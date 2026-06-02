@@ -15,6 +15,55 @@ Make sure the following are installed on your machine before you begin.
 | npm | v8 or higher | `npm --version` |
 | Git | Any recent version | `git --version` |
 
+---
+
+### How to Install Git on Windows
+
+> **If you see:** `'git' is not recognized as the name of a cmdlet...`  
+> Git is not installed. Follow these steps:
+
+**Option A — Git for Windows (Recommended)**
+
+1. Go to: **https://git-scm.com/download/win**
+2. Click the download link — it starts automatically
+3. Run the installer (`.exe` file)
+4. On every screen, click **Next** — the defaults are fine
+5. On the screen **"Adjusting your PATH environment"**, select:  
+   ✅ **Git from the command line and also from 3rd-party software**
+6. Continue clicking **Next** → **Install** → **Finish**
+7. **Close and reopen PowerShell or Command Prompt**
+8. Verify it works:
+   ```powershell
+   git --version
+   # Should show: git version 2.x.x.windows.x
+   ```
+
+**Option B — GitHub Desktop (Easiest, includes Git)**
+
+1. Go to: **https://desktop.github.com**
+2. Download and install GitHub Desktop
+3. Git is included automatically
+4. Open **Git Bash** from the Start Menu to run git commands
+
+---
+
+### How to Install Node.js on Windows
+
+> **If you see:** `'node' is not recognized...`
+
+1. Go to: **https://nodejs.org**
+2. Click **"LTS"** (the green button — recommended for most users)
+3. Run the downloaded `.msi` installer
+4. Click **Next** on every screen → **Install** → **Finish**
+5. **Close and reopen PowerShell**
+6. Verify:
+   ```powershell
+   node --version   # Should show v18.x.x or higher
+   npm --version    # Should show v8.x.x or higher
+   ```
+
+---
+
 > **Download Node.js**: https://nodejs.org (choose LTS version)
 
 ---

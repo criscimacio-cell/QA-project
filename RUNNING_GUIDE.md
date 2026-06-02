@@ -1,380 +1,333 @@
 # Q-KTAMP — How to Run (Step-by-Step Guide)
 
-> **QA Knowledge & Test Asset Management Platform**  
-> Built with React 18 + TypeScript (Frontend) · Express.js + SQLite (Backend)
+> **QA Knowledge & Test Asset Management Platform**
+> React 18 + TypeScript (Frontend) · Express.js + SQLite (Backend)
 
 ---
 
-## Prerequisites
+## Part 1 — Install Required Tools (Do This Once)
 
-Make sure the following are installed on your machine before you begin.
+### Step 1 — Install Git
 
-| Tool | Version | Check Command |
-|------|---------|---------------|
-| Node.js | v18 or higher | `node --version` |
-| npm | v8 or higher | `npm --version` |
-| Git | Any recent version | `git --version` |
+1. Open your browser and go to: **https://git-scm.com/download/win**
+2. Click **"Git for Windows/x64 Setup"** — the download starts automatically
+3. Run the downloaded `.exe` file
+4. Click through the installer — **do not change any defaults**
+5. On the **"Adjusting your PATH environment"** screen, select:
+   ✅ **"Git from the command line and also from 3rd-party software"**
+6. Keep clicking **Next** → **Install**
+7. On the last screen: ✅ check **"Launch Git Bash"** → click **Finish**
 
----
-
-### How to Install Git on Windows
-
-> **If you see:** `'git' is not recognized as the name of a cmdlet...`  
-> Git is not installed. Follow these steps:
-
-**Option A — Git for Windows (Recommended)**
-
-1. Go to: **https://git-scm.com/download/win**
-2. Click the download link — it starts automatically
-3. Run the installer (`.exe` file)
-4. On every screen, click **Next** — the defaults are fine
-5. On the screen **"Adjusting your PATH environment"**, select:  
-   ✅ **Git from the command line and also from 3rd-party software**
-6. Continue clicking **Next** → **Install** → **Finish**
-7. **Close and reopen PowerShell or Command Prompt**
-8. Verify it works:
-   ```powershell
-   git --version
-   # Should show: git version 2.x.x.windows.x
-   ```
-
-**Option B — GitHub Desktop (Easiest, includes Git)**
-
-1. Go to: **https://desktop.github.com**
-2. Download and install GitHub Desktop
-3. Git is included automatically
-4. Open **Git Bash** from the Start Menu to run git commands
+> Git Bash will open automatically. Use **Git Bash** for ALL commands in this guide.
 
 ---
 
-### How to Install Node.js on Windows
+### Step 2 — Install Node.js
 
-> **If you see:** `'node' is not recognized...`
-
-1. Go to: **https://nodejs.org**
-2. Click **"LTS"** (the green button — recommended for most users)
+1. Open your browser and go to: **https://nodejs.org**
+2. Click the **LTS** button (the green one)
 3. Run the downloaded `.msi` installer
-4. Click **Next** on every screen → **Install** → **Finish**
-5. **Close and reopen PowerShell**
-6. Verify:
-   ```powershell
-   node --version   # Should show v18.x.x or higher
-   npm --version    # Should show v8.x.x or higher
+4. Click **Next** through all screens → **Install** → **Finish**
+5. **Close and reopen Git Bash**
+6. Verify it works:
+   ```bash
+   node --version
+   # Should show: v18.x.x or v22.x.x
+   npm --version
+   # Should show: v8.x.x or higher
    ```
 
 ---
 
-> **Download Node.js**: https://nodejs.org (choose LTS version)
+## Part 2 — Get the Project
 
----
+### Step 3 — Clone the Repository
 
-## Step 1 — Clone the Repository
-
-Open your terminal (Command Prompt, PowerShell, or macOS/Linux Terminal).
+In Git Bash, run:
 
 ```bash
 git clone https://github.com/criscimacio-cell/qa-project.git
 ```
 
-Then enter the project folder:
+### Step 4 — Enter the Project Folder
 
 ```bash
 cd qa-project
 ```
 
----
-
-## Step 2 — Switch to the Application Branch
-
-The application lives on the feature branch. Switch to it:
+### Step 5 — Switch to the App Branch
 
 ```bash
 git checkout claude/loving-wright-KSSbB
 ```
 
-Verify you are on the correct branch:
+---
+
+## Part 3 — Install Project Dependencies
+
+> ⚠️ **Important:** You must install dependencies in BOTH the backend and frontend folders separately. Do not skip this.
+
+### Step 6 — Install Backend Dependencies
 
 ```bash
-git branch
-# Should show: * claude/loving-wright-KSSbB
+cd backend
+npm install
+cd ..
 ```
+
+Wait for it to finish completely before moving on.
+
+### Step 7 — Install Frontend Dependencies
+
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+Wait for it to finish completely before moving on.
 
 ---
 
-## Step 3 — Install All Dependencies
+## Part 4 — Run the Application
 
-Run this single command from the **root** of the project. It installs dependencies for the root, backend, and frontend all at once:
+> You need **two Git Bash windows open at the same time** — one for the backend, one for the frontend.
+
+### Step 8 — Start the Backend (Window 1)
+
+In your current Git Bash window, make sure you are in the `qa-project` folder:
 
 ```bash
-npm install && npm install --workspace=backend && npm install --workspace=frontend
+cd ~/Desktop/qa-project
 ```
 
-> This may take 1–2 minutes. You will see npm progress messages — this is normal.
-
----
-
-## Step 4 — Start the Backend Server
-
-Open a **new terminal window** (keep this one open the whole time).
-
-Navigate to the project folder and run:
+Then start the backend:
 
 ```bash
 npx tsx backend/src/index.ts
 ```
 
-You should see these two lines, confirming the backend is running:
+You should see:
 
 ```
 Database initialized and seeded successfully
 Q-KTAMP API running on http://localhost:3001
 ```
 
-> The database (`data/qtamp.db`) is created automatically on first run with all demo data pre-loaded.
-
-**Leave this terminal open.** Do not close it.
+**Leave this window open. Do not close it.**
 
 ---
 
-## Step 5 — Start the Frontend Dev Server
+### Step 9 — Open a Second Git Bash Window
 
-Open a **second terminal window**.
+Right-click on your Desktop → **Git Bash Here**
 
-Navigate to the frontend folder:
+OR open Git Bash from the Start Menu again.
+
+---
+
+### Step 10 — Start the Frontend (Window 2)
+
+In the second Git Bash window:
 
 ```bash
-cd frontend
-```
-
-Start the frontend:
-
-```bash
+cd ~/Desktop/qa-project/frontend
 npx vite
 ```
 
-You should see output like:
+You should see:
 
 ```
   VITE v5.x.x  ready in xxx ms
 
   ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
 ```
 
-**Leave this terminal open too.**
+**Leave this window open too.**
 
 ---
 
-## Step 6 — Open the Application
+### Step 11 — Open the App in Your Browser
 
-Open your web browser and go to:
+Go to:
 
 ```
 http://localhost:5173
 ```
 
-You will see the **Q-KTAMP Login Page**.
-
 ---
 
-## Step 7 — Log In with Demo Credentials
+## Part 5 — Log In
 
-Click any of the demo credential buttons on the login page, or type them manually.  
-**All accounts use the same password:** `password123`
+Click any demo user button on the login page, or type the credentials manually.
+**All accounts use password:** `password123`
 
-| Email | Role | Access Level |
-|-------|------|--------------|
-| `admin@qa.com` | QA Admin | Full access — user management, audit logs, all settings |
-| `lead@qa.com` | QA Lead | Repository management, approvals, analytics |
-| `engineer1@qa.com` | QA Engineer | Upload files, manage own assets |
+| Email | Role | What They Can Do |
+|-------|------|-----------------|
+| `admin@qa.com` | QA Admin | Everything — users, audit logs, all settings |
+| `lead@qa.com` | QA Lead | Approve files, manage repos, view analytics |
+| `engineer1@qa.com` | QA Engineer | Upload and manage files |
 | `viewer@qa.com` | Viewer | View and download only |
 
-> **Tip:** Start with `admin@qa.com` to explore all features.
+> **Start with `admin@qa.com` to see all features.**
 
 ---
 
-## Step 8 — Explore the Platform
+## Stopping the App
 
-Once logged in, use the **left sidebar** to navigate:
-
-### Main
-| Page | What You Can Do |
-|------|----------------|
-| **Dashboard** | View stats, charts, upload trends, recent activity |
-| **Repositories** | Browse the folder tree, view/upload files per folder |
-| **File Manager** | Search/filter all files, approve/reject, view versions |
-| **Search** | Full-text search across files, articles, Jira tickets |
-
-### Content
-| Page | What You Can Do |
-|------|----------------|
-| **Knowledge Base** | Read/write team guides, RCA docs, best practices |
-| **Test Data Library** | Browse published test assets and templates |
-| **Approval Workflow** | Kanban board — move files through review pipeline |
-
-### Admin *(Admin and Lead roles only)*
-| Page | What You Can Do |
-|------|----------------|
-| **User Management** | Add/edit users, assign roles, view permission matrix |
-| **Audit Log** | View all system events, export CSV |
-| **Settings** | Change password, view platform info |
+Press **Ctrl + C** in both Git Bash windows.
 
 ---
 
-## Stopping the Application
+## Restarting the App (Next Time)
 
-To stop, go to each terminal and press:
-
-```
-Ctrl + C
-```
-
-Do this in both the **backend terminal** and the **frontend terminal**.
-
----
-
-## Restarting After a Stop
-
-You do **not** need to reinstall dependencies. Just repeat **Steps 4 and 5**:
+Dependencies are already installed — just repeat Steps 8–10:
 
 ```bash
-# Terminal 1 — Backend
+# Window 1 — Backend
+cd ~/Desktop/qa-project
 npx tsx backend/src/index.ts
 
-# Terminal 2 — Frontend
-cd frontend && npx vite
+# Window 2 — Frontend
+cd ~/Desktop/qa-project/frontend
+npx vite
 ```
 
 ---
 
 ## Troubleshooting
 
-### Port already in use
+### "git is not recognized"
+Git is not installed or Git Bash is not open. Follow Step 1 above.
+Use **Git Bash** — not PowerShell, not Command Prompt.
 
-If you see `EADDRINUSE: address already in use`, another process is using port 3001 or 5173.
+---
 
-**On macOS/Linux:**
+### "Cannot find module 'express'" or "Cannot find module 'better-sqlite3'"
+Backend dependencies are not installed. Run:
 ```bash
-# Kill whatever is using port 3001
-lsof -ti:3001 | xargs kill -9
-
-# Kill whatever is using port 5173
-lsof -ti:5173 | xargs kill -9
-```
-
-**On Windows (PowerShell):**
-```powershell
-# Find and kill port 3001
-netstat -ano | findstr :3001
-taskkill /PID <PID_NUMBER> /F
+cd ~/Desktop/qa-project/backend
+npm install
+cd ..
 ```
 
 ---
 
-### Cannot find module error
-
-If you see a module not found error, reinstall dependencies:
-
+### "Cannot find package 'vite'" or vite config errors
+Frontend dependencies are not installed. Run:
 ```bash
-npm install && npm install --workspace=backend && npm install --workspace=frontend
+cd ~/Desktop/qa-project/frontend
+npm install
+```
+Then run `npx vite` again.
+
+---
+
+### "EADDRINUSE: address already in use" (port already taken)
+Something else is using port 3001 or 5173. Run in Git Bash:
+```bash
+# Kill port 3001
+npx kill-port 3001
+
+# Kill port 5173
+npx kill-port 5173
 ```
 
 ---
 
-### Database issues / want a fresh start
-
-Delete the auto-generated database file and restart the backend. It will recreate and re-seed everything:
-
+### "gyp ERR! find VS" / "No prebuilt binaries found"
+This happens when using an old version of the project. Make sure you have the latest code:
 ```bash
-rm -rf data/
-npx tsx backend/src/index.ts
+cd ~/Desktop/qa-project
+git pull
+cd backend
+npm install
 ```
+The current version uses `better-sqlite3 v11` which has prebuilt binaries for Node.js 22 and does **not** require Visual Studio.
 
 ---
 
-### Login fails with "Invalid credentials"
-
-Make sure you are using the exact email and password below:
-
+### Login fails
+Use exactly:
 - Email: `admin@qa.com`
 - Password: `password123`
 
-Passwords are case-sensitive. There are no spaces.
+Passwords are case-sensitive. No spaces.
 
 ---
 
-## Project Structure (Quick Reference)
+## Quick Reference — All Commands
+
+```bash
+# 1. Clone (first time only)
+git clone https://github.com/criscimacio-cell/qa-project.git
+cd qa-project
+git checkout claude/loving-wright-KSSbB
+
+# 2. Install (first time only)
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
+
+# 3. Run — Window 1 (Backend)
+cd ~/Desktop/qa-project
+npx tsx backend/src/index.ts
+
+# 4. Run — Window 2 (Frontend)
+cd ~/Desktop/qa-project/frontend
+npx vite
+
+# 5. Open browser
+# http://localhost:5173
+```
+
+---
+
+## Project Structure
 
 ```
 qa-project/
-│
-├── backend/                  ← Express.js API server
+├── backend/                  ← Express.js API (port 3001)
 │   └── src/
-│       ├── index.ts          ← Entry point (starts on port 3001)
-│       ├── db.ts             ← SQLite setup + seed data
-│       ├── middleware/
-│       │   └── auth.ts       ← JWT authentication
-│       └── routes/
-│           ├── auth.ts       ← Login, logout, change password
-│           ├── users.ts      ← User CRUD
-│           ├── repositories.ts ← Folder/repo management
-│           ├── files.ts      ← File upload, download, approval
-│           ├── knowledge.ts  ← Knowledge base articles
-│           ├── search.ts     ← Full-text search
-│           ├── dashboard.ts  ← Stats and charts data
-│           ├── notifications.ts ← In-app notifications
-│           └── audit.ts      ← Audit log
+│       ├── index.ts          ← Server entry point
+│       ├── db.ts             ← SQLite database + seed data
+│       ├── middleware/auth.ts ← JWT authentication
+│       └── routes/           ← API endpoints
+│           ├── auth.ts
+│           ├── users.ts
+│           ├── repositories.ts
+│           ├── files.ts
+│           ├── knowledge.ts
+│           ├── search.ts
+│           ├── dashboard.ts
+│           ├── notifications.ts
+│           └── audit.ts
 │
-├── frontend/                 ← React + Vite app
+├── frontend/                 ← React app (port 5173)
 │   └── src/
 │       ├── App.tsx           ← Routes
-│       ├── pages/            ← One file per page/screen
-│       ├── components/       ← Reusable UI components
-│       ├── context/          ← Auth + Theme state
-│       └── api/client.ts     ← Axios instance with JWT
+│       ├── pages/            ← Dashboard, Repositories, Files, etc.
+│       ├── components/       ← Sidebar, TopBar, UI components
+│       ├── context/          ← Auth + Theme
+│       └── api/client.ts     ← Axios + JWT
 │
 ├── data/                     ← Auto-created SQLite database
-├── uploads/                  ← Auto-created file upload storage
-└── package.json              ← Root workspace config
+└── uploads/                  ← Auto-created file storage
 ```
 
 ---
 
-## API Endpoints (Reference)
-
-The backend runs on `http://localhost:3001`. All endpoints require a Bearer token except `/api/auth/login`.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Login — returns JWT token |
-| GET | `/api/auth/me` | Current user info |
-| GET | `/api/dashboard/stats` | Dashboard metrics |
-| GET | `/api/repositories` | All folders/repos |
-| GET | `/api/files` | List files (supports filters) |
-| POST | `/api/files/upload` | Upload a file with metadata |
-| GET | `/api/search?q=` | Full-text search |
-| GET | `/api/knowledge` | Knowledge articles |
-| GET | `/api/notifications` | User notifications |
-| GET | `/api/audit` | Audit log (admin/lead only) |
-| GET | `/api/users` | User list |
-
----
-
-## Tech Stack Summary
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend Framework | React 18 + TypeScript |
-| Build Tool | Vite |
-| Styling | Tailwind CSS (primary color: `#08a49c`) |
+| Frontend | React 18 + TypeScript + Vite |
+| Styling | Tailwind CSS · Primary color: `#08a49c` |
 | Charts | Recharts |
 | Icons | Lucide React |
-| HTTP Client | Axios |
-| Routing | React Router v6 |
-| Backend Framework | Express.js + TypeScript |
-| Database | SQLite via better-sqlite3 |
-| Authentication | JWT (8-hour sessions) + bcrypt |
-| Runtime | Node.js v18+ |
+| Backend | Express.js + TypeScript |
+| Database | SQLite (better-sqlite3 v11) |
+| Auth | JWT + bcrypt |
+| Runtime | Node.js v18+ or v22+ |
 
 ---
 

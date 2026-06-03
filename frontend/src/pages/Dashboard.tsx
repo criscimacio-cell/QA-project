@@ -180,11 +180,11 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5">
 
       {/* ── Header / Greeting ── */}
       <div
-        className="relative rounded-2xl p-6 overflow-hidden animate-fade-in-up"
+        className="relative rounded-2xl p-5 overflow-hidden animate-fade-in-up"
         style={{
           background: 'linear-gradient(135deg, #08a49c 0%, #06b6d4 50%, #0891b2 100%)',
           backgroundSize: '200% 200%',
@@ -207,7 +207,7 @@ export default function Dashboard() {
               <Sparkles size={16} className="text-teal-200" />
               <span className="text-teal-100 text-sm font-medium">{greeting}</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">
               {user?.name?.split(' ')[0]} 👋
             </h1>
             <p className="text-teal-100/80 text-sm mt-1">
@@ -236,32 +236,20 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── First stats row ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Files} label="Total Files" value={stats.totalFiles} sub="Active assets"
-          gradient="linear-gradient(135deg, #08a49c, #06b6d4)" delay={0} />
-        <StatCard icon={Users} label="Active Users" value={stats.activeUsers} sub="Team members"
-          gradient="linear-gradient(135deg, #3b82f6, #6366f1)" delay={80} />
-        <StatCard icon={Upload} label="Uploaded Today" value={stats.uploadedToday} sub="New files"
-          gradient="linear-gradient(135deg, #10b981, #059669)" delay={160} />
-        <StatCard icon={Clock} label="Pending Review" value={stats.pendingApprovals} sub="Awaiting approval"
-          gradient="linear-gradient(135deg, #f59e0b, #d97706)" delay={240} />
-      </div>
-
-      {/* ── Second stats row ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={BookOpen} label="KB Articles" value={stats.totalKB} sub="Published guides"
-          gradient="linear-gradient(135deg, #8b5cf6, #7c3aed)" delay={80} />
-        <StatCard icon={HardDrive} label="Total Storage" value={formatBytes(stats.totalSize)} sub="Used capacity"
-          gradient="linear-gradient(135deg, #ef4444, #dc2626)" delay={160} />
-        <StatCard icon={Activity} label="Audit Events" value="15+" sub="Last 24 hours"
-          gradient="linear-gradient(135deg, #6366f1, #4f46e5)" delay={240} />
-        <StatCard icon={TrendingUp} label="This Week" value="+12%" sub="Upload growth"
-          gradient="linear-gradient(135deg, #f97316, #ea580c)" delay={320} />
+      {/* ── Stats grid (all 8 in one 4-col grid) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StatCard icon={Files}     label="Total Files"     value={stats.totalFiles}           sub="Active assets"     gradient="linear-gradient(135deg,#08a49c,#06b6d4)"  delay={0}   />
+        <StatCard icon={Users}     label="Active Users"    value={stats.activeUsers}          sub="Team members"      gradient="linear-gradient(135deg,#3b82f6,#6366f1)"  delay={60}  />
+        <StatCard icon={Upload}    label="Uploaded Today"  value={stats.uploadedToday}        sub="New files"         gradient="linear-gradient(135deg,#10b981,#059669)"  delay={120} />
+        <StatCard icon={Clock}     label="Pending Review"  value={stats.pendingApprovals}     sub="Awaiting approval" gradient="linear-gradient(135deg,#f59e0b,#d97706)"  delay={180} />
+        <StatCard icon={BookOpen}  label="KB Articles"     value={stats.totalKB}              sub="Published guides"  gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)"  delay={240} />
+        <StatCard icon={HardDrive} label="Total Storage"   value={formatBytes(stats.totalSize)} sub="Used capacity"  gradient="linear-gradient(135deg,#ef4444,#dc2626)"  delay={300} />
+        <StatCard icon={Activity}  label="Audit Events"    value="15+"                        sub="Last 24 hours"     gradient="linear-gradient(135deg,#6366f1,#4f46e5)"  delay={360} />
+        <StatCard icon={TrendingUp}label="This Week"       value="+12%"                       sub="Upload growth"     gradient="linear-gradient(135deg,#f97316,#ea580c)"  delay={420} />
       </div>
 
       {/* ── Charts Row ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Upload Trend */}
         <div className="card p-5 lg:col-span-2 animate-fade-in-up stagger-4">
@@ -364,7 +352,7 @@ export default function Dashboard() {
 
       {/* ── Repository Usage ── */}
       {stats.repositoryStats?.length > 0 && (
-        <div className="card p-5 animate-fade-in-up stagger-5">
+        <div className="card p-4 animate-fade-in-up stagger-5">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-sm">Repository Usage</h3>
@@ -404,7 +392,7 @@ export default function Dashboard() {
       )}
 
       {/* ── Bottom Row: Activity + Top Files ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Recent Activity */}
         <div className="card p-5 animate-fade-in-up stagger-6">

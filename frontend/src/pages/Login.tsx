@@ -1,69 +1,60 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import {
-  Layers, Eye, EyeOff, Lock, Mail, AlertCircle,
-  CheckCircle2, GitBranch, ShieldCheck, Zap, Sun, Moon,
-  ArrowRight
-} from 'lucide-react';
+import { Eye, EyeOff, User, Lock, AlertCircle, CheckCircle2, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 const DEMO_USERS = [
-  {
-    email: 'admin@qa.com',
-    role: 'QA Admin',
-    icon: '🔑',
-    gradient: 'from-red-500 to-rose-600',
-    bg: 'bg-red-50 dark:bg-red-900/20',
-    border: 'border-red-200 dark:border-red-800/50',
-    text: 'text-red-700 dark:text-red-300',
-  },
-  {
-    email: 'lead@qa.com',
-    role: 'QA Lead',
-    icon: '⭐',
-    gradient: 'from-amber-500 to-orange-500',
-    bg: 'bg-amber-50 dark:bg-amber-900/20',
-    border: 'border-amber-200 dark:border-amber-800/50',
-    text: 'text-amber-700 dark:text-amber-300',
-  },
-  {
-    email: 'engineer1@qa.com',
-    role: 'QA Engineer',
-    icon: '⚙️',
-    gradient: 'from-blue-500 to-indigo-600',
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
-    border: 'border-blue-200 dark:border-blue-800/50',
-    text: 'text-blue-700 dark:text-blue-300',
-  },
-  {
-    email: 'viewer@qa.com',
-    role: 'Viewer',
-    icon: '👁️',
-    gradient: 'from-slate-400 to-slate-600',
-    bg: 'bg-slate-50 dark:bg-slate-800/60',
-    border: 'border-slate-200 dark:border-slate-700',
-    text: 'text-slate-700 dark:text-slate-300',
-  },
+  { email: 'admin@qa.com', role: 'Admin', password: 'password123' },
+  { email: 'lead@qa.com', role: 'Lead', password: 'password123' },
+  { email: 'engineer1@qa.com', role: 'Engineer', password: 'password123' },
+  { email: 'viewer@qa.com', role: 'Viewer', password: 'password123' },
 ];
 
-const FEATURES = [
-  {
-    icon: ShieldCheck,
-    title: 'Enterprise-Grade Security',
-    desc: 'Role-based access control with full audit logging',
-  },
-  {
-    icon: GitBranch,
-    title: 'Version-Controlled Assets',
-    desc: 'Track every change with complete history',
-  },
-  {
-    icon: Zap,
-    title: 'Smart Approval Workflows',
-    desc: 'Automated review pipelines with notifications',
-  },
-];
+/* ── Isometric phone SVG illustration ── */
+function IsometricIllustration() {
+  return (
+    <svg viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[200px]">
+      {/* Phone body */}
+      <rect x="55" y="30" width="90" height="120" rx="10" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+      {/* Screen */}
+      <rect x="62" y="42" width="76" height="90" rx="4" fill="rgba(255,255,255,0.12)" />
+      {/* Home bar */}
+      <rect x="82" y="140" width="36" height="4" rx="2" fill="rgba(255,255,255,0.3)" />
+
+      {/* Chart bars inside screen */}
+      <rect x="68" y="100" width="10" height="26" rx="2" fill="rgba(255,255,255,0.5)" />
+      <rect x="82" y="88" width="10" height="38" rx="2" fill="rgba(255,255,255,0.7)" />
+      <rect x="96" y="94" width="10" height="32" rx="2" fill="rgba(255,255,255,0.5)" />
+      <rect x="110" y="80" width="10" height="46" rx="2" fill="rgba(255,255,255,0.9)" />
+
+      {/* Line chart */}
+      <polyline points="68,90 82,75 96,80 110,60 124,68" stroke="rgba(255,255,255,0.8)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Dots on line */}
+      {[[68,90],[82,75],[96,80],[110,60],[124,68]].map(([x,y], i) => (
+        <circle key={i} cx={x} cy={y} r="2.5" fill="white" opacity="0.9" />
+      ))}
+
+      {/* Circular gauge top-left of screen */}
+      <circle cx="80" cy="58" r="10" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
+      <circle cx="80" cy="58" r="10" stroke="rgba(255,255,255,0.85)" strokeWidth="3"
+        strokeDasharray="40 23" strokeDashoffset="10" strokeLinecap="round" />
+      <text x="80" y="62" textAnchor="middle" fill="white" fontSize="7" fontWeight="700" opacity="0.9">72%</text>
+
+      {/* Rising plane/arrow outside phone top-right */}
+      <g transform="translate(138, 20) rotate(30)">
+        <rect width="28" height="14" rx="4" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+        <polyline points="5,9 11,5 17,9 23,5" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      </g>
+
+      {/* Small floating card bottom-left */}
+      <rect x="20" y="115" width="36" height="26" rx="5" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.35)" strokeWidth="1" />
+      <rect x="25" y="121" width="20" height="3" rx="1.5" fill="rgba(255,255,255,0.6)" />
+      <rect x="25" y="128" width="14" height="3" rx="1.5" fill="rgba(255,255,255,0.4)" />
+      <rect x="25" y="134" width="8" height="2" rx="1" fill="rgba(255,255,255,0.3)" />
+    </svg>
+  );
+}
 
 export default function Login() {
   const { login } = useAuth();
@@ -84,7 +75,7 @@ export default function Login() {
       await login(email, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
+      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -92,384 +83,215 @@ export default function Login() {
 
   const quickLogin = (u: typeof DEMO_USERS[0]) => {
     setEmail(u.email);
-    setPassword('password123');
+    setPassword(u.password);
     setFilledRole(u.role);
   };
 
   return (
-    <div className="min-h-screen flex overflow-hidden">
-      {/* ── Theme Toggle ── */}
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #b2eae7 0%, #d4f4f2 40%, #c8eef6 100%)' }}
+    >
+      {/* Theme toggle */}
       <button
         onClick={toggle}
-        className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl glass text-slate-600 dark:text-slate-300 hover:text-[#08a49c] transition-all hover:scale-105 shadow-md"
-        title="Toggle theme"
+        className="fixed top-4 right-4 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 backdrop-blur text-slate-600 hover:text-[#08a49c] shadow transition-all hover:scale-105"
       >
-        {dark ? <Sun size={17} /> : <Moon size={17} />}
+        {dark ? <Sun size={16} /> : <Moon size={16} />}
       </button>
 
-      {/* ══════════════════════════════════════════
-          LEFT PANEL — Animated Brand Hero (60%)
-      ══════════════════════════════════════════ */}
+      {/* Background decorative circles */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-30" style={{ background: 'radial-gradient(circle, #08a49c, transparent 70%)' }} />
+      <div className="absolute -bottom-40 -right-20 w-[28rem] h-[28rem] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #06b6d4, transparent 70%)' }} />
+
+      {/* ── Main Card ── */}
       <div
-        className="hidden lg:flex lg:w-[60%] relative flex-col justify-between overflow-hidden"
-        style={{
-          background: 'linear-gradient(145deg, #06736d 0%, #08a49c 30%, #06b6d4 65%, #0891b2 100%)',
-          backgroundSize: '300% 300%',
-          animation: 'gradient-shift 10s ease infinite',
-        }}
+        className="relative w-full flex rounded-3xl overflow-hidden shadow-2xl"
+        style={{ maxWidth: 820, minHeight: 500, animation: 'fadeInUp 0.5s ease both' }}
       >
-        {/* Dark overlay */}
+        {/* ══ LEFT PANEL — Teal ══ */}
         <div
-          className="absolute inset-0"
+          className="relative flex-shrink-0 flex flex-col justify-between overflow-hidden"
           style={{
-            background: 'linear-gradient(145deg, rgba(4,50,47,0.55) 0%, rgba(6,60,56,0.3) 50%, rgba(4,40,55,0.5) 100%)',
+            width: '42%',
+            background: 'linear-gradient(160deg, #07b5ac 0%, #08a49c 40%, #06908a 100%)',
           }}
-        />
-
-        {/* Floating blobs */}
-        <div
-          className="login-blob w-96 h-96 opacity-30"
-          style={{
-            background: 'rgba(94,234,212,0.5)',
-            top: '-80px',
-            left: '-80px',
-            animation: 'blobFloat1 14s ease-in-out infinite',
-          }}
-        />
-        <div
-          className="login-blob w-80 h-80 opacity-20"
-          style={{
-            background: 'rgba(6,182,212,0.6)',
-            bottom: '80px',
-            right: '-60px',
-            animation: 'blobFloat2 17s ease-in-out infinite',
-          }}
-        />
-        <div
-          className="login-blob w-64 h-64 opacity-25"
-          style={{
-            background: 'rgba(8,164,156,0.5)',
-            top: '40%',
-            left: '45%',
-            animation: 'blobFloat3 11s ease-in-out infinite',
-          }}
-        />
-
-        {/* Grid pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px',
-          }}
-        />
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col h-full px-12 py-12 justify-between">
-          {/* Top: Logo */}
-          <div className="animate-fade-in-up stagger-1">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                }}
-              >
-                <Layers size={22} className="text-white" />
-              </div>
-              <div>
-                <span className="text-white font-extrabold text-xl tracking-tight">Q-KTAMP</span>
-                <div className="text-xs text-teal-200/80 font-medium tracking-wide">QA Asset Platform</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Middle: Main copy */}
-          <div className="space-y-8">
-            <div className="animate-fade-in-up stagger-2">
-              <div
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6 text-xs font-semibold text-teal-100 tracking-wider uppercase"
-                style={{
-                  background: 'rgba(255,255,255,0.12)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-teal-300"
-                  style={{ animation: 'pulse-dot 2s ease-in-out infinite' }}
-                />
-                Enterprise QA Platform
-              </div>
-              <h1
-                className="text-5xl font-black text-white leading-tight tracking-tight"
-                style={{ textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}
-              >
-                Manage QA Assets
-                <br />
-                <span
-                  style={{
-                    background: 'linear-gradient(90deg, #a7f3d0, #5eead4, #a5f3fc)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  With Confidence.
-                </span>
-              </h1>
-              <p className="text-teal-100/80 text-lg mt-4 leading-relaxed max-w-md">
-                A unified platform for your test data, documentation, and approval workflows — built for modern QA teams.
-              </p>
-            </div>
-
-            {/* Feature rows */}
-            <div className="space-y-3 animate-fade-in-up stagger-3">
-              {FEATURES.map((f, i) => (
-                <div
-                  key={f.title}
-                  className="feature-row"
-                  style={{ animationDelay: `${(i + 4) * 80}ms` }}
-                >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: 'rgba(255,255,255,0.18)',
-                      border: '1px solid rgba(255,255,255,0.25)',
-                    }}
-                  >
-                    <f.icon size={16} className="text-white" />
-                  </div>
-                  <div>
-                    <div className="text-white text-sm font-semibold">{f.title}</div>
-                    <div className="text-teal-200/70 text-xs mt-0.5">{f.desc}</div>
-                  </div>
-                  <CheckCircle2 size={15} className="text-teal-300/60 ml-auto flex-shrink-0" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bottom: Stats */}
+        >
+          {/* Large circle overlay — mimics the geometric shape in reference */}
           <div
-            className="animate-fade-in-up stagger-5 grid grid-cols-3 gap-4 pt-6 border-t"
-            style={{ borderColor: 'rgba(255,255,255,0.15)' }}
+            className="absolute"
+            style={{
+              width: 420,
+              height: 420,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.10)',
+              right: -160,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              border: '1.5px solid rgba(255,255,255,0.18)',
+            }}
+          />
+          <div
+            className="absolute"
+            style={{
+              width: 280,
+              height: 280,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.07)',
+              right: -80,
+              top: '50%',
+              transform: 'translateY(-50%)',
+            }}
+          />
+
+          {/* "Welcome" rotated text on left edge */}
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 font-black text-white/30 tracking-[0.4em] uppercase"
+            style={{
+              writingMode: 'vertical-rl',
+              transform: 'translateY(-50%) rotate(180deg)',
+              fontSize: 28,
+              left: 12,
+            }}
           >
-            {[
-              { num: '50K+', label: 'Assets Managed' },
-              { num: '200+', label: 'QA Teams' },
-              { num: '99.9%', label: 'Uptime SLA' },
-            ].map(s => (
-              <div key={s.label} className="text-center">
-                <div className="text-2xl font-extrabold text-white">{s.num}</div>
-                <div className="text-teal-200/70 text-xs mt-0.5">{s.label}</div>
-              </div>
-            ))}
+            Welcome
           </div>
-        </div>
-      </div>
 
-      {/* ══════════════════════════════════════════
-          RIGHT PANEL — Login Form (40%)
-      ══════════════════════════════════════════ */}
-      <div className="w-full lg:w-[40%] flex flex-col justify-center bg-white dark:bg-slate-950 relative overflow-y-auto">
-        {/* Subtle background noise for the form side */}
-        <div
-          className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage: `radial-gradient(circle at 30% 20%, #08a49c 0%, transparent 50%),
-                              radial-gradient(circle at 70% 80%, #06b6d4 0%, transparent 50%)`,
-          }}
-        />
+          {/* Center content */}
+          <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 py-10">
+            {/* Logo */}
+            <div className="flex items-center gap-2 mb-8 self-start ml-6">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" />
+                </svg>
+              </div>
+              <span className="text-white font-extrabold text-base tracking-wide">Q-KTAMP</span>
+            </div>
 
-        <div className="relative z-10 w-full max-w-md mx-auto px-8 py-12">
-          {/* Mobile logo */}
-          <div className="flex justify-center mb-10 lg:hidden animate-fade-in-up">
-            <div className="flex flex-col items-center gap-3">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #08a49c, #06b6d4)', boxShadow: '0 8px 24px rgba(8,164,156,0.4)' }}
-              >
-                <Layers size={28} className="text-white" />
-              </div>
-              <div className="text-center">
-                <div className="font-extrabold text-xl text-slate-900 dark:text-white tracking-tight">Q-KTAMP</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">QA Asset Platform</div>
-              </div>
+            {/* Illustration */}
+            <div style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))' }}>
+              <IsometricIllustration />
             </div>
           </div>
 
-          {/* Heading */}
-          <div className="animate-fade-in-up stagger-1 mb-8">
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Welcome back
-            </h2>
-            <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm leading-relaxed">
-              Sign in to your account to continue managing your QA assets.
+          {/* Bottom tagline */}
+          <div className="relative z-10 px-8 pb-8">
+            <p className="text-white/60 text-[10px] font-semibold tracking-[0.2em] uppercase text-center">
+              QA Knowledge &amp; Test Asset Platform
             </p>
           </div>
+        </div>
 
-          {/* Error alert */}
+        {/* ══ RIGHT PANEL — White form ══ */}
+        <div className="flex-1 flex flex-col justify-center bg-white dark:bg-slate-900 px-10 py-10">
+          <h2
+            className="font-extrabold text-center mb-8 tracking-wider text-[#08a49c]"
+            style={{ fontSize: 26, letterSpacing: '0.15em' }}
+          >
+            LOGIN
+          </h2>
+
           {error && (
-            <div className="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl mb-6 animate-scale-in-bounce">
-              <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-red-700 dark:text-red-300 leading-snug">{error}</span>
+            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-5 text-sm text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+              <AlertCircle size={14} className="flex-shrink-0" />
+              {error}
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in-up stagger-2">
-            {/* Email field */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email / Username */}
             <div>
-              <label className="label">Email address</label>
+              <label className="block text-xs font-semibold text-[#08a49c] mb-1.5 tracking-wide">Username</label>
               <div className="relative">
-                <Mail
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                  style={{ transition: 'color 0.2s ease' }}
-                />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@company.com"
                   required
-                  className="input pl-10 h-11 rounded-xl"
+                  className="w-full border-b-2 border-slate-200 dark:border-slate-700 bg-transparent outline-none text-sm text-slate-800 dark:text-slate-100 pb-2 pr-8 placeholder-slate-300 dark:placeholder-slate-600 focus:border-[#08a49c] transition-colors"
                 />
-                {email && (
-                  <CheckCircle2
-                    size={15}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#08a49c] animate-scale-in"
-                  />
-                )}
+                <User size={15} className="absolute right-1 bottom-2.5 text-[#08a49c]" />
               </div>
             </div>
 
-            {/* Password field */}
+            {/* Password */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="label mb-0">Password</label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-medium text-[#08a49c] hover:text-[#06b6d4] transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <label className="block text-xs font-semibold text-[#08a49c] mb-1.5 tracking-wide">password</label>
               <div className="relative">
-                <Lock
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                />
                 <input
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="••••••••"
                   required
-                  className="input pl-10 pr-10 h-11 rounded-xl"
+                  className="w-full border-b-2 border-slate-200 dark:border-slate-700 bg-transparent outline-none text-sm text-slate-800 dark:text-slate-100 pb-2 pr-8 placeholder-slate-300 dark:placeholder-slate-600 focus:border-[#08a49c] transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(s => !s)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="absolute right-1 bottom-2.5 text-[#08a49c] hover:opacity-70 transition-opacity"
                   tabIndex={-1}
                 >
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPw ? <EyeOff size={15} /> : <Lock size={15} />}
                 </button>
               </div>
             </div>
 
-            {/* Remember me */}
-            <div className="flex items-center gap-2">
-              <input
-                id="remember"
-                type="checkbox"
-                className="w-4 h-4 rounded border-slate-300 text-[#08a49c] focus:ring-[#08a49c] focus:ring-offset-0"
-              />
-              <label
-                htmlFor="remember"
-                className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none"
+            {/* Submit */}
+            <div className="pt-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 rounded-full font-bold text-sm tracking-wider text-white transition-all hover:opacity-90 hover:scale-[1.02] active:scale-100 shadow-lg disabled:opacity-60"
+                style={{ background: 'linear-gradient(90deg, #08a49c, #06b6d4)', boxShadow: '0 6px 20px rgba(8,164,156,0.4)' }}
               >
-                Keep me signed in
-              </label>
+                {loading ? (
+                  <span className="inline-flex items-center gap-2 justify-center">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Signing in…
+                  </span>
+                ) : 'Login'}
+              </button>
             </div>
-
-            {/* Submit button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full justify-center h-12 rounded-xl text-base font-bold tracking-wide"
-              style={{ letterSpacing: '0.02em' }}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Signing in...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Sign In
-                  <ArrowRight size={18} />
-                </span>
-              )}
-            </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-7 animate-fade-in-up stagger-3">
-            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
-            <span className="text-xs text-slate-400 font-medium uppercase tracking-widest">
-              Quick Access
-            </span>
-            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+          {/* Forgot / Help */}
+          <div className="flex justify-end gap-4 mt-4">
+            <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-[#08a49c] transition-colors">
+              Forgot
+            </Link>
+            <a href="#" className="text-xs text-slate-400 hover:text-[#08a49c] transition-colors">Help</a>
           </div>
 
-          {/* Demo credentials */}
-          <div className="animate-fade-in-up stagger-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 text-center">
-              Demo accounts — click to auto-fill
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {DEMO_USERS.map((u, i) => (
+          {/* Demo accounts */}
+          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+            <p className="text-[10px] text-slate-400 text-center mb-3 uppercase tracking-widest">Quick access — demo accounts</p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {DEMO_USERS.map(u => (
                 <button
                   key={u.email}
                   type="button"
                   onClick={() => quickLogin(u)}
-                  className={`demo-pill text-left ${u.bg} ${u.border} border`}
-                  style={{ animationDelay: `${i * 60}ms` }}
+                  className="relative flex flex-col items-center py-2 px-1 rounded-xl border transition-all hover:border-[#08a49c]/50 hover:bg-[#08a49c]/5 text-center"
+                  style={{
+                    borderColor: filledRole === u.role ? '#08a49c' : 'rgba(226,232,240,1)',
+                    background: filledRole === u.role ? 'rgba(8,164,156,0.06)' : undefined,
+                  }}
                 >
-                  <div className={`flex items-center gap-1.5 ${u.text}`}>
-                    <span className="text-base leading-none">{u.icon}</span>
-                    <span className="text-xs font-bold tracking-tight">{u.role}</span>
-                    {filledRole === u.role && (
-                      <CheckCircle2 size={12} className="ml-auto text-[#08a49c] animate-scale-in" />
-                    )}
-                  </div>
-                  <div className={`text-xs opacity-60 truncate font-mono mt-0.5 ${u.text}`}>
-                    {u.email}
-                  </div>
+                  {filledRole === u.role && (
+                    <CheckCircle2 size={11} className="absolute top-1.5 right-1.5 text-[#08a49c]" />
+                  )}
+                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{u.role}</span>
+                  <span className="text-[9px] text-slate-400 font-mono truncate w-full px-0.5">{u.email.split('@')[0]}</span>
                 </button>
               ))}
             </div>
-            <p className="text-xs text-center text-slate-400 dark:text-slate-600 mt-3">
-              Password for all demo accounts: <code className="font-mono text-[#08a49c]">password123</code>
+            <p className="text-[10px] text-center text-slate-400 mt-2">
+              Password: <span className="font-mono text-[#08a49c]">password123</span>
             </p>
           </div>
-
-          {/* Footer */}
-          <p className="text-center text-xs text-slate-400 dark:text-slate-600 mt-10">
-            © 2025 Q-KTAMP · Enterprise QA Platform
-          </p>
         </div>
       </div>
     </div>

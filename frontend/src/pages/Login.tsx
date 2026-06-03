@@ -13,7 +13,7 @@ const DEMO_USERS = [
 
 function IsometricIllustration() {
   return (
-    <svg viewBox="0 0 220 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[260px] drop-shadow-xl">
+    <svg viewBox="0 0 220 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[340px] drop-shadow-xl">
       {/* Phone body */}
       <rect x="60" y="28" width="100" height="136" rx="12" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" />
       {/* Screen area */}
@@ -144,13 +144,13 @@ export default function Login() {
         <div
           className="absolute select-none font-black tracking-[0.45em] uppercase"
           style={{
-            color: 'rgba(255,255,255,0.22)',
-            fontSize: 32,
+            color: 'rgba(255,255,255,0.25)',
+            fontSize: 42,
             writingMode: 'vertical-rl',
             transform: 'rotate(180deg)',
-            left: 18,
+            left: 20,
             top: '50%',
-            marginTop: '-90px',
+            marginTop: '-120px',
           }}
         >
           WELCOME
@@ -194,28 +194,28 @@ export default function Login() {
           style={{ background: 'radial-gradient(circle at top right, #b2f0ec, transparent 70%)' }}
         />
 
-        <div className="relative z-10 w-full max-w-[420px] mx-auto px-10 py-12">
+        <div className="relative z-10 w-full max-w-[520px] mx-auto px-14 py-0">
 
           {/* Heading */}
           <h2
-            className="font-extrabold text-center mb-10 tracking-[0.2em]"
-            style={{ fontSize: 28, color: '#08a49c' }}
+            className="font-extrabold text-center mb-12 tracking-[0.25em]"
+            style={{ fontSize: 36, color: '#08a49c' }}
           >
             LOGIN
           </h2>
 
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-xl border mb-6 text-sm bg-red-50 border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
-              <AlertCircle size={14} className="flex-shrink-0" />
+            <div className="flex items-center gap-2 p-4 rounded-xl border mb-8 text-sm bg-red-50 border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+              <AlertCircle size={15} className="flex-shrink-0" />
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-10">
             {/* Username */}
             <div>
               <label
-                className="block text-xs font-semibold mb-2 tracking-wide"
+                className="block text-sm font-semibold mb-3 tracking-wide"
                 style={{ color: '#08a49c' }}
               >
                 Username
@@ -227,19 +227,19 @@ export default function Login() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@company.com"
                   required
-                  className="w-full bg-transparent outline-none text-sm pb-2.5 pr-8 text-slate-800 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 transition-colors"
+                  className="w-full bg-transparent outline-none text-base pb-3 pr-10 text-slate-700 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 transition-colors"
                   style={{ borderBottom: '2px solid #e2e8f0' }}
                   onFocus={e => (e.target.style.borderBottomColor = '#08a49c')}
                   onBlur={e => (e.target.style.borderBottomColor = '#e2e8f0')}
                 />
-                <User size={16} className="absolute right-1 bottom-2.5" style={{ color: '#08a49c' }} />
+                <User size={18} className="absolute right-1 bottom-3" style={{ color: '#08a49c' }} />
               </div>
             </div>
 
             {/* Password */}
             <div>
               <label
-                className="block text-xs font-semibold mb-2 tracking-wide"
+                className="block text-sm font-semibold mb-3 tracking-wide"
                 style={{ color: '#08a49c' }}
               >
                 password
@@ -251,7 +251,7 @@ export default function Login() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full bg-transparent outline-none text-sm pb-2.5 pr-8 text-slate-800 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 transition-colors"
+                  className="w-full bg-transparent outline-none text-base pb-3 pr-10 text-slate-700 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 transition-colors"
                   style={{ borderBottom: '2px solid #e2e8f0' }}
                   onFocus={e => (e.target.style.borderBottomColor = '#08a49c')}
                   onBlur={e => (e.target.style.borderBottomColor = '#e2e8f0')}
@@ -260,29 +260,29 @@ export default function Login() {
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowPw(s => !s)}
-                  className="absolute right-1 bottom-2.5 transition-opacity hover:opacity-60"
+                  className="absolute right-1 bottom-3 transition-opacity hover:opacity-60"
                   style={{ color: '#08a49c' }}
                 >
-                  {showPw ? <EyeOff size={16} /> : <Lock size={16} />}
+                  {showPw ? <EyeOff size={18} /> : <Lock size={18} />}
                 </button>
               </div>
             </div>
 
             {/* Login button */}
-            <div className="pt-1">
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-full font-bold text-sm tracking-widest text-white transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-60"
+                className="w-full h-14 rounded-full font-bold text-base tracking-widest text-white transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-60"
                 style={{
                   background: 'linear-gradient(90deg, #08a49c 0%, #09c4ba 100%)',
-                  boxShadow: '0 8px 24px rgba(8,164,156,0.38)',
-                  letterSpacing: '0.12em',
+                  boxShadow: '0 10px 30px rgba(8,164,156,0.4)',
+                  letterSpacing: '0.15em',
                 }}
               >
                 {loading ? (
                   <span className="inline-flex items-center gap-2 justify-center">
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Signing in…
                   </span>
                 ) : 'Login'}
@@ -291,46 +291,46 @@ export default function Login() {
           </form>
 
           {/* Forgot / Help */}
-          <div className="flex justify-end gap-5 mt-5">
+          <div className="flex justify-end gap-6 mt-5">
             <Link
               to="/forgot-password"
-              className="text-xs text-slate-400 hover:text-[#08a49c] transition-colors"
+              className="text-sm text-slate-400 hover:text-[#08a49c] transition-colors"
             >
               Forgot
             </Link>
-            <a href="#" className="text-xs text-slate-400 hover:text-[#08a49c] transition-colors">
+            <a href="#" className="text-sm text-slate-400 hover:text-[#08a49c] transition-colors">
               Help
             </a>
           </div>
 
           {/* Demo accounts */}
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-[10px] text-slate-400 text-center mb-3 uppercase tracking-[0.2em]">
+          <div className="mt-10 pt-7 border-t border-slate-100 dark:border-slate-800">
+            <p className="text-xs text-slate-400 text-center mb-4 uppercase tracking-[0.2em]">
               Quick access — demo accounts
             </p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-3">
               {DEMO_USERS.map(u => (
                 <button
                   key={u.email}
                   type="button"
                   onClick={() => quickLogin(u)}
-                  className="relative flex flex-col items-center py-2.5 px-1 rounded-xl border transition-all hover:scale-105"
+                  className="relative flex flex-col items-center py-3 px-2 rounded-xl border transition-all hover:scale-105"
                   style={{
                     borderColor: filledRole === u.role ? '#08a49c' : '#e2e8f0',
                     background: filledRole === u.role ? 'rgba(8,164,156,0.06)' : 'transparent',
                   }}
                 >
                   {filledRole === u.role && (
-                    <CheckCircle2 size={11} className="absolute top-1.5 right-1.5" style={{ color: '#08a49c' }} />
+                    <CheckCircle2 size={12} className="absolute top-2 right-2" style={{ color: '#08a49c' }} />
                   )}
-                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">{u.role}</span>
-                  <span className="text-[9px] text-slate-400 font-mono mt-0.5 truncate w-full text-center px-1">
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{u.role}</span>
+                  <span className="text-[10px] text-slate-400 font-mono mt-1 truncate w-full text-center">
                     {u.email.split('@')[0]}
                   </span>
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-center text-slate-400 mt-3">
+            <p className="text-xs text-center text-slate-400 mt-3">
               Password: <span className="font-mono" style={{ color: '#08a49c' }}>password123</span>
             </p>
           </div>

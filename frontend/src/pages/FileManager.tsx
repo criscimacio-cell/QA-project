@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Filter, Download, Archive, Trash2, Eye, GitBranch, RefreshCw, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image } from 'lucide-react';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
@@ -22,12 +22,23 @@ export default function FileManager() {
   const [tab, setTab] = useState('All Files');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<any>(null);
-  const [showVersions, setShowVersions] = useState(false);
   const [showApprove, setShowApprove] = useState(false);
   const [approveStatus, setApproveStatus] = useState('approved');
   const [approveComment, setApproveComment] = useState('');
   const [project, setProject] = useState('');
   const [category, setCategory] = useState('');
+
+  // Bulk upload state
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Preview state
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewFile, setPreviewFile] = useState<any>(null);
 
   const load = () => {
     setLoading(true);
@@ -54,27 +65,80 @@ export default function FileManager() {
     load();
   };
 
+  const doRestore = async (id: number) => {
+    await api.post(`/files/${id}/restore`);
+    load();
+  };
+
   const openFile = async (f: any) => {
     const r = await api.get(`/files/${f.id}`);
     setSelected(r.data);
   };
 
+  const openPreview = (f: any) => {
+    setPreviewFile(f);
+    setShowPreview(true);
+  };
+
+  const isPreviewable = (f: any) =>
+    f?.mime_type?.startsWith('image/') || f?.mime_type === 'application/pdf';
+
+  // Bulk upload handlers
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const dropped = Array.from(e.dataTransfer.files);
+    setBulkFiles(prev => [...prev, ...dropped]);
+  };
+
+  const removeFile = (i: number) => setBulkFiles(prev => prev.filter((_, idx) => idx !== i));
+
+  const doBulkUpload = async () => {
+    if (!bulkFiles.length) return;
+    setBulkUploading(true);
+    setBulkProgress(`Uploading ${bulkFiles.length} file(s)…`);
+    try {
+      const fd = new FormData();
+      bulkFiles.forEach(f => fd.append('files', f));
+      await api.post('/files/bulk-upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setBulkProgress('Upload complete!');
+      setTimeout(() => {
+        setShowBulkUpload(false);
+        setBulkFiles([]);
+        setBulkProgress('');
+        load();
+      }, 1200);
+    } catch (e: any) {
+      setBulkProgress(e.response?.data?.error || 'Upload failed');
+    } finally {
+      setBulkUploading(false);
+    }
+  };
+
   const projects = [...new Set(files.map(f => f.project).filter(Boolean))];
   const categories = [...new Set(files.map(f => f.category).filter(Boolean))];
+
+  const token = localStorage.getItem('token');
+  const previewUrl = previewFile
+    ? `${(api.defaults.baseURL || '/api')}${previewFile.id ? `/files/${previewFile.id}/preview` : ''}`
+    : '';
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">File Manager</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage all QA files and assets</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">File Manager</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage all QA files and assets</p>
         </div>
+        <button onClick={() => setShowBulkUpload(true)} className="btn-primary">
+          <Upload size={15} /> Bulk Upload
+        </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
+      <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
         {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>
             {t}
           </button>
         ))}
@@ -82,9 +146,9 @@ export default function FileManager() {
 
       {/* Filters */}
       <div className="card p-4 flex flex-wrap gap-3 items-center">
-        <Filter size={16} className="text-gray-400" />
+        <Filter size={16} className="text-slate-400" />
         <form onSubmit={handleSearch} className="flex gap-2">
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, tags, Jira..." className="input h-8 text-sm w-64" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, tags, Jira…" className="input h-8 text-sm w-64" />
           <button type="submit" className="btn-primary py-1.5 px-3 text-sm">Search</button>
         </form>
         <select value={project} onChange={e => setProject(e.target.value)} className="input h-8 text-sm w-40">
@@ -101,55 +165,62 @@ export default function FileManager() {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-16"><RefreshCw size={20} className="animate-spin text-primary-500" /></div>
+          <div className="flex items-center justify-center py-16"><RefreshCw size={20} className="animate-spin text-[#08a49c]" /></div>
         ) : files.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">No files found</div>
+          <div className="text-center py-16 text-slate-400 text-sm">No files found</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
+              <thead className="bg-slate-50 dark:bg-slate-800/50">
                 <tr>
                   {['File', 'Project / Module', 'Version', 'Status', 'Owner', 'Jira', 'Size', 'Updated', 'Actions'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {files.map(f => (
-                  <tr key={f.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 max-w-[220px]">
                         <FileIcon mimeType={f.mime_type} name={f.original_name} size={18} />
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-gray-100 truncate">{f.name}</div>
-                          <div className="text-xs text-gray-400 truncate">{f.original_name}</div>
+                          <div className="font-medium text-slate-900 dark:text-slate-100 truncate">{f.name}</div>
+                          <div className="text-xs text-slate-400 truncate">{f.original_name}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">
-                      <div className="font-medium text-gray-700 dark:text-gray-300">{f.project}</div>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">
+                      <div className="font-medium text-slate-700 dark:text-slate-300">{f.project}</div>
                       <div>{f.module}</div>
                     </td>
-                    <td className="px-4 py-3"><span className="text-xs bg-gray-100 dark:bg-gray-800 rounded px-2 py-0.5 font-mono">v{f.version}</span></td>
+                    <td className="px-4 py-3"><span className="text-xs bg-slate-100 dark:bg-slate-800 rounded px-2 py-0.5 font-mono">v{f.version}</span></td>
                     <td className="px-4 py-3"><StatusBadge status={f.status} /></td>
-                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{f.owner_name}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{f.owner_name}</td>
                     <td className="px-4 py-3">
                       {f.jira_ticket && <span className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">{f.jira_ticket}</span>}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">{formatBytes(f.size)}</td>
-                    <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-xs text-slate-400">{formatBytes(f.size)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => openFile(f)} title="View" className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"><Eye size={14} /></button>
-                        <button onClick={() => window.open(`/api/files/${f.id}/download`, '_blank')} title="Download" className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"><Download size={14} /></button>
-                        {isLead && (
+                        <button onClick={() => openFile(f)} title="Details" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Eye size={14} /></button>
+                        {isPreviewable(f) && (
+                          <button onClick={() => openPreview(f)} title="Preview" className="p-1.5 rounded hover:bg-[#08a49c]/10 text-[#08a49c]">
+                            {f.mime_type?.startsWith('image/') ? <Image size={14} /> : <FileText size={14} />}
+                          </button>
+                        )}
+                        <button onClick={() => window.open(`/api/files/${f.id}/download`, '_blank')} title="Download" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
+                        {f.status === 'archived' ? (
+                          <button onClick={() => doRestore(f.id)} title="Restore" className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500"><RotateCcw size={14} /></button>
+                        ) : isLead ? (
                           <>
-                            <button onClick={() => { openFile(f).then(() => setShowApprove(true)); setSelected(f); }} title="Review" className="p-1.5 rounded hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-500">
+                            <button onClick={() => { setSelected(f); setShowApprove(true); }} title="Review" className="p-1.5 rounded hover:bg-[#08a49c]/10 text-[#08a49c]">
                               <GitBranch size={14} />
                             </button>
                             <button onClick={() => doArchive(f.id)} title="Archive" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
                           </>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -161,41 +232,41 @@ export default function FileManager() {
       </div>
 
       {/* File Detail Modal */}
-      {selected && !showApprove && !showVersions && (
+      {selected && !showApprove && (
         <Modal open={!!selected} onClose={() => setSelected(null)} title="File Details" size="lg">
           <div className="space-y-4">
-            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+            <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
               <FileIcon mimeType={selected.mime_type} name={selected.original_name} size={36} />
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{selected.name}</h3>
-                <p className="text-sm text-gray-500">{selected.original_name} · {formatBytes(selected.size)}</p>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100">{selected.name}</h3>
+                <p className="text-sm text-slate-500">{selected.original_name} · {formatBytes(selected.size)}</p>
                 <StatusBadge status={selected.status} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              {[
+              {([
                 ['Project', selected.project], ['Module', selected.module], ['Category', selected.category],
                 ['Version', `v${selected.version}`], ['Owner', selected.owner_name], ['Repository', selected.repository_name],
                 ['Jira Ticket', selected.jira_ticket], ['Tags', selected.tags],
-              ].map(([l, v]) => v ? (
+              ] as [string, string][]).map(([l, v]) => v ? (
                 <div key={l}>
-                  <span className="text-gray-500 dark:text-gray-400">{l}: </span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{v}</span>
+                  <span className="text-slate-500 dark:text-slate-400">{l}: </span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{v}</span>
                 </div>
               ) : null)}
             </div>
-            {selected.description && <div className="text-sm text-gray-600 dark:text-gray-300 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">{selected.description}</div>}
+            {selected.description && <div className="text-sm text-slate-600 dark:text-slate-300 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">{selected.description}</div>}
 
-            {/* Versions */}
             {selected.versions?.length > 0 && (
               <div>
-                <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-2">Version History</h4>
+                <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 mb-2">Version History</h4>
                 <div className="space-y-2">
                   {selected.versions.map((v: any) => (
-                    <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm">
-                      <span className="text-xs bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 px-2 py-0.5 rounded font-mono">v{v.version}</span>
-                      <span className="text-gray-500">{v.change_log}</span>
-                      <span className="ml-auto text-xs text-gray-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString()}</span>
+                    <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
+                      <span className="text-xs bg-[#08a49c]/10 text-[#08a49c] px-2 py-0.5 rounded font-mono">v{v.version}</span>
+                      <span className="text-slate-500">{v.change_log}</span>
+                      <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString()}</span>
+                      <a href={`/api/files/${selected.id}/versions/${v.version}/download`} target="_blank" rel="noreferrer" className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version"><Download size={12} /></a>
                     </div>
                   ))}
                 </div>
@@ -203,9 +274,17 @@ export default function FileManager() {
             )}
 
             <div className="flex gap-2 justify-end pt-2">
-              <button onClick={() => window.open(`/api/files/${selected.id}/download`, '_blank')} className="btn-secondary"><Download size={15} />Download</button>
-              {isLead && selected.status !== 'published' && (
+              {isPreviewable(selected) && (
+                <button onClick={() => { setSelected(null); openPreview(selected); }} className="btn-secondary"><Eye size={15} /> Preview</button>
+              )}
+              <button onClick={() => window.open(`/api/files/${selected.id}/download`, '_blank')} className="btn-secondary"><Download size={15} /> Download</button>
+              {isLead && selected.status !== 'published' && selected.status !== 'archived' && (
                 <button onClick={() => setShowApprove(true)} className="btn-primary">Review / Approve</button>
+              )}
+              {selected.status === 'archived' && (
+                <button onClick={() => { doRestore(selected.id); setSelected(null); }} className="btn-primary" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                  <RotateCcw size={15} /> Restore
+                </button>
               )}
             </div>
           </div>
@@ -226,7 +305,7 @@ export default function FileManager() {
           </div>
           <div>
             <label className="label">Comments</label>
-            <textarea value={approveComment} onChange={e => setApproveComment(e.target.value)} className="input" rows={3} placeholder="Add review comments..." />
+            <textarea value={approveComment} onChange={e => setApproveComment(e.target.value)} className="input" rows={3} placeholder="Add review comments…" />
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowApprove(false); setSelected(null); }} className="btn-secondary">Cancel</button>
@@ -234,6 +313,76 @@ export default function FileManager() {
           </div>
         </div>
       </Modal>
+
+      {/* Bulk Upload Modal */}
+      <Modal open={showBulkUpload} onClose={() => { setShowBulkUpload(false); setBulkFiles([]); setBulkProgress(''); }} title="Bulk Upload Files" size="md">
+        <div className="space-y-4">
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver ? 'border-[#08a49c] bg-[#08a49c]/5' : 'border-slate-200 dark:border-slate-700 hover:border-[#08a49c]/50'}`}
+          >
+            <Upload size={28} className="mx-auto mb-3 text-slate-400" />
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Drop files here or click to browse</p>
+            <p className="text-xs text-slate-400 mt-1">Up to 20 files, max 50 MB each</p>
+            <input ref={fileInputRef} type="file" multiple className="hidden" onChange={e => setBulkFiles(prev => [...prev, ...Array.from(e.target.files || [])])} />
+          </div>
+
+          {bulkFiles.length > 0 && (
+            <div className="max-h-48 overflow-y-auto space-y-1.5">
+              {bulkFiles.map((f, i) => (
+                <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-sm">
+                  <FileIcon mimeType={f.type} name={f.name} size={16} />
+                  <span className="flex-1 truncate text-slate-700 dark:text-slate-300">{f.name}</span>
+                  <span className="text-xs text-slate-400">{formatBytes(f.size)}</span>
+                  <button onClick={() => removeFile(i)} className="text-slate-400 hover:text-red-400 transition-colors"><X size={13} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {bulkProgress && (
+            <p className={`text-sm text-center font-medium ${bulkProgress.includes('complete') ? 'text-[#08a49c]' : bulkProgress.includes('fail') ? 'text-red-500' : 'text-slate-600 dark:text-slate-400'}`}>
+              {bulkProgress}
+            </p>
+          )}
+
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => { setShowBulkUpload(false); setBulkFiles([]); setBulkProgress(''); }} className="btn-secondary">Cancel</button>
+            <button onClick={doBulkUpload} disabled={!bulkFiles.length || bulkUploading} className="btn-primary">
+              {bulkUploading ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> : <Upload size={15} />}
+              Upload {bulkFiles.length > 0 ? `${bulkFiles.length} File${bulkFiles.length > 1 ? 's' : ''}` : 'Files'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Preview Modal */}
+      {previewFile && (
+        <Modal open={showPreview} onClose={() => { setShowPreview(false); setPreviewFile(null); }} title={`Preview: ${previewFile.name || previewFile.original_name}`} size="lg">
+          <div className="flex flex-col items-center gap-4">
+            {previewFile.mime_type?.startsWith('image/') ? (
+              <img
+                src={`/api/files/${previewFile.id}/preview`}
+                alt={previewFile.name}
+                className="max-w-full max-h-[60vh] rounded-lg object-contain"
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            ) : previewFile.mime_type === 'application/pdf' ? (
+              <iframe
+                src={`/api/files/${previewFile.id}/preview`}
+                className="w-full h-[60vh] rounded-lg border border-slate-200 dark:border-slate-700"
+                title="PDF Preview"
+              />
+            ) : null}
+            <div className="flex gap-2">
+              <button onClick={() => window.open(`/api/files/${previewFile.id}/download`, '_blank')} className="btn-secondary"><Download size={15} /> Download</button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

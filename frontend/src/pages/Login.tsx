@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Layers, Eye, EyeOff, Lock, Mail, AlertCircle,
   CheckCircle2, GitBranch, ShieldCheck, Zap, Sun, Moon,
@@ -355,12 +355,12 @@ export default function Login() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="label mb-0">Password</label>
-                <a
-                  href="#"
+                <Link
+                  to="/forgot-password"
                   className="text-xs font-medium text-[#08a49c] hover:text-[#06b6d4] transition-colors"
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <Lock

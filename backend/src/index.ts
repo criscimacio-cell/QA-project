@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { initDb } from './db';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
@@ -14,11 +16,13 @@ import auditRoutes from './routes/audit';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:4173'], credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+app.use('/uploads', express.static(UPLOAD_DIR));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

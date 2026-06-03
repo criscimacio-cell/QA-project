@@ -111,6 +111,15 @@ export function initDb() {
       comments TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER REFERENCES users(id),
+      token TEXT UNIQUE NOT NULL,
+      expires_at TEXT NOT NULL,
+      used INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@qa.com');
@@ -171,6 +180,17 @@ export function initDb() {
   insertFile.run('CF4 Pemisc Bug Report', 'CF4_Pemisc_Bugs.xlsx', 73728, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', cf4RepoId, 3, 1, 'submitted', 'PhilHealth', 'CF4', 'Bug Report', 'QA-233', 'CF4,Pemisc,Bugs', 'Bug tracker for CF4 Pemisc issues');
   insertFile.run('CF4 Performance Test Results', 'CF4_Performance.pdf', 204800, 'application/pdf', cf4RepoId, 2, 1, 'draft', 'PhilHealth', 'CF4', 'Performance', 'QA-244', 'CF4,Performance', 'Performance test results for CF4');
   insertFile.run('XML Validation Test Data', 'XML_Validation_Data.zip', 2097152, 'application/zip', (db.prepare("SELECT id FROM repositories WHERE name='XML Validation'").get() as any).id, 3, 1, 'published', 'PhilHealth', 'XML', 'Test Data', 'QA-255', 'XML,Validation,PhilHealth', 'Test data set for XML validation');
+
+  // Seed file versions for the seeded files
+  const insertVersion = db.prepare(`
+    INSERT INTO file_versions (file_id, version, path, size, change_log, created_by) VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  const seededFiles = db.prepare('SELECT id, version, size FROM files').all() as any[];
+  for (const f of seededFiles) {
+    for (let v = 1; v <= f.version; v++) {
+      insertVersion.run(f.id, v, '', f.size, v === 1 ? 'Initial upload' : `Version ${v} update`, v === 1 ? 3 : 2);
+    }
+  }
 
   const insertArticle = db.prepare(`
     INSERT INTO knowledge_articles (title, content, category, author_id, status, tags)

@@ -106,37 +106,52 @@ export default function Login() {
           LEFT PANEL — full-height teal
       ══════════════════════════════════ */}
       <div
-        className="relative w-[45%] flex-shrink-0 flex flex-col overflow-hidden"
-        style={{ background: 'linear-gradient(150deg, #09c4ba 0%, #08a49c 45%, #06918b 100%)' }}
+        className="relative w-[45%] flex-shrink-0 flex flex-col"
+        style={{ background: 'linear-gradient(150deg, #09c4ba 0%, #08a49c 45%, #06918b 100%)', overflow: 'visible', zIndex: 10 }}
       >
+        {/* ── Curved right edge — SVG bulge into white panel ── */}
+        <svg
+          className="absolute top-0 right-0 h-full pointer-events-none"
+          style={{ width: 72, right: -70, zIndex: 20 }}
+          viewBox="0 0 72 1000"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="edgeGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#09c4ba" />
+              <stop offset="45%"  stopColor="#08a49c" />
+              <stop offset="100%" stopColor="#06918b" />
+            </linearGradient>
+          </defs>
+          {/* convex bulge: starts flush left, curves right to ~70px at midpoint, returns flush */}
+          <path d="M0,0 C72,250 72,750 0,1000 L0,0 Z" fill="url(#edgeGrad)" />
+        </svg>
 
-        {/* ── Wavy circle that bleeds across the divider ── */}
+        {/* ── Decorative concentric rings (stay inside teal) ── */}
         <div
           className="absolute pointer-events-none"
           style={{
-            width: '130%',
-            paddingBottom: '130%',
+            width: '100%',
+            paddingBottom: '100%',
             borderRadius: '50%',
-            background: 'rgba(255,255,255,0.11)',
-            border: '2px solid rgba(255,255,255,0.22)',
-            right: '-62%',
+            border: '2px solid rgba(255,255,255,0.18)',
+            right: '-48%',
             top: '50%',
             transform: 'translateY(-50%)',
-            zIndex: 10,
+            zIndex: 5,
           }}
         />
-        {/* inner ring */}
         <div
           className="absolute pointer-events-none"
           style={{
-            width: '90%',
-            paddingBottom: '90%',
+            width: '70%',
+            paddingBottom: '70%',
             borderRadius: '50%',
-            background: 'rgba(255,255,255,0.07)',
-            right: '-44%',
+            border: '1.5px solid rgba(255,255,255,0.10)',
+            right: '-32%',
             top: '50%',
             transform: 'translateY(-50%)',
-            zIndex: 10,
+            zIndex: 5,
           }}
         />
 
@@ -186,7 +201,7 @@ export default function Login() {
       ══════════════════════════════════ */}
       <div
         className="flex-1 flex flex-col justify-center relative overflow-y-auto"
-        style={{ background: dark ? '#0f172a' : '#ffffff' }}
+        style={{ background: dark ? '#0f172a' : '#ffffff', zIndex: 1 }}
       >
         {/* Subtle teal tint blob top-right */}
         <div

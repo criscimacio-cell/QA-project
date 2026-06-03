@@ -5,53 +5,58 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 const DEMO_USERS = [
-  { email: 'admin@qa.com', role: 'Admin', password: 'password123' },
-  { email: 'lead@qa.com', role: 'Lead', password: 'password123' },
-  { email: 'engineer1@qa.com', role: 'Engineer', password: 'password123' },
-  { email: 'viewer@qa.com', role: 'Viewer', password: 'password123' },
+  { email: 'admin@qa.com', role: 'Admin' },
+  { email: 'lead@qa.com', role: 'Lead' },
+  { email: 'engineer1@qa.com', role: 'Engineer' },
+  { email: 'viewer@qa.com', role: 'Viewer' },
 ];
 
-/* ── Isometric phone SVG illustration ── */
 function IsometricIllustration() {
   return (
-    <svg viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[200px]">
+    <svg viewBox="0 0 220 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[260px] drop-shadow-xl">
       {/* Phone body */}
-      <rect x="55" y="30" width="90" height="120" rx="10" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-      {/* Screen */}
-      <rect x="62" y="42" width="76" height="90" rx="4" fill="rgba(255,255,255,0.12)" />
+      <rect x="60" y="28" width="100" height="136" rx="12" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" />
+      {/* Screen area */}
+      <rect x="68" y="42" width="84" height="106" rx="5" fill="rgba(255,255,255,0.10)" />
       {/* Home bar */}
-      <rect x="82" y="140" width="36" height="4" rx="2" fill="rgba(255,255,255,0.3)" />
+      <rect x="90" y="154" width="40" height="4" rx="2" fill="rgba(255,255,255,0.35)" />
 
-      {/* Chart bars inside screen */}
-      <rect x="68" y="100" width="10" height="26" rx="2" fill="rgba(255,255,255,0.5)" />
-      <rect x="82" y="88" width="10" height="38" rx="2" fill="rgba(255,255,255,0.7)" />
-      <rect x="96" y="94" width="10" height="32" rx="2" fill="rgba(255,255,255,0.5)" />
-      <rect x="110" y="80" width="10" height="46" rx="2" fill="rgba(255,255,255,0.9)" />
+      {/* Bar chart */}
+      <rect x="74" y="110" width="12" height="30" rx="2.5" fill="rgba(255,255,255,0.45)" />
+      <rect x="90" y="97"  width="12" height="43" rx="2.5" fill="rgba(255,255,255,0.65)" />
+      <rect x="106" y="104" width="12" height="36" rx="2.5" fill="rgba(255,255,255,0.45)" />
+      <rect x="122" y="88"  width="12" height="52" rx="2.5" fill="rgba(255,255,255,0.85)" />
 
-      {/* Line chart */}
-      <polyline points="68,90 82,75 96,80 110,60 124,68" stroke="rgba(255,255,255,0.8)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Dots on line */}
-      {[[68,90],[82,75],[96,80],[110,60],[124,68]].map(([x,y], i) => (
-        <circle key={i} cx={x} cy={y} r="2.5" fill="white" opacity="0.9" />
-      ))}
+      {/* Line chart over bars */}
+      <polyline points="80,102 96,85 112,92 128,70" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+      <circle cx="80"  cy="102" r="3" fill="white" opacity="0.9"/>
+      <circle cx="96"  cy="85"  r="3" fill="white" opacity="0.9"/>
+      <circle cx="112" cy="92"  r="3" fill="white" opacity="0.9"/>
+      <circle cx="128" cy="70"  r="4" fill="white"/>
 
-      {/* Circular gauge top-left of screen */}
-      <circle cx="80" cy="58" r="10" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
-      <circle cx="80" cy="58" r="10" stroke="rgba(255,255,255,0.85)" strokeWidth="3"
-        strokeDasharray="40 23" strokeDashoffset="10" strokeLinecap="round" />
-      <text x="80" y="62" textAnchor="middle" fill="white" fontSize="7" fontWeight="700" opacity="0.9">72%</text>
+      {/* Donut gauge top-left of screen */}
+      <circle cx="86" cy="60" r="12" stroke="rgba(255,255,255,0.2)" strokeWidth="4" fill="none"/>
+      <circle cx="86" cy="60" r="12" stroke="rgba(255,255,255,0.85)" strokeWidth="4" fill="none"
+        strokeDasharray="50 25" strokeDashoffset="10" strokeLinecap="round"/>
+      <text x="86" y="64" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="800">72%</text>
 
-      {/* Rising plane/arrow outside phone top-right */}
-      <g transform="translate(138, 20) rotate(30)">
-        <rect width="28" height="14" rx="4" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-        <polyline points="5,9 11,5 17,9 23,5" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      {/* Small stats card top-right inside screen */}
+      <rect x="106" y="48" width="40" height="28" rx="4" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
+      <rect x="111" y="54" width="24" height="3" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+      <rect x="111" y="60" width="16" height="3" rx="1.5" fill="rgba(255,255,255,0.45)"/>
+      <rect x="111" y="66" width="10" height="2" rx="1" fill="rgba(255,255,255,0.3)"/>
+
+      {/* Floating arrow/plane top-right outside phone */}
+      <g transform="translate(152,22) rotate(25)">
+        <rect width="30" height="16" rx="5" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.35)" strokeWidth="1"/>
+        <polyline points="5,10 11,6 17,10 24,6" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
       </g>
 
-      {/* Small floating card bottom-left */}
-      <rect x="20" y="115" width="36" height="26" rx="5" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.35)" strokeWidth="1" />
-      <rect x="25" y="121" width="20" height="3" rx="1.5" fill="rgba(255,255,255,0.6)" />
-      <rect x="25" y="128" width="14" height="3" rx="1.5" fill="rgba(255,255,255,0.4)" />
-      <rect x="25" y="134" width="8" height="2" rx="1" fill="rgba(255,255,255,0.3)" />
+      {/* Small floating card bottom-left outside phone */}
+      <rect x="18" y="122" width="40" height="30" rx="6" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
+      <rect x="24" y="129" width="22" height="3" rx="1.5" fill="rgba(255,255,255,0.6)"/>
+      <rect x="24" y="136" width="16" height="3" rx="1.5" fill="rgba(255,255,255,0.4)"/>
+      <rect x="24" y="143" width="10" height="2" rx="1"   fill="rgba(255,255,255,0.25)"/>
     </svg>
   );
 }
@@ -60,17 +65,16 @@ export default function Login() {
   const { login } = useAuth();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [showPw, setShowPw]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
   const [filledRole, setFilledRole] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       await login(email, password);
       navigate('/');
@@ -83,126 +87,139 @@ export default function Login() {
 
   const quickLogin = (u: typeof DEMO_USERS[0]) => {
     setEmail(u.email);
-    setPassword(u.password);
+    setPassword('password123');
     setFilledRole(u.role);
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #b2eae7 0%, #d4f4f2 40%, #c8eef6 100%)' }}
-    >
+    <div className="min-h-screen flex overflow-hidden relative">
+
       {/* Theme toggle */}
       <button
         onClick={toggle}
-        className="fixed top-4 right-4 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 backdrop-blur text-slate-600 hover:text-[#08a49c] shadow transition-all hover:scale-105"
+        className="fixed top-4 right-4 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur text-slate-500 hover:text-[#08a49c] shadow-sm transition-all hover:scale-105"
       >
         {dark ? <Sun size={16} /> : <Moon size={16} />}
       </button>
 
-      {/* Background decorative circles */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-30" style={{ background: 'radial-gradient(circle, #08a49c, transparent 70%)' }} />
-      <div className="absolute -bottom-40 -right-20 w-[28rem] h-[28rem] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #06b6d4, transparent 70%)' }} />
-
-      {/* ── Main Card ── */}
+      {/* ══════════════════════════════════
+          LEFT PANEL — full-height teal
+      ══════════════════════════════════ */}
       <div
-        className="relative w-full flex rounded-3xl overflow-hidden shadow-2xl"
-        style={{ maxWidth: 820, minHeight: 500, animation: 'fadeInUp 0.5s ease both' }}
+        className="relative w-[45%] flex-shrink-0 flex flex-col overflow-hidden"
+        style={{ background: 'linear-gradient(150deg, #09c4ba 0%, #08a49c 45%, #06918b 100%)' }}
       >
-        {/* ══ LEFT PANEL — Teal ══ */}
+
+        {/* ── Wavy circle that bleeds across the divider ── */}
         <div
-          className="relative flex-shrink-0 flex flex-col justify-between overflow-hidden"
+          className="absolute pointer-events-none"
           style={{
-            width: '42%',
-            background: 'linear-gradient(160deg, #07b5ac 0%, #08a49c 40%, #06908a 100%)',
+            width: '130%',
+            paddingBottom: '130%',
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.11)',
+            border: '2px solid rgba(255,255,255,0.22)',
+            right: '-62%',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 10,
+          }}
+        />
+        {/* inner ring */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            width: '90%',
+            paddingBottom: '90%',
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.07)',
+            right: '-44%',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 10,
+          }}
+        />
+
+        {/* "WELCOME" rotated vertically on left edge */}
+        <div
+          className="absolute select-none font-black tracking-[0.45em] uppercase"
+          style={{
+            color: 'rgba(255,255,255,0.22)',
+            fontSize: 32,
+            writingMode: 'vertical-rl',
+            transform: 'rotate(180deg)',
+            left: 18,
+            top: '50%',
+            marginTop: '-90px',
           }}
         >
-          {/* Large circle overlay — mimics the geometric shape in reference */}
-          <div
-            className="absolute"
-            style={{
-              width: 420,
-              height: 420,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.10)',
-              right: -160,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              border: '1.5px solid rgba(255,255,255,0.18)',
-            }}
-          />
-          <div
-            className="absolute"
-            style={{
-              width: 280,
-              height: 280,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.07)',
-              right: -80,
-              top: '50%',
-              transform: 'translateY(-50%)',
-            }}
-          />
-
-          {/* "Welcome" rotated text on left edge */}
-          <div
-            className="absolute left-0 top-1/2 -translate-y-1/2 font-black text-white/30 tracking-[0.4em] uppercase"
-            style={{
-              writingMode: 'vertical-rl',
-              transform: 'translateY(-50%) rotate(180deg)',
-              fontSize: 28,
-              left: 12,
-            }}
-          >
-            Welcome
-          </div>
-
-          {/* Center content */}
-          <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-8 py-10">
-            {/* Logo */}
-            <div className="flex items-center gap-2 mb-8 self-start ml-6">
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" />
-                </svg>
-              </div>
-              <span className="text-white font-extrabold text-base tracking-wide">Q-KTAMP</span>
-            </div>
-
-            {/* Illustration */}
-            <div style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))' }}>
-              <IsometricIllustration />
-            </div>
-          </div>
-
-          {/* Bottom tagline */}
-          <div className="relative z-10 px-8 pb-8">
-            <p className="text-white/60 text-[10px] font-semibold tracking-[0.2em] uppercase text-center">
-              QA Knowledge &amp; Test Asset Platform
-            </p>
-          </div>
+          WELCOME
         </div>
 
-        {/* ══ RIGHT PANEL — White form ══ */}
-        <div className="flex-1 flex flex-col justify-center bg-white dark:bg-slate-900 px-10 py-10">
+        {/* Logo top-left */}
+        <div className="relative z-20 flex items-center gap-2.5 px-12 pt-10">
+          <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+          </div>
+          <span className="text-white font-extrabold text-lg tracking-wide">Q-KTAMP</span>
+        </div>
+
+        {/* Centered illustration */}
+        <div className="relative z-20 flex-1 flex items-center justify-center px-12">
+          <IsometricIllustration />
+        </div>
+
+        {/* Bottom tagline */}
+        <div className="relative z-20 pb-10 px-12 text-center">
+          <p className="text-white/55 text-[11px] font-semibold tracking-[0.22em] uppercase">
+            QA Knowledge &amp; Test Asset Platform
+          </p>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════
+          RIGHT PANEL — full-height white
+      ══════════════════════════════════ */}
+      <div
+        className="flex-1 flex flex-col justify-center relative overflow-y-auto"
+        style={{ background: dark ? '#0f172a' : '#ffffff' }}
+      >
+        {/* Subtle teal tint blob top-right */}
+        <div
+          className="absolute top-0 right-0 w-80 h-80 pointer-events-none opacity-20"
+          style={{ background: 'radial-gradient(circle at top right, #b2f0ec, transparent 70%)' }}
+        />
+
+        <div className="relative z-10 w-full max-w-[420px] mx-auto px-10 py-12">
+
+          {/* Heading */}
           <h2
-            className="font-extrabold text-center mb-8 tracking-wider text-[#08a49c]"
-            style={{ fontSize: 26, letterSpacing: '0.15em' }}
+            className="font-extrabold text-center mb-10 tracking-[0.2em]"
+            style={{ fontSize: 28, color: '#08a49c' }}
           >
             LOGIN
           </h2>
 
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-5 text-sm text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+            <div className="flex items-center gap-2 p-3 rounded-xl border mb-6 text-sm bg-red-50 border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
               <AlertCircle size={14} className="flex-shrink-0" />
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email / Username */}
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Username */}
             <div>
-              <label className="block text-xs font-semibold text-[#08a49c] mb-1.5 tracking-wide">Username</label>
+              <label
+                className="block text-xs font-semibold mb-2 tracking-wide"
+                style={{ color: '#08a49c' }}
+              >
+                Username
+              </label>
               <div className="relative">
                 <input
                   type="email"
@@ -210,15 +227,23 @@ export default function Login() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@company.com"
                   required
-                  className="w-full border-b-2 border-slate-200 dark:border-slate-700 bg-transparent outline-none text-sm text-slate-800 dark:text-slate-100 pb-2 pr-8 placeholder-slate-300 dark:placeholder-slate-600 focus:border-[#08a49c] transition-colors"
+                  className="w-full bg-transparent outline-none text-sm pb-2.5 pr-8 text-slate-800 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 transition-colors"
+                  style={{ borderBottom: '2px solid #e2e8f0' }}
+                  onFocus={e => (e.target.style.borderBottomColor = '#08a49c')}
+                  onBlur={e => (e.target.style.borderBottomColor = '#e2e8f0')}
                 />
-                <User size={15} className="absolute right-1 bottom-2.5 text-[#08a49c]" />
+                <User size={16} className="absolute right-1 bottom-2.5" style={{ color: '#08a49c' }} />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-semibold text-[#08a49c] mb-1.5 tracking-wide">password</label>
+              <label
+                className="block text-xs font-semibold mb-2 tracking-wide"
+                style={{ color: '#08a49c' }}
+              >
+                password
+              </label>
               <div className="relative">
                 <input
                   type={showPw ? 'text' : 'password'}
@@ -226,26 +251,34 @@ export default function Login() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full border-b-2 border-slate-200 dark:border-slate-700 bg-transparent outline-none text-sm text-slate-800 dark:text-slate-100 pb-2 pr-8 placeholder-slate-300 dark:placeholder-slate-600 focus:border-[#08a49c] transition-colors"
+                  className="w-full bg-transparent outline-none text-sm pb-2.5 pr-8 text-slate-800 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 transition-colors"
+                  style={{ borderBottom: '2px solid #e2e8f0' }}
+                  onFocus={e => (e.target.style.borderBottomColor = '#08a49c')}
+                  onBlur={e => (e.target.style.borderBottomColor = '#e2e8f0')}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPw(s => !s)}
-                  className="absolute right-1 bottom-2.5 text-[#08a49c] hover:opacity-70 transition-opacity"
                   tabIndex={-1}
+                  onClick={() => setShowPw(s => !s)}
+                  className="absolute right-1 bottom-2.5 transition-opacity hover:opacity-60"
+                  style={{ color: '#08a49c' }}
                 >
-                  {showPw ? <EyeOff size={15} /> : <Lock size={15} />}
+                  {showPw ? <EyeOff size={16} /> : <Lock size={16} />}
                 </button>
               </div>
             </div>
 
-            {/* Submit */}
-            <div className="pt-3">
+            {/* Login button */}
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-full font-bold text-sm tracking-wider text-white transition-all hover:opacity-90 hover:scale-[1.02] active:scale-100 shadow-lg disabled:opacity-60"
-                style={{ background: 'linear-gradient(90deg, #08a49c, #06b6d4)', boxShadow: '0 6px 20px rgba(8,164,156,0.4)' }}
+                className="w-full h-12 rounded-full font-bold text-sm tracking-widest text-white transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-60"
+                style={{
+                  background: 'linear-gradient(90deg, #08a49c 0%, #09c4ba 100%)',
+                  boxShadow: '0 8px 24px rgba(8,164,156,0.38)',
+                  letterSpacing: '0.12em',
+                }}
               >
                 {loading ? (
                   <span className="inline-flex items-center gap-2 justify-center">
@@ -258,38 +291,47 @@ export default function Login() {
           </form>
 
           {/* Forgot / Help */}
-          <div className="flex justify-end gap-4 mt-4">
-            <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-[#08a49c] transition-colors">
+          <div className="flex justify-end gap-5 mt-5">
+            <Link
+              to="/forgot-password"
+              className="text-xs text-slate-400 hover:text-[#08a49c] transition-colors"
+            >
               Forgot
             </Link>
-            <a href="#" className="text-xs text-slate-400 hover:text-[#08a49c] transition-colors">Help</a>
+            <a href="#" className="text-xs text-slate-400 hover:text-[#08a49c] transition-colors">
+              Help
+            </a>
           </div>
 
           {/* Demo accounts */}
-          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-[10px] text-slate-400 text-center mb-3 uppercase tracking-widest">Quick access — demo accounts</p>
-            <div className="grid grid-cols-4 gap-1.5">
+          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
+            <p className="text-[10px] text-slate-400 text-center mb-3 uppercase tracking-[0.2em]">
+              Quick access — demo accounts
+            </p>
+            <div className="grid grid-cols-4 gap-2">
               {DEMO_USERS.map(u => (
                 <button
                   key={u.email}
                   type="button"
                   onClick={() => quickLogin(u)}
-                  className="relative flex flex-col items-center py-2 px-1 rounded-xl border transition-all hover:border-[#08a49c]/50 hover:bg-[#08a49c]/5 text-center"
+                  className="relative flex flex-col items-center py-2.5 px-1 rounded-xl border transition-all hover:scale-105"
                   style={{
-                    borderColor: filledRole === u.role ? '#08a49c' : 'rgba(226,232,240,1)',
-                    background: filledRole === u.role ? 'rgba(8,164,156,0.06)' : undefined,
+                    borderColor: filledRole === u.role ? '#08a49c' : '#e2e8f0',
+                    background: filledRole === u.role ? 'rgba(8,164,156,0.06)' : 'transparent',
                   }}
                 >
                   {filledRole === u.role && (
-                    <CheckCircle2 size={11} className="absolute top-1.5 right-1.5 text-[#08a49c]" />
+                    <CheckCircle2 size={11} className="absolute top-1.5 right-1.5" style={{ color: '#08a49c' }} />
                   )}
-                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{u.role}</span>
-                  <span className="text-[9px] text-slate-400 font-mono truncate w-full px-0.5">{u.email.split('@')[0]}</span>
+                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">{u.role}</span>
+                  <span className="text-[9px] text-slate-400 font-mono mt-0.5 truncate w-full text-center px-1">
+                    {u.email.split('@')[0]}
+                  </span>
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-center text-slate-400 mt-2">
-              Password: <span className="font-mono text-[#08a49c]">password123</span>
+            <p className="text-[10px] text-center text-slate-400 mt-3">
+              Password: <span className="font-mono" style={{ color: '#08a49c' }}>password123</span>
             </p>
           </div>
         </div>

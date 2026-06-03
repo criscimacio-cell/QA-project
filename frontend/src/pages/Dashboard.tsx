@@ -244,8 +244,8 @@ export default function Dashboard() {
         <StatCard icon={Clock}     label="Pending Review"  value={stats.pendingApprovals}     sub="Awaiting approval" gradient="linear-gradient(135deg,#f59e0b,#d97706)"  delay={180} />
         <StatCard icon={BookOpen}  label="KB Articles"     value={stats.totalKB}              sub="Published guides"  gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)"  delay={240} />
         <StatCard icon={HardDrive} label="Total Storage"   value={formatBytes(stats.totalSize)} sub="Used capacity"  gradient="linear-gradient(135deg,#ef4444,#dc2626)"  delay={300} />
-        <StatCard icon={Activity}  label="Audit Events"    value="15+"                        sub="Last 24 hours"     gradient="linear-gradient(135deg,#6366f1,#4f46e5)"  delay={360} />
-        <StatCard icon={TrendingUp}label="This Week"       value="+12%"                       sub="Upload growth"     gradient="linear-gradient(135deg,#f97316,#ea580c)"  delay={420} />
+        <StatCard icon={Activity}  label="Audit Events"    value={stats.auditEventsToday}     sub="Last 24 hours"     gradient="linear-gradient(135deg,#6366f1,#4f46e5)"  delay={360} />
+        <StatCard icon={TrendingUp}label="This Week"       value={stats.uploadGrowth}         sub="Upload growth"     gradient="linear-gradient(135deg,#f97316,#ea580c)"  delay={420} />
       </div>
 
       {/* ── Charts Row ── */}

@@ -11,6 +11,14 @@ router.get('/stats', authenticate, (req: Request, res: Response) => {
   const pendingApprovals = (db.prepare("SELECT COUNT(*) as c FROM files WHERE status IN ('submitted', 'under_review')").get() as any).c;
   const totalKB = (db.prepare("SELECT COUNT(*) as c FROM knowledge_articles WHERE status = 'published'").get() as any).c;
   const totalSize = (db.prepare("SELECT SUM(size) as s FROM files WHERE status != 'archived'").get() as any).s || 0;
+  const auditEventsToday = (db.prepare("SELECT COUNT(*) as c FROM audit_logs WHERE date(created_at) = date('now')").get() as any).c;
+
+  // Week-over-week upload growth
+  const uploadsThisWeek = (db.prepare("SELECT COUNT(*) as c FROM files WHERE created_at >= datetime('now', '-7 days')").get() as any).c;
+  const uploadsLastWeek = (db.prepare("SELECT COUNT(*) as c FROM files WHERE created_at >= datetime('now', '-14 days') AND created_at < datetime('now', '-7 days')").get() as any).c;
+  const uploadGrowth = uploadsLastWeek === 0
+    ? (uploadsThisWeek > 0 ? '+100%' : '0%')
+    : `${uploadsThisWeek >= uploadsLastWeek ? '+' : ''}${Math.round(((uploadsThisWeek - uploadsLastWeek) / uploadsLastWeek) * 100)}%`;
 
   const recentActivity = db.prepare(`
     SELECT al.*, u.name as user_name, u.avatar FROM audit_logs al
@@ -35,12 +43,12 @@ router.get('/stats', authenticate, (req: Request, res: Response) => {
   const uploadTrend = [];
   for (let i = 6; i >= 0; i--) {
     const row = db.prepare(`SELECT COUNT(*) as count, date('now', '-' || ? || ' days') as day FROM files WHERE date(created_at) = date('now', '-' || ? || ' days')`).get(i, i) as any;
-    uploadTrend.push({ day: row.day || `Day -${i}`, count: row.count || Math.floor(Math.random() * 8) + 1 });
+    uploadTrend.push({ day: row.day || `Day -${i}`, count: row.count });
   }
 
   const statusBreakdown = db.prepare(`SELECT status, COUNT(*) as count FROM files GROUP BY status`).all();
 
-  res.json({ totalFiles, activeUsers, uploadedToday, pendingApprovals, totalKB, totalSize, recentActivity, topFiles, repositoryStats, uploadTrend, statusBreakdown });
+  res.json({ totalFiles, activeUsers, uploadedToday, pendingApprovals, totalKB, totalSize, auditEventsToday, uploadGrowth, recentActivity, topFiles, repositoryStats, uploadTrend, statusBreakdown });
 });
 
 export default router;

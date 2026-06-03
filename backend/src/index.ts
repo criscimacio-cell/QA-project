@@ -19,7 +19,9 @@ const PORT = process.env.PORT || 3001;
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:4173'], credentials: true }));
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:4173')
+  .split(',').map(o => o.trim()).filter(Boolean);
+app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(UPLOAD_DIR));

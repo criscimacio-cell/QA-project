@@ -17,7 +17,7 @@ router.post('/login', (req: Request, res: Response) => {
   }
   db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(user.id);
   db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'LOGIN', 'user', ?, 'Successful login', ?)").run(user.id, user.id, req.ip || '');
-  const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
+  const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: (process.env.JWT_EXPIRES_IN || '8h') as any });
   const { password_hash, ...safeUser } = user;
   res.json({ token, user: safeUser });
 });

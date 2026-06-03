@@ -2,7 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../types';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'qtamp-secret-key-2025';
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
+  process.exit(1);
+}
+const JWT_SECRET = process.env.JWT_SECRET as string;
 
 export function authenticate(req: Request, res: Response, next: NextFunction) {
   const token = req.headers.authorization?.split(' ')[1];

@@ -208,7 +208,8 @@ def _r(attr, max_b=None, vals=None, date=False, num=False, lib=None, multi=False
     return (attr, max_b, vals, date, num, lib, multi)
 
 
-# Rules per element – only attributes that need content validation beyond DTD
+# Rules per element — every attribute from the data dictionary is listed.
+# Format: _r(attribute, max_bytes, valid_values_set, date, numeric, lib_key, multi_semicolon)
 RULES: dict[str, list] = {
 
     # ── PCB (root) ──────────────────────────────────────────────────
@@ -217,6 +218,11 @@ RULES: dict[str, list] = {
         _r("pPassword",              21),
         _r("pHciAccreNo",            21),
         _r("pPMCCNo",                21),
+        _r("pEnlistTotalCnt",        None, num=True),
+        _r("pProfileTotalCnt",       None, num=True),
+        _r("pSoapTotalCnt",          None, num=True),
+        _r("pCertificationId",       21),
+        _r("pHciTransmittalNumber",  21),
     ],
 
     # ── ENLISTMENT ──────────────────────────────────────────────────
@@ -257,6 +263,7 @@ RULES: dict[str, list] = {
         _r("pProfDate",              10, date=True),
         _r("pPatientPin",            12),
         _r("pPatientType",            2, MMDD_VALS),
+        _r("pPatientAge",            21),
         _r("pMemPin",                12),
         _r("pEffYear",                4),
         _r("pATC",                   10),
@@ -301,7 +308,9 @@ RULES: dict[str, list] = {
 
     "SOCHIST": [
         _r("pIsSmoker",               1, YNX_VALS),
+        _r("pNoCigpk",             None, num=True),
         _r("pIsAdrinker",             1, YNX_VALS),
+        _r("pNoBottles",           None, num=True),
         _r("pIllDrugUser",            1, YNX_VALS),
         _r("pIsSexuallyActive",       1, YNX_VALS),
         _r("pReportStatus",           1, UVF_VALS),
@@ -309,23 +318,40 @@ RULES: dict[str, list] = {
     ],
 
     "IMMUNIZATION": [
-        _r("pChildImmcode",           3, lib="lib_immchild",  multi=True),
-        _r("pYoungwImmcode",          3, lib="lib_immyoungw", multi=True),
-        _r("pPregwImmcode",           3, lib="lib_immpregw",  multi=True),
-        _r("pElderlyImmcode",         3, lib="lib_immelderly",multi=True),
+        _r("pChildImmcode",        None, lib="lib_immchild",  multi=True),
+        _r("pYoungwImmcode",       None, lib="lib_immyoungw", multi=True),
+        _r("pPregwImmcode",        None, lib="lib_immpregw",  multi=True),
+        _r("pElderlyImmcode",      None, lib="lib_immelderly",multi=True),
+        _r("pOtherImm",            2000),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
 
     "MENSHIST": [
+        _r("pMenarchePeriod",      None, num=True),
         _r("pLastMensPeriod",        10, date=True),
+        _r("pPeriodDuration",      None, num=True),
+        _r("pMensInterval",        None, num=True),
+        _r("pPadsPerDay",          None, num=True),
+        _r("pOnsetSexIc",          None, num=True),
+        _r("pBirthCtrlMethod",     2000),
+        _r("pIsMenopause",            1, YN_VALS),
+        _r("pMenopauseAge",        None, num=True),
         _r("pIsApplicable",           1, YN_VALS),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
 
     "PREGHIST": [
+        _r("pPregCnt",             None, num=True),
+        _r("pDeliveryCnt",         None, num=True),
         _r("pDeliveryTyp",            1, {"N","O","B","X"}),
+        _r("pFullTermCnt",         None, num=True),
+        _r("pPrematureCnt",        None, num=True),
+        _r("pAbortionCnt",         None, num=True),
+        _r("pLivChildrenCnt",      None, num=True),
+        _r("pWPregIndhyp",            1, YN_VALS),
+        _r("pWFamPlan",               1, YN_VALS),
         _r("pIsApplicable",           1, YN_VALS),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
@@ -390,12 +416,17 @@ RULES: dict[str, list] = {
         _r("pQid17_Abcde",           1, {"A","B","C","D","E"}),
         _r("pQid18_Yn",              1, YN_VALS),
         _r("pQid19_Yn",              1, YN_VALS),
+        _r("pQid19_Fbsmg",          50),
+        _r("pQid19_Fbsmmol",        50),
         _r("pQid19_Fbsdate",        10, date=True),
         _r("pQid20_Yn",              1, YN_VALS),
+        _r("pQid20_Choleval",       50),
         _r("pQid20_Choledate",      10, date=True),
         _r("pQid21_Yn",              1, YN_VALS),
+        _r("pQid21_Ketonval",       50),
         _r("pQid21_Ketondate",      10, date=True),
         _r("pQid22_Yn",              1, YN_VALS),
+        _r("pQid22_Proteinval",     50),
         _r("pQid22_Proteindate",    10, date=True),
         _r("pQid23_Yn",              1, YN_VALS),
         _r("pQid24_Yn",              1, YN_VALS),
@@ -414,6 +445,7 @@ RULES: dict[str, list] = {
         _r("pEffYear",                4),
         _r("pATC",                   10),
         _r("pIsWalkedIn",             1, YN_VALS),
+        _r("pCoPay",                 15),
         _r("pTransDate",             10, date=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
@@ -437,6 +469,16 @@ RULES: dict[str, list] = {
         _r("pHeight",              None, num=True),
         _r("pWeight",              None, num=True),
         _r("pBMI",                 None, num=True),
+        _r("pZScore",                10),
+        _r("pLeftVision",            12),
+        _r("pRightVision",           12),
+        _r("pLength",              None, num=True),
+        _r("pHeadCirc",            None, num=True),
+        _r("pSkinfoldThickness",   None, num=True),
+        _r("pWaist",               None, num=True),
+        _r("pHip",                 None, num=True),
+        _r("pLimbs",               None, num=True),
+        _r("pMidUpperArmCirc",     None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
@@ -457,7 +499,7 @@ RULES: dict[str, list] = {
     ],
 
     "MANAGEMENT": [
-        _r("pManagementId",           None, lib="lib_management"),
+        _r("pManagementId",        None, lib="lib_management"),
         _r("pOthRemarks",           500),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
@@ -482,10 +524,14 @@ RULES: dict[str, list] = {
         _r("pUnitCode",               5, lib="lib_medicine_unit"),
         _r("pPackageCode",            5, lib="lib_medicine_package"),
         _r("pOtherMedicine",        500),
+        _r("pOthMedDrugGrouping",    50),
         _r("pRoute",                500),
         _r("pQuantity",            None, num=True),
         _r("pActualUnitPrice",     None, num=True),
         _r("pTotalAmtPrice",       None, num=True),
+        _r("pInstructionQuantity",   50),
+        _r("pInstructionStrength",   50),
+        _r("pInstructionFrequency",  50),
         _r("pPrescribingPhysician", 200),
         _r("pIsDispensed",            1, YN_VALS),
         _r("pDateDispensed",         10, date=True),
@@ -506,128 +552,278 @@ RULES: dict[str, list] = {
         _r("pEffYear",                4),
     ],
 
-    # ── Lab results (shared pStatus / pLabDate / pReportStatus) ─────
+    # ── Lab result shared fields helper (reused below) ───────────────
+    # ── CBC ──────────────────────────────────────────────────────────
     "CBC": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pHematocrit",            50),
+        _r("pHemoglobinG",           50),
+        _r("pHemoglobinMmol",        50),
+        _r("pMhcPg",                 50),
+        _r("pMhcFmol",               50),
+        _r("pMchcGhb",               50),
+        _r("pMchcMmol",              50),
+        _r("pMcvUm",                 50),
+        _r("pMcvFl",                 50),
+        _r("pWbc1000",               50),
+        _r("pWbc10",                 50),
+        _r("pMyelocyte",             50),
+        _r("pNeutrophilsBnd",        50),
+        _r("pNeutrophilsSeg",        50),
+        _r("pLymphocytes",           50),
+        _r("pMonocytes",             50),
+        _r("pEosinophils",           50),
+        _r("pBasophils",             50),
+        _r("pPlatelet",              50),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── URINALYSIS ───────────────────────────────────────────────────
     "URINALYSIS": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pGravity",               50),
+        _r("pAppearance",            50),
+        _r("pColor",                 50),
+        _r("pGlucose",               50),
+        _r("pProteins",              50),
+        _r("pKetones",               50),
+        _r("pPh",                    50),
+        _r("pRbCells",               50),
+        _r("pWbCells",               50),
+        _r("pBacteria",              50),
+        _r("pCrystals",              50),
+        _r("pBladderCell",           50),
+        _r("pSquamousCell",          50),
+        _r("pTubularCell",           50),
+        _r("pBroadCasts",            50),
+        _r("pEpithelialCast",        50),
+        _r("pGranularCast",          50),
+        _r("pHyalineCast",           50),
+        _r("pRbcCast",               50),
+        _r("pWaxyCast",              50),
+        _r("pWcCast",                50),
+        _r("pAlbumin",               50),
+        _r("pPusCells",              50),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── CHESTXRAY ────────────────────────────────────────────────────
     "CHESTXRAY": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
-        _r("pFindings",              None, lib="lib_chestxray_findings"),
-        _r("pObservation",           None, lib="lib_chestxray_observation"),
+        _r("pFindings",            None, lib="lib_chestxray_findings"),
+        _r("pRemarksFindings",     2000),
+        _r("pObservation",         None, lib="lib_chestxray_observation"),
+        _r("pRemarksObservation",  2000),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── SPUTUM ───────────────────────────────────────────────────────
     "SPUTUM": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
-        _r("pDataCollection",       None, {"S1","S2","S3",""}),
-        _r("pFindings",             None, {"P","N",""}),
+        _r("pDataCollection",      None, {"S1","S2","S3",""}),
+        _r("pFindings",            None, {"P","N",""}),
+        _r("pRemarks",             2000),
+        _r("pNoPlusses",             50),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── LIPIDPROFILE ─────────────────────────────────────────────────
     "LIPIDPROFILE": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pLdl",                   50),
+        _r("pHdl",                   50),
+        _r("pTotal",                 50),
+        _r("pCholesterol",           50),
+        _r("pTriglycerides",         50),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── FBS ──────────────────────────────────────────────────────────
     "FBS": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pGlucoseMg",             50),
+        _r("pGlucoseMmol",           50),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── RBS ──────────────────────────────────────────────────────────
     "RBS": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pGlucoseMg",             50),
+        _r("pGlucoseMmol",           50),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── ECG ──────────────────────────────────────────────────────────
     "ECG": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pFindings",            2000),
+        _r("pRemarks",             2000),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── FECALYSIS ────────────────────────────────────────────────────
     "FECALYSIS": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pColor",                 50),
+        _r("pConsistency",           50),
+        _r("pRbc",                   50),
+        _r("pWbc",                   50),
+        _r("pOva",                   50),
+        _r("pParasite",              50),
+        _r("pBlood",                 50),
+        _r("pPusCells",              50),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── PAPSMEAR ─────────────────────────────────────────────────────
     "PAPSMEAR": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pFindings",            2000),
+        _r("pImpression",          2000),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── OGTT ─────────────────────────────────────────────────────────
     "OGTT": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pExamFastingMg",         50),
+        _r("pExamFastingMmol",       50),
+        _r("pExamOgttOneHrMg",       50),
+        _r("pExamOgttOneHrMmol",     50),
+        _r("pExamOgttTwoHrMg",       50),
+        _r("pExamOgttTwoHrMmol",     50),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── FOBT ─────────────────────────────────────────────────────────
     "FOBT": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pFindings",            2000),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── CREATININE ───────────────────────────────────────────────────
     "CREATININE": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pFindings",            2000),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── PPDTest ──────────────────────────────────────────────────────
     "PPDTest": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pFindings",            2000),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── HbA1c ────────────────────────────────────────────────────────
     "HbA1c": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
+        _r("pFindings",            2000),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
+
+    # ── OTHERDIAGEXAM ────────────────────────────────────────────────
     "OTHERDIAGEXAM": [
+        _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
         _r("pOthDiagExam",         2000),
+        _r("pFindings",            2000),
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
+        _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
 
     # ── DOCUMENT ─────────────────────────────────────────────────────
     "DOCUMENT": [
+        _r("pHciCaseNo",             21),
+        _r("pHciTransNo",            21),
+        _r("pPatientPin",            12),
+        _r("pPatientType",            2, MMDD_VALS),
+        _r("pMemPin",                12),
+        _r("pDocumentType",          50),
+        _r("pDocumentUrl",         2000),
         _r("pTransDate",             10, date=True),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
     ],
 }
 

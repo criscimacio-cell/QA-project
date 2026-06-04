@@ -1,391 +1,795 @@
 #!/usr/bin/env python3
 """
-XML Checker — validates XML files against a DTD and a data dictionary.
+KonSulTa PCB XML Checker
+Validates PhilHealth KonSulTa XML files against:
+  1. XML well-formedness
+  2. DTD structure (KonsultaData_v1.14_1.dtd)
+  3. Data Dictionary rules (field formats, valid values, required flags)
+  4. Library lookups (Excel reference tables)
 
 Usage:
     python xml_checker.py <xml_file> [options]
 
 Options:
-    --dtd <file>        Path to DTD file (optional)
-    --dict <file>       Path to data dictionary JSON file (optional)
-    --report <file>     Write report to file instead of stdout
-    --strict            Treat warnings as errors (exit code 1)
-    --no-color          Disable colored output
+    --dtd <file>        Path to DTD file (default: KonsultaData_v1.14_1.dtd beside this script)
+    --libs <dir>        Path to LIBRARIES folder containing .xlsx files
+    --report <file>     Write plain-text report to file
+    --strict            Treat warnings as errors (exit 1)
+    --no-color          Disable ANSI colour output
 
-Exit codes:
-    0   All checks passed
-    1   Errors found (or warnings in --strict mode)
-    2   Script usage / file not found error
+Exit codes:  0 = pass   1 = errors found   2 = usage / file not found
 """
 
 import argparse
-import json
 import os
 import re
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from io import StringIO
-from typing import Any
 
 from lxml import etree
 
+try:
+    import openpyxl
+    HAS_OPENPYXL = True
+except ImportError:
+    HAS_OPENPYXL = False
 
-# ---------------------------------------------------------------------------
-# Data structures
-# ---------------------------------------------------------------------------
+
+# ─────────────────────────────────────────────
+# Colour helpers
+# ─────────────────────────────────────────────
+
+USE_COLOR = True
+_C = {"ERROR": "\033[91m", "WARNING": "\033[93m", "INFO": "\033[96m",
+      "PASS": "\033[92m", "BOLD": "\033[1m", "RESET": "\033[0m"}
+
+def c(text, key):
+    return f"{_C.get(key,'')}{text}{_C['RESET']}" if USE_COLOR else text
+
+def strip_ansi(s):
+    return re.sub(r"\033\[[0-9;]*m", "", s)
+
+
+# ─────────────────────────────────────────────
+# Issue / Result containers
+# ─────────────────────────────────────────────
 
 @dataclass
 class Issue:
-    level: str          # "ERROR" | "WARNING" | "INFO"
-    category: str       # "SYNTAX" | "DTD" | "DICT" | "TYPE" | "REQUIRED"
-    message: str
-    line: int | None = None
-    element: str | None = None
-    attribute: str | None = None
-
+    level:     str        # ERROR | WARNING | INFO
+    category:  str        # SYNTAX | DTD | DICT | LIBRARY | TYPE
+    message:   str
+    line:      int | None = None
+    path:      str | None = None
 
 @dataclass
-class CheckResult:
-    xml_file: str
-    dtd_file: str | None
-    dict_file: str | None
-    issues: list[Issue] = field(default_factory=list)
-    passed: bool = True
+class Result:
+    xml_file:  str
+    dtd_file:  str | None
+    libs_dir:  str | None
+    issues:    list = field(default_factory=list)
+    passed:    bool = True
 
-    def add(self, level: str, category: str, message: str, **kwargs):
-        self.issues.append(Issue(level=level, category=category, message=message, **kwargs))
+    def add(self, level, category, message, line=None, path=None):
+        self.issues.append(Issue(level, category, message, line, path))
         if level == "ERROR":
             self.passed = False
 
     @property
-    def errors(self):
-        return [i for i in self.issues if i.level == "ERROR"]
-
+    def errors(self):   return [i for i in self.issues if i.level == "ERROR"]
     @property
-    def warnings(self):
-        return [i for i in self.issues if i.level == "WARNING"]
-
-    @property
-    def infos(self):
-        return [i for i in self.issues if i.level == "INFO"]
+    def warnings(self): return [i for i in self.issues if i.level == "WARNING"]
 
 
-# ---------------------------------------------------------------------------
-# Color helpers
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────────
+# Library loader
+# ─────────────────────────────────────────────
 
-USE_COLOR = True
+def load_libraries(libs_dir: str) -> dict:
+    """
+    Returns a dict mapping library name → set of valid string codes.
+    Codes come from column 0 (ID/Code column) of each Excel file.
+    """
+    if not HAS_OPENPYXL:
+        print("WARNING: openpyxl not installed – library lookups skipped.", file=sys.stderr)
+        return {}
 
-COLORS = {
-    "ERROR":   "\033[91m",
-    "WARNING": "\033[93m",
-    "INFO":    "\033[96m",
-    "PASS":    "\033[92m",
-    "BOLD":    "\033[1m",
-    "RESET":   "\033[0m",
+    libs = {}
+
+    mapping = {
+        # library key           : (filename,             sheet index, col index)
+        "lib_mdiseases":          ("lib_mdiseases.xlsx",         0, 0),
+        "lib_icd":                ("lib_icd.xlsx",               0, 0),
+        "lib_diagnostic":         ("lib_diagnostic.xlsx",        0, 0),
+        "lib_management":         ("lib_management.xlsx",        0, 0),
+        "lib_medicine":           ("lib_medicine.xlsx",          0, 0),
+        "lib_medicine_generic":   ("lib_medicine_generic.xlsx",  0, 0),
+        "lib_medicine_salt":      ("lib_medicine_salt.xlsx",     0, 0),
+        "lib_medicine_strength":  ("lib_medicine_strength.xlsx", 0, 0),
+        "lib_medicine_form":      ("lib_medicine_form.xlsx",     0, 0),
+        "lib_medicine_unit":      ("lib_medicine_unit.xlsx",     0, 0),
+        "lib_medicine_package":   ("lib_medicine_package.xlsx",  0, 0),
+        "lib_skin_extremities":   ("lib_skin_extremities.xlsx",  0, 0),
+        "lib_heent":              ("lib_heent.xlsx",             0, 0),
+        "lib_chest":              ("lib_chest.xlsx",             0, 0),
+        "lib_heart":              ("lib_heart.xlsx",             0, 0),
+        "lib_abdomen":            ("lib_abdomen.xlsx",           0, 0),
+        "lib_neuro":              ("lib_neuro.xlsx",             0, 0),
+        "lib_digital_rectal":     ("lib_digital_rectal.xlsx",    0, 0),
+        "lib_genitourinary":      ("lib_genitourinary.xlsx",     0, 0),
+        "lib_immchild":           ("lib_immchild.xlsx",          0, 0),
+        "lib_immyoungw":          ("lib_immyoungw.xlsx",         0, 0),
+        "lib_immpregw":           ("lib_immpregw.xlsx",          0, 0),
+        "lib_immelderly":         ("lib_immelderly.xlsx",        0, 0),
+        "lib_signs_symptoms":     ("lib_signs_symptoms.xlsx",    0, 0),
+        "lib_chestxray_findings":     ("lib_chestxray_findings.xlsx",     0, 0),
+        "lib_chestxray_observation":  ("lib_chestxray_observation.xlsx",  0, 0),
+    }
+
+    for lib_key, (filename, sheet_idx, col_idx) in mapping.items():
+        path = os.path.join(libs_dir, filename)
+        if not os.path.isfile(path):
+            continue
+        try:
+            wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+            ws = wb.worksheets[sheet_idx]
+            codes = set()
+            for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True)):
+                if row and row[col_idx] is not None:
+                    raw_code = row[col_idx]
+                    # Excel stores integers as floats (1 → 1.0); normalise to int string
+                    if isinstance(raw_code, float) and raw_code == int(raw_code):
+                        raw_code = int(raw_code)
+                    codes.add(str(raw_code).strip())
+            libs[lib_key] = codes
+        except Exception as e:
+            print(f"WARNING: Could not load {filename}: {e}", file=sys.stderr)
+
+    return libs
+
+
+# ─────────────────────────────────────────────
+# Validation helpers
+# ─────────────────────────────────────────────
+
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+def is_date(val):
+    if not DATE_RE.match(val):
+        return False
+    try:
+        datetime.strptime(val, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
+def is_number(val):
+    try:
+        float(val)
+        return True
+    except ValueError:
+        return False
+
+def check_length(val, max_bytes):
+    return len(val.encode("utf-8")) <= max_bytes
+
+def lib_lookup(val, lib_name, libs, allow_semicolon=False):
+    """Return list of codes that are NOT in the library."""
+    if lib_name not in libs:
+        return []    # library not loaded – skip
+    if not val or not val.strip():
+        return []
+    codes = [v.strip() for v in val.split(";")] if allow_semicolon else [val.strip()]
+    return [code for code in codes if code and code not in libs[lib_name]]
+
+
+# ─────────────────────────────────────────────
+# Element-level rule definitions
+# ─────────────────────────────────────────────
+# Each rule is (attribute, max_bytes, required_flag, valid_values_set_or_None,
+#               date_flag, number_flag, lib_key_or_None, multi_value_flag)
+# required_flag: True = always required; None = defined as REQUIRED in DTD but
+#                we skip (DTD already catches it); False = optional per data dict
+
+REPORT_STATUS_VALS = {"U", "V", "F"}
+YN_VALS      = {"Y", "N"}
+YNX_VALS     = {"Y", "N", "X"}
+YNBLANK_VALS = {"Y", "N", ""}
+SEX_VALS     = {"M", "F"}
+MMDD_VALS    = {"MM", "DD"}
+PKG_VALS     = {"P", "E", "K"}
+UVF_VALS     = {"U", "V", "F"}
+LAB_STATUS   = {"D", "N", "X", "W"}
+
+
+def _r(attr, max_b=None, vals=None, date=False, num=False, lib=None, multi=False):
+    return (attr, max_b, vals, date, num, lib, multi)
+
+
+# Rules per element – only attributes that need content validation beyond DTD
+RULES: dict[str, list] = {
+
+    # ── PCB (root) ──────────────────────────────────────────────────
+    "PCB": [
+        _r("pUsername",              21),
+        _r("pPassword",              21),
+        _r("pHciAccreNo",            21),
+        _r("pPMCCNo",                21),
+    ],
+
+    # ── ENLISTMENT ──────────────────────────────────────────────────
+    "ENLISTMENT": [
+        _r("pHciCaseNo",             21),
+        _r("pHciTransNo",            21),
+        _r("pEffYear",                4),
+        _r("pEnlistStat",             1, {"1","2","3"}),
+        _r("pEnlistDate",            10, date=True),
+        _r("pPackageType",            1, PKG_VALS),
+        _r("pMemPin",                12),
+        _r("pMemFname",              30),
+        _r("pMemMname",              30),
+        _r("pMemLname",              30),
+        _r("pMemExtname",            30),
+        _r("pMemDob",                10, date=True),
+        _r("pPatientPin",            12),
+        _r("pPatientFname",          30),
+        _r("pPatientMname",          30),
+        _r("pPatientLname",          30),
+        _r("pPatientExtname",        30),
+        _r("pPatientSex",             1, SEX_VALS),
+        _r("pPatientDob",            10, date=True),
+        _r("pPatientType",            2, MMDD_VALS),
+        _r("pPatientMobileNo",       15),
+        _r("pPatientLandlineNo",     15),
+        _r("pWithConsent",            1, YNX_VALS),
+        _r("pTransDate",             10, date=True),
+        _r("pCreatedBy",             30),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    # ── PROFILE ─────────────────────────────────────────────────────
+    "PROFILE": [
+        _r("pHciTransNo",            21),
+        _r("pHciCaseNo",             21),
+        _r("pProfDate",              10, date=True),
+        _r("pPatientPin",            12),
+        _r("pPatientType",            2, MMDD_VALS),
+        _r("pMemPin",                12),
+        _r("pEffYear",                4),
+        _r("pATC",                   10),
+        _r("pIsWalkedIn",             1, YN_VALS),
+        _r("pTransDate",             10, date=True),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "MEDHIST": [
+        _r("pMdiseaseCode",           3, lib="lib_mdiseases"),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "MHSPECIFIC": [
+        _r("pMdiseaseCode",           3, lib="lib_mdiseases"),
+        _r("pSpecificDesc",        2000),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "SURGHIST": [
+        _r("pSurgDesc",             500),
+        _r("pSurgDate",              10, date=True),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "FAMHIST": [
+        _r("pMdiseaseCode",           3, lib="lib_mdiseases"),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "FHSPECIFIC": [
+        _r("pMdiseaseCode",           3, lib="lib_mdiseases"),
+        _r("pSpecificDesc",        2000),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "SOCHIST": [
+        _r("pIsSmoker",               1, YNX_VALS),
+        _r("pIsAdrinker",             1, YNX_VALS),
+        _r("pIllDrugUser",            1, YNX_VALS),
+        _r("pIsSexuallyActive",       1, YNX_VALS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "IMMUNIZATION": [
+        _r("pChildImmcode",           3, lib="lib_immchild",  multi=True),
+        _r("pYoungwImmcode",          3, lib="lib_immyoungw", multi=True),
+        _r("pPregwImmcode",           3, lib="lib_immpregw",  multi=True),
+        _r("pElderlyImmcode",         3, lib="lib_immelderly",multi=True),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "MENSHIST": [
+        _r("pLastMensPeriod",        10, date=True),
+        _r("pIsApplicable",           1, YN_VALS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "PREGHIST": [
+        _r("pDeliveryTyp",            1, {"N","O","B","X"}),
+        _r("pIsApplicable",           1, YN_VALS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "BLOODTYPE": [
+        _r("pBloodType",              3, {"A+","B+","AB+","O+","A-","B-","AB-","O-",""}),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "PEGENSURVEY": [
+        _r("pGenSurveyId",            1, {"1","2"}),
+        _r("pGenSurveyRem",        2000),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "PEMISC": [
+        _r("pSkinId",                 3, lib="lib_skin_extremities"),
+        _r("pHeentId",                3, lib="lib_heent"),
+        _r("pChestId",                3, lib="lib_chest"),
+        _r("pHeartId",                3, lib="lib_heart"),
+        _r("pAbdomenId",              3, lib="lib_abdomen"),
+        _r("pNeuroId",                3, lib="lib_neuro"),
+        _r("pRectalId",               3, lib="lib_digital_rectal"),
+        _r("pGuId",                   3, lib="lib_genitourinary"),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "PESPECIFIC": [
+        _r("pSkinRem",             2000),
+        _r("pHeentRem",            2000),
+        _r("pChestRem",            2000),
+        _r("pHeartRem",            2000),
+        _r("pAbdomenRem",          2000),
+        _r("pNeuroRem",            2000),
+        _r("pRectalRem",           2000),
+        _r("pGuRem",               2000),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "NCDQANS": [
+        _r("pQid1_Yn",               1, YN_VALS),
+        _r("pQid2_Yn",               1, YN_VALS),
+        _r("pQid3_Yn",               1, YN_VALS),
+        _r("pQid4_Yn",               1, YN_VALS),
+        _r("pQid5_Ynx",              1, {"Y","N","X"}),
+        _r("pQid6_Yn",               1, YN_VALS),
+        _r("pQid7_Yn",               1, YN_VALS),
+        _r("pQid8_Yn",               1, YN_VALS),
+        _r("pQid9_Yn",               1, YN_VALS),
+        _r("pQid10_Yn",              1, YN_VALS),
+        _r("pQid11_Yn",              1, YN_VALS),
+        _r("pQid12_Yn",              1, YN_VALS),
+        _r("pQid13_Yn",              1, YN_VALS),
+        _r("pQid14_Yn",              1, YN_VALS),
+        _r("pQid15_Yn",              1, YN_VALS),
+        _r("pQid16_Yn",              1, YN_VALS),
+        _r("pQid17_Abcde",           1, {"A","B","C","D","E"}),
+        _r("pQid18_Yn",              1, YN_VALS),
+        _r("pQid19_Yn",              1, YN_VALS),
+        _r("pQid19_Fbsdate",        10, date=True),
+        _r("pQid20_Yn",              1, YN_VALS),
+        _r("pQid20_Choledate",      10, date=True),
+        _r("pQid21_Yn",              1, YN_VALS),
+        _r("pQid21_Ketondate",      10, date=True),
+        _r("pQid22_Yn",              1, YN_VALS),
+        _r("pQid22_Proteindate",    10, date=True),
+        _r("pQid23_Yn",              1, YN_VALS),
+        _r("pQid24_Yn",              1, YN_VALS),
+        _r("pReportStatus",          1, UVF_VALS),
+        _r("pDeficiencyRemarks",  2000),
+    ],
+
+    # ── SOAP ─────────────────────────────────────────────────────────
+    "SOAP": [
+        _r("pHciCaseNo",             21),
+        _r("pHciTransNo",            21),
+        _r("pSoapDate",              10, date=True),
+        _r("pPatientPin",            12),
+        _r("pPatientType",            2, MMDD_VALS),
+        _r("pMemPin",                12),
+        _r("pEffYear",                4),
+        _r("pATC",                   10),
+        _r("pIsWalkedIn",             1, YN_VALS),
+        _r("pTransDate",             10, date=True),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "SUBJECTIVE": [
+        _r("pIllnessHistory",      2000),
+        _r("pSignsSymptoms",       2000, lib="lib_signs_symptoms", multi=True),
+        _r("pOtherComplaint",      2000),
+        _r("pPainSite",             500),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "PEPERT": [
+        _r("pSystolic",            None, num=True),
+        _r("pDiastolic",           None, num=True),
+        _r("pHr",                  None, num=True),
+        _r("pRr",                  None, num=True),
+        _r("pTemp",                None, num=True),
+        _r("pHeight",              None, num=True),
+        _r("pWeight",              None, num=True),
+        _r("pBMI",                 None, num=True),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "ICD": [
+        _r("pIcdCode",               10, lib="lib_icd"),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "DIAGNOSTIC": [
+        _r("pDiagnosticId",           3, lib="lib_diagnostic"),
+        _r("pOthRemarks",           500),
+        _r("pIsPhysicianRecommendation", 1, {"Y","N","X"}),
+        _r("pPatientRemarks",         2, {"RQ","RF","XX"}),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "MANAGEMENT": [
+        _r("pManagementId",           None, lib="lib_management"),
+        _r("pOthRemarks",           500),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    "ADVICE": [
+        _r("pRemarks",             2000),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    # ── MEDICINE ─────────────────────────────────────────────────────
+    "MEDICINE": [
+        _r("pHciCaseNo",             21),
+        _r("pHciTransNo",            21),
+        _r("pCategory",              50, {"NCD","ANTIBIOTIC","OTHERS","-",""}),
+        _r("pDrugCode",              30, lib="lib_medicine"),
+        _r("pGenericCode",            5, lib="lib_medicine_generic"),
+        _r("pSaltCode",               5, lib="lib_medicine_salt"),
+        _r("pStrengthCode",           5, lib="lib_medicine_strength"),
+        _r("pFormCode",               5, lib="lib_medicine_form"),
+        _r("pUnitCode",               5, lib="lib_medicine_unit"),
+        _r("pPackageCode",            5, lib="lib_medicine_package"),
+        _r("pOtherMedicine",        500),
+        _r("pRoute",                500),
+        _r("pQuantity",            None, num=True),
+        _r("pActualUnitPrice",     None, num=True),
+        _r("pTotalAmtPrice",       None, num=True),
+        _r("pPrescribingPhysician", 200),
+        _r("pIsDispensed",            1, YN_VALS),
+        _r("pDateDispensed",         10, date=True),
+        _r("pDispensingPersonnel",  200),
+        _r("pIsApplicable",           1, YN_VALS),
+        _r("pDateAdded",             10, date=True),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    # ── DIAGNOSTICEXAMRESULT header ──────────────────────────────────
+    "DIAGNOSTICEXAMRESULT": [
+        _r("pHciCaseNo",             21),
+        _r("pHciTransNo",            21),
+        _r("pPatientPin",            12),
+        _r("pPatientType",            2, MMDD_VALS),
+        _r("pMemPin",                12),
+        _r("pEffYear",                4),
+    ],
+
+    # ── Lab results (shared pStatus / pLabDate / pReportStatus) ─────
+    "CBC": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "URINALYSIS": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "CHESTXRAY": [
+        _r("pLabDate",               10, date=True),
+        _r("pFindings",              None, lib="lib_chestxray_findings"),
+        _r("pObservation",           None, lib="lib_chestxray_observation"),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "SPUTUM": [
+        _r("pLabDate",               10, date=True),
+        _r("pDataCollection",       None, {"S1","S2","S3",""}),
+        _r("pFindings",             None, {"P","N",""}),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "LIPIDPROFILE": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "FBS": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "RBS": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "ECG": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "FECALYSIS": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "PAPSMEAR": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "OGTT": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "FOBT": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "CREATININE": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "PPDTest": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "HbA1c": [
+        _r("pLabDate",               10, date=True),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+    "OTHERDIAGEXAM": [
+        _r("pLabDate",               10, date=True),
+        _r("pOthDiagExam",         2000),
+        _r("pDateAdded",             10, date=True),
+        _r("pStatus",                 1, LAB_STATUS),
+        _r("pReportStatus",           1, UVF_VALS),
+        _r("pDeficiencyRemarks",   2000),
+    ],
+
+    # ── DOCUMENT ─────────────────────────────────────────────────────
+    "DOCUMENT": [
+        _r("pTransDate",             10, date=True),
+    ],
 }
 
 
-def c(text: str, key: str) -> str:
-    if not USE_COLOR:
-        return text
-    return f"{COLORS.get(key, '')}{text}{COLORS['RESET']}"
+# ─────────────────────────────────────────────
+# Validation steps
+# ─────────────────────────────────────────────
 
-
-# ---------------------------------------------------------------------------
-# Step 1 — Syntax / well-formedness check
-# ---------------------------------------------------------------------------
-
-def check_syntax(xml_path: str, result: CheckResult) -> etree._Element | None:
-    """Parse the XML file; return the root element or None on failure."""
+def check_syntax(xml_path, result) -> etree._Element | None:
     try:
-        parser = etree.XMLParser(
-            load_dtd=True,
-            no_network=True,
-            resolve_entities=False,
-        )
+        parser = etree.XMLParser(load_dtd=True, no_network=True, resolve_entities=False)
         tree = etree.parse(xml_path, parser=parser)
         result.add("INFO", "SYNTAX", "XML is well-formed")
         return tree.getroot()
     except etree.XMLSyntaxError as exc:
         for err in exc.error_log:
-            result.add(
-                "ERROR", "SYNTAX",
-                f"{err.message}",
-                line=err.line,
-            )
+            result.add("ERROR", "SYNTAX", err.message, line=err.line)
         return None
 
 
-# ---------------------------------------------------------------------------
-# Step 2 — DTD validation
-# ---------------------------------------------------------------------------
-
-def check_dtd(xml_path: str, dtd_path: str, result: CheckResult) -> None:
-    """Validate the XML file against the given DTD."""
+def check_dtd(xml_path, dtd_path, result):
     try:
         dtd = etree.DTD(dtd_path)
     except etree.DTDParseError as exc:
-        result.add("ERROR", "DTD", f"Could not parse DTD: {exc}")
+        result.add("ERROR", "DTD", f"Cannot parse DTD: {exc}")
         return
-
     try:
         tree = etree.parse(xml_path)
     except etree.XMLSyntaxError:
-        return  # already reported in check_syntax
-
+        return
     if dtd.validate(tree):
         result.add("INFO", "DTD", f"Document is valid against DTD: {os.path.basename(dtd_path)}")
     else:
         for err in dtd.error_log:
-            result.add(
-                "ERROR", "DTD",
-                err.message,
-                line=err.line,
-            )
+            result.add("ERROR", "DTD", err.message, line=err.line)
 
 
-# ---------------------------------------------------------------------------
-# Step 3 — Data dictionary validation
-# ---------------------------------------------------------------------------
+def check_data_dict(root: etree._Element, libs: dict, result: Result):
+    def walk(elem, path):
+        tag  = elem.tag
+        line = getattr(elem, "sourceline", None)
+        rules = RULES.get(tag)
 
-# Data dictionary JSON schema (example):
-# {
-#   "elements": {
-#     "Order": {
-#       "required": true,
-#       "description": "Root order element",
-#       "attributes": {
-#         "id": {"required": true, "type": "string", "pattern": "^ORD-\\d+$"},
-#         "status": {"required": true, "type": "enum", "values": ["open","closed","pending"]}
-#       },
-#       "children": {
-#         "required": ["Customer", "LineItem"],
-#         "optional": ["Notes"]
-#       }
-#     },
-#     "Quantity": {
-#       "required": false,
-#       "text_type": "integer",
-#       "min": 1
-#     }
-#   }
-# }
+        if rules is None:
+            # not an element we define rules for — skip silently
+            for child in elem:
+                walk(child, f"{path}/{child.tag}")
+            return
 
-TYPE_VALIDATORS: dict[str, Any] = {
-    "integer": lambda v: re.fullmatch(r"-?\d+", v.strip()) is not None,
-    "float":   lambda v: re.fullmatch(r"-?\d+(\.\d+)?", v.strip()) is not None,
-    "boolean": lambda v: v.strip().lower() in ("true", "false", "1", "0", "yes", "no"),
-    "date":    lambda v: re.fullmatch(r"\d{4}-\d{2}-\d{2}", v.strip()) is not None,
-    "datetime":lambda v: re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", v.strip()) is not None,
-    "email":   lambda v: re.fullmatch(r"[^@]+@[^@]+\.[^@]+", v.strip()) is not None,
-    "string":  lambda v: True,
-}
+        for (attr, max_b, vals, date_flag, num_flag, lib_key, multi) in rules:
+            raw = elem.get(attr)
+            if raw is None:
+                continue          # missing required attrs caught by DTD
+            val = raw.strip()
 
+            # ── valid values set ─────────────────────────────────────
+            if vals and val not in vals and val != "":
+                result.add("ERROR", "DICT",
+                    f"<{tag}> @{attr}='{val}' not in allowed values {sorted(vals)}",
+                    line=line, path=path)
 
-def load_data_dict(dict_path: str, result: CheckResult) -> dict | None:
-    try:
-        with open(dict_path, encoding="utf-8") as f:
-            return json.load(f)
-    except (OSError, json.JSONDecodeError) as exc:
-        result.add("ERROR", "DICT", f"Could not load data dictionary: {exc}")
-        return None
+            # ── date format ──────────────────────────────────────────
+            if date_flag and val and not is_date(val):
+                result.add("ERROR", "TYPE",
+                    f"<{tag}> @{attr}='{val}' is not a valid date (expected YYYY-MM-DD)",
+                    line=line, path=path)
 
+            # ── numeric check ────────────────────────────────────────
+            if num_flag and val and not is_number(val):
+                result.add("WARNING", "TYPE",
+                    f"<{tag}> @{attr}='{val}' is not numeric",
+                    line=line, path=path)
 
-def check_element_against_dict(
-    elem: etree._Element,
-    elem_def: dict,
-    result: CheckResult,
-    path: str,
-) -> None:
-    tag = elem.tag
-    line = elem.sourceline if hasattr(elem, "sourceline") else None
+            # ── field length ─────────────────────────────────────────
+            if max_b and val and not check_length(val, max_b):
+                result.add("WARNING", "DICT",
+                    f"<{tag}> @{attr} value exceeds {max_b}-byte limit "
+                    f"({len(val.encode())} bytes)",
+                    line=line, path=path)
 
-    # --- attribute checks ---
-    attr_defs: dict = elem_def.get("attributes", {})
-    for attr_name, attr_def in attr_defs.items():
-        value = elem.get(attr_name)
-        if attr_def.get("required", False) and value is None:
-            result.add(
-                "ERROR", "DICT",
-                f"<{tag}> missing required attribute '{attr_name}'",
-                line=line, element=path, attribute=attr_name,
-            )
-            continue
-        if value is None:
-            continue
+            # ── library lookup ───────────────────────────────────────
+            if lib_key and val:
+                bad = lib_lookup(val, lib_key, libs, allow_semicolon=multi)
+                for code in bad:
+                    result.add("ERROR", "LIBRARY",
+                        f"<{tag}> @{attr}='{code}' not found in {lib_key}",
+                        line=line, path=path)
 
-        attr_type = attr_def.get("type", "string")
-        if attr_type == "enum":
-            allowed = attr_def.get("values", [])
-            if value not in allowed:
-                result.add(
-                    "ERROR", "DICT",
-                    f"<{tag}> attribute '{attr_name}' value '{value}' not in allowed values {allowed}",
-                    line=line, element=path, attribute=attr_name,
-                )
-        elif attr_type in TYPE_VALIDATORS:
-            if not TYPE_VALIDATORS[attr_type](value):
-                result.add(
-                    "ERROR", "TYPE",
-                    f"<{tag}> attribute '{attr_name}' value '{value}' is not a valid {attr_type}",
-                    line=line, element=path, attribute=attr_name,
-                )
-        pattern = attr_def.get("pattern")
-        if pattern and not re.fullmatch(pattern, value):
-            result.add(
-                "ERROR", "DICT",
-                f"<{tag}> attribute '{attr_name}' value '{value}' does not match pattern '{pattern}'",
-                line=line, element=path, attribute=attr_name,
-            )
-
-    # --- text content type check ---
-    text_type = elem_def.get("text_type")
-    if text_type and elem.text and elem.text.strip():
-        val = elem.text.strip()
-        validator = TYPE_VALIDATORS.get(text_type)
-        if validator and not validator(val):
-            result.add(
-                "ERROR", "TYPE",
-                f"<{tag}> text content '{val}' is not a valid {text_type}",
-                line=line, element=path,
-            )
-        # numeric range checks
-        if text_type in ("integer", "float"):
-            try:
-                num = float(val)
-                if "min" in elem_def and num < elem_def["min"]:
-                    result.add(
-                        "ERROR", "DICT",
-                        f"<{tag}> value {val} is below minimum {elem_def['min']}",
-                        line=line, element=path,
-                    )
-                if "max" in elem_def and num > elem_def["max"]:
-                    result.add(
-                        "ERROR", "DICT",
-                        f"<{tag}> value {val} exceeds maximum {elem_def['max']}",
-                        line=line, element=path,
-                    )
-            except ValueError:
-                pass
-
-    # --- required / optional children ---
-    children_def: dict = elem_def.get("children", {})
-    required_children: list = children_def.get("required", [])
-    present_tags = {child.tag for child in elem}
-    for req_child in required_children:
-        if req_child not in present_tags:
-            result.add(
-                "ERROR", "REQUIRED",
-                f"<{tag}> is missing required child element <{req_child}>",
-                line=line, element=path,
-            )
-
-    # warn about unexpected children (if strict list provided)
-    allowed_children = set(required_children) | set(children_def.get("optional", []))
-    if allowed_children:
-        for child in elem:
-            if child.tag not in allowed_children:
-                result.add(
-                    "WARNING", "DICT",
-                    f"<{tag}> contains unexpected child element <{child.tag}>",
-                    line=getattr(child, "sourceline", None),
-                    element=f"{path}/{child.tag}",
-                )
-
-
-def check_data_dict(root: etree._Element, data_dict: dict, result: CheckResult) -> None:
-    elements_def: dict = data_dict.get("elements", {})
-
-    def walk(elem: etree._Element, path: str):
-        tag = elem.tag
-        if tag in elements_def:
-            check_element_against_dict(elem, elements_def[tag], result, path)
-        else:
-            result.add(
-                "WARNING", "DICT",
-                f"Element <{tag}> is not defined in the data dictionary",
-                line=getattr(elem, "sourceline", None),
-                element=path,
-            )
         for child in elem:
             walk(child, f"{path}/{child.tag}")
 
     walk(root, root.tag)
 
-    # check top-level required elements
-    for elem_name, elem_def in elements_def.items():
-        if elem_def.get("required", False) and root.tag != elem_name:
-            # check if it appears anywhere (shallow — only direct children)
-            if root.find(elem_name) is None and root.tag != elem_name:
-                pass  # deep-required checks are done in walk()
 
-
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────────
 # Reporting
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────────
 
-def build_report(result: CheckResult, strict: bool) -> str:
+def build_report(result: Result, strict: bool) -> str:
     out = StringIO()
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    out.write(f"\n{'='*65}\n")
-    out.write(f"  XML CHECKER REPORT\n")
+    out.write(f"\n{'='*70}\n")
+    out.write(f"  KONSULTA PCB XML CHECKER\n")
     out.write(f"  Generated : {ts}\n")
     out.write(f"  File      : {result.xml_file}\n")
     if result.dtd_file:
         out.write(f"  DTD       : {result.dtd_file}\n")
-    if result.dict_file:
-        out.write(f"  Dict      : {result.dict_file}\n")
-    out.write(f"{'='*65}\n\n")
+    if result.libs_dir:
+        out.write(f"  Libraries : {result.libs_dir}\n")
+    out.write(f"{'='*70}\n\n")
 
-    categories = {}
+    by_cat: dict[str, list[Issue]] = {}
     for issue in result.issues:
-        categories.setdefault(issue.category, []).append(issue)
+        by_cat.setdefault(issue.category, []).append(issue)
 
-    for cat, issues in categories.items():
+    for cat, issues in by_cat.items():
         out.write(f"  [{cat}]\n")
         for i in issues:
-            level_str = c(f"  {i.level:<8}", i.level)
+            lvl = c(f"  {i.level:<8}", i.level)
             loc = f"  line {i.line}" if i.line else ""
-            elem = f"  path: {i.element}" if i.element else ""
-            out.write(f"{level_str} {i.message}{loc}{elem}\n")
+            pth = f"  @ {i.path}" if i.path else ""
+            out.write(f"{lvl} {i.message}{loc}{pth}\n")
         out.write("\n")
 
-    # Summary
     errors   = len(result.errors)
     warnings = len(result.warnings)
-    effective_errors = errors + (warnings if strict else 0)
+    fail = not result.passed or (strict and warnings > 0)
 
-    out.write(f"{'─'*65}\n")
-    out.write(f"  Errors: {c(str(errors), 'ERROR')}   Warnings: {c(str(warnings), 'WARNING')}\n")
-
-    if effective_errors == 0:
-        out.write(f"\n  {c('✔  ALL CHECKS PASSED', 'PASS')}\n")
+    out.write(f"{'─'*70}\n")
+    out.write(f"  Errors: {c(str(errors),'ERROR')}   Warnings: {c(str(warnings),'WARNING')}\n")
+    if fail:
+        out.write(f"\n  {c('✘  VALIDATION FAILED','ERROR')}\n")
     else:
-        out.write(f"\n  {c('✘  VALIDATION FAILED', 'ERROR')}\n")
-    out.write(f"{'='*65}\n\n")
-
+        out.write(f"\n  {c('✔  ALL CHECKS PASSED','PASS')}\n")
+    out.write(f"{'='*70}\n\n")
     return out.getvalue()
 
 
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────────
 # Entry point
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────────
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_dtd  = os.path.join(script_dir, "KonsultaData_v1.14_1.dtd")
+    default_libs = os.path.join(script_dir, "LIBRARIES")
+
     p = argparse.ArgumentParser(
-        description="Validate an XML file against a DTD and/or a data dictionary.",
+        description="Validate a KonSulTa PCB XML file.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
     )
     p.add_argument("xml_file", help="Path to the XML file to check")
-    p.add_argument("--dtd",    metavar="FILE", help="Path to DTD file")
-    p.add_argument("--dict",   metavar="FILE", help="Path to data dictionary JSON")
-    p.add_argument("--report", metavar="FILE", help="Write report to this file")
-    p.add_argument("--strict", action="store_true", help="Warnings count as errors")
-    p.add_argument("--no-color", action="store_true", help="Disable colored output")
+    p.add_argument("--dtd",    default=default_dtd,  metavar="FILE",
+                   help=f"DTD file (default: {default_dtd})")
+    p.add_argument("--libs",   default=default_libs, metavar="DIR",
+                   help=f"Libraries folder (default: {default_libs})")
+    p.add_argument("--report", metavar="FILE", help="Write report to file")
+    p.add_argument("--strict", action="store_true",
+                   help="Warnings count as errors")
+    p.add_argument("--no-color", action="store_true",
+                   help="Disable coloured output")
     return p.parse_args()
 
 
@@ -396,48 +800,44 @@ def main() -> int:
     if args.no_color:
         USE_COLOR = False
 
-    # -- file existence checks --
-    for label, path in [("XML file", args.xml_file),
-                         ("DTD file", args.dtd),
-                         ("Data dictionary", args.dict)]:
-        if path and not os.path.isfile(path):
-            print(f"Error: {label} not found: {path}", file=sys.stderr)
-            return 2
+    if not os.path.isfile(args.xml_file):
+        print(f"Error: XML file not found: {args.xml_file}", file=sys.stderr)
+        return 2
 
-    result = CheckResult(
-        xml_file=args.xml_file,
-        dtd_file=args.dtd,
-        dict_file=args.dict,
-    )
+    dtd_path  = args.dtd  if os.path.isfile(args.dtd)   else None
+    libs_dir  = args.libs if os.path.isdir(args.libs)   else None
 
-    # Step 1 — Syntax
+    if not dtd_path:
+        print(f"WARNING: DTD not found at {args.dtd} – DTD check skipped.", file=sys.stderr)
+    if not libs_dir:
+        print(f"WARNING: LIBRARIES folder not found at {args.libs} – library checks skipped.",
+              file=sys.stderr)
+
+    result = Result(xml_file=args.xml_file, dtd_file=dtd_path, libs_dir=libs_dir)
+
+    # 1 – Well-formedness
     root = check_syntax(args.xml_file, result)
 
-    # Step 2 — DTD
-    if args.dtd and root is not None:
-        check_dtd(args.xml_file, args.dtd, result)
+    # 2 – DTD
+    if dtd_path and root is not None:
+        check_dtd(args.xml_file, dtd_path, result)
 
-    # Step 3 — Data dictionary
-    if args.dict and root is not None:
-        data_dict = load_data_dict(args.dict, result)
-        if data_dict:
-            check_data_dict(root, data_dict, result)
+    # 3 – Data dictionary + library lookups
+    if root is not None:
+        libs = load_libraries(libs_dir) if libs_dir else {}
+        check_data_dict(root, libs, result)
 
-    # -- Output --
     report = build_report(result, strict=args.strict)
 
     if args.report:
         with open(args.report, "w", encoding="utf-8") as f:
-            # strip ANSI codes for file output
-            clean = re.sub(r"\033\[[0-9;]*m", "", report)
-            f.write(clean)
+            f.write(strip_ansi(report))
         print(f"Report written to: {args.report}")
     else:
         print(report)
 
-    warnings = len(result.warnings)
-    effective_fail = not result.passed or (args.strict and warnings > 0)
-    return 1 if effective_fail else 0
+    fail = not result.passed or (args.strict and len(result.warnings) > 0)
+    return 1 if fail else 0
 
 
 if __name__ == "__main__":

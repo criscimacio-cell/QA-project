@@ -1,7 +1,10 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+// Load .env from repo root (works whether running from backend/ or root)
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config(); // fallback to local .env if present
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import fs from 'fs';
 import { initDb } from './db';
 import authRoutes from './routes/auth';

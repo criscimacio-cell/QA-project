@@ -1,8 +1,9 @@
 import dotenv from 'dotenv';
 import path from 'path';
 // Load .env from repo root (works whether running from backend/ or root)
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
-dotenv.config(); // fallback to local .env if present
+// Try repo root .env first, then fallback to cwd .env
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';

@@ -68,11 +68,11 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
           }`}
           style={{
             background: searchFocused
-              ? 'rgba(15,23,42,0.9)'
-              : 'rgba(30,41,59,0.6)',
+              ? (dark ? 'rgba(15,23,42,0.9)' : 'rgba(248,250,252,1)')
+              : (dark ? 'rgba(30,41,59,0.6)' : 'rgba(248,250,252,0.9)'),
             border: searchFocused
               ? '1px solid rgba(8,164,156,0.4)'
-              : '1px solid rgba(51,65,85,0.5)',
+              : (dark ? '1px solid rgba(51,65,85,0.5)' : '1px solid rgba(226,232,240,0.8)'),
             backdropFilter: 'blur(12px)',
           }}
         >
@@ -88,7 +88,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             placeholder="Search files, articles, Jira tickets…"
-            className="w-full pl-9 pr-9 h-9 bg-transparent rounded-xl text-sm text-slate-100 placeholder-slate-500 outline-none transition-all duration-300"
+            className="w-full pl-9 pr-9 h-9 bg-transparent rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder-slate-500 outline-none transition-all duration-300"
           />
           {query && (
             <button
@@ -108,8 +108,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
         {/* Theme toggle */}
         <button
           onClick={toggle}
-          className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-teal-400 transition-all duration-200"
-          style={{ background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(51,65,85,0.4)' }}
+          className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-500 dark:hover:text-teal-400 transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50"
           title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           <div className="transition-all duration-300" style={{ transform: dark ? 'rotate(0deg)' : 'rotate(180deg)' }}>
@@ -120,8 +119,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
         {/* Notifications */}
         <div className="relative" ref={notifRef}>
           <button
-            className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-teal-400 transition-all duration-200"
-            style={{ background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(51,65,85,0.4)' }}
+            className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:text-teal-500 dark:hover:text-teal-400 transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50"
             onClick={() => { setShowNotif(s => !s); setShowUser(false); }}
             title="Notifications"
           >
@@ -136,25 +134,22 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
 
           {showNotif && (
             <div
-              className="absolute right-0 top-12 rounded-2xl overflow-hidden z-50 dropdown-menu"
+              className="absolute right-0 top-12 rounded-2xl overflow-hidden z-50 dropdown-menu bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60"
               style={{
                 width: '340px',
-                background: 'rgba(15,23,42,0.97)',
-                border: '1px solid rgba(51,65,85,0.6)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                boxShadow: dark ? '0 20px 60px rgba(0,0,0,0.6)' : '0 20px 40px rgba(0,0,0,0.12)',
                 backdropFilter: 'blur(24px)',
               }}
             >
               {/* Header */}
               <div
-                className="flex items-center justify-between px-4 py-3.5"
+                className="flex items-center justify-between px-4 py-3.5 border-b border-slate-200 dark:border-slate-700/50"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(8,164,156,0.1), rgba(6,182,212,0.05))',
-                  borderBottom: '1px solid rgba(51,65,85,0.5)',
+                  background: 'linear-gradient(135deg, rgba(8,164,156,0.07), rgba(6,182,212,0.04))',
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-sm text-white">Notifications</span>
+                  <span className="font-semibold text-sm text-slate-800 dark:text-white">Notifications</span>
                   {notifCount > 0 && (
                     <span
                       className="px-1.5 py-0.5 rounded-full text-xs font-bold text-white"

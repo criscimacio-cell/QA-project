@@ -44,9 +44,9 @@ export default function AppLayout() {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      {/* ── Floating background orbs ── */}
-      <div className="pointer-events-none" aria-hidden="true">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-cyan-50/30 dark:bg-slate-950 dark:bg-none">
+      {/* ── Floating background orbs (dark mode only) ── */}
+      <div className="pointer-events-none hidden dark:block" aria-hidden="true">
         {/* Orb 1 – teal top-left */}
         <div
           className="fixed rounded-full"

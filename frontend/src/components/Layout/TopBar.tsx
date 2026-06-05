@@ -169,7 +169,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
               </div>
 
               {/* Items */}
-              <div className="divide-y divide-slate-800/60 max-h-72 overflow-y-auto">
+              <div className="divide-y divide-slate-200 dark:divide-slate-800/60 max-h-72 overflow-y-auto">
                 {notifs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400">
                     <Bell size={28} className="opacity-30" />
@@ -178,8 +178,8 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                 ) : notifs.map((n, i) => (
                   <div
                     key={n.id}
-                    className={`notif-item px-4 py-3 cursor-pointer transition-colors hover:bg-slate-800/50 ${
-                      !n.read ? 'bg-teal-900/10' : ''
+                    className={`notif-item px-4 py-3 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
+                      !n.read ? 'bg-teal-50/50 dark:bg-teal-900/10' : ''
                     }`}
                     style={{ animationDelay: `${i * 40}ms` }}
                   >
@@ -195,13 +195,13 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                         {notifIcons[n.type] || 'ℹ️'}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-semibold text-slate-100 leading-snug">
+                        <div className="text-xs font-semibold text-slate-700 dark:text-slate-100 leading-snug">
                           {n.title}
                         </div>
-                        <div className="text-xs text-slate-400 mt-0.5 leading-snug line-clamp-2">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2">
                           {n.message}
                         </div>
-                        <div className="text-xs text-slate-600 mt-1">
+                        <div className="text-xs text-slate-400 dark:text-slate-600 mt-1">
                           {new Date(n.created_at).toLocaleString()}
                         </div>
                       </div>
@@ -218,8 +218,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
 
               {/* Footer */}
               <div
-                className="px-4 py-3 text-center"
-                style={{ borderTop: '1px solid rgba(51,65,85,0.5)' }}
+                className="px-4 py-3 text-center border-t border-slate-200 dark:border-slate-700/50"
               >
                 <button
                   className="text-xs font-medium transition-colors hover:underline"
@@ -233,28 +232,25 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
         </div>
 
         {/* Divider */}
-        <div className="w-px h-6 bg-slate-700/60 mx-1" />
+        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700/60 mx-1" />
 
         {/* User menu */}
         <div className="relative" ref={userRef}>
           <button
-            className="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl transition-all duration-200"
-            style={{ background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(51,65,85,0.4)' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(8,164,156,0.35)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(51,65,85,0.4)'; }}
+            className="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 hover:border-teal-400/50"
             onClick={() => { setShowUser(s => !s); setShowNotif(false); }}
           >
             <div className="relative flex-shrink-0">
               <img
                 src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
                 alt=""
-                className="w-8 h-8 rounded-full bg-slate-800"
+                className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800"
                 style={{ border: '2px solid rgba(8,164,156,0.4)' }}
               />
               <span className="online-indicator" />
             </div>
             <div className="text-left hidden sm:block">
-              <div className="text-xs font-semibold text-white leading-none">
+              <div className="text-xs font-semibold text-slate-800 dark:text-white leading-none">
                 {user?.name?.split(' ')[0]}
               </div>
               <div className="text-xs capitalize leading-none mt-0.5 font-medium" style={{ color: '#08a49c' }}>
@@ -269,20 +265,17 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
 
           {showUser && (
             <div
-              className="absolute right-0 top-12 w-52 rounded-xl overflow-hidden z-50 dropdown-menu"
+              className="absolute right-0 top-12 w-52 rounded-xl overflow-hidden z-50 dropdown-menu bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60"
               style={{
-                background: 'rgba(15,23,42,0.97)',
-                border: '1px solid rgba(51,65,85,0.6)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                boxShadow: dark ? '0 20px 60px rgba(0,0,0,0.6)' : '0 20px 40px rgba(0,0,0,0.12)',
                 backdropFilter: 'blur(24px)',
               }}
             >
               {/* User info header */}
               <div
-                className="px-4 py-3.5"
+                className="px-4 py-3.5 border-b border-slate-200 dark:border-slate-700/50"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(8,164,156,0.1), rgba(6,182,212,0.05))',
-                  borderBottom: '1px solid rgba(51,65,85,0.5)',
+                  background: 'linear-gradient(135deg, rgba(8,164,156,0.07), rgba(6,182,212,0.04))',
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -296,10 +289,10 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                     <span className="online-indicator" style={{ width: '9px', height: '9px' }} />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-white truncate leading-tight">
+                    <div className="text-sm font-semibold text-slate-800 dark:text-white truncate leading-tight">
                       {user?.name}
                     </div>
-                    <div className="text-xs text-slate-400 truncate mt-0.5">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                       {user?.email}
                     </div>
                   </div>
@@ -308,7 +301,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
 
               {/* Menu items */}
               <div className="py-1">
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/60 transition-colors">
+                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
                   <div
                     className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: 'rgba(8,164,156,0.1)' }}
@@ -318,7 +311,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                   <span className="font-medium">My Profile</span>
                 </button>
 
-                <div className="mx-3 my-1 h-px bg-slate-800/60" />
+                <div className="mx-3 my-1 h-px bg-slate-200 dark:bg-slate-800/60" />
 
                 <button
                   onClick={logout}

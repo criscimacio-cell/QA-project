@@ -124,11 +124,11 @@ export default function FileManager() {
     : '';
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">File Manager</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage all QA files and assets</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">File Manager</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage all QA files and assets</p>
         </div>
         <button onClick={() => setShowBulkUpload(true)} className="btn-primary">
           <Upload size={15} /> Bulk Upload
@@ -282,7 +282,7 @@ export default function FileManager() {
                 <button onClick={() => setShowApprove(true)} className="btn-primary">Review / Approve</button>
               )}
               {selected.status === 'archived' && (
-                <button onClick={() => { doRestore(selected.id); setSelected(null); }} className="btn-primary" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                <button onClick={() => { doRestore(selected.id); setSelected(null); }} className="btn-primary">
                   <RotateCcw size={15} /> Restore
                 </button>
               )}

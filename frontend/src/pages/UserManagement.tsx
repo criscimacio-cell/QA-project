@@ -4,12 +4,6 @@ import api from '../api/client';
 import Modal from '../components/UI/Modal';
 
 const ROLES = ['admin', 'lead', 'engineer', 'viewer'];
-const ROLE_STYLES: Record<string, string> = {
-  admin: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  lead: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  engineer: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  viewer: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-};
 
 export default function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
@@ -40,11 +34,11 @@ export default function UserManagement() {
   const roleCount = (role: string) => users.filter(u => u.role === role).length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage team members and access control</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">User Management</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage team members and access control</p>
         </div>
         <button onClick={() => { setEditing(null); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); setShowModal(true); }} className="btn-primary">
           <Plus size={16} /> Add User
@@ -55,24 +49,24 @@ export default function UserManagement() {
       <div className="grid grid-cols-4 gap-4">
         {ROLES.map(r => (
           <div key={r} className="card p-4 text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{roleCount(r)}</div>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize mt-1 inline-block ${ROLE_STYLES[r]}`}>{r === 'admin' ? 'QA Admin' : r === 'lead' ? 'QA Lead' : r === 'engineer' ? 'QA Engineer' : 'Viewer'}</span>
+            <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{roleCount(r)}</div>
+            <span className={`badge-${r} mt-1 inline-flex`}>{r === 'admin' ? 'QA Admin' : r === 'lead' ? 'QA Lead' : r === 'engineer' ? 'QA Engineer' : 'Viewer'}</span>
           </div>
         ))}
       </div>
 
       {/* Permission Matrix */}
       <div className="card p-5">
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Permission Matrix</h3>
+        <h3 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4">Permission Matrix</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Permission</th>
-                {['QA Admin', 'QA Lead', 'QA Engineer', 'Viewer'].map(r => <th key={r} className="py-2 px-3 text-xs font-semibold text-gray-500 uppercase text-center">{r}</th>)}
+                <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Permission</th>
+                {['QA Admin', 'QA Lead', 'QA Engineer', 'Viewer'].map(r => <th key={r} className="py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-center">{r}</th>)}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {[
                 ['Upload Files', true, true, true, false],
                 ['Download Files', true, true, true, true],
@@ -85,11 +79,11 @@ export default function UserManagement() {
                 ['Audit Logs', true, true, false, false],
                 ['System Settings', true, false, false, false],
               ].map(([label, ...perms]) => (
-                <tr key={label as string} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <td className="py-2.5 px-3 text-gray-700 dark:text-gray-300 text-sm font-medium">{label as string}</td>
+                <tr key={label as string} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 text-sm font-medium">{label as string}</td>
                   {(perms as boolean[]).map((p, i) => (
                     <td key={i} className="py-2.5 px-3 text-center">
-                      {p ? <span className="text-green-500 text-lg">✓</span> : <span className="text-gray-300 dark:text-gray-600 text-lg">✗</span>}
+                      {p ? <span className="text-emerald-500 text-lg">✓</span> : <span className="text-slate-300 dark:text-slate-600 text-lg">✗</span>}
                     </td>
                   ))}
                 </tr>
@@ -103,43 +97,43 @@ export default function UserManagement() {
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800/50">
+            <thead className="bg-slate-50 dark:bg-slate-800/50">
               <tr>
                 {['User', 'Role', 'Department', 'Status', 'Last Login', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {users.map(u => (
-                <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <img src={u.avatar} alt="" className="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0" />
+                      <img src={u.avatar} alt="" className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0" />
                       <div>
-                        <div className="font-medium text-gray-900 dark:text-gray-100">{u.name}</div>
-                        <div className="text-xs text-gray-400">{u.email}</div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">{u.name}</div>
+                        <div className="text-xs text-slate-400">{u.email}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${ROLE_STYLES[u.role]}`}>
+                    <span className={`badge-${u.role}`}>
                       {u.role === 'admin' ? 'QA Admin' : u.role === 'lead' ? 'QA Lead' : u.role === 'engineer' ? 'QA Engineer' : 'Viewer'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{u.department || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{u.department || '—'}</td>
                   <td className="px-4 py-3">
                     {u.active ? (
-                      <span className="badge bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Active</span>
+                      <span className="badge-approved">Active</span>
                     ) : (
-                      <span className="badge bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">Inactive</span>
+                      <span className="badge-archived">Inactive</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-400">{u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
+                  <td className="px-4 py-3 text-xs text-slate-400">{u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => startEdit(u)} title="Edit" className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"><Edit2 size={14} /></button>
-                      <button onClick={() => toggleActive(u)} title={u.active ? 'Deactivate' : 'Activate'} className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${u.active ? 'text-red-400' : 'text-green-500'}`}>
+                      <button onClick={() => startEdit(u)} title="Edit" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Edit2 size={14} /></button>
+                      <button onClick={() => toggleActive(u)} title={u.active ? 'Deactivate' : 'Activate'} className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 ${u.active ? 'text-red-400' : 'text-emerald-500'}`}>
                         {u.active ? <UserX size={14} /> : <UserCheck size={14} />}
                       </button>
                     </div>

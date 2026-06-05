@@ -204,7 +204,7 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-fade-in-up">
 
       {/* ── Header / Greeting ── */}
       <div

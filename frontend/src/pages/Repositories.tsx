@@ -581,8 +581,7 @@ export default function Repositories() {
             <button
               onClick={doDelete}
               disabled={saving}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)' }}
+              className="btn-danger"
             >
               {saving ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
               Delete

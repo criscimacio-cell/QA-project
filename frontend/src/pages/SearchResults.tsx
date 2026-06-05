@@ -39,10 +39,10 @@ export default function SearchResults() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       {/* Search bar */}
       <form onSubmit={handleSearch} className="relative">
-        <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
@@ -60,7 +60,7 @@ export default function SearchResults() {
             { id: 'files', label: `Files (${results.files?.length || 0})` },
             { id: 'knowledge', label: `Knowledge (${results.knowledge?.length || 0})` },
           ].map(f => (
-            <button key={f.id} onClick={() => setFilter(f.id)} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === f.id ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'}`}>
+            <button key={f.id} onClick={() => setFilter(f.id)} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === f.id ? 'bg-[#08a49c] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}>
               {f.label}
             </button>
           ))}
@@ -69,13 +69,13 @@ export default function SearchResults() {
 
       {/* No query */}
       {!q && (
-        <div className="card p-12 text-center text-gray-400">
-          <Search size={48} className="mx-auto mb-4 opacity-20" />
-          <p className="text-lg font-medium text-gray-600 dark:text-gray-300">Search Q-KTAMP</p>
-          <p className="text-sm mt-1">Search across files, knowledge articles, Jira tickets, tags, and more</p>
+        <div className="card p-12 text-center">
+          <Search size={48} className="mx-auto mb-4 opacity-20 text-slate-400" />
+          <p className="text-lg font-medium text-slate-600 dark:text-slate-300">Search Q-KTAMP</p>
+          <p className="text-sm mt-1 text-slate-400">Search across files, knowledge articles, Jira tickets, tags, and more</p>
           <div className="mt-6 flex flex-wrap gap-2 justify-center">
             {['CF4 Pemisc', 'ETL Template', 'API Testing', 'RCA Report', 'QA-123'].map(s => (
-              <button key={s} onClick={() => navigate(`/search?q=${encodeURIComponent(s)}`)} className="text-sm bg-gray-100 dark:bg-gray-800 hover:bg-primary-50 dark:hover:bg-primary-900/20 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-1.5 rounded-full transition-colors">
+              <button key={s} onClick={() => navigate(`/search?q=${encodeURIComponent(s)}`)} className="text-sm bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/20 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-1.5 rounded-full transition-colors">
                 {s}
               </button>
             ))}
@@ -86,43 +86,43 @@ export default function SearchResults() {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-2 border-[#08a49c] border-t-transparent rounded-full" />
         </div>
       )}
 
       {/* Results */}
       {results && !loading && (
         <>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Found <strong>{results.total}</strong> results for "<strong>{q}</strong>"
           </p>
 
           {results.total === 0 && (
-            <div className="card p-8 text-center text-gray-400">
-              <p className="font-medium text-gray-600 dark:text-gray-300">No results found</p>
-              <p className="text-sm mt-1">Try different keywords or check the spelling</p>
+            <div className="card p-8 text-center">
+              <p className="font-medium text-slate-600 dark:text-slate-300">No results found</p>
+              <p className="text-sm mt-1 text-slate-400">Try different keywords or check the spelling</p>
             </div>
           )}
 
           {/* File results */}
           {(filter === 'all' || filter === 'files') && results.files?.length > 0 && (
             <div className="space-y-3">
-              <h2 className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <FileText size={18} className="text-primary-500" /> Files
+              <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                <FileText size={18} className="text-[#08a49c]" /> Files
               </h2>
               {results.files.map((f: any) => (
-                <div key={f.id} className="card p-4 hover:shadow-md hover:border-primary-200 dark:hover:border-primary-800 transition-all">
+                <div key={f.id} className="card p-4 hover:shadow-md hover:border-teal-200 dark:hover:border-teal-800 transition-all">
                   <div className="flex items-start gap-4">
                     <FileIcon mimeType={f.mime_type} name={f.original_name} size={28} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100" dangerouslySetInnerHTML={{ __html: highlight(f.name, q) }} />
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlight(f.name, q) }} />
                         <StatusBadge status={f.status} />
                         {f.jira_ticket && (
                           <span className="text-xs text-blue-600 font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded" dangerouslySetInnerHTML={{ __html: highlight(f.jira_ticket, q) }} />
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1 space-x-3">
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 space-x-3">
                         <span>{f.repository_name}</span>
                         <span>·</span>
                         <span dangerouslySetInnerHTML={{ __html: highlight(f.project, q) }} />
@@ -134,17 +134,17 @@ export default function SearchResults() {
                         <span>{f.owner_name}</span>
                       </div>
                       {f.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1.5 line-clamp-2" dangerouslySetInnerHTML={{ __html: highlight(f.description, q) }} />
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1.5 line-clamp-2" dangerouslySetInnerHTML={{ __html: highlight(f.description, q) }} />
                       )}
                       {f.tags && (
                         <div className="flex gap-1 flex-wrap mt-2">
                           {f.tags.split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string) => (
-                            <span key={t} className={`text-xs px-1.5 py-0.5 rounded border ${f.tags.toLowerCase().includes(q.toLowerCase()) ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'}`}>#{t}</span>
+                            <span key={t} className={`text-xs px-1.5 py-0.5 rounded border ${f.tags.toLowerCase().includes(q.toLowerCase()) ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}>#{t}</span>
                           ))}
                         </div>
                       )}
                     </div>
-                    <button onClick={() => window.open(`/api/files/${f.id}/download`, '_blank')} className="btn-ghost p-2 flex-shrink-0 text-primary-500">
+                    <button onClick={() => window.open(`/api/files/${f.id}/download`, '_blank')} className="btn-ghost p-2 flex-shrink-0 text-teal-500">
                       <Download size={16} />
                     </button>
                   </div>
@@ -156,7 +156,7 @@ export default function SearchResults() {
           {/* Knowledge results */}
           {(filter === 'all' || filter === 'knowledge') && results.knowledge?.length > 0 && (
             <div className="space-y-3 mt-4">
-              <h2 className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
                 <BookOpen size={18} className="text-purple-500" /> Knowledge Articles
               </h2>
               {results.knowledge.map((a: any) => (
@@ -166,19 +166,19 @@ export default function SearchResults() {
                       <BookOpen size={18} className="text-purple-600 dark:text-purple-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100" dangerouslySetInnerHTML={{ __html: highlight(a.title, q) }} />
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlight(a.title, q) }} />
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         <span className="text-purple-600 dark:text-purple-400 font-medium">{a.category}</span> · {a.author_name} · {new Date(a.updated_at).toLocaleDateString()}
                       </div>
                       {a.tags && (
                         <div className="flex gap-1 flex-wrap mt-1.5">
                           {a.tags.split(',').map((t: string) => t.trim()).filter(Boolean).slice(0, 4).map((t: string) => (
-                            <span key={t} className="text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 px-1.5 py-0.5 rounded">#{t}</span>
+                            <span key={t} className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 px-1.5 py-0.5 rounded">#{t}</span>
                           ))}
                         </div>
                       )}
                     </div>
-                    <ExternalLink size={14} className="text-gray-300 flex-shrink-0 mt-1" />
+                    <ExternalLink size={14} className="text-slate-300 flex-shrink-0 mt-1" />
                   </div>
                 </div>
               ))}

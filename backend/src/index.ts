@@ -18,6 +18,11 @@ import dashboardRoutes from './routes/dashboard';
 import notifRoutes from './routes/notifications';
 import auditRoutes from './routes/audit';
 
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');

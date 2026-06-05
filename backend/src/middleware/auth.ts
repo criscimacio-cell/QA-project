@@ -2,11 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../types';
 
-if (!process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
-  process.exit(1);
-}
-const JWT_SECRET = process.env.JWT_SECRET as string;
+export const JWT_SECRET = () => process.env.JWT_SECRET as string;
 
 export function authenticate(req: Request, res: Response, next: NextFunction) {
   const token = req.headers.authorization?.split(' ')[1];
@@ -15,7 +11,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     return;
   }
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const payload = jwt.verify(token, JWT_SECRET()) as JwtPayload;
     req.user = payload;
     next();
   } catch {
@@ -33,4 +29,3 @@ export function requireRole(...roles: string[]) {
   };
 }
 
-export { JWT_SECRET };

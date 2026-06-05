@@ -3,6 +3,25 @@ import {
   Files, Users, Upload, Clock, BookOpen, HardDrive,
   Activity, TrendingUp, ArrowUpRight, Sparkles
 } from 'lucide-react';
+
+/* ── 3D tilt hook ── */
+function useTilt(intensity = 12) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const onMove = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      el.style.transform = `perspective(800px) rotateY(${x * intensity}deg) rotateX(${-y * intensity}deg) translateZ(8px) scale(1.02)`;
+    };
+    const onLeave = () => { el.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) translateZ(0) scale(1)'; };
+    el.addEventListener('mousemove', onMove);
+    el.addEventListener('mouseleave', onLeave);
+    return () => { el.removeEventListener('mousemove', onMove); el.removeEventListener('mouseleave', onLeave); };
+  }, [intensity]);
+  return ref;
+}
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
@@ -35,7 +54,7 @@ function useCountUp(target: number, duration = 900, active = false) {
   return value;
 }
 
-/* ── Stat card with animated counter ── */
+/* ── Stat card with animated counter + 3D tilt ── */
 function StatCard({
   icon: Icon, label, value, sub, gradient, delay = 0,
 }: {
@@ -43,7 +62,7 @@ function StatCard({
   sub?: string; gradient: string; delay?: number;
 }) {
   const [visible, setVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const tiltRef = useTilt(10);
   const isNumeric = typeof value === 'number';
   const count = useCountUp(isNumeric ? (value as number) : 0, 900, visible && isNumeric);
 
@@ -56,23 +75,28 @@ function StatCard({
 
   return (
     <div
-      ref={ref}
-      className="stat-card p-5 animate-fade-in-up"
+      ref={tiltRef}
+      className="stat-card-dark card-3d p-5 animate-fade-in-up"
       style={{ animationDelay: `${delay}ms`, opacity: 0 }}
     >
+      {/* Top shimmer line */}
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(8,164,156,0.4), transparent)' }}
+      />
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             {label}
           </p>
           <p
-            className="stat-number mt-2"
+            className="stat-number-neon mt-2"
             style={{ animation: visible ? 'countUp 0.4s ease forwards' : 'none' }}
           >
             {displayValue}
           </p>
           {sub && (
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1">
+            <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
               <ArrowUpRight size={11} className="text-[#08a49c]" />
               {sub}
             </p>
@@ -82,7 +106,7 @@ function StatCard({
           className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ml-4"
           style={{
             background: gradient,
-            boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.3)',
           }}
         >
           <Icon size={22} className="text-white" />
@@ -252,13 +276,13 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Upload Trend */}
-        <div className="card p-5 lg:col-span-2 animate-fade-in-up stagger-4">
+        <div className="stat-card-dark p-5 lg:col-span-2 animate-fade-in-up stagger-4">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+              <h3 className="font-bold text-white text-sm">
                 Upload Trend
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Last 7 days</p>
+              <p className="text-xs text-slate-500 mt-0.5">Last 7 days</p>
             </div>
             <div
               className="px-2.5 py-1 rounded-lg text-xs font-semibold"
@@ -305,10 +329,10 @@ export default function Dashboard() {
         </div>
 
         {/* Status Breakdown */}
-        <div className="card p-5 animate-fade-in-up stagger-5">
+        <div className="stat-card-dark p-5 animate-fade-in-up stagger-5">
           <div className="mb-5">
-            <h3 className="font-bold text-slate-900 dark:text-white text-sm">File Status</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Distribution</p>
+            <h3 className="font-bold text-white text-sm">File Status</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Distribution</p>
           </div>
           <ResponsiveContainer width="100%" height={160}>
             <PieChart>
@@ -340,10 +364,10 @@ export default function Dashboard() {
                   className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                   style={{ background: STATUS_COLORS[s.status] || '#9ca3af' }}
                 />
-                <span className="text-slate-600 dark:text-slate-400 capitalize flex-1">
+                <span className="text-slate-400 capitalize flex-1">
                   {s.status.replace('_', ' ')}
                 </span>
-                <span className="font-bold text-slate-900 dark:text-slate-100">{s.count}</span>
+                <span className="font-bold text-slate-100">{s.count}</span>
               </div>
             ))}
           </div>
@@ -352,11 +376,11 @@ export default function Dashboard() {
 
       {/* ── Repository Usage ── */}
       {stats.repositoryStats?.length > 0 && (
-        <div className="card p-4 animate-fade-in-up stagger-5">
+        <div className="stat-card-dark p-4 animate-fade-in-up stagger-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Repository Usage</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Files per repository</p>
+              <h3 className="font-bold text-white text-sm">Repository Usage</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Files per repository</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
@@ -395,11 +419,11 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Recent Activity */}
-        <div className="card p-5 animate-fade-in-up stagger-6">
+        <div className="stat-card-dark p-5 animate-fade-in-up stagger-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Recent Activity</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Latest team actions</p>
+              <h3 className="font-bold text-white text-sm">Recent Activity</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Latest team actions</p>
             </div>
             <div
               className="w-2 h-2 rounded-full"
@@ -426,7 +450,7 @@ export default function Dashboard() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      <span className="text-xs font-semibold text-slate-100">
                         {item.user_name || 'System'}
                       </span>
                       <span
@@ -450,11 +474,11 @@ export default function Dashboard() {
         </div>
 
         {/* Top Files (Most Downloaded) */}
-        <div className="card p-5 animate-fade-in-up stagger-7">
+        <div className="stat-card-dark p-5 animate-fade-in-up stagger-7">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Top Files</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Most downloaded assets</p>
+              <h3 className="font-bold text-white text-sm">Top Files</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Most downloaded assets</p>
             </div>
             <span
               className="text-xs font-semibold px-2.5 py-1 rounded-lg"
@@ -488,10 +512,10 @@ export default function Dashboard() {
                       {i + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      <div className="text-xs font-semibold text-slate-100 truncate">
                         {f.name}
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                      <div className="text-xs text-slate-500 mt-0.5 truncate">
                         {f.project} · {f.category}
                       </div>
                       <div className="progress-bar mt-1.5">

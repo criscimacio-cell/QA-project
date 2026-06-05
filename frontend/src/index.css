@@ -183,6 +183,29 @@
   to { opacity: 1; transform: translateX(0); }
 }
 
+/* ── 3D / Premium design system additions ── */
+@keyframes aurora {
+  0%, 100% { transform: translate(0%, 0%) scale(1); }
+  33% { transform: translate(2%, -2%) scale(1.05); }
+  66% { transform: translate(-2%, 2%) scale(0.95); }
+}
+
+@keyframes float-orb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -20px) scale(1.08); }
+}
+
+@keyframes float-orb-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-25px, 18px) scale(1.06); }
+}
+
+@keyframes float-orb-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(18px, -28px) scale(1.1); }
+  80% { transform: translate(-12px, 10px) scale(0.94); }
+}
+
 /* ============================================================
    REDUCED MOTION SUPPORT
    ============================================================ */
@@ -1129,6 +1152,73 @@
   /* ---- NOTIF ITEM ---- */
   .notif-item {
     animation: notifSlideIn 0.25s ease both;
+  }
+
+  /* ---- 3D CARD TILT ---- */
+  .card-3d {
+    transform-style: preserve-3d;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    will-change: transform;
+  }
+
+  /* ---- NEON GLOW NAV ---- */
+  .nav-glow {
+    box-shadow: 0 0 20px rgba(8,164,156,0.4), inset 0 0 20px rgba(8,164,156,0.1);
+  }
+
+  /* ---- DARK GLASS STAT CARD ---- */
+  .stat-card-dark {
+    background: rgba(15,23,42,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(51,65,85,0.5);
+    border-radius: 1rem;
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s ease;
+    will-change: transform;
+  }
+  .stat-card-dark::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(8,164,156,0.5), transparent);
+  }
+  .stat-card-dark:hover {
+    border-color: rgba(8,164,156,0.3);
+    box-shadow: 0 0 30px rgba(8,164,156,0.12), 0 20px 40px rgba(0,0,0,0.4);
+  }
+
+  /* ---- NEON STAT NUMBER ---- */
+  .stat-number-neon {
+    font-size: 1.875rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #5eead4, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 8px rgba(8,164,156,0.4));
+  }
+
+  /* ---- PREMIUM SIDEBAR ---- */
+  .sidebar-premium {
+    background: rgba(2,6,23,0.97);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(51,65,85,0.5);
+  }
+
+  /* ---- PREMIUM TOPBAR ---- */
+  .topbar-premium {
+    background: rgba(15,23,42,0.85);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 1px solid rgba(51,65,85,0.5);
+    box-shadow: 0 1px 30px rgba(0,0,0,0.4);
   }
 
   /* ---- CHART TOOLTIP ---- */

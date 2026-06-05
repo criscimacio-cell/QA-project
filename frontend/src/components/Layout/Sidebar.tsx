@@ -41,19 +41,18 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={clsx(
-        'fixed left-0 top-0 h-full flex flex-col z-40 transition-all duration-300 ease-in-out',
-        'glass-sidebar',
+        'fixed left-0 top-0 h-full flex flex-col z-40 transition-all duration-300 ease-in-out sidebar-premium',
         collapsed ? 'w-16' : 'w-64',
       )}
       style={{
-        boxShadow: '2px 0 20px rgba(0,0,0,0.06)',
+        boxShadow: '2px 0 40px rgba(0,0,0,0.5), 1px 0 0 rgba(8,164,156,0.08)',
       }}
     >
-      {/* Dark mode subtle gradient overlay */}
+      {/* Subtle teal gradient overlay */}
       <div
-        className="absolute inset-0 pointer-events-none rounded-none opacity-0 dark:opacity-100 transition-opacity"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(180deg, rgba(8,164,156,0.04) 0%, transparent 40%, rgba(6,182,212,0.02) 100%)',
+          background: 'linear-gradient(180deg, rgba(8,164,156,0.05) 0%, transparent 30%, rgba(6,182,212,0.03) 100%)',
         }}
       />
 
@@ -61,11 +60,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div
         className={clsx(
           'relative z-10 flex items-center gap-3 px-3 border-b transition-all duration-300',
-          'border-slate-100 dark:border-slate-800/80',
+          'border-slate-800/60',
           collapsed ? 'py-[1.125rem] justify-center' : 'py-[1.125rem] px-4',
         )}
         style={{
-          background: 'linear-gradient(135deg, rgba(8,164,156,0.06), rgba(6,182,212,0.03))',
+          background: 'linear-gradient(135deg, rgba(8,164,156,0.08), rgba(6,182,212,0.04))',
         }}
       >
         {/* Animated border line at bottom of logo area */}
@@ -86,10 +85,19 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
         {!collapsed && (
           <div className="animate-fade-in overflow-hidden">
-            <div className="font-extrabold text-sm text-slate-900 dark:text-white tracking-tight">
+            <div
+              className="font-extrabold text-sm tracking-tight"
+              style={{
+                background: 'linear-gradient(135deg, #5eead4, #06b6d4)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                filter: 'drop-shadow(0 0 6px rgba(8,164,156,0.5))',
+              }}
+            >
               Q-KTAMP
             </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            <div className="text-xs text-slate-500 font-medium">
               QA Asset Platform
             </div>
           </div>
@@ -97,13 +105,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </div>
 
       {/* ── Navigation ── */}
-      <nav className="relative z-10 flex-1 overflow-y-auto py-4 space-y-5 px-2">
+      <nav className="relative z-10 flex-1 overflow-y-auto py-4 space-y-5 px-2 scrollbar-thin">
         {nav.map(section => (
           <div key={section.section}>
             {!collapsed && (
               <div
                 className="px-3 mb-2 text-xs font-bold uppercase tracking-widest animate-fade-in"
-                style={{ color: 'rgba(8,164,156,0.6)' }}
+                style={{ color: 'rgba(94,234,212,0.5)' }}
               >
                 {section.section}
               </div>
@@ -112,7 +120,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <div className="px-1.5 mb-2">
                 <div
                   className="h-px w-full rounded-full"
-                  style={{ background: 'rgba(8,164,156,0.2)' }}
+                  style={{ background: 'rgba(8,164,156,0.25)' }}
                 />
               </div>
             )}
@@ -159,7 +167,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             {!collapsed && (
               <div
                 className="px-3 mb-2 text-xs font-bold uppercase tracking-widest animate-fade-in"
-                style={{ color: 'rgba(239,68,68,0.55)' }}
+                style={{ color: 'rgba(252,165,165,0.5)' }}
               >
                 Admin
               </div>
@@ -211,9 +219,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* ── User card ── */}
       <div
-        className="relative z-10 p-3 border-t border-slate-100 dark:border-slate-800/80"
+        className="relative z-10 p-3 border-t border-slate-800/60"
         style={{
-          background: 'linear-gradient(135deg, rgba(8,164,156,0.04), rgba(6,182,212,0.02))',
+          background: 'linear-gradient(135deg, rgba(8,164,156,0.05), rgba(6,182,212,0.03))',
         }}
       >
         {!collapsed ? (
@@ -221,55 +229,57 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             onClick={logout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
             style={{
-              background: 'rgba(248,250,252,0.8)',
-              border: '1px solid rgba(226,232,240,0.7)',
+              background: 'rgba(15,23,42,0.8)',
+              border: '1px solid rgba(51,65,85,0.6)',
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(8,164,156,0.06)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(8,164,156,0.2)';
+              (e.currentTarget as HTMLElement).style.background = 'rgba(8,164,156,0.08)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(8,164,156,0.35)';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(248,250,252,0.8)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(226,232,240,0.7)';
+              (e.currentTarget as HTMLElement).style.background = 'rgba(15,23,42,0.8)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(51,65,85,0.6)';
             }}
           >
             <div className="relative flex-shrink-0">
-              <img
-                src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-                alt=""
-                className="w-8 h-8 rounded-full bg-slate-200"
-                style={{ border: '2px solid rgba(8,164,156,0.3)' }}
-              />
-              <span className="online-indicator" />
+              <div style={{ padding: '2px', background: 'linear-gradient(135deg, #08a49c, #06b6d4)', borderRadius: '50%' }}>
+                <img
+                  src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+                  alt=""
+                  className="w-8 h-8 rounded-full bg-slate-800 block"
+                />
+              </div>
+              <span className="online-indicator" style={{ borderColor: '#020617' }} />
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <div className="text-xs font-semibold text-slate-900 dark:text-white truncate leading-none">
+              <div className="text-xs font-semibold text-white truncate leading-none">
                 {user?.name}
               </div>
               <div
                 className="text-xs font-medium capitalize mt-0.5 truncate"
-                style={{ color: '#08a49c' }}
+                style={{ color: '#5eead4' }}
               >
                 {user?.role}
               </div>
             </div>
             <LogOut
               size={14}
-              className="text-slate-400 group-hover:text-red-400 transition-colors flex-shrink-0"
+              className="text-slate-500 group-hover:text-red-400 transition-colors flex-shrink-0"
             />
           </button>
         ) : (
           <div className="flex justify-center">
             <div className="relative">
-              <img
-                src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-                alt=""
-                className="w-8 h-8 rounded-full bg-slate-200 cursor-pointer hover:opacity-80 transition-opacity"
-                style={{ border: '2px solid rgba(8,164,156,0.35)' }}
-                onClick={logout}
-                title={`${user?.name} · Sign out`}
-              />
-              <span className="online-indicator" />
+              <div style={{ padding: '2px', background: 'linear-gradient(135deg, #08a49c, #06b6d4)', borderRadius: '50%' }}>
+                <img
+                  src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+                  alt=""
+                  className="w-8 h-8 rounded-full bg-slate-800 cursor-pointer hover:opacity-80 transition-opacity block"
+                  onClick={logout}
+                  title={`${user?.name} · Sign out`}
+                />
+              </div>
+              <span className="online-indicator" style={{ borderColor: '#020617' }} />
             </div>
           </div>
         )}
@@ -280,9 +290,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         onClick={onToggle}
         className="absolute -right-3.5 top-[4.5rem] w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 z-50"
         style={{
-          background: 'white',
-          border: '1.5px solid rgba(8,164,156,0.25)',
-          boxShadow: '0 2px 10px rgba(8,164,156,0.2)',
+          background: '#0f172a',
+          border: '1.5px solid rgba(8,164,156,0.4)',
+          boxShadow: '0 2px 12px rgba(8,164,156,0.25)',
           color: '#08a49c',
         }}
         onMouseEnter={e => {
@@ -291,7 +301,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)';
         }}
         onMouseLeave={e => {
-          (e.currentTarget as HTMLElement).style.background = 'white';
+          (e.currentTarget as HTMLElement).style.background = '#0f172a';
           (e.currentTarget as HTMLElement).style.color = '#08a49c';
           (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
         }}

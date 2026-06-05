@@ -44,7 +44,60 @@ export default function AppLayout() {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-950">
+      {/* ── Floating background orbs ── */}
+      <div className="pointer-events-none" aria-hidden="true">
+        {/* Orb 1 – teal top-left */}
+        <div
+          className="fixed rounded-full"
+          style={{
+            width: '600px', height: '600px',
+            top: '-200px', left: '-150px',
+            background: 'radial-gradient(circle, rgba(8,164,156,0.18) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+            animation: 'float-orb 18s ease-in-out infinite',
+            zIndex: 0,
+          }}
+        />
+        {/* Orb 2 – cyan bottom-right */}
+        <div
+          className="fixed rounded-full"
+          style={{
+            width: '700px', height: '700px',
+            bottom: '-250px', right: '-200px',
+            background: 'radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+            animation: 'float-orb-2 22s ease-in-out infinite',
+            zIndex: 0,
+          }}
+        />
+        {/* Orb 3 – emerald center */}
+        <div
+          className="fixed rounded-full"
+          style={{
+            width: '500px', height: '500px',
+            top: '40%', left: '40%',
+            transform: 'translate(-50%, -50%)',
+            background: 'radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%)',
+            filter: 'blur(70px)',
+            animation: 'float-orb-3 28s ease-in-out infinite',
+            zIndex: 0,
+          }}
+        />
+        {/* Orb 4 – indigo mid-right */}
+        <div
+          className="fixed rounded-full"
+          style={{
+            width: '400px', height: '400px',
+            top: '30%', right: '-100px',
+            background: 'radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+            animation: 'float-orb 24s ease-in-out infinite reverse',
+            zIndex: 0,
+          }}
+        />
+      </div>
+
       {/* ── Top Progress Bar ── */}
       {loading && (
         <div

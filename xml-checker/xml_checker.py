@@ -919,6 +919,167 @@ def check_data_dict(root: etree._Element, libs: dict, result: Result):
 
 
 # ─────────────────────────────────────────────
+# Cross-field rules
+# ─────────────────────────────────────────────
+
+def _get(elem, attr):
+    """Return stripped attribute value or empty string."""
+    return (elem.get(attr) or "").strip()
+
+
+def check_cross_field(root: etree._Element, result: Result):
+    """
+    Validate rules that depend on the value of another attribute.
+    All rules come directly from the KonSulTa data dictionary Rev 14.
+    """
+
+    # ── helper ──────────────────────────────────────────────────────
+    def req_if(elem, trigger_attr, trigger_vals, dependent_attr, tag=None, line=None):
+        """Warn if trigger is active but dependent field is empty."""
+        tag  = tag  or elem.tag
+        line = line or getattr(elem, "sourceline", None)
+        tv   = _get(elem, trigger_attr)
+        dv   = _get(elem, dependent_attr)
+        if tv in trigger_vals and not dv:
+            result.add("ERROR", "CROSS",
+                f"<{tag}> @{dependent_attr} is required when "
+                f"@{trigger_attr}='{tv}'",
+                line=line)
+
+    def must_equal_if(elem, trigger_attr, trigger_val, dependent_attr, expected_val,
+                      tag=None, line=None):
+        """Warn if trigger is active but dependent field has wrong value."""
+        tag  = tag  or elem.tag
+        line = line or getattr(elem, "sourceline", None)
+        tv   = _get(elem, trigger_attr)
+        dv   = _get(elem, dependent_attr)
+        if tv == trigger_val and dv and dv != expected_val:
+            result.add("WARNING", "CROSS",
+                f"<{tag}> @{dependent_attr} should be '{expected_val}' "
+                f"when @{trigger_attr}='{trigger_val}' (got '{dv}')",
+                line=line)
+
+    def contains_code(semicolon_val, code):
+        return code in {v.strip() for v in semicolon_val.split(";")}
+
+    # ── Collect family history disease codes for the Diabetes rule ───
+    fh_diabetes = set()   # pHciCaseNo values whose FAMHIST has DM code 006
+    for fh in root.iter("FAMHIST"):
+        if _get(fh, "pMdiseaseCode") == "006":
+            # walk up to find the PROFILE's pHciCaseNo
+            profile = fh.getparent()
+            while profile is not None and profile.tag != "PROFILE":
+                profile = profile.getparent()
+            if profile is not None:
+                fh_diabetes.add(_get(profile, "pHciCaseNo"))
+
+    # ══════════════════════════════════════════════════════════════════
+    # SOCHIST rules
+    # ══════════════════════════════════════════════════════════════════
+    for elem in root.iter("SOCHIST"):
+        line = getattr(elem, "sourceline", None)
+
+        # pNoCigpk required if pIsSmoker = 'Y'
+        req_if(elem, "pIsSmoker",   {"Y"}, "pNoCigpk",  line=line)
+        # pNoBottles required if pIsAdrinker = 'Y'
+        req_if(elem, "pIsAdrinker", {"Y"}, "pNoBottles", line=line)
+
+    # ══════════════════════════════════════════════════════════════════
+    # PEGENSURVEY — pGenSurveyRem required if pGenSurveyId = '2'
+    # ══════════════════════════════════════════════════════════════════
+    for elem in root.iter("PEGENSURVEY"):
+        req_if(elem, "pGenSurveyId", {"2"}, "pGenSurveyRem")
+
+    # ══════════════════════════════════════════════════════════════════
+    # PROFILE / SOAP — pATC must be 'WALKEDIN' when pIsWalkedIn = 'Y'
+    # ══════════════════════════════════════════════════════════════════
+    for tag in ("PROFILE", "SOAP"):
+        for elem in root.iter(tag):
+            must_equal_if(elem, "pIsWalkedIn", "Y", "pATC", "WALKEDIN")
+
+    # ══════════════════════════════════════════════════════════════════
+    # SUBJECTIVE cross-field rules
+    # ══════════════════════════════════════════════════════════════════
+    for elem in root.iter("SUBJECTIVE"):
+        line = getattr(elem, "sourceline", None)
+        signs = _get(elem, "pSignsSymptoms")
+
+        # pOtherComplaint required if 'X' code is in pSignsSymptoms
+        if contains_code(signs, "X") and not _get(elem, "pOtherComplaint"):
+            result.add("ERROR", "CROSS",
+                "<SUBJECTIVE> @pOtherComplaint is required when 'X' "
+                "is included in @pSignsSymptoms",
+                line=line)
+
+        # pPainSite required if pain code '38' is in pSignsSymptoms
+        if contains_code(signs, "38") and not _get(elem, "pPainSite"):
+            result.add("ERROR", "CROSS",
+                "<SUBJECTIVE> @pPainSite is required when pain code '38' "
+                "is included in @pSignsSymptoms",
+                line=line)
+
+    # ══════════════════════════════════════════════════════════════════
+    # MEDICINE cross-field rules
+    # ══════════════════════════════════════════════════════════════════
+    for elem in root.iter("MEDICINE"):
+        line = getattr(elem, "sourceline", None)
+
+        # pOthMedDrugGrouping required if pOtherMedicine has value AND pIsApplicable='Y'
+        if _get(elem, "pOtherMedicine") and _get(elem, "pIsApplicable") == "Y":
+            if not _get(elem, "pOthMedDrugGrouping"):
+                result.add("ERROR", "CROSS",
+                    "<MEDICINE> @pOthMedDrugGrouping is required when "
+                    "@pOtherMedicine has a value and @pIsApplicable='Y'",
+                    line=line)
+
+        # pDateDispensed required if pIsDispensed = 'Y'
+        req_if(elem, "pIsDispensed", {"Y"}, "pDateDispensed", line=line)
+
+    # ══════════════════════════════════════════════════════════════════
+    # NCDQANS — sub-field groups required when parent question = 'Y'
+    # ══════════════════════════════════════════════════════════════════
+    for elem in root.iter("NCDQANS"):
+        line = getattr(elem, "sourceline", None)
+
+        # Q19: Have you had FBS/RBS done? → require value + date
+        for dep in ("pQid19_Fbsmg", "pQid19_Fbsmmol", "pQid19_Fbsdate"):
+            req_if(elem, "pQid19_Yn", {"Y"}, dep, line=line)
+
+        # Q20: Have you had Cholesterol test? → require value + date
+        for dep in ("pQid20_Choleval", "pQid20_Choledate"):
+            req_if(elem, "pQid20_Yn", {"Y"}, dep, line=line)
+
+        # Q21: Have you had Urine Ketones test? → require value + date
+        for dep in ("pQid21_Ketonval", "pQid21_Ketondate"):
+            req_if(elem, "pQid21_Yn", {"Y"}, dep, line=line)
+
+        # Q22: Have you had Urine Protein test? → require value + date
+        for dep in ("pQid22_Proteinval", "pQid22_Proteindate"):
+            req_if(elem, "pQid22_Yn", {"Y"}, dep, line=line)
+
+    # ══════════════════════════════════════════════════════════════════
+    # Diabetes Mellitus rule:
+    # If any FAMHIST has pMdiseaseCode='006' (Diabetes Mellitus),
+    # then for that case's DIAGNOSTICEXAMRESULT the FBS/RBS lab
+    # should be present.
+    # ══════════════════════════════════════════════════════════════════
+    if fh_diabetes:
+        for der in root.iter("DIAGNOSTICEXAMRESULT"):
+            line = getattr(der, "sourceline", None)
+            case_no = _get(der, "pHciCaseNo")
+            if case_no not in fh_diabetes:
+                continue
+            has_fbs = der.find(".//FBS") is not None
+            has_rbs = der.find(".//RBS") is not None
+            if not has_fbs and not has_rbs:
+                result.add("WARNING", "CROSS",
+                    f"<DIAGNOSTICEXAMRESULT> pHciCaseNo='{case_no}': "
+                    "FBS or RBS result expected because FAMHIST has "
+                    "Diabetes Mellitus (pMdiseaseCode='006')",
+                    line=line)
+
+
+# ─────────────────────────────────────────────
 # Reporting
 # ─────────────────────────────────────────────
 
@@ -1022,6 +1183,10 @@ def main() -> int:
     if root is not None:
         libs = load_libraries(libs_dir) if libs_dir else {}
         check_data_dict(root, libs, result)
+
+    # 4 – Cross-field rules
+    if root is not None:
+        check_cross_field(root, result)
 
     report = build_report(result, strict=args.strict)
 

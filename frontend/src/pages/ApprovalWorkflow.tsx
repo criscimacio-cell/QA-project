@@ -17,6 +17,7 @@ export default function ApprovalWorkflow() {
   const { isLead } = useAuth();
   const [files, setFiles] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
+  const [approveTarget, setApproveTarget] = useState<any>(null);
   const [approveModal, setApproveModal] = useState(false);
   const [newStatus, setNewStatus] = useState('approved');
   const [comment, setComment] = useState('');
@@ -27,8 +28,10 @@ export default function ApprovalWorkflow() {
   const getFilesForStage = (stage: string) => files.filter(f => f.status === stage);
 
   const doApprove = async () => {
-    await api.post(`/files/${selected.id}/approve`, { status: newStatus, comments: comment });
-    setApproveModal(false); setSelected(null); setComment(''); load();
+    const target = approveTarget || selected;
+    if (!target) return;
+    await api.post(`/files/${target.id}/approve`, { status: newStatus, comments: comment });
+    setApproveModal(false); setApproveTarget(null); setSelected(null); setComment(''); load();
   };
 
   const quickMove = async (f: any, status: string) => {
@@ -125,7 +128,7 @@ export default function ApprovalWorkflow() {
             </div>
             {isLead && (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button onClick={() => setApproveModal(true)} className="btn-primary w-full justify-center">Update Status</button>
+                <button onClick={() => { setApproveTarget(selected); setSelected(null); setApproveModal(true); }} className="btn-primary w-full justify-center">Update Status</button>
               </div>
             )}
           </div>
@@ -133,7 +136,7 @@ export default function ApprovalWorkflow() {
       )}
 
       {/* Approve modal */}
-      <Modal open={approveModal} onClose={() => setApproveModal(false)} title="Update File Status" size="sm">
+      <Modal open={approveModal} onClose={() => { setApproveModal(false); setApproveTarget(null); }} title="Update File Status" size="sm">
         <div className="space-y-4">
           <div>
             <label className="label">New Status</label>
@@ -149,7 +152,7 @@ export default function ApprovalWorkflow() {
             <textarea value={comment} onChange={e => setComment(e.target.value)} className="input" rows={3} placeholder="Add a review comment..." />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setApproveModal(false)} className="btn-secondary">Cancel</button>
+            <button onClick={() => { setApproveModal(false); setApproveTarget(null); }} className="btn-secondary">Cancel</button>
             <button onClick={doApprove} className="btn-primary">Update</button>
           </div>
         </div>

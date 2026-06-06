@@ -137,7 +137,7 @@ export default function KnowledgeBase() {
               <span className="text-xs text-slate-400 flex items-center gap-1"><User size={11} />{selected.author_name}</span>
               <span className="text-xs text-slate-400 flex items-center gap-1"><Clock size={11} />{new Date(selected.updated_at).toLocaleString()}</span>
               <div className="ml-auto flex gap-2">
-                {isEngineer && <button onClick={() => startEdit(selected)} className="btn-secondary text-sm py-1.5 px-3"><Edit2 size={13} />Edit</button>}
+                {isEngineer && <button onClick={() => { const a = selected; setSelected(null); startEdit(a); }} className="btn-secondary text-sm py-1.5 px-3"><Edit2 size={13} />Edit</button>}
                 {isLead && <button onClick={() => doDelete(selected.id)} className="btn-ghost text-sm py-1.5 px-3 text-red-500 hover:bg-red-50"><Trash2 size={13} /></button>}
               </div>
             </div>

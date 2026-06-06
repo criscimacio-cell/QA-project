@@ -6,6 +6,21 @@ import StatusBadge from '../components/UI/Badge';
 import Modal from '../components/UI/Modal';
 import { useAuth } from '../context/AuthContext';
 
+async function downloadFile(fileId: number, filename: string, versionPath?: string) {
+  const url = versionPath || `/api/files/${fileId}/download`;
+  const token = localStorage.getItem('token');
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) { alert('Download failed — file not found on disk.'); return; }
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+}
+
 function formatBytes(b: number) {
   if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
   if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
@@ -210,7 +225,7 @@ export default function FileManager() {
                             {f.mime_type?.startsWith('image/') ? <Image size={14} /> : <FileText size={14} />}
                           </button>
                         )}
-                        <button onClick={() => window.open(`/api/files/${f.id}/download`, '_blank')} title="Download" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
+                        <button onClick={() => downloadFile(f.id, f.original_name)} title="Download" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
                         {f.status === 'archived' ? (
                           <button onClick={() => doRestore(f.id)} title="Restore" className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500"><RotateCcw size={14} /></button>
                         ) : isLead ? (
@@ -266,7 +281,7 @@ export default function FileManager() {
                       <span className="text-xs bg-[#08a49c]/10 text-[#08a49c] px-2 py-0.5 rounded font-mono">v{v.version}</span>
                       <span className="text-slate-500">{v.change_log}</span>
                       <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString()}</span>
-                      <a href={`/api/files/${selected.id}/versions/${v.version}/download`} target="_blank" rel="noreferrer" className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version"><Download size={12} /></a>
+                      <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version"><Download size={12} /></button>
                     </div>
                   ))}
                 </div>
@@ -277,7 +292,7 @@ export default function FileManager() {
               {isPreviewable(selected) && (
                 <button onClick={() => { setSelected(null); openPreview(selected); }} className="btn-secondary"><Eye size={15} /> Preview</button>
               )}
-              <button onClick={() => window.open(`/api/files/${selected.id}/download`, '_blank')} className="btn-secondary"><Download size={15} /> Download</button>
+              <button onClick={() => downloadFile(selected.id, selected.original_name)} className="btn-secondary"><Download size={15} /> Download</button>
               {isLead && selected.status !== 'published' && selected.status !== 'archived' && (
                 <button onClick={() => setShowApprove(true)} className="btn-primary">Review / Approve</button>
               )}
@@ -378,7 +393,7 @@ export default function FileManager() {
               />
             ) : null}
             <div className="flex gap-2">
-              <button onClick={() => window.open(`/api/files/${previewFile.id}/download`, '_blank')} className="btn-secondary"><Download size={15} /> Download</button>
+              <button onClick={() => downloadFile(previewFile.id, previewFile.original_name)} className="btn-secondary"><Download size={15} /> Download</button>
             </div>
           </div>
         </Modal>

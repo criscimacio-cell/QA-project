@@ -49,7 +49,7 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
       style={{
         background: dark
           ? 'linear-gradient(135deg, #020617 0%, #0f172a 50%, #020617 100%)'
@@ -88,17 +88,12 @@ export default function Login() {
         {dark ? <Sun size={16} /> : <Moon size={16} />}
       </button>
 
-      {/* Main card */}
+      {/* Main card — full screen */}
       <div
-        className="relative w-full max-w-[960px] rounded-3xl overflow-hidden z-10"
-        style={{
-          boxShadow: dark
-            ? '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(51,65,85,0.4)'
-            : '0 40px 80px rgba(0,0,0,0.12), 0 0 0 1px rgba(226,232,240,0.6)',
-          animation: 'fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) both',
-        }}
+        className="relative w-full h-screen overflow-hidden z-10"
+        style={{ animation: 'fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) both' }}
       >
-        <div className="flex min-h-[600px]">
+        <div className="flex h-full">
 
           {/* ── LEFT PANEL ── */}
           <div
@@ -172,7 +167,7 @@ export default function Login() {
 
           {/* ── RIGHT PANEL ── */}
           <div
-            className="flex-1 flex flex-col justify-center px-8 md:px-12 py-12"
+            className="flex-1 flex flex-col justify-center px-8 md:px-16 py-12 overflow-y-auto"
             style={{
               background: dark ? '#0f172a' : '#ffffff',
             }}

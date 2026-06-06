@@ -1,65 +1,21 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, User, Lock, AlertCircle, CheckCircle2, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, AlertCircle, CheckCircle2, Sun, Moon, Layers, ArrowRight, ShieldCheck, Zap, BarChart3 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 const DEMO_USERS = [
-  { email: 'admin@qa.com', role: 'Admin' },
-  { email: 'lead@qa.com', role: 'Lead' },
-  { email: 'engineer1@qa.com', role: 'Engineer' },
-  { email: 'viewer@qa.com', role: 'Viewer' },
+  { email: 'admin@qa.com',     role: 'Admin',    color: '#ef4444' },
+  { email: 'lead@qa.com',      role: 'Lead',     color: '#8b5cf6' },
+  { email: 'engineer1@qa.com', role: 'Engineer', color: '#3b82f6' },
+  { email: 'viewer@qa.com',    role: 'Viewer',   color: '#64748b' },
 ];
 
-function IsometricIllustration() {
-  return (
-    <svg viewBox="0 0 220 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[340px] drop-shadow-xl">
-      {/* Phone body */}
-      <rect x="60" y="28" width="100" height="136" rx="12" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" />
-      {/* Screen area */}
-      <rect x="68" y="42" width="84" height="106" rx="5" fill="rgba(255,255,255,0.10)" />
-      {/* Home bar */}
-      <rect x="90" y="154" width="40" height="4" rx="2" fill="rgba(255,255,255,0.35)" />
-
-      {/* Bar chart */}
-      <rect x="74" y="110" width="12" height="30" rx="2.5" fill="rgba(255,255,255,0.45)" />
-      <rect x="90" y="97"  width="12" height="43" rx="2.5" fill="rgba(255,255,255,0.65)" />
-      <rect x="106" y="104" width="12" height="36" rx="2.5" fill="rgba(255,255,255,0.45)" />
-      <rect x="122" y="88"  width="12" height="52" rx="2.5" fill="rgba(255,255,255,0.85)" />
-
-      {/* Line chart over bars */}
-      <polyline points="80,102 96,85 112,92 128,70" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
-      <circle cx="80"  cy="102" r="3" fill="white" opacity="0.9"/>
-      <circle cx="96"  cy="85"  r="3" fill="white" opacity="0.9"/>
-      <circle cx="112" cy="92"  r="3" fill="white" opacity="0.9"/>
-      <circle cx="128" cy="70"  r="4" fill="white"/>
-
-      {/* Donut gauge top-left of screen */}
-      <circle cx="86" cy="60" r="12" stroke="rgba(255,255,255,0.2)" strokeWidth="4" fill="none"/>
-      <circle cx="86" cy="60" r="12" stroke="rgba(255,255,255,0.85)" strokeWidth="4" fill="none"
-        strokeDasharray="50 25" strokeDashoffset="10" strokeLinecap="round"/>
-      <text x="86" y="64" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="800">72%</text>
-
-      {/* Small stats card top-right inside screen */}
-      <rect x="106" y="48" width="40" height="28" rx="4" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
-      <rect x="111" y="54" width="24" height="3" rx="1.5" fill="rgba(255,255,255,0.7)"/>
-      <rect x="111" y="60" width="16" height="3" rx="1.5" fill="rgba(255,255,255,0.45)"/>
-      <rect x="111" y="66" width="10" height="2" rx="1" fill="rgba(255,255,255,0.3)"/>
-
-      {/* Floating arrow/plane top-right outside phone */}
-      <g transform="translate(152,22) rotate(25)">
-        <rect width="30" height="16" rx="5" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.35)" strokeWidth="1"/>
-        <polyline points="5,10 11,6 17,10 24,6" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-      </g>
-
-      {/* Small floating card bottom-left outside phone */}
-      <rect x="18" y="122" width="40" height="30" rx="6" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
-      <rect x="24" y="129" width="22" height="3" rx="1.5" fill="rgba(255,255,255,0.6)"/>
-      <rect x="24" y="136" width="16" height="3" rx="1.5" fill="rgba(255,255,255,0.4)"/>
-      <rect x="24" y="143" width="10" height="2" rx="1"   fill="rgba(255,255,255,0.25)"/>
-    </svg>
-  );
-}
+const FEATURES = [
+  { icon: ShieldCheck, text: 'Role-based access control' },
+  { icon: Zap,         text: 'Real-time approval workflows' },
+  { icon: BarChart3,   text: 'Audit logs & analytics' },
+];
 
 export default function Login() {
   const { login } = useAuth();
@@ -92,262 +48,294 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex overflow-hidden relative">
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{
+        background: dark
+          ? 'linear-gradient(135deg, #020617 0%, #0f172a 50%, #020617 100%)'
+          : 'linear-gradient(135deg, #f0fdfc 0%, #ecfeff 40%, #f8fafc 100%)',
+      }}
+    >
+      {/* Background orbs */}
+      <div className="pointer-events-none" aria-hidden="true">
+        <div className="fixed rounded-full" style={{
+          width: 600, height: 600, top: -200, left: -200,
+          background: 'radial-gradient(circle, rgba(8,164,156,0.15) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          animation: 'float-orb 18s ease-in-out infinite',
+        }} />
+        <div className="fixed rounded-full" style={{
+          width: 500, height: 500, bottom: -150, right: -150,
+          background: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          animation: 'float-orb-2 22s ease-in-out infinite',
+        }} />
+      </div>
 
       {/* Theme toggle */}
       <button
         onClick={toggle}
-        className="fixed top-4 right-4 z-50 w-9 h-9 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur text-slate-500 hover:text-[#08a49c] shadow-sm transition-all hover:scale-105"
+        className="fixed top-5 right-5 z-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all hover:scale-105"
+        style={{
+          background: dark ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.9)',
+          border: dark ? '1px solid rgba(51,65,85,0.6)' : '1px solid rgba(226,232,240,0.8)',
+          color: dark ? '#94a3b8' : '#64748b',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+        title={dark ? 'Light mode' : 'Dark mode'}
       >
         {dark ? <Sun size={16} /> : <Moon size={16} />}
       </button>
 
-      {/* ══════════════════════════════════
-          LEFT PANEL — full-height teal
-      ══════════════════════════════════ */}
+      {/* Main card */}
       <div
-        className="relative w-[45%] flex-shrink-0 flex flex-col"
-        style={{ background: 'linear-gradient(150deg, #09c4ba 0%, #08a49c 45%, #06918b 100%)', overflow: 'visible', zIndex: 10 }}
+        className="relative w-full max-w-[960px] rounded-3xl overflow-hidden z-10"
+        style={{
+          boxShadow: dark
+            ? '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(51,65,85,0.4)'
+            : '0 40px 80px rgba(0,0,0,0.12), 0 0 0 1px rgba(226,232,240,0.6)',
+          animation: 'fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) both',
+        }}
       >
-        {/* ── Curved right edge — SVG bulge into white panel ── */}
-        <svg
-          className="absolute top-0 right-0 h-full pointer-events-none"
-          style={{ width: 72, right: -70, zIndex: 20 }}
-          viewBox="0 0 72 1000"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id="edgeGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#09c4ba" />
-              <stop offset="45%"  stopColor="#08a49c" />
-              <stop offset="100%" stopColor="#06918b" />
-            </linearGradient>
-          </defs>
-          {/* convex bulge: starts flush left, curves right to ~70px at midpoint, returns flush */}
-          <path d="M0,0 C72,250 72,750 0,1000 L0,0 Z" fill="url(#edgeGrad)" />
-        </svg>
+        <div className="flex min-h-[600px]">
 
-        {/* ── Decorative concentric rings (stay inside teal) ── */}
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            width: '100%',
-            paddingBottom: '100%',
-            borderRadius: '50%',
-            border: '2px solid rgba(255,255,255,0.18)',
-            right: '-48%',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 5,
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            width: '70%',
-            paddingBottom: '70%',
-            borderRadius: '50%',
-            border: '1.5px solid rgba(255,255,255,0.10)',
-            right: '-32%',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 5,
-          }}
-        />
-
-        {/* "WELCOME" rotated vertically on left edge */}
-        <div
-          className="absolute select-none font-black tracking-[0.45em] uppercase"
-          style={{
-            color: 'rgba(255,255,255,0.25)',
-            fontSize: 42,
-            writingMode: 'vertical-rl',
-            transform: 'rotate(180deg)',
-            left: 20,
-            top: '50%',
-            marginTop: '-120px',
-          }}
-        >
-          WELCOME
-        </div>
-
-        {/* Logo top-left */}
-        <div className="relative z-20 flex items-center gap-2.5 px-12 pt-10">
-          <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center border border-white/30">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-              <polyline points="2 17 12 22 22 17"/>
-              <polyline points="2 12 12 17 22 12"/>
-            </svg>
-          </div>
-          <span className="text-white font-extrabold text-lg tracking-wide">Q-KTAMP</span>
-        </div>
-
-        {/* Centered illustration */}
-        <div className="relative z-20 flex-1 flex items-center justify-center px-12">
-          <IsometricIllustration />
-        </div>
-
-        {/* Bottom tagline */}
-        <div className="relative z-20 pb-10 px-12 text-center">
-          <p className="text-white/55 text-[11px] font-semibold tracking-[0.22em] uppercase">
-            QA Knowledge &amp; Test Asset Platform
-          </p>
-        </div>
-      </div>
-
-      {/* ══════════════════════════════════
-          RIGHT PANEL — full-height white
-      ══════════════════════════════════ */}
-      <div
-        className="flex-1 flex flex-col justify-center relative overflow-y-auto"
-        style={{ background: dark ? '#0f172a' : '#ffffff', zIndex: 1 }}
-      >
-        {/* Subtle teal tint blob top-right */}
-        <div
-          className="absolute top-0 right-0 w-80 h-80 pointer-events-none opacity-20"
-          style={{ background: 'radial-gradient(circle at top right, #b2f0ec, transparent 70%)' }}
-        />
-
-        <div className="relative z-10 w-full max-w-[520px] mx-auto px-14 py-0">
-
-          {/* Heading */}
-          <h2
-            className="font-extrabold text-center mb-12 tracking-[0.25em]"
-            style={{ fontSize: 36, color: '#08a49c' }}
+          {/* ── LEFT PANEL ── */}
+          <div
+            className="hidden md:flex md:w-[42%] flex-col relative overflow-hidden"
+            style={{ background: 'linear-gradient(150deg, #09c4ba 0%, #08a49c 50%, #0d9488 100%)' }}
           >
-            LOGIN
-          </h2>
+            {/* Decorative rings */}
+            <div className="absolute" style={{
+              width: 480, height: 480, borderRadius: '50%',
+              border: '1.5px solid rgba(255,255,255,0.12)',
+              top: '50%', left: '50%',
+              transform: 'translate(-50%,-50%)',
+            }} />
+            <div className="absolute" style={{
+              width: 320, height: 320, borderRadius: '50%',
+              border: '1.5px solid rgba(255,255,255,0.18)',
+              top: '50%', left: '50%',
+              transform: 'translate(-50%,-50%)',
+            }} />
+            <div className="absolute" style={{
+              width: 160, height: 160, borderRadius: '50%',
+              border: '1.5px solid rgba(255,255,255,0.25)',
+              top: '50%', left: '50%',
+              transform: 'translate(-50%,-50%)',
+            }} />
 
-          {error && (
-            <div className="flex items-center gap-2 p-4 rounded-xl border mb-8 text-sm bg-red-50 border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
-              <AlertCircle size={15} className="flex-shrink-0" />
-              {error}
+            {/* Floating shape top-right */}
+            <div className="absolute top-8 right-8 w-16 h-16 rounded-2xl rotate-12 opacity-20"
+              style={{ background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }} />
+            <div className="absolute top-16 right-20 w-8 h-8 rounded-xl rotate-45 opacity-15"
+              style={{ background: 'rgba(255,255,255,0.5)' }} />
+
+            {/* Logo */}
+            <div className="relative z-10 flex items-center gap-3 p-8">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.2)', border: '1.5px solid rgba(255,255,255,0.35)' }}>
+                <Layers size={17} className="text-white" />
+              </div>
+              <span className="text-white font-extrabold text-lg tracking-wide">Q-KTAMP</span>
             </div>
-          )}
 
-          <form onSubmit={handleSubmit} className="space-y-10">
-            {/* Username */}
-            <div>
-              <label
-                className="block text-sm font-semibold mb-3 tracking-wide"
-                style={{ color: '#08a49c' }}
-              >
-                Username
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  required
-                  className="w-full bg-transparent outline-none text-base pb-3 pr-10 text-slate-700 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 transition-colors"
-                  style={{ borderBottom: '2px solid #e2e8f0' }}
-                  onFocus={e => (e.target.style.borderBottomColor = '#08a49c')}
-                  onBlur={e => (e.target.style.borderBottomColor = '#e2e8f0')}
-                />
-                <User size={18} className="absolute right-1 bottom-3" style={{ color: '#08a49c' }} />
+            {/* Center content */}
+            <div className="relative z-10 flex-1 flex flex-col justify-center px-10">
+              <h1 className="text-white font-black text-3xl leading-tight mb-3">
+                QA Asset<br />Management
+              </h1>
+              <p className="text-white/70 text-sm leading-relaxed mb-8">
+                Centralise your test assets, manage approvals, and track quality across every release.
+              </p>
+
+              <div className="space-y-3">
+                {FEATURES.map(({ icon: Icon, text }) => (
+                  <div key={text} className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'rgba(255,255,255,0.18)' }}>
+                      <Icon size={14} className="text-white" />
+                    </div>
+                    <span className="text-white/80 text-sm font-medium">{text}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Password */}
-            <div>
-              <label
-                className="block text-sm font-semibold mb-3 tracking-wide"
-                style={{ color: '#08a49c' }}
-              >
-                password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPw ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full bg-transparent outline-none text-base pb-3 pr-10 text-slate-700 dark:text-slate-100 placeholder-slate-300 dark:placeholder-slate-600 transition-colors"
-                  style={{ borderBottom: '2px solid #e2e8f0' }}
-                  onFocus={e => (e.target.style.borderBottomColor = '#08a49c')}
-                  onBlur={e => (e.target.style.borderBottomColor = '#e2e8f0')}
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPw(s => !s)}
-                  className="absolute right-1 bottom-3 transition-opacity hover:opacity-60"
-                  style={{ color: '#08a49c' }}
-                >
-                  {showPw ? <EyeOff size={18} /> : <Lock size={18} />}
-                </button>
-              </div>
+            {/* Bottom */}
+            <div className="relative z-10 p-8">
+              <p className="text-white/40 text-[11px] font-semibold tracking-[0.2em] uppercase">
+                QA Knowledge &amp; Test Asset Platform
+              </p>
             </div>
-
-            {/* Login button */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-14 rounded-full font-bold text-base tracking-widest text-white transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-60"
-                style={{
-                  background: 'linear-gradient(90deg, #08a49c 0%, #09c4ba 100%)',
-                  boxShadow: '0 10px 30px rgba(8,164,156,0.4)',
-                  letterSpacing: '0.15em',
-                }}
-              >
-                {loading ? (
-                  <span className="inline-flex items-center gap-2 justify-center">
-                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Signing in…
-                  </span>
-                ) : 'Login'}
-              </button>
-            </div>
-          </form>
-
-          {/* Forgot / Help */}
-          <div className="flex justify-end gap-6 mt-5">
-            <Link
-              to="/forgot-password"
-              className="text-sm text-slate-400 hover:text-[#08a49c] transition-colors"
-            >
-              Forgot
-            </Link>
-            <a href="#" className="text-sm text-slate-400 hover:text-[#08a49c] transition-colors">
-              Help
-            </a>
           </div>
 
-          {/* Demo accounts */}
-          <div className="mt-10 pt-7 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-xs text-slate-400 text-center mb-4 uppercase tracking-[0.2em]">
-              Quick access — demo accounts
-            </p>
-            <div className="grid grid-cols-4 gap-3">
-              {DEMO_USERS.map(u => (
-                <button
-                  key={u.email}
-                  type="button"
-                  onClick={() => quickLogin(u)}
-                  className="relative flex flex-col items-center py-3 px-2 rounded-xl border transition-all hover:scale-105"
-                  style={{
-                    borderColor: filledRole === u.role ? '#08a49c' : '#e2e8f0',
-                    background: filledRole === u.role ? 'rgba(8,164,156,0.06)' : 'transparent',
-                  }}
-                >
-                  {filledRole === u.role && (
-                    <CheckCircle2 size={12} className="absolute top-2 right-2" style={{ color: '#08a49c' }} />
-                  )}
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{u.role}</span>
-                  <span className="text-[10px] text-slate-400 font-mono mt-1 truncate w-full text-center">
-                    {u.email.split('@')[0]}
-                  </span>
-                </button>
-              ))}
+          {/* ── RIGHT PANEL ── */}
+          <div
+            className="flex-1 flex flex-col justify-center px-8 md:px-12 py-12"
+            style={{
+              background: dark ? '#0f172a' : '#ffffff',
+            }}
+          >
+            {/* Mobile logo */}
+            <div className="md:hidden flex items-center gap-2 mb-8">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #08a49c, #06b6d4)' }}>
+                <Layers size={15} className="text-white" />
+              </div>
+              <span className="font-extrabold text-lg" style={{ color: '#08a49c' }}>Q-KTAMP</span>
             </div>
-            <p className="text-xs text-center text-slate-400 mt-3">
-              Password: <span className="font-mono" style={{ color: '#08a49c' }}>password123</span>
-            </p>
+
+            <div className="max-w-[380px] w-full mx-auto">
+              {/* Heading */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-1">
+                  Welcome back
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Sign in to your account to continue
+                </p>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="flex items-center gap-2.5 p-3.5 rounded-xl mb-6 text-sm"
+                  style={{
+                    background: 'rgba(239,68,68,0.06)',
+                    border: '1px solid rgba(239,68,68,0.2)',
+                    color: '#dc2626',
+                  }}>
+                  <AlertCircle size={15} className="flex-shrink-0" />
+                  {error}
+                </div>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      required
+                      className="w-full pl-10 pr-4 h-11 rounded-xl text-sm outline-none transition-all"
+                      style={{
+                        background: dark ? 'rgba(30,41,59,0.6)' : 'rgba(248,250,252,1)',
+                        border: dark ? '1px solid rgba(51,65,85,0.6)' : '1px solid rgba(226,232,240,1)',
+                        color: dark ? '#f1f5f9' : '#0f172a',
+                      }}
+                      onFocus={e => { e.target.style.borderColor = '#08a49c'; e.target.style.boxShadow = '0 0 0 3px rgba(8,164,156,0.12)'; }}
+                      onBlur={e => { e.target.style.borderColor = dark ? 'rgba(51,65,85,0.6)' : 'rgba(226,232,240,1)'; e.target.style.boxShadow = 'none'; }}
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Password
+                    </label>
+                    <Link to="/forgot-password" className="text-xs font-medium transition-colors hover:underline" style={{ color: '#08a49c' }}>
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type={showPw ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full pl-10 pr-10 h-11 rounded-xl text-sm outline-none transition-all"
+                      style={{
+                        background: dark ? 'rgba(30,41,59,0.6)' : 'rgba(248,250,252,1)',
+                        border: dark ? '1px solid rgba(51,65,85,0.6)' : '1px solid rgba(226,232,240,1)',
+                        color: dark ? '#f1f5f9' : '#0f172a',
+                      }}
+                      onFocus={e => { e.target.style.borderColor = '#08a49c'; e.target.style.boxShadow = '0 0 0 3px rgba(8,164,156,0.12)'; }}
+                      onBlur={e => { e.target.style.borderColor = dark ? 'rgba(51,65,85,0.6)' : 'rgba(226,232,240,1)'; e.target.style.boxShadow = 'none'; }}
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowPw(s => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                    >
+                      {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all mt-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #08a49c 0%, #06b6d4 100%)',
+                    boxShadow: '0 4px 20px rgba(8,164,156,0.4)',
+                  }}
+                  onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(8,164,156,0.55)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(8,164,156,0.4)'; }}
+                >
+                  {loading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Signing in…
+                    </>
+                  ) : (
+                    <>
+                      Sign in
+                      <ArrowRight size={15} />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Demo accounts */}
+              <div className="mt-8 pt-6" style={{ borderTop: dark ? '1px solid rgba(51,65,85,0.5)' : '1px solid rgba(226,232,240,0.8)' }}>
+                <p className="text-xs text-center font-semibold uppercase tracking-widest text-slate-400 mb-3">
+                  Demo accounts
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {DEMO_USERS.map(u => (
+                    <button
+                      key={u.email}
+                      type="button"
+                      onClick={() => quickLogin(u)}
+                      className="relative flex flex-col items-center py-2.5 px-1 rounded-xl transition-all hover:-translate-y-0.5"
+                      style={{
+                        background: filledRole === u.role
+                          ? `${u.color}12`
+                          : dark ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)',
+                        border: `1.5px solid ${filledRole === u.role ? u.color + '50' : dark ? 'rgba(51,65,85,0.4)' : 'rgba(226,232,240,0.8)'}`,
+                      }}
+                    >
+                      {filledRole === u.role && (
+                        <CheckCircle2 size={10} className="absolute top-1.5 right-1.5" style={{ color: u.color }} />
+                      )}
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center mb-1" style={{ background: u.color + '20' }}>
+                        <span className="text-[9px] font-black" style={{ color: u.color }}>{u.role[0]}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{u.role}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-center text-slate-400 mt-2.5">
+                  All use password&nbsp;
+                  <span className="font-mono font-semibold" style={{ color: '#08a49c' }}>password123</span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -26,7 +26,7 @@ export default function UserManagement() {
   };
 
   const startEdit = (u: any) => {
-    setEditing(u); setForm({ name: u.name, email: u.email, role: u.role, department: u.department, active: u.active }); setShowModal(true);
+    setEditing(u); setForm({ name: u.name || '', email: u.email || '', role: u.role || 'engineer', department: u.department || '', active: u.active }); setShowModal(true);
   };
 
   const toggleActive = async (u: any) => {

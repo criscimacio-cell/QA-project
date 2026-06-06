@@ -24,7 +24,7 @@ export default function KnowledgeBase() {
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ title: '', content: '', category: 'Best Practices', tags: '' });
+  const [form, setForm] = useState({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' });
 
   const load = () => {
     const params: any = {};
@@ -47,7 +47,7 @@ export default function KnowledgeBase() {
       await api.post('/knowledge', form);
     }
     setShowCreate(false); setEditing(null);
-    setForm({ title: '', content: '', category: 'Best Practices', tags: '' });
+    setForm({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' });
     load();
   };
 
@@ -58,7 +58,7 @@ export default function KnowledgeBase() {
   };
 
   const startEdit = (a: any) => {
-    setForm({ title: a.title || '', content: a.content || '', category: a.category || 'Best Practices', tags: a.tags || '' });
+    setForm({ title: a.title || '', content: a.content || '', category: a.category || 'Best Practices', tags: a.tags || '', status: a.status || 'draft' });
     setEditing(a); setShowCreate(true);
   };
 
@@ -167,6 +167,16 @@ export default function KnowledgeBase() {
             </div>
             <div><label className="label">Tags</label><input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))} className="input" placeholder="tag1, tag2, tag3" /></div>
           </div>
+          {editing && (
+            <div>
+              <label className="label">Status</label>
+              <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className="input">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          )}
           <div>
             <label className="label">Content (HTML supported)</label>
             <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} className="input font-mono text-xs" rows={12} placeholder="<h2>Section Title</h2><p>Content here...</p>" />

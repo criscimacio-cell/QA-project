@@ -55,13 +55,16 @@ export default function FileManager() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewFile, setPreviewFile] = useState<any>(null);
 
-  const load = () => {
+  const load = (overrides?: { search?: string; project?: string; category?: string }) => {
     setLoading(true);
     const params: any = {};
     if (TAB_STATUS[tab]) params.status = TAB_STATUS[tab];
-    if (search) params.search = search;
-    if (project) params.project = project;
-    if (category) params.category = category;
+    const effectiveSearch = overrides && 'search' in overrides ? overrides.search : search;
+    const effectiveProject = overrides && 'project' in overrides ? overrides.project : project;
+    const effectiveCategory = overrides && 'category' in overrides ? overrides.category : category;
+    if (effectiveSearch) params.search = effectiveSearch;
+    if (effectiveProject) params.project = effectiveProject;
+    if (effectiveCategory) params.category = effectiveCategory;
     api.get('/files', { params }).then(r => setFiles(r.data)).finally(() => setLoading(false));
   };
 
@@ -72,7 +75,7 @@ export default function FileManager() {
   const doApprove = async () => {
     if (!selected) return;
     await api.post(`/files/${selected.id}/approve`, { status: approveStatus, comments: approveComment });
-    setShowApprove(false); setSelected(null); setApproveComment(''); load();
+    setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); load();
   };
 
   const doArchive = async (id: number) => {
@@ -174,7 +177,7 @@ export default function FileManager() {
           <option value="">All Categories</option>
           {categories.map(c => <option key={c}>{c}</option>)}
         </select>
-        <button onClick={() => { setSearch(''); setProject(''); setCategory(''); }} className="btn-ghost text-sm py-1.5">Clear</button>
+        <button onClick={() => { setSearch(''); setProject(''); setCategory(''); load({ search: '', project: '', category: '' }); }} className="btn-ghost text-sm py-1.5">Clear</button>
       </div>
 
       {/* Table */}
@@ -307,7 +310,7 @@ export default function FileManager() {
       )}
 
       {/* Approve Modal */}
-      <Modal open={showApprove} onClose={() => { setShowApprove(false); setSelected(null); }} title="Review File" size="sm">
+      <Modal open={showApprove} onClose={() => { setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); }} title="Review File" size="sm">
         <div className="space-y-4">
           <div>
             <label className="label">Update Status</label>
@@ -323,7 +326,7 @@ export default function FileManager() {
             <textarea value={approveComment} onChange={e => setApproveComment(e.target.value)} className="input" rows={3} placeholder="Add review comments…" />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowApprove(false); setSelected(null); }} className="btn-secondary">Cancel</button>
+            <button onClick={() => { setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); }} className="btn-secondary">Cancel</button>
             <button onClick={doApprove} className="btn-primary">Update Status</button>
           </div>
         </div>

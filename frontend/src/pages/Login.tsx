@@ -50,25 +50,25 @@ export default function Login() {
   return (
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d1f3c 50%, #071020 100%)' }}
+      style={{ background: 'linear-gradient(150deg, #09c4ba 0%, #08a49c 45%, #06918b 100%)' }}
     >
       {/* Background orbs */}
       <div className="pointer-events-none" aria-hidden="true">
         <div className="fixed rounded-full" style={{
           width: 700, height: 700, top: -200, left: -200,
-          background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%)',
           filter: 'blur(80px)',
           animation: 'float-orb 18s ease-in-out infinite',
         }} />
         <div className="fixed rounded-full" style={{
           width: 600, height: 600, bottom: -200, right: -100,
-          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(6,182,212,0.25) 0%, transparent 70%)',
           filter: 'blur(80px)',
           animation: 'float-orb-2 22s ease-in-out infinite',
         }} />
         <div className="fixed rounded-full" style={{
           width: 400, height: 400, top: '40%', left: '50%',
-          background: 'radial-gradient(circle, rgba(8,164,156,0.1) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
           filter: 'blur(60px)',
           animation: 'float-orb-3 28s ease-in-out infinite',
         }} />
@@ -79,9 +79,9 @@ export default function Login() {
         onClick={toggle}
         className="fixed top-5 right-5 z-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all hover:scale-105"
         style={{
-          background: 'rgba(255,255,255,0.08)',
-          border: '1px solid rgba(255,255,255,0.15)',
-          color: '#94a3b8',
+          background: 'rgba(255,255,255,0.15)',
+          border: '1px solid rgba(255,255,255,0.3)',
+          color: 'rgba(255,255,255,0.8)',
           backdropFilter: 'blur(12px)',
           boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
         }}
@@ -100,7 +100,7 @@ export default function Login() {
           {/* ── LEFT PANEL ── */}
           <div
             className="hidden md:flex md:w-[42%] flex-col relative overflow-hidden"
-            style={{ background: 'linear-gradient(150deg, #1e3a8a 0%, #1d4ed8 50%, #1e40af 100%)' }}
+            style={{ background: 'rgba(0,0,0,0.08)', borderRight: '1px solid rgba(255,255,255,0.15)' }}
           >
             {/* Decorative rings */}
             <div className="absolute" style={{
@@ -171,9 +171,9 @@ export default function Login() {
           <div
             className="flex-1 flex flex-col justify-center px-8 md:px-16 py-12 overflow-y-auto"
             style={{
-              background: 'rgba(255,255,255,0.03)',
-              backdropFilter: 'blur(20px)',
-              borderLeft: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(24px)',
+              borderLeft: '1px solid rgba(255,255,255,0.2)',
             }}
           >
             {/* Mobile logo */}
@@ -226,12 +226,12 @@ export default function Login() {
                       required
                       className="w-full pl-10 pr-4 h-11 rounded-xl text-sm outline-none transition-all"
                       style={{
-                        background: 'rgba(255,255,255,0.07)',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        color: '#f1f5f9',
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        color: '#ffffff',
                       }}
-                      onFocus={e => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.2)'; e.target.style.background = 'rgba(255,255,255,0.1)'; }}
-                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(255,255,255,0.07)'; }}
+                      onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.18)'; }}
+                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.2)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(255,255,255,0.1)'; }}
                     />
                   </div>
                 </div>
@@ -242,7 +242,7 @@ export default function Login() {
                     <label className="block text-xs font-semibold text-blue-200/70 uppercase tracking-wider">
                       Password
                     </label>
-                    <Link to="/forgot-password" className="text-xs font-medium transition-colors hover:underline" style={{ color: '#60a5fa' }}>
+                    <Link to="/forgot-password" className="text-xs font-medium transition-colors hover:underline" style={{ color: 'rgba(255,255,255,0.8)' }}>
                       Forgot password?
                     </Link>
                   </div>
@@ -256,12 +256,12 @@ export default function Login() {
                       required
                       className="w-full pl-10 pr-10 h-11 rounded-xl text-sm outline-none transition-all"
                       style={{
-                        background: 'rgba(255,255,255,0.07)',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        color: '#f1f5f9',
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        color: '#ffffff',
                       }}
-                      onFocus={e => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.2)'; e.target.style.background = 'rgba(255,255,255,0.1)'; }}
-                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(255,255,255,0.07)'; }}
+                      onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.18)'; }}
+                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.2)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(255,255,255,0.1)'; }}
                     />
                     <button
                       type="button"
@@ -280,11 +280,13 @@ export default function Login() {
                   disabled={loading}
                   className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all mt-2"
                   style={{
-                    background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)',
-                    boxShadow: '0 4px 20px rgba(59,130,246,0.4)',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '1.5px solid rgba(255,255,255,0.4)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                    backdropFilter: 'blur(8px)',
                   }}
-                  onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(59,130,246,0.6)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(59,130,246,0.4)'; }}
+                  onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.28)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(0,0,0,0.2)'; } }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.2)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)'; }}
                 >
                   {loading ? (
                     <>
@@ -314,9 +316,9 @@ export default function Login() {
                       className="relative flex flex-col items-center py-2.5 px-1 rounded-xl transition-all hover:-translate-y-0.5"
                       style={{
                         background: filledRole === u.role
-                          ? `${u.color}20`
-                          : 'rgba(255,255,255,0.05)',
-                        border: `1.5px solid ${filledRole === u.role ? u.color + '60' : 'rgba(255,255,255,0.1)'}`,
+                          ? 'rgba(255,255,255,0.22)'
+                          : 'rgba(255,255,255,0.08)',
+                        border: `1.5px solid ${filledRole === u.role ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
                       }}
                     >
                       {filledRole === u.role && (
@@ -331,7 +333,7 @@ export default function Login() {
                 </div>
                 <p className="text-[11px] text-center text-blue-200/50 mt-2.5">
                   All use password&nbsp;
-                  <span className="font-mono font-semibold" style={{ color: '#60a5fa' }}>password123</span>
+                  <span className="font-mono font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>password123</span>
                 </p>
               </div>
             </div>

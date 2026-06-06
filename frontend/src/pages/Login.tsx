@@ -50,25 +50,27 @@ export default function Login() {
   return (
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden"
-      style={{
-        background: dark
-          ? 'linear-gradient(135deg, #020617 0%, #0f172a 50%, #020617 100%)'
-          : 'linear-gradient(135deg, #f0fdfc 0%, #ecfeff 40%, #f8fafc 100%)',
-      }}
+      style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d1f3c 50%, #071020 100%)' }}
     >
       {/* Background orbs */}
       <div className="pointer-events-none" aria-hidden="true">
         <div className="fixed rounded-full" style={{
-          width: 600, height: 600, top: -200, left: -200,
-          background: 'radial-gradient(circle, rgba(8,164,156,0.15) 0%, transparent 70%)',
-          filter: 'blur(60px)',
+          width: 700, height: 700, top: -200, left: -200,
+          background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)',
+          filter: 'blur(80px)',
           animation: 'float-orb 18s ease-in-out infinite',
         }} />
         <div className="fixed rounded-full" style={{
-          width: 500, height: 500, bottom: -150, right: -150,
-          background: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)',
-          filter: 'blur(60px)',
+          width: 600, height: 600, bottom: -200, right: -100,
+          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+          filter: 'blur(80px)',
           animation: 'float-orb-2 22s ease-in-out infinite',
+        }} />
+        <div className="fixed rounded-full" style={{
+          width: 400, height: 400, top: '40%', left: '50%',
+          background: 'radial-gradient(circle, rgba(8,164,156,0.1) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          animation: 'float-orb-3 28s ease-in-out infinite',
         }} />
       </div>
 
@@ -77,11 +79,11 @@ export default function Login() {
         onClick={toggle}
         className="fixed top-5 right-5 z-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all hover:scale-105"
         style={{
-          background: dark ? 'rgba(30,41,59,0.8)' : 'rgba(255,255,255,0.9)',
-          border: dark ? '1px solid rgba(51,65,85,0.6)' : '1px solid rgba(226,232,240,0.8)',
-          color: dark ? '#94a3b8' : '#64748b',
+          background: 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.15)',
+          color: '#94a3b8',
           backdropFilter: 'blur(12px)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
         }}
         title={dark ? 'Light mode' : 'Dark mode'}
       >
@@ -98,7 +100,7 @@ export default function Login() {
           {/* ── LEFT PANEL ── */}
           <div
             className="hidden md:flex md:w-[42%] flex-col relative overflow-hidden"
-            style={{ background: 'linear-gradient(150deg, #09c4ba 0%, #08a49c 50%, #0d9488 100%)' }}
+            style={{ background: 'linear-gradient(150deg, #1e3a8a 0%, #1d4ed8 50%, #1e40af 100%)' }}
           >
             {/* Decorative rings */}
             <div className="absolute" style={{
@@ -169,7 +171,9 @@ export default function Login() {
           <div
             className="flex-1 flex flex-col justify-center px-8 md:px-16 py-12 overflow-y-auto"
             style={{
-              background: dark ? '#0f172a' : '#ffffff',
+              background: 'rgba(255,255,255,0.03)',
+              backdropFilter: 'blur(20px)',
+              borderLeft: '1px solid rgba(255,255,255,0.06)',
             }}
           >
             {/* Mobile logo */}
@@ -184,10 +188,10 @@ export default function Login() {
             <div className="max-w-[380px] w-full mx-auto">
               {/* Heading */}
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-1">
+                <h2 className="text-2xl font-bold text-white mb-1">
                   Welcome back
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-blue-200/60">
                   Sign in to your account to continue
                 </p>
               </div>
@@ -196,9 +200,9 @@ export default function Login() {
               {error && (
                 <div className="flex items-center gap-2.5 p-3.5 rounded-xl mb-6 text-sm"
                   style={{
-                    background: 'rgba(239,68,68,0.06)',
-                    border: '1px solid rgba(239,68,68,0.2)',
-                    color: '#dc2626',
+                    background: 'rgba(239,68,68,0.15)',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    color: '#fca5a5',
                   }}>
                   <AlertCircle size={15} className="flex-shrink-0" />
                   {error}
@@ -209,7 +213,7 @@ export default function Login() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-blue-200/70 uppercase tracking-wider mb-1.5">
                     Email address
                   </label>
                   <div className="relative">
@@ -222,12 +226,12 @@ export default function Login() {
                       required
                       className="w-full pl-10 pr-4 h-11 rounded-xl text-sm outline-none transition-all"
                       style={{
-                        background: dark ? 'rgba(30,41,59,0.6)' : 'rgba(248,250,252,1)',
-                        border: dark ? '1px solid rgba(51,65,85,0.6)' : '1px solid rgba(226,232,240,1)',
-                        color: dark ? '#f1f5f9' : '#0f172a',
+                        background: 'rgba(255,255,255,0.07)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        color: '#f1f5f9',
                       }}
-                      onFocus={e => { e.target.style.borderColor = '#08a49c'; e.target.style.boxShadow = '0 0 0 3px rgba(8,164,156,0.12)'; }}
-                      onBlur={e => { e.target.style.borderColor = dark ? 'rgba(51,65,85,0.6)' : 'rgba(226,232,240,1)'; e.target.style.boxShadow = 'none'; }}
+                      onFocus={e => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.2)'; e.target.style.background = 'rgba(255,255,255,0.1)'; }}
+                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(255,255,255,0.07)'; }}
                     />
                   </div>
                 </div>
@@ -235,10 +239,10 @@ export default function Login() {
                 {/* Password */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <label className="block text-xs font-semibold text-blue-200/70 uppercase tracking-wider">
                       Password
                     </label>
-                    <Link to="/forgot-password" className="text-xs font-medium transition-colors hover:underline" style={{ color: '#08a49c' }}>
+                    <Link to="/forgot-password" className="text-xs font-medium transition-colors hover:underline" style={{ color: '#60a5fa' }}>
                       Forgot password?
                     </Link>
                   </div>
@@ -252,12 +256,12 @@ export default function Login() {
                       required
                       className="w-full pl-10 pr-10 h-11 rounded-xl text-sm outline-none transition-all"
                       style={{
-                        background: dark ? 'rgba(30,41,59,0.6)' : 'rgba(248,250,252,1)',
-                        border: dark ? '1px solid rgba(51,65,85,0.6)' : '1px solid rgba(226,232,240,1)',
-                        color: dark ? '#f1f5f9' : '#0f172a',
+                        background: 'rgba(255,255,255,0.07)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        color: '#f1f5f9',
                       }}
-                      onFocus={e => { e.target.style.borderColor = '#08a49c'; e.target.style.boxShadow = '0 0 0 3px rgba(8,164,156,0.12)'; }}
-                      onBlur={e => { e.target.style.borderColor = dark ? 'rgba(51,65,85,0.6)' : 'rgba(226,232,240,1)'; e.target.style.boxShadow = 'none'; }}
+                      onFocus={e => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.2)'; e.target.style.background = 'rgba(255,255,255,0.1)'; }}
+                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(255,255,255,0.07)'; }}
                     />
                     <button
                       type="button"
@@ -276,11 +280,11 @@ export default function Login() {
                   disabled={loading}
                   className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all mt-2"
                   style={{
-                    background: 'linear-gradient(135deg, #08a49c 0%, #06b6d4 100%)',
-                    boxShadow: '0 4px 20px rgba(8,164,156,0.4)',
+                    background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)',
+                    boxShadow: '0 4px 20px rgba(59,130,246,0.4)',
                   }}
-                  onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(8,164,156,0.55)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(8,164,156,0.4)'; }}
+                  onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(59,130,246,0.6)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(59,130,246,0.4)'; }}
                 >
                   {loading ? (
                     <>
@@ -297,8 +301,8 @@ export default function Login() {
               </form>
 
               {/* Demo accounts */}
-              <div className="mt-8 pt-6" style={{ borderTop: dark ? '1px solid rgba(51,65,85,0.5)' : '1px solid rgba(226,232,240,0.8)' }}>
-                <p className="text-xs text-center font-semibold uppercase tracking-widest text-slate-400 mb-3">
+              <div className="mt-8 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <p className="text-xs text-center font-semibold uppercase tracking-widest text-blue-200/50 mb-3">
                   Demo accounts
                 </p>
                 <div className="grid grid-cols-4 gap-2">
@@ -310,9 +314,9 @@ export default function Login() {
                       className="relative flex flex-col items-center py-2.5 px-1 rounded-xl transition-all hover:-translate-y-0.5"
                       style={{
                         background: filledRole === u.role
-                          ? `${u.color}12`
-                          : dark ? 'rgba(30,41,59,0.4)' : 'rgba(248,250,252,0.8)',
-                        border: `1.5px solid ${filledRole === u.role ? u.color + '50' : dark ? 'rgba(51,65,85,0.4)' : 'rgba(226,232,240,0.8)'}`,
+                          ? `${u.color}20`
+                          : 'rgba(255,255,255,0.05)',
+                        border: `1.5px solid ${filledRole === u.role ? u.color + '60' : 'rgba(255,255,255,0.1)'}`,
                       }}
                     >
                       {filledRole === u.role && (
@@ -321,13 +325,13 @@ export default function Login() {
                       <div className="w-6 h-6 rounded-lg flex items-center justify-center mb-1" style={{ background: u.color + '20' }}>
                         <span className="text-[9px] font-black" style={{ color: u.color }}>{u.role[0]}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{u.role}</span>
+                      <span className="text-[10px] font-bold text-blue-100/80">{u.role}</span>
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-center text-slate-400 mt-2.5">
+                <p className="text-[11px] text-center text-blue-200/50 mt-2.5">
                   All use password&nbsp;
-                  <span className="font-mono font-semibold" style={{ color: '#08a49c' }}>password123</span>
+                  <span className="font-mono font-semibold" style={{ color: '#60a5fa' }}>password123</span>
                 </p>
               </div>
             </div>

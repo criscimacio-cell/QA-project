@@ -253,7 +253,9 @@ export default function Login() {
       {/* ════════════════════════════════════
           LEFT — Login form
       ════════════════════════════════════ */}
-      <div className="relative z-10 flex flex-col justify-center w-full md:w-[48%] px-8 md:px-16 py-12">
+      <div className="relative z-10 flex flex-col items-center justify-center w-full md:w-[48%] px-8 py-12">
+
+      <div style={{ width: '100%', maxWidth: 420 }}>
 
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-10" style={{ animation: 'fadeInField 0.5s ease both' }}>
@@ -396,6 +398,8 @@ export default function Login() {
             Password: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#08a49c' }}>password123</span>
           </p>
         </div>
+
+      </div>{/* end max-width wrapper */}
       </div>
 
       {/* ════════════════════════════════════

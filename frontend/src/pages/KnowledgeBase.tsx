@@ -57,7 +57,7 @@ export default function KnowledgeBase() {
   };
 
   const startEdit = (a: any) => {
-    setForm({ title: a.title, content: a.content, category: a.category, tags: a.tags });
+    setForm({ title: a.title || '', content: a.content || '', category: a.category || 'Best Practices', tags: a.tags || '' });
     setEditing(a); setShowCreate(true);
   };
 

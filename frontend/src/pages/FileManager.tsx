@@ -72,7 +72,7 @@ export default function FileManager() {
   const doApprove = async () => {
     if (!selected) return;
     await api.post(`/files/${selected.id}/approve`, { status: approveStatus, comments: approveComment });
-    setShowApprove(false); setApproveComment(''); load();
+    setShowApprove(false); setSelected(null); setApproveComment(''); load();
   };
 
   const doArchive = async (id: number) => {

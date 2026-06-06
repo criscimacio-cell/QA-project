@@ -28,7 +28,7 @@ export default function ApprovalWorkflow() {
 
   const doApprove = async () => {
     await api.post(`/files/${selected.id}/approve`, { status: newStatus, comments: comment });
-    setApproveModal(false); setComment(''); load();
+    setApproveModal(false); setSelected(null); setComment(''); load();
   };
 
   const quickMove = async (f: any, status: string) => {

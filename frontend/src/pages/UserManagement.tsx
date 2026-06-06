@@ -136,10 +136,10 @@ export default function UserManagement() {
                   <td className="px-4 py-3 text-xs text-slate-400">{u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => startEdit(u)} title="Edit" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Edit2 size={14} /></button>
-                      <button onClick={() => toggleActive(u)} title={u.active ? 'Deactivate' : 'Activate'} className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 ${u.active ? 'text-red-400' : 'text-emerald-500'}`}>
+                      {isAdmin && <button onClick={() => startEdit(u)} title="Edit" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Edit2 size={14} /></button>}
+                      {isAdmin && <button onClick={() => toggleActive(u)} title={u.active ? 'Deactivate' : 'Activate'} className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 ${u.active ? 'text-red-400' : 'text-emerald-500'}`}>
                         {u.active ? <UserX size={14} /> : <UserCheck size={14} />}
-                      </button>
+                      </button>}
                     </div>
                   </td>
                 </tr>

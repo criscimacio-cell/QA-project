@@ -5,6 +5,7 @@ import api from '../api/client';
 
 export default function Settings() {
   const { user } = useAuth();
+  const [activeSection, setActiveSection] = useState('Security');
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -23,11 +24,11 @@ export default function Settings() {
   };
 
   const sections = [
-    { icon: Palette, label: 'Appearance', active: false },
-    { icon: Bell, label: 'Notifications', active: false },
-    { icon: Shield, label: 'Security', active: true },
-    { icon: Database, label: 'Storage', active: false },
-    { icon: Key, label: 'API Access', active: false },
+    { icon: Palette, label: 'Appearance' },
+    { icon: Bell, label: 'Notifications' },
+    { icon: Shield, label: 'Security' },
+    { icon: Database, label: 'Storage' },
+    { icon: Key, label: 'API Access' },
   ];
 
   return (
@@ -42,7 +43,7 @@ export default function Settings() {
         <div className="w-48 flex-shrink-0">
           <nav className="space-y-1">
             {sections.map(s => (
-              <button key={s.label} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${s.active ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+              <button key={s.label} onClick={() => setActiveSection(s.label)} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeSection === s.label ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                 <s.icon size={16} />{s.label}
               </button>
             ))}
@@ -51,7 +52,7 @@ export default function Settings() {
 
         {/* Content */}
         <div className="flex-1 space-y-5">
-          {/* Profile */}
+          {/* Profile — always visible */}
           <div className="card p-6">
             <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4">Profile Information</h2>
             <div className="flex items-center gap-4 mb-4">
@@ -64,42 +65,58 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Change Password */}
-          <div className="card p-6">
-            <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-              <Key size={18} className="text-[#08a49c]" /> Change Password
-            </h2>
-            {pwMsg && <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-400">{pwMsg}</div>}
-            {pwErr && <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">{pwErr}</div>}
-            <form onSubmit={changePassword} className="space-y-4 max-w-sm">
-              <div><label className="label">Current Password</label><input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} className="input" required /></div>
-              <div><label className="label">New Password</label><input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} className="input" required /></div>
-              <div><label className="label">Confirm New Password</label><input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} className="input" required /></div>
-              <button type="submit" className="btn-primary">Update Password</button>
-            </form>
-          </div>
-
-          {/* Platform Info */}
-          <div className="card p-6">
-            <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-              <SettingsIcon size={18} className="text-[#08a49c]" /> Platform Information
-            </h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              {[
-                ['Platform', 'Q-KTAMP v1.0.0'],
-                ['Environment', 'Production'],
-                ['Database', 'SQLite (WAL Mode)'],
-                ['Authentication', 'JWT (8h sessions)'],
-                ['File Storage', 'Local / Network Drive'],
-                ['Last Updated', new Date().toLocaleDateString()],
-              ].map(([l, v]) => (
-                <div key={l} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                  <div className="text-xs text-slate-500 dark:text-slate-400">{l}</div>
-                  <div className="font-medium text-slate-900 dark:text-slate-100 mt-0.5">{v}</div>
-                </div>
-              ))}
+          {/* Security section */}
+          {activeSection === 'Security' && (
+            <div className="card p-6">
+              <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                <Key size={18} className="text-[#08a49c]" /> Change Password
+              </h2>
+              {pwMsg && <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-400">{pwMsg}</div>}
+              {pwErr && <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">{pwErr}</div>}
+              <form onSubmit={changePassword} className="space-y-4 max-w-sm">
+                <div><label className="label">Current Password</label><input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} className="input" required /></div>
+                <div><label className="label">New Password</label><input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} className="input" required /></div>
+                <div><label className="label">Confirm New Password</label><input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} className="input" required /></div>
+                <button type="submit" className="btn-primary">Update Password</button>
+              </form>
             </div>
-          </div>
+          )}
+
+          {/* Platform Info — shown under Storage section */}
+          {activeSection === 'Storage' && (
+            <div className="card p-6">
+              <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                <SettingsIcon size={18} className="text-[#08a49c]" /> Platform Information
+              </h2>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                {[
+                  ['Platform', 'Q-KTAMP v1.0.0'],
+                  ['Environment', 'Production'],
+                  ['Database', 'SQLite (WAL Mode)'],
+                  ['Authentication', 'JWT (8h sessions)'],
+                  ['File Storage', 'Local / Network Drive'],
+                  ['Last Updated', new Date().toLocaleDateString()],
+                ].map(([l, v]) => (
+                  <div key={l} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{l}</div>
+                    <div className="font-medium text-slate-900 dark:text-slate-100 mt-0.5">{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Appearance, Notifications, API Access — placeholder panels */}
+          {(activeSection === 'Appearance' || activeSection === 'Notifications' || activeSection === 'API Access') && (
+            <div className="card p-6">
+              <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                {activeSection}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {activeSection} settings are not yet configurable in this version.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

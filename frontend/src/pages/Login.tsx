@@ -100,7 +100,7 @@ export default function Login() {
           {/* ── LEFT PANEL ── */}
           <div
             className="hidden md:flex md:w-[42%] flex-col relative overflow-hidden"
-            style={{ background: 'rgba(0,0,0,0.08)', borderRight: '1px solid rgba(255,255,255,0.15)' }}
+            style={{ background: 'rgba(0,0,0,0.08)' }}
           >
             {/* Decorative rings */}
             <div className="absolute" style={{
@@ -170,11 +170,7 @@ export default function Login() {
           {/* ── RIGHT PANEL ── */}
           <div
             className="flex-1 flex flex-col justify-center px-8 md:px-16 py-12 overflow-y-auto"
-            style={{
-              background: 'rgba(255,255,255,0.1)',
-              backdropFilter: 'blur(24px)',
-              borderLeft: '1px solid rgba(255,255,255,0.2)',
-            }}
+            style={{ background: 'transparent' }}
           >
             {/* Mobile logo */}
             <div className="md:hidden flex items-center gap-2 mb-8">
@@ -226,12 +222,12 @@ export default function Login() {
                       required
                       className="w-full pl-10 pr-4 h-11 rounded-xl text-sm outline-none transition-all"
                       style={{
-                        background: 'rgba(255,255,255,0.1)',
-                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(0,0,0,0.15)',
+                        border: '1.5px solid rgba(255,255,255,0.35)',
                         color: '#ffffff',
                       }}
-                      onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.18)'; }}
-                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.2)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(255,255,255,0.1)'; }}
+                      onFocus={e => { e.target.style.borderColor = '#ffffff'; e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.2)'; e.target.style.background = 'rgba(0,0,0,0.25)'; }}
+                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.35)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(0,0,0,0.15)'; }}
                     />
                   </div>
                 </div>
@@ -256,12 +252,12 @@ export default function Login() {
                       required
                       className="w-full pl-10 pr-10 h-11 rounded-xl text-sm outline-none transition-all"
                       style={{
-                        background: 'rgba(255,255,255,0.1)',
-                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(0,0,0,0.15)',
+                        border: '1.5px solid rgba(255,255,255,0.35)',
                         color: '#ffffff',
                       }}
-                      onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.18)'; }}
-                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.2)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(255,255,255,0.1)'; }}
+                      onFocus={e => { e.target.style.borderColor = '#ffffff'; e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.2)'; e.target.style.background = 'rgba(0,0,0,0.25)'; }}
+                      onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.35)'; e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(0,0,0,0.15)'; }}
                     />
                     <button
                       type="button"
@@ -280,13 +276,12 @@ export default function Login() {
                   disabled={loading}
                   className="w-full h-11 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all mt-2"
                   style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    border: '1.5px solid rgba(255,255,255,0.4)',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    backdropFilter: 'blur(8px)',
+                    background: 'rgba(0,0,0,0.25)',
+                    border: '1.5px solid rgba(255,255,255,0.5)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
                   }}
-                  onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.28)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(0,0,0,0.2)'; } }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.2)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)'; }}
+                  onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.35)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(0,0,0,0.3)'; } }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.25)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)'; }}
                 >
                   {loading ? (
                     <>
@@ -316,9 +311,9 @@ export default function Login() {
                       className="relative flex flex-col items-center py-2.5 px-1 rounded-xl transition-all hover:-translate-y-0.5"
                       style={{
                         background: filledRole === u.role
-                          ? 'rgba(255,255,255,0.22)'
-                          : 'rgba(255,255,255,0.08)',
-                        border: `1.5px solid ${filledRole === u.role ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)'}`,
+                          ? 'rgba(0,0,0,0.3)'
+                          : 'rgba(0,0,0,0.15)',
+                        border: `1.5px solid ${filledRole === u.role ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)'}`,
                       }}
                     >
                       {filledRole === u.role && (

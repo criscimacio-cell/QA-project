@@ -144,7 +144,17 @@ export default function SearchResults() {
                         </div>
                       )}
                     </div>
-                    <button onClick={() => window.open(`/api/files/${f.id}/download`, '_blank')} className="btn-ghost p-2 flex-shrink-0 text-teal-500">
+                    <button onClick={async () => {
+                      const token = localStorage.getItem('token');
+                      const res = await fetch(`/api/files/${f.id}/download`, { headers: { Authorization: `Bearer ${token}` } });
+                      if (!res.ok) { alert('Download failed'); return; }
+                      const blob = await res.blob();
+                      const a = document.createElement('a');
+                      a.href = URL.createObjectURL(blob);
+                      a.download = f.original_name || f.name;
+                      document.body.appendChild(a); a.click(); a.remove();
+                      URL.revokeObjectURL(a.href);
+                    }} className="btn-ghost p-2 flex-shrink-0 text-teal-500">
                       <Download size={16} />
                     </button>
                   </div>

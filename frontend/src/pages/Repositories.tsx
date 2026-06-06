@@ -47,11 +47,11 @@ function matchesSearch(node: Repo, q: string): boolean {
 /* ── Tree Node ── */
 function TreeNode({
   node, selected, onSelect, level = 0,
-  forceOpen, isLead, onAddSub, onEdit, onDelete,
+  forceOpen, isLead, isAdmin, onAddSub, onEdit, onDelete,
   treeSearch,
 }: {
   node: Repo; selected: number | null; onSelect: (id: number) => void;
-  level?: number; forceOpen?: boolean; isLead: boolean;
+  level?: number; forceOpen?: boolean; isLead: boolean; isAdmin: boolean;
   onAddSub: (repo: Repo) => void; onEdit: (repo: Repo) => void;
   onDelete: (repo: Repo) => void; treeSearch: string;
 }) {
@@ -131,11 +131,15 @@ function TreeNode({
                   className="flex items-center gap-2 w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
                   <Pencil size={13} className="text-blue-500" /> Rename
                 </button>
-                <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
-                <button onClick={() => { onDelete(node); setMenuOpen(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">
-                  <Trash2 size={13} /> Delete
-                </button>
+                {isAdmin && (
+                  <>
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
+                    <button onClick={() => { onDelete(node); setMenuOpen(false); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">
+                      <Trash2 size={13} /> Delete
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -145,7 +149,7 @@ function TreeNode({
       {shouldOpen && hasChildren && node.children?.map(child => (
         <TreeNode
           key={child.id} node={child} selected={selected} onSelect={onSelect}
-          level={level + 1} forceOpen={forceOpen} isLead={isLead}
+          level={level + 1} forceOpen={forceOpen} isLead={isLead} isAdmin={isAdmin}
           onAddSub={onAddSub} onEdit={onEdit} onDelete={onDelete}
           treeSearch={treeSearch}
         />
@@ -156,7 +160,7 @@ function TreeNode({
 
 /* ── Main Page ── */
 export default function Repositories() {
-  const { isLead, isEngineer } = useAuth();
+  const { isLead, isEngineer, isAdmin } = useAuth();
   const [repos, setRepos] = useState<Repo[]>([]);
   const [tree, setTree] = useState<Repo[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
@@ -303,7 +307,7 @@ export default function Repositories() {
           ) : tree.map(node => (
             <TreeNode
               key={node.id} node={node} selected={selected} onSelect={setSelected}
-              level={0} forceOpen={allOpen || !!treeSearch} isLead={isLead}
+              level={0} forceOpen={allOpen || !!treeSearch} isLead={isLead} isAdmin={isAdmin}
               onAddSub={repo => openCreate(repo.id, repo.name)}
               onEdit={repo => { setFormData({ name: repo.name, description: repo.description }); setEditModal({ open: true, repo }); }}
               onDelete={repo => setDeleteModal({ open: true, repo })}

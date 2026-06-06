@@ -125,7 +125,17 @@ export default function TestDataLibrary() {
               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <span className="text-xs text-slate-400">v{f.version} · {f.owner_name?.split(' ')[0]}</span>
                 <button
-                  onClick={() => window.open(`/api/files/${f.id}/download`, '_blank')}
+                  onClick={async () => {
+                    const token = localStorage.getItem('token');
+                    const res = await fetch(`/api/files/${f.id}/download`, { headers: { Authorization: `Bearer ${token}` } });
+                    if (!res.ok) { alert('Download failed'); return; }
+                    const blob = await res.blob();
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = f.original_name || f.name;
+                    document.body.appendChild(a); a.click(); a.remove();
+                    URL.revokeObjectURL(a.href);
+                  }}
                   className="flex items-center gap-1 text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 font-medium"
                 >
                   <Download size={13} /> Download

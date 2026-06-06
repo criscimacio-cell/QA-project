@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Users, Plus, Edit2, UserCheck, UserX } from 'lucide-react';
 import api from '../api/client';
 import Modal from '../components/UI/Modal';
+import { useAuth } from '../context/AuthContext';
 
 const ROLES = ['admin', 'lead', 'engineer', 'viewer'];
 
 export default function UserManagement() {
+  const { isAdmin } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -40,9 +42,11 @@ export default function UserManagement() {
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">User Management</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage team members and access control</p>
         </div>
-        <button onClick={() => { setEditing(null); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); setShowModal(true); }} className="btn-primary">
-          <Plus size={16} /> Add User
-        </button>
+        {isAdmin && (
+          <button onClick={() => { setEditing(null); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); setShowModal(true); }} className="btn-primary">
+            <Plus size={16} /> Add User
+          </button>
+        )}
       </div>
 
       {/* Role summary */}

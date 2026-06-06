@@ -149,7 +149,7 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <Modal open={showModal} onClose={() => setShowModal(false)} title={editing ? 'Edit User' : 'Add New User'} size="sm">
+      <Modal open={showModal} onClose={() => { setShowModal(false); setEditing(null); }} title={editing ? 'Edit User' : 'Add New User'} size="sm">
         <div className="space-y-4">
           <div><label className="label">Full Name *</label><input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="input" placeholder="John Doe" /></div>
           {!editing && <div><label className="label">Email *</label><input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className="input" placeholder="john@company.com" /></div>}

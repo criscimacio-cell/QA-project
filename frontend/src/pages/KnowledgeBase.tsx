@@ -40,6 +40,7 @@ export default function KnowledgeBase() {
   };
 
   const save = async () => {
+    if (!form.title.trim()) return;
     if (editing) {
       await api.put(`/knowledge/${editing.id}`, form);
     } else {

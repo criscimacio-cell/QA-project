@@ -136,7 +136,7 @@ export default function ApprovalWorkflow() {
       )}
 
       {/* Approve modal */}
-      <Modal open={approveModal} onClose={() => { setApproveModal(false); setApproveTarget(null); }} title="Update File Status" size="sm">
+      <Modal open={approveModal} onClose={() => { setApproveModal(false); setApproveTarget(null); setNewStatus('approved'); setComment(''); }} title="Update File Status" size="sm">
         <div className="space-y-4">
           <div>
             <label className="label">New Status</label>
@@ -152,7 +152,7 @@ export default function ApprovalWorkflow() {
             <textarea value={comment} onChange={e => setComment(e.target.value)} className="input" rows={3} placeholder="Add a review comment..." />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setApproveModal(false); setApproveTarget(null); }} className="btn-secondary">Cancel</button>
+            <button onClick={() => { setApproveModal(false); setApproveTarget(null); setNewStatus('approved'); setComment(''); }} className="btn-secondary">Cancel</button>
             <button onClick={doApprove} className="btn-primary">Update</button>
           </div>
         </div>

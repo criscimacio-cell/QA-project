@@ -218,36 +218,46 @@ export default function Repositories() {
   const doCreate = async () => {
     if (!formData.name.trim()) return;
     setSaving(true);
-    await api.post('/repositories', {
-      name: formData.name.trim(),
-      description: formData.description,
-      parent_id: createModal.parentId,
-      type: createModal.parentId ? 'folder' : 'repository',
-    });
-    setSaving(false);
-    setCreateModal({ open: false, parentId: null, parentName: '' });
-    await loadRepos();
-    if (selected) loadDetail(selected);
+    try {
+      await api.post('/repositories', {
+        name: formData.name.trim(),
+        description: formData.description,
+        parent_id: createModal.parentId,
+        type: createModal.parentId ? 'folder' : 'repository',
+      });
+      setCreateModal({ open: false, parentId: null, parentName: '' });
+      await loadRepos();
+      if (selected) loadDetail(selected);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const doEdit = async () => {
     if (!editModal.repo || !formData.name.trim()) return;
     setSaving(true);
-    await api.put(`/repositories/${editModal.repo.id}`, { name: formData.name.trim(), description: formData.description });
-    setSaving(false);
-    setEditModal({ open: false, repo: null });
-    await loadRepos();
-    if (selected) loadDetail(selected);
+    try {
+      await api.put(`/repositories/${editModal.repo.id}`, { name: formData.name.trim(), description: formData.description });
+      setEditModal({ open: false, repo: null });
+      await loadRepos();
+      if (selected) loadDetail(selected);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const doDelete = async () => {
     if (!deleteModal.repo) return;
     setSaving(true);
-    await api.delete(`/repositories/${deleteModal.repo.id}`);
-    setSaving(false);
-    setDeleteModal({ open: false, repo: null });
-    if (selected === deleteModal.repo.id) setSelected(null);
-    await loadRepos();
+    const deletedId = deleteModal.repo.id;
+    try {
+      await api.delete(`/repositories/${deletedId}`);
+      setDeleteModal({ open: false, repo: null });
+      if (selected === deletedId) setSelected(null);
+      await loadRepos();
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

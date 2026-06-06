@@ -37,7 +37,7 @@ const adminNav = [
 ];
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
-  const { user, isLead } = useAuth();
+  const { user, isLead, isAdmin } = useAuth();
   const { dark } = useTheme();
 
   return (

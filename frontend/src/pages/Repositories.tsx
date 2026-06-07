@@ -622,13 +622,22 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState(repositoryId?.toString() || '');
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => { setSelectedRepo(repositoryId?.toString() || ''); }, [repositoryId]);
+
+  useEffect(() => {
+    api.get('/categories?type=file').then(r => setCategories(r.data.map((c: any) => c.name)));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
     setLoading(true);
+    if (form.category && !categories.includes(form.category)) {
+      await api.post('/categories', { name: form.category, type: 'file' });
+      setCategories(prev => [...prev, form.category]);
+    }
     const fd = new FormData();
     fd.append('file', file);
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
@@ -690,7 +699,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
               placeholder="Select or type a category…"
             />
             <datalist id="category-options">
-              {['Test Cases', 'RCA', 'Evidence', 'Test Plan', 'Test Data', 'Bug Report', 'Template', 'Test Scripts', 'Performance'].map(c => <option key={c} value={c} />)}
+              {categories.map(c => <option key={c} value={c} />)}
             </datalist>
           </div>
           <div><label className="label">Jira Ticket</label><input value={form.jira_ticket} onChange={e => setForm(p => ({ ...p, jira_ticket: e.target.value }))} className="input" placeholder="e.g. QA-123" /></div>

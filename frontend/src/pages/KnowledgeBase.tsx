@@ -5,7 +5,7 @@ import StatusBadge from '../components/UI/Badge';
 import Modal from '../components/UI/Modal';
 import { useAuth } from '../context/AuthContext';
 
-const CATEGORIES = ['All', 'Troubleshooting', 'RCA', 'Testing Standards', 'Best Practices', 'Onboarding', 'Process Documentation'];
+const DEFAULT_CATEGORIES = ['Troubleshooting', 'RCA', 'Testing Standards', 'Best Practices', 'Onboarding', 'Process Documentation'];
 
 const CAT_COLORS: Record<string, string> = {
   Troubleshooting: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800',
@@ -25,6 +25,7 @@ export default function KnowledgeBase() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' });
+  const [kbCategories, setKbCategories] = useState<string[]>(DEFAULT_CATEGORIES);
 
   const load = () => {
     const params: any = {};
@@ -32,6 +33,13 @@ export default function KnowledgeBase() {
     if (search) params.search = search;
     api.get('/knowledge', { params }).then(r => setArticles(r.data));
   };
+
+  useEffect(() => {
+    api.get('/categories?type=knowledge').then(r => {
+      const names = r.data.map((c: any) => c.name);
+      setKbCategories(names.length > 0 ? names : DEFAULT_CATEGORIES);
+    });
+  }, []);
 
   useEffect(() => { load(); }, [category]);
 
@@ -41,6 +49,10 @@ export default function KnowledgeBase() {
 
   const save = async () => {
     if (!form.title.trim()) return;
+    if (form.category && !kbCategories.includes(form.category)) {
+      await api.post('/categories', { name: form.category, type: 'knowledge' });
+      setKbCategories(prev => [...prev, form.category]);
+    }
     if (editing) {
       await api.put(`/knowledge/${editing.id}`, form);
     } else {
@@ -83,7 +95,7 @@ export default function KnowledgeBase() {
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} placeholder="Search articles..." className="input pl-8 text-sm h-8 w-full" />
           </div>
-          {CATEGORIES.map(cat => {
+          {['All', ...kbCategories].map(cat => {
             const count = cat === 'All' ? articles.length : articles.filter(a => a.category === cat).length;
             return (
               <button key={cat} onClick={() => setCategory(cat)} className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${category === cat ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
@@ -161,9 +173,16 @@ export default function KnowledgeBase() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Category</label>
-              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="input">
-                {CATEGORIES.slice(1).map(c => <option key={c}>{c}</option>)}
-              </select>
+              <input
+                list="kb-category-options"
+                value={form.category}
+                onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+                className="input"
+                placeholder="Select or type a category…"
+              />
+              <datalist id="kb-category-options">
+                {kbCategories.map(c => <option key={c} value={c} />)}
+              </datalist>
             </div>
             <div><label className="label">Tags</label><input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))} className="input" placeholder="tag1, tag2, tag3" /></div>
           </div>

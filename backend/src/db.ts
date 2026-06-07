@@ -120,7 +120,24 @@ export function initDb() {
       used INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'file',
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(name, type)
+    );
   `);
+
+  const existingCats = db.prepare('SELECT COUNT(*) as c FROM categories').get() as any;
+  if (existingCats.c === 0) {
+    const insertCat = db.prepare('INSERT OR IGNORE INTO categories (name, type) VALUES (?, ?)');
+    ['Test Cases', 'RCA', 'Evidence', 'Test Plan', 'Test Data', 'Bug Report', 'Template', 'Test Scripts', 'Performance']
+      .forEach(name => insertCat.run(name, 'file'));
+    ['Troubleshooting', 'RCA', 'Testing Standards', 'Best Practices', 'Onboarding', 'Process Documentation']
+      .forEach(name => insertCat.run(name, 'knowledge'));
+  }
 
   const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@qa.com');
   if (existingUser) return;

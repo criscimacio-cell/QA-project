@@ -17,6 +17,7 @@ import searchRoutes from './routes/search';
 import dashboardRoutes from './routes/dashboard';
 import notifRoutes from './routes/notifications';
 import auditRoutes from './routes/audit';
+import categoryRoutes from './routes/categories';
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
@@ -44,6 +45,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/notifications', notifRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/categories', categoryRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

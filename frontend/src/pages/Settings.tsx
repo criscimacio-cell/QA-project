@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [activeSection, setActiveSection] = useState('Security');
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -23,11 +23,42 @@ export default function Settings() {
     } catch (e: any) { setPwErr(e.response?.data?.error || 'Failed to change password'); }
   };
 
+  // Categories state
+  const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [catLoading, setCatLoading] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatType, setNewCatType] = useState<'file' | 'knowledge'>('file');
+  const [catSaving, setCatSaving] = useState(false);
+
+  const loadCategories = () => {
+    setCatLoading(true);
+    api.get('/categories').then(r => { setAllCategories(r.data); setCatLoading(false); }).catch(() => setCatLoading(false));
+  };
+
+  useEffect(() => { if (activeSection === 'Categories') loadCategories(); }, [activeSection]);
+
+  const addCategory = async () => {
+    if (!newCatName.trim()) return;
+    setCatSaving(true);
+    try {
+      await api.post('/categories', { name: newCatName.trim(), type: newCatType });
+      setNewCatName('');
+      loadCategories();
+    } finally { setCatSaving(false); }
+  };
+
+  const deleteCategory = async (id: number) => {
+    if (!confirm('Delete this category?')) return;
+    await api.delete(`/categories/${id}`);
+    loadCategories();
+  };
+
   const sections = [
     { icon: Palette, label: 'Appearance' },
     { icon: Bell, label: 'Notifications' },
     { icon: Shield, label: 'Security' },
     { icon: Database, label: 'Storage' },
+    { icon: Tag, label: 'Categories' },
     { icon: Key, label: 'API Access' },
   ];
 
@@ -103,6 +134,76 @@ export default function Settings() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Categories section */}
+          {activeSection === 'Categories' && (
+            <div className="card p-6 space-y-5">
+              <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                <Tag size={18} className="text-[#08a49c]" /> Category Manager
+              </h2>
+
+              {/* Add category */}
+              {isAdmin && (
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="label">New Category Name</label>
+                    <input
+                      value={newCatName}
+                      onChange={e => setNewCatName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addCategory()}
+                      className="input"
+                      placeholder="e.g. Performance"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Type</label>
+                    <select value={newCatType} onChange={e => setNewCatType(e.target.value as 'file' | 'knowledge')} className="input">
+                      <option value="file">File</option>
+                      <option value="knowledge">Knowledge</option>
+                    </select>
+                  </div>
+                  <button onClick={addCategory} disabled={!newCatName.trim() || catSaving} className="btn-primary h-9">
+                    {catSaving ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
+                    Add
+                  </button>
+                </div>
+              )}
+
+              {catLoading ? (
+                <div className="flex justify-center py-8"><RefreshCw size={20} className="animate-spin text-[#08a49c]" /></div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {(['file', 'knowledge'] as const).map(type => {
+                    const cats = allCategories.filter(c => c.type === type);
+                    return (
+                      <div key={type}>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                          {type === 'file' ? 'File Categories' : 'Knowledge Categories'}
+                        </h3>
+                        <div className="space-y-1.5">
+                          {cats.length === 0 && <p className="text-xs text-slate-400 italic">No categories yet</p>}
+                          {cats.map(cat => (
+                            <div key={cat.id} className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg group">
+                              <span className="text-sm text-slate-700 dark:text-slate-300">{cat.name}</span>
+                              {isAdmin && (
+                                <button
+                                  onClick={() => deleteCategory(cat.id)}
+                                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5 rounded"
+                                  title="Delete category"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

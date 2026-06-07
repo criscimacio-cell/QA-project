@@ -15,6 +15,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isAdmin: boolean;
   isLead: boolean;
   isEngineer: boolean;
@@ -44,6 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.data.user);
   };
 
+  const refreshUser = async () => {
+    const r = await api.get('/auth/me');
+    setUser(r.data);
+  };
+
   const logout = () => {
     api.post('/auth/logout').catch(() => {});
     localStorage.removeItem('token');
@@ -53,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, loading, login, logout,
+      user, loading, login, logout, refreshUser,
       isAdmin: user?.role === 'admin',
       isLead: user?.role === 'lead' || user?.role === 'admin',
       isEngineer: ['admin', 'lead', 'engineer'].includes(user?.role || ''),

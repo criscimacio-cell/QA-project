@@ -1,11 +1,53 @@
-import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, RefreshCw, Camera, X, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
 export default function Settings() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, refreshUser } = useAuth();
   const [activeSection, setActiveSection] = useState('Security');
+
+  // Avatar state
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState('');
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarMsg('');
+  };
+
+  const saveAvatar = async () => {
+    if (!avatarFile) return;
+    setAvatarSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append('avatar', avatarFile);
+      await api.put('/users/me/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await refreshUser();
+      setAvatarPreview(null);
+      setAvatarFile(null);
+      setAvatarMsg('Profile photo updated!');
+      setTimeout(() => setAvatarMsg(''), 3000);
+    } catch (e: any) {
+      setAvatarMsg(e.response?.data?.error || 'Upload failed');
+    } finally {
+      setAvatarSaving(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
+  const cancelAvatar = () => {
+    setAvatarPreview(null);
+    setAvatarFile(null);
+    if (avatarInputRef.current) avatarInputRef.current.value = '';
+  };
+
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -101,14 +143,74 @@ export default function Settings() {
           {/* Profile — always visible */}
           <div className="card p-6">
             <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4">Profile Information</h2>
-            <div className="flex items-center gap-4 mb-4">
-              <img src={user?.avatar} alt="" className="w-16 h-16 rounded-full bg-slate-100" />
-              <div>
+            <div className="flex items-center gap-5">
+              {/* Avatar with edit overlay */}
+              <div className="relative flex-shrink-0">
+                <img
+                  src={avatarPreview || user?.avatar}
+                  alt={user?.name}
+                  className="w-20 h-20 rounded-full object-cover bg-slate-100 border-2 border-slate-200 dark:border-slate-700"
+                />
+                {/* Camera button */}
+                {!avatarPreview && (
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110"
+                    style={{ background: 'linear-gradient(135deg,#08a49c,#06b6d4)', border: '2px solid white' }}
+                    title="Change profile photo"
+                  >
+                    <Camera size={12} color="white" />
+                  </button>
+                )}
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+
+              <div className="flex-1 min-w-0">
                 <div className="font-semibold text-slate-900 dark:text-slate-100">{user?.name}</div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">{user?.email}</div>
                 <div className="text-xs text-teal-600 dark:text-teal-400 capitalize mt-0.5 font-medium">{user?.role} · {user?.department}</div>
+
+                {/* Preview action buttons */}
+                {avatarPreview && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      onClick={saveAvatar}
+                      disabled={avatarSaving}
+                      className="btn-primary py-1.5 px-3 text-xs flex items-center gap-1.5"
+                    >
+                      {avatarSaving ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} />}
+                      {avatarSaving ? 'Saving...' : 'Save photo'}
+                    </button>
+                    <button onClick={cancelAvatar} className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-1.5">
+                      <X size={12} /> Cancel
+                    </button>
+                  </div>
+                )}
+
+                {/* Status message */}
+                {avatarMsg && !avatarPreview && (
+                  <p className={`text-xs mt-2 font-medium ${avatarMsg.includes('failed') || avatarMsg.includes('failed') ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {avatarMsg}
+                  </p>
+                )}
+
+                {!avatarPreview && (
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="text-xs text-teal-600 dark:text-teal-400 hover:underline mt-2 block"
+                  >
+                    Change profile photo
+                  </button>
+                )}
               </div>
             </div>
+            <p className="text-xs text-slate-400 mt-4">JPG, PNG, GIF or WEBP · Max 2MB</p>
           </div>
 
           {/* Security section */}

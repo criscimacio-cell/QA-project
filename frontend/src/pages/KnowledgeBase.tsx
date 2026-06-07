@@ -77,6 +77,7 @@ export default function KnowledgeBase() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [kbCategories, setKbCategories] = useState<string[]>(DEFAULT_CATEGORIES);
 
   const load = () => {
@@ -101,8 +102,16 @@ export default function KnowledgeBase() {
     api.get(`/knowledge/${a.id}`).then(r => setSelected(r.data));
   };
 
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!form.title.trim()) e.title = 'Title is required';
+    if (!form.category.trim()) e.category = 'Category is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const save = async () => {
-    if (!form.title.trim()) return;
+    if (!validate()) return;
     if (form.category && !kbCategories.includes(form.category)) {
       await api.post('/categories', { name: form.category, type: 'knowledge' });
       setKbCategories(prev => [...prev, form.category]);
@@ -112,7 +121,7 @@ export default function KnowledgeBase() {
     } else {
       await api.post('/knowledge', form);
     }
-    setShowCreate(false); setEditing(null);
+    setShowCreate(false); setEditing(null); setErrors({});
     setForm({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' });
     load();
   };
@@ -125,7 +134,7 @@ export default function KnowledgeBase() {
 
   const startEdit = (a: any) => {
     setForm({ title: a.title || '', content: a.content || '', category: a.category || 'Best Practices', tags: a.tags || '', status: a.status || 'draft' });
-    setEditing(a); setShowCreate(true);
+    setEditing(a); setErrors({}); setShowCreate(true);
   };
 
   return (
@@ -136,7 +145,7 @@ export default function KnowledgeBase() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Team knowledge, guides, and documentation</p>
         </div>
         {isEngineer && (
-          <button onClick={() => { setEditing(null); setForm({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' }); setShowCreate(true); }} className="btn-primary">
+          <button onClick={() => { setEditing(null); setErrors({}); setForm({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' }); setShowCreate(true); }} className="btn-primary">
             <Plus size={16} /> New Article
           </button>
         )}
@@ -221,19 +230,24 @@ export default function KnowledgeBase() {
       )}
 
       {/* Create/Edit Modal */}
-      <Modal open={showCreate} onClose={() => { setShowCreate(false); setEditing(null); }} title={editing ? 'Edit Article' : 'New Knowledge Article'} size="xl">
+      <Modal open={showCreate} onClose={() => { setShowCreate(false); setEditing(null); setErrors({}); }} title={editing ? 'Edit Article' : 'New Knowledge Article'} size="xl">
         <div className="space-y-4">
-          <div><label className="label">Title *</label><input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className="input" placeholder="Article title" /></div>
+          <div>
+            <label className="label">Title<span className="text-red-500 ml-0.5">*</span></label>
+            <input value={form.title} onChange={e => { setForm(p => ({ ...p, title: e.target.value })); if (errors.title) setErrors(p => ({ ...p, title: '' })); }} className={`input ${errors.title ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="Article title" />
+            {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Category</label>
+              <label className="label">Category<span className="text-red-500 ml-0.5">*</span></label>
               <input
                 list="kb-category-options"
                 value={form.category}
-                onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
-                className="input"
+                onChange={e => { setForm(p => ({ ...p, category: e.target.value })); if (errors.category) setErrors(p => ({ ...p, category: '' })); }}
+                className={`input ${errors.category ? 'border-red-400 focus:ring-red-300' : ''}`}
                 placeholder="Select or type a category…"
               />
+              {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
               <datalist id="kb-category-options">
                 {kbCategories.map(c => <option key={c} value={c} />)}
               </datalist>
@@ -256,7 +270,7 @@ export default function KnowledgeBase() {
             <p className="text-xs text-slate-400 mt-1">Supports HTML: h2, h3, p, ul, li, strong, em, code, pre</p>
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowCreate(false); setEditing(null); }} className="btn-secondary">Cancel</button>
+            <button onClick={() => { setShowCreate(false); setEditing(null); setErrors({}); }} className="btn-secondary">Cancel</button>
             <button onClick={save} className="btn-primary">{editing ? 'Save Changes' : 'Create Article'}</button>
           </div>
         </div>

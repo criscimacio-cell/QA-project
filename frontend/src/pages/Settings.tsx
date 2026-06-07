@@ -11,14 +11,25 @@ export default function Settings() {
   const [confirmPw, setConfirmPw] = useState('');
   const [pwMsg, setPwMsg] = useState('');
   const [pwErr, setPwErr] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validatePassword = () => {
+    const e: Record<string, string> = {};
+    if (!currentPw) e.currentPassword = 'Current password is required';
+    if (!newPw) e.newPassword = 'New password is required';
+    else if (newPw.length < 8) e.newPassword = 'Password must be at least 8 characters';
+    if (!confirmPw) e.confirmPassword = 'Please confirm your new password';
+    else if (newPw && confirmPw !== newPw) e.confirmPassword = "Passwords don't match";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   const changePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPw !== confirmPw) { setPwErr("Passwords don't match"); return; }
-    if (newPw.length < 8) { setPwErr("Password must be at least 8 characters"); return; }
+    if (!validatePassword()) return;
     try {
       await api.post('/auth/change-password', { currentPassword: currentPw, newPassword: newPw });
-      setPwMsg('Password changed successfully'); setPwErr('');
+      setPwMsg('Password changed successfully'); setPwErr(''); setErrors({});
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
     } catch (e: any) { setPwErr(e.response?.data?.error || 'Failed to change password'); }
   };
@@ -109,9 +120,33 @@ export default function Settings() {
               {pwMsg && <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-400">{pwMsg}</div>}
               {pwErr && <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">{pwErr}</div>}
               <form onSubmit={changePassword} className="space-y-4 max-w-sm">
-                <div><label className="label">Current Password</label><input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} className="input" required /></div>
-                <div><label className="label">New Password</label><input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} className="input" required /></div>
-                <div><label className="label">Confirm New Password</label><input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} className="input" required /></div>
+                <div>
+                  <label className="label">Current Password<span className="text-red-500 ml-0.5">*</span></label>
+                  <input type="password" value={currentPw} onChange={e => { setCurrentPw(e.target.value); if (errors.currentPassword) setErrors(p => ({ ...p, currentPassword: '' })); }} className={`input ${errors.currentPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                  {errors.currentPassword && <p className="text-xs text-red-500 mt-1">{errors.currentPassword}</p>}
+                </div>
+                <div>
+                  <label className="label">New Password<span className="text-red-500 ml-0.5">*</span></label>
+                  <input type="password" value={newPw} onChange={e => {
+                    const v = e.target.value;
+                    setNewPw(v);
+                    setErrors(p => {
+                      const n: Record<string, string> = { ...p, newPassword: '' };
+                      if (confirmPw) n.confirmPassword = confirmPw !== v ? "Passwords don't match" : '';
+                      return n;
+                    });
+                  }} className={`input ${errors.newPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                  {errors.newPassword && <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>}
+                </div>
+                <div>
+                  <label className="label">Confirm New Password<span className="text-red-500 ml-0.5">*</span></label>
+                  <input type="password" value={confirmPw} onChange={e => {
+                    const v = e.target.value;
+                    setConfirmPw(v);
+                    setErrors(p => ({ ...p, confirmPassword: v && newPw && v !== newPw ? "Passwords don't match" : '' }));
+                  }} className={`input ${errors.confirmPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                  {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
+                </div>
                 <button type="submit" className="btn-primary">Update Password</button>
               </form>
             </div>

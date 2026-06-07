@@ -40,6 +40,7 @@ export default function FileManager() {
   const [showApprove, setShowApprove] = useState(false);
   const [approveStatus, setApproveStatus] = useState('approved');
   const [approveComment, setApproveComment] = useState('');
+  const [approveError, setApproveError] = useState('');
   const [project, setProject] = useState('');
   const [category, setCategory] = useState('');
 
@@ -72,10 +73,16 @@ export default function FileManager() {
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); load(); };
 
+  const requiresComment = approveStatus === 'rejected' || approveStatus === 'draft';
+
   const doApprove = async () => {
     if (!selected) return;
+    if (requiresComment && approveComment.trim().length < 10) {
+      setApproveError('Please provide a reason (min 10 characters)');
+      return;
+    }
     await api.post(`/files/${selected.id}/approve`, { status: approveStatus, comments: approveComment });
-    setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); load();
+    setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); load();
   };
 
   const doArchive = async (id: number) => {
@@ -310,11 +317,11 @@ export default function FileManager() {
       )}
 
       {/* Approve Modal */}
-      <Modal open={showApprove} onClose={() => { setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); }} title="Review File" size="sm">
+      <Modal open={showApprove} onClose={() => { setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); }} title="Review File" size="sm">
         <div className="space-y-4">
           <div>
             <label className="label">Update Status</label>
-            <select value={approveStatus} onChange={e => setApproveStatus(e.target.value)} className="input">
+            <select value={approveStatus} onChange={e => { setApproveStatus(e.target.value); setApproveError(''); }} className="input">
               <option value="under_review">Under Review</option>
               <option value="approved">Approved</option>
               <option value="published">Published</option>
@@ -322,11 +329,12 @@ export default function FileManager() {
             </select>
           </div>
           <div>
-            <label className="label">Comments</label>
-            <textarea value={approveComment} onChange={e => setApproveComment(e.target.value)} className="input" rows={3} placeholder="Add review comments…" />
+            <label className="label">Comments{requiresComment && <span className="text-red-500 ml-0.5">*</span>}</label>
+            <textarea value={approveComment} onChange={e => { setApproveComment(e.target.value); if (approveError) setApproveError(''); }} className={`input ${approveError ? 'border-red-400 focus:ring-red-300' : ''}`} rows={3} placeholder={requiresComment ? 'Explain why you are returning/rejecting this file…' : 'Add review comments…'} />
+            {approveError && <p className="text-xs text-red-500 mt-1">{approveError}</p>}
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); }} className="btn-secondary">Cancel</button>
+            <button onClick={() => { setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); }} className="btn-secondary">Cancel</button>
             <button onClick={doApprove} className="btn-primary">Update Status</button>
           </div>
         </div>

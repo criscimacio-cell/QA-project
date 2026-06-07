@@ -12,21 +12,37 @@ export default function UserManagement() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', email: '', role: 'engineer', department: '', active: 1 });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const load = () => api.get('/users').then(r => setUsers(r.data));
   useEffect(() => { load(); }, []);
 
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!form.name.trim()) e.name = 'Name is required';
+    if (!editing) {
+      if (!form.email.trim()) e.email = 'Email is required';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = 'Enter a valid email address';
+    }
+    if (!form.role) e.role = 'Role is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const closeModal = () => { setShowModal(false); setEditing(null); setErrors({}); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); };
+
   const save = async () => {
+    if (!validate()) return;
     if (editing) {
       await api.put(`/users/${editing.id}`, form);
     } else {
       await api.post('/users', { ...form, password: 'password123' });
     }
-    setShowModal(false); setEditing(null); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); load();
+    closeModal(); load();
   };
 
   const startEdit = (u: any) => {
-    setEditing(u); setForm({ name: u.name || '', email: u.email || '', role: u.role || 'engineer', department: u.department || '', active: u.active }); setShowModal(true);
+    setEditing(u); setErrors({}); setForm({ name: u.name || '', email: u.email || '', role: u.role || 'engineer', department: u.department || '', active: u.active }); setShowModal(true);
   };
 
   const toggleActive = async (u: any) => {
@@ -44,7 +60,7 @@ export default function UserManagement() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage team members and access control</p>
         </div>
         {isAdmin && (
-          <button onClick={() => { setEditing(null); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); setShowModal(true); }} className="btn-primary">
+          <button onClick={() => { setEditing(null); setErrors({}); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); setShowModal(true); }} className="btn-primary">
             <Plus size={16} /> Add User
           </button>
         )}
@@ -150,22 +166,33 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <Modal open={showModal} onClose={() => { setShowModal(false); setEditing(null); }} title={editing ? 'Edit User' : 'Add New User'} size="sm">
+      <Modal open={showModal} onClose={closeModal} title={editing ? 'Edit User' : 'Add New User'} size="sm">
         <div className="space-y-4">
-          <div><label className="label">Full Name *</label><input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="input" placeholder="John Doe" /></div>
-          {!editing && <div><label className="label">Email *</label><input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className="input" placeholder="john@company.com" /></div>}
           <div>
-            <label className="label">Role</label>
-            <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} className="input">
+            <label className="label">Full Name<span className="text-red-500 ml-0.5">*</span></label>
+            <input value={form.name} onChange={e => { setForm(p => ({ ...p, name: e.target.value })); if (errors.name) setErrors(p => ({ ...p, name: '' })); }} className={`input ${errors.name ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="John Doe" />
+            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+          </div>
+          {!editing && (
+            <div>
+              <label className="label">Email<span className="text-red-500 ml-0.5">*</span></label>
+              <input type="email" value={form.email} onChange={e => { setForm(p => ({ ...p, email: e.target.value })); if (errors.email) setErrors(p => ({ ...p, email: '' })); }} className={`input ${errors.email ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="john@company.com" />
+              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+            </div>
+          )}
+          <div>
+            <label className="label">Role<span className="text-red-500 ml-0.5">*</span></label>
+            <select value={form.role} onChange={e => { setForm(p => ({ ...p, role: e.target.value })); if (errors.role) setErrors(p => ({ ...p, role: '' })); }} className={`input ${errors.role ? 'border-red-400 focus:ring-red-300' : ''}`}>
               <option value="admin">QA Admin</option>
               <option value="lead">QA Lead</option>
               <option value="engineer">QA Engineer</option>
               <option value="viewer">Viewer</option>
             </select>
+            {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role}</p>}
           </div>
           <div><label className="label">Department</label><input value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="input" placeholder="QA Department" /></div>
           <div className="flex gap-2 justify-end pt-2">
-            <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
+            <button onClick={closeModal} className="btn-secondary">Cancel</button>
             <button onClick={save} className="btn-primary">{editing ? 'Save Changes' : 'Create User'}</button>
           </div>
         </div>

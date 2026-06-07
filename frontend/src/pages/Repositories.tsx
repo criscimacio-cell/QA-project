@@ -177,6 +177,7 @@ export default function Repositories() {
   const [editModal, setEditModal] = useState<{ open: boolean; repo: Repo | null }>({ open: false, repo: null });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; repo: Repo | null }>({ open: false, repo: null });
   const [formData, setFormData] = useState({ name: '', description: '' });
+  const [repoErrors, setRepoErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const loadRepos = async () => {
@@ -214,11 +215,12 @@ export default function Repositories() {
   /* ── CRUD handlers ── */
   const openCreate = (parentId: number | null, parentName = '') => {
     setFormData({ name: '', description: '' });
+    setRepoErrors({});
     setCreateModal({ open: true, parentId, parentName });
   };
 
   const doCreate = async () => {
-    if (!formData.name.trim()) return;
+    if (!formData.name.trim()) { setRepoErrors({ name: 'Repository name is required' }); return; }
     setSaving(true);
     try {
       await api.post('/repositories', {
@@ -236,7 +238,8 @@ export default function Repositories() {
   };
 
   const doEdit = async () => {
-    if (!editModal.repo || !formData.name.trim()) return;
+    if (!editModal.repo) return;
+    if (!formData.name.trim()) { setRepoErrors({ name: 'Repository name is required' }); return; }
     setSaving(true);
     try {
       await api.put(`/repositories/${editModal.repo.id}`, { name: formData.name.trim(), description: formData.description });
@@ -321,7 +324,7 @@ export default function Repositories() {
               key={node.id} node={node} selected={selected} onSelect={setSelected}
               level={0} forceOpen={allOpen || !!treeSearch} isLead={isLead} isAdmin={isAdmin}
               onAddSub={repo => openCreate(repo.id, repo.name)}
-              onEdit={repo => { setFormData({ name: repo.name, description: repo.description }); setEditModal({ open: true, repo }); }}
+              onEdit={repo => { setFormData({ name: repo.name, description: repo.description }); setRepoErrors({}); setEditModal({ open: true, repo }); }}
               onDelete={repo => setDeleteModal({ open: true, repo })}
               treeSearch={treeSearch}
             />
@@ -422,7 +425,7 @@ export default function Repositories() {
                   {isLead && (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => { setFormData({ name: selectedRepo.name, description: selectedRepo.description }); setEditModal({ open: true, repo: selectedRepo as Repo }); }}
+                        onClick={() => { setFormData({ name: selectedRepo.name, description: selectedRepo.description }); setRepoErrors({}); setEditModal({ open: true, repo: selectedRepo as Repo }); }}
                         className="btn-secondary text-xs py-1.5 px-3"
                       >
                         <Pencil size={12} /> Rename
@@ -527,24 +530,27 @@ export default function Repositories() {
         title={createModal.parentId ? `New Sub-folder in "${createModal.parentName}"` : 'New Repository'} size="sm">
         <div className="space-y-4">
           <div>
-            <label className="label">{createModal.parentId ? 'Folder' : 'Repository'} Name *</label>
+            <label className="label">{createModal.parentId ? 'Folder' : 'Repository'} Name<span className="text-red-500 ml-0.5">*</span></label>
             <input
               autoFocus
               value={formData.name}
-              onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
+              onChange={e => { setFormData(f => ({ ...f, name: e.target.value })); if (repoErrors.name) setRepoErrors(p => ({ ...p, name: '' })); }}
               onKeyDown={e => e.key === 'Enter' && doCreate()}
-              className="input"
+              className={`input ${repoErrors.name ? 'border-red-400 focus:ring-red-300' : ''}`}
               placeholder={createModal.parentId ? 'e.g. Test Cases' : 'e.g. PhilHealth QA'}
             />
+            {repoErrors.name && <p className="text-xs text-red-500 mt-1">{repoErrors.name}</p>}
           </div>
           <div>
             <label className="label">Description</label>
             <textarea
               value={formData.description}
-              onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
+              onChange={e => setFormData(f => ({ ...f, description: e.target.value.slice(0, 500) }))}
+              maxLength={500}
               className="input" rows={2}
               placeholder="Optional description…"
             />
+            <p className="text-xs text-slate-400 mt-1 text-right">{formData.description.length}/500</p>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button onClick={() => setCreateModal(m => ({ ...m, open: false }))} className="btn-secondary">Cancel</button>
@@ -560,18 +566,20 @@ export default function Repositories() {
       <Modal open={editModal.open} onClose={() => setEditModal({ open: false, repo: null })} title="Rename" size="sm">
         <div className="space-y-4">
           <div>
-            <label className="label">Name *</label>
+            <label className="label">Name<span className="text-red-500 ml-0.5">*</span></label>
             <input
               autoFocus
               value={formData.name}
-              onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
+              onChange={e => { setFormData(f => ({ ...f, name: e.target.value })); if (repoErrors.name) setRepoErrors(p => ({ ...p, name: '' })); }}
               onKeyDown={e => e.key === 'Enter' && doEdit()}
-              className="input"
+              className={`input ${repoErrors.name ? 'border-red-400 focus:ring-red-300' : ''}`}
             />
+            {repoErrors.name && <p className="text-xs text-red-500 mt-1">{repoErrors.name}</p>}
           </div>
           <div>
             <label className="label">Description</label>
-            <textarea value={formData.description} onChange={e => setFormData(f => ({ ...f, description: e.target.value }))} className="input" rows={2} />
+            <textarea value={formData.description} onChange={e => setFormData(f => ({ ...f, description: e.target.value.slice(0, 500) }))} maxLength={500} className="input" rows={2} />
+            <p className="text-xs text-slate-400 mt-1 text-right">{formData.description.length}/500</p>
           </div>
           <div className="flex justify-end gap-2">
             <button onClick={() => setEditModal({ open: false, repo: null })} className="btn-secondary">Cancel</button>
@@ -625,6 +633,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
   const [loading, setLoading] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState(repositoryId?.toString() || '');
   const [categories, setCategories] = useState<string[]>([]);
+  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
 
   useEffect(() => { setSelectedRepo(repositoryId?.toString() || ''); }, [repositoryId]);
 
@@ -634,22 +643,32 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
       .catch(() => {});
   }, []);
 
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!form.name.trim()) errs.name = 'Display name is required';
+    if (!selectedRepo) errs.repository_id = 'Please select a repository';
+    if (!file) errs.file = 'Please choose a file to upload';
+    setUploadErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (!validate()) return;
     setLoading(true);
     if (form.category && !categories.includes(form.category)) {
       await api.post('/categories', { name: form.category, type: 'file' });
       setCategories(prev => [...prev, form.category]);
     }
     const fd = new FormData();
-    fd.append('file', file);
+    fd.append('file', file as File);
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     fd.append('repository_id', selectedRepo);
     try {
       await api.post('/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       onClose(); onSuccess();
       setFile(null);
+      setUploadErrors({});
       setForm({ name: '', project: '', module: '', category: '', jira_ticket: '', tags: '', description: '', version: '1' });
     } finally { setLoading(false); }
   };
@@ -658,7 +677,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
     <Modal open={open} onClose={onClose} title="Upload File" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div
-          className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 text-center hover:border-[#08a49c]/50 transition-colors"
+          className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${uploadErrors.file ? 'border-red-400' : 'border-slate-200 dark:border-slate-700 hover:border-[#08a49c]/50'}`}
         >
           {file ? (
             <div className="flex items-center justify-center gap-3">
@@ -676,20 +695,26 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
               <p className="text-xs text-slate-400">Excel, PDF, Word, ZIP, JSON, XML, CSV, Images</p>
               <input type="file" className="hidden" onChange={e => {
                 const f = e.target.files?.[0];
-                if (f) { setFile(f); if (!form.name) setForm(p => ({ ...p, name: f.name.replace(/\.[^/.]+$/, '') })); }
+                if (f) { setFile(f); setUploadErrors(p => ({ ...p, file: '' })); if (!form.name) setForm(p => ({ ...p, name: f.name.replace(/\.[^/.]+$/, '') })); }
               }} />
             </label>
           )}
         </div>
+        {uploadErrors.file && <p className="text-xs text-red-500 -mt-2">{uploadErrors.file}</p>}
 
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Display Name *</label><input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="input" placeholder="File display name" required /></div>
           <div>
-            <label className="label">Repository *</label>
-            <select value={selectedRepo} onChange={e => setSelectedRepo(e.target.value)} className="input" required>
+            <label className="label">Display Name<span className="text-red-500 ml-0.5">*</span></label>
+            <input value={form.name} onChange={e => { setForm(p => ({ ...p, name: e.target.value })); if (uploadErrors.name) setUploadErrors(p => ({ ...p, name: '' })); }} className={`input ${uploadErrors.name ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="File display name" />
+            {uploadErrors.name && <p className="text-xs text-red-500 mt-1">{uploadErrors.name}</p>}
+          </div>
+          <div>
+            <label className="label">Repository<span className="text-red-500 ml-0.5">*</span></label>
+            <select value={selectedRepo} onChange={e => { setSelectedRepo(e.target.value); if (uploadErrors.repository_id) setUploadErrors(p => ({ ...p, repository_id: '' })); }} className={`input ${uploadErrors.repository_id ? 'border-red-400 focus:ring-red-300' : ''}`}>
               <option value="">Select repository…</option>
               {repos.filter((r: any) => r.parent_id !== null).map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
+            {uploadErrors.repository_id && <p className="text-xs text-red-500 mt-1">{uploadErrors.repository_id}</p>}
           </div>
           <div><label className="label">Project</label><input value={form.project} onChange={e => setForm(p => ({ ...p, project: e.target.value }))} className="input" placeholder="e.g. PhilHealth" /></div>
           <div><label className="label">Module</label><input value={form.module} onChange={e => setForm(p => ({ ...p, module: e.target.value }))} className="input" placeholder="e.g. CF4" /></div>

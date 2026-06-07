@@ -9,6 +9,14 @@ import { sendPasswordReset } from '../mailer';
 const router = Router();
 
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+// Periodically purge expired entries to prevent memory growth
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of loginAttempts.entries()) {
+    if (entry.resetAt < now) loginAttempts.delete(ip);
+  }
+}, 5 * 60 * 1000);
+
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const entry = loginAttempts.get(ip);
@@ -16,13 +24,22 @@ function checkRateLimit(ip: string): boolean {
     loginAttempts.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
     return true;
   }
-  if (entry.count >= 20) return false;
+  if (entry.count >= 10) return false;
   entry.count++;
   return true;
 }
 
+function getClientIp(req: Request): string {
+  // Honour X-Forwarded-For only when explicitly trusted via env var TRUST_PROXY=1
+  if (process.env.TRUST_PROXY === '1') {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) return (Array.isArray(forwarded) ? forwarded[0] : forwarded).split(',')[0].trim();
+  }
+  return req.socket.remoteAddress || 'unknown';
+}
+
 router.post('/login', (req: Request, res: Response) => {
-  const ip = req.ip || req.socket.remoteAddress || '';
+  const ip = getClientIp(req);
   if (!checkRateLimit(ip)) { res.status(429).json({ error: 'Too many login attempts, try again in 15 minutes' }); return; }
   const { email, password } = req.body;
   if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }

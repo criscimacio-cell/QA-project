@@ -24,7 +24,8 @@ const upload = multer({
   storage,
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (req, file, cb) => {
-    const BLOCKED = ['text/html','application/x-httpd-php','application/x-sh','text/javascript','application/javascript'];
+    // Blocklist types that can execute script when served inline (including SVG)
+    const BLOCKED = ['text/html','application/x-httpd-php','application/x-sh','text/javascript','application/javascript','image/svg+xml','image/svg'];
     if (BLOCKED.includes(file.mimetype)) {
       cb(new Error('File type not allowed'));
     } else {
@@ -187,6 +188,9 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
 });
 
 router.post('/:id/archive', authenticate, requireRole('admin', 'lead'), (req: Request, res: Response) => {
+  const file = db.prepare('SELECT status FROM files WHERE id=?').get(req.params.id) as any;
+  if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  if (file.status === 'archived') { res.status(400).json({ error: 'File is already archived' }); return; }
   db.prepare("UPDATE files SET status='archived', updated_at=datetime('now') WHERE id=?").run(req.params.id);
   db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'ARCHIVE', 'file', ?, 'Archived file', ?)").run(req.user!.userId, req.params.id, req.ip || '');
   res.json({ message: 'Archived' });
@@ -194,6 +198,9 @@ router.post('/:id/archive', authenticate, requireRole('admin', 'lead'), (req: Re
 
 // Restore archived file
 router.post('/:id/restore', authenticate, requireRole('admin', 'lead'), (req: Request, res: Response) => {
+  const file = db.prepare('SELECT status FROM files WHERE id=?').get(req.params.id) as any;
+  if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  if (file.status !== 'archived') { res.status(400).json({ error: 'Only archived files can be restored' }); return; }
   db.prepare("UPDATE files SET status='draft', updated_at=datetime('now') WHERE id=?").run(req.params.id);
   db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'RESTORE', 'file', ?, 'Restored file from archive', ?)").run(req.user!.userId, req.params.id, req.ip || '');
   res.json({ message: 'Restored to draft' });

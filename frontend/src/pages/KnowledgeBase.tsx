@@ -8,47 +8,51 @@ import { useAuth } from '../context/AuthContext';
 const DEFAULT_CATEGORIES = ['Troubleshooting', 'RCA', 'Testing Standards', 'Best Practices', 'Onboarding', 'Process Documentation'];
 
 function sanitizeHtml(html: string): string {
-  // Parse into a temporary DOM element and only keep safe tags/attributes
   const div = document.createElement('div');
   div.innerHTML = html;
+
   const ALLOWED_TAGS = new Set(['h1','h2','h3','h4','h5','h6','p','ul','ol','li','strong','em','b','i','u','code','pre','blockquote','br','hr','span','a','table','thead','tbody','tr','th','td']);
   const ALLOWED_ATTRS: Record<string, Set<string>> = {
-    'a': new Set(['href', 'title', 'target']),
+    'a':  new Set(['href', 'title']),
     'td': new Set(['colspan', 'rowspan']),
     'th': new Set(['colspan', 'rowspan']),
   };
+  // Schemes allowed in href
+  const SAFE_HREF = /^(https?:|mailto:|#)/i;
+
   function clean(node: Element) {
     const children = Array.from(node.childNodes);
     for (const child of children) {
       if (child.nodeType === Node.TEXT_NODE) continue;
-      if (child.nodeType === Node.ELEMENT_NODE) {
-        const el = child as Element;
-        const tag = el.tagName.toLowerCase();
-        if (!ALLOWED_TAGS.has(tag)) {
-          // Replace disallowed element with its text content only
-          node.replaceChild(document.createTextNode(el.textContent || ''), el);
-          continue;
-        }
-        // Strip all attributes not in allowlist
-        const attrs = Array.from(el.attributes);
-        for (const attr of attrs) {
-          const allowed = ALLOWED_ATTRS[tag];
-          if (!allowed || !allowed.has(attr.name.toLowerCase())) {
-            el.removeAttribute(attr.name);
-          }
-        }
-        // For <a> tags, block javascript: hrefs
-        if (tag === 'a') {
-          const href = el.getAttribute('href') || '';
-          if (/^\s*javascript:/i.test(href)) el.removeAttribute('href');
-          el.setAttribute('rel', 'noopener noreferrer');
-          el.setAttribute('target', '_blank');
-        }
-        clean(el);
-      } else {
-        // Remove comments, processing instructions, etc.
+      if (child.nodeType !== Node.ELEMENT_NODE) {
         node.removeChild(child);
+        continue;
       }
+      const el = child as Element;
+      // tagName is always uppercase for HTML elements; SVG/MathML foreign-content nodes
+      // have mixed-case tagNames — treat those as disallowed too.
+      const tag = el.tagName.toLowerCase();
+      const isHtmlElement = el.namespaceURI === 'http://www.w3.org/1999/xhtml' || el.namespaceURI === null;
+      if (!isHtmlElement || !ALLOWED_TAGS.has(tag)) {
+        node.replaceChild(document.createTextNode(el.textContent || ''), el);
+        continue;
+      }
+      // Strip all attributes not in allowlist
+      const attrs = Array.from(el.attributes);
+      for (const attr of attrs) {
+        const allowed = ALLOWED_ATTRS[tag];
+        if (!allowed || !allowed.has(attr.name.toLowerCase())) {
+          el.removeAttribute(attr.name);
+        }
+      }
+      // Validate href — only allow safe schemes, block javascript:, data:, vbscript:, etc.
+      if (tag === 'a') {
+        const href = (el.getAttribute('href') || '').trim();
+        if (href && !SAFE_HREF.test(href)) el.removeAttribute('href');
+        el.setAttribute('rel', 'noopener noreferrer');
+        el.setAttribute('target', '_blank');
+      }
+      clean(el);
     }
   }
   clean(div);

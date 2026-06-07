@@ -11,9 +11,17 @@ function escapeHtml(str: string): string {
 
 function highlight(text: string, q: string) {
   if (!q || !text) return escapeHtml(text || '');
+  // escapeHtml first so injected text can never break out of the mark tag
   const escaped = escapeHtml(text);
-  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(${safeQ})`, 'gi');
   return escaped.replace(re, '<mark class="bg-yellow-200 dark:bg-yellow-900/50 rounded px-0.5">$1</mark>');
+}
+
+// Safe highlighted span — only use dangerouslySetInnerHTML for the highlight markup;
+// the content has been HTML-escaped so no raw user HTML survives.
+function HL({ text, q }: { text: string; q: string }) {
+  return <span dangerouslySetInnerHTML={{ __html: highlight(text, q) }} />;
 }
 
 function formatBytes(b: number) {
@@ -121,16 +129,16 @@ export default function SearchResults() {
                     <FileIcon mimeType={f.mime_type} name={f.original_name} size={28} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlight(f.name, q) }} />
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100"><HL text={f.name} q={q} /></h3>
                         <StatusBadge status={f.status} />
                         {f.jira_ticket && (
-                          <span className="text-xs text-blue-600 font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded" dangerouslySetInnerHTML={{ __html: highlight(f.jira_ticket, q) }} />
+                          <span className="text-xs text-blue-600 font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded"><HL text={f.jira_ticket} q={q} /></span>
                         )}
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 space-x-3">
                         <span>{f.repository_name}</span>
                         <span>·</span>
-                        <span dangerouslySetInnerHTML={{ __html: highlight(f.project, q) }} />
+                        <span><HL text={f.project} q={q} /></span>
                         <span>·</span>
                         <span>{f.category}</span>
                         <span>·</span>
@@ -139,7 +147,7 @@ export default function SearchResults() {
                         <span>{f.owner_name}</span>
                       </div>
                       {f.description && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1.5 line-clamp-2" dangerouslySetInnerHTML={{ __html: highlight(f.description, q) }} />
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1.5 line-clamp-2"><HL text={f.description} q={q} /></p>
                       )}
                       {f.tags && (
                         <div className="flex gap-1 flex-wrap mt-2">
@@ -181,7 +189,7 @@ export default function SearchResults() {
                       <BookOpen size={18} className="text-purple-600 dark:text-purple-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlight(a.title, q) }} />
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100"><HL text={a.title} q={q} /></h3>
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         <span className="text-purple-600 dark:text-purple-400 font-medium">{a.category}</span> · {a.author_name} · {new Date(a.updated_at).toLocaleDateString()}
                       </div>

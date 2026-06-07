@@ -44,7 +44,7 @@ app.use((req, res, next) => {
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(UPLOAD_DIR));
+// NOTE: /uploads static mount removed — all file access goes through authenticated /api/files/:id/download
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

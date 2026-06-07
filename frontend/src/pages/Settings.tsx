@@ -49,7 +49,11 @@ export default function Settings() {
 
   const deleteCategory = async (id: number) => {
     if (!confirm('Delete this category?')) return;
-    await api.delete(`/categories/${id}`);
+    try {
+      await api.delete(`/categories/${id}`);
+    } catch {
+      alert('Failed to delete category.');
+    }
     loadCategories();
   };
 

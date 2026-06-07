@@ -35,10 +35,12 @@ export default function KnowledgeBase() {
   };
 
   useEffect(() => {
-    api.get('/categories?type=knowledge').then(r => {
-      const names = r.data.map((c: any) => c.name);
-      setKbCategories(names.length > 0 ? names : DEFAULT_CATEGORIES);
-    });
+    api.get('/categories', { params: { type: 'knowledge' } })
+      .then(r => {
+        const names = r.data.map((c: any) => c.name);
+        setKbCategories(names.length > 0 ? names : DEFAULT_CATEGORIES);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => { load(); }, [category]);
@@ -82,7 +84,7 @@ export default function KnowledgeBase() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Team knowledge, guides, and documentation</p>
         </div>
         {isEngineer && (
-          <button onClick={() => { setEditing(null); setForm({ title: '', content: '', category: 'Best Practices', tags: '' }); setShowCreate(true); }} className="btn-primary">
+          <button onClick={() => { setEditing(null); setForm({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' }); setShowCreate(true); }} className="btn-primary">
             <Plus size={16} /> New Article
           </button>
         )}

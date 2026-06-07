@@ -180,9 +180,11 @@ export default function Repositories() {
   const [saving, setSaving] = useState(false);
 
   const loadRepos = async () => {
-    const r = await api.get('/repositories');
-    setRepos(r.data);
-    setTree(buildTree(r.data));
+    try {
+      const r = await api.get('/repositories');
+      setRepos(r.data);
+      setTree(buildTree(r.data));
+    } catch {}
   };
 
   const loadDetail = async (id: number) => {
@@ -627,7 +629,9 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
   useEffect(() => { setSelectedRepo(repositoryId?.toString() || ''); }, [repositoryId]);
 
   useEffect(() => {
-    api.get('/categories?type=file').then(r => setCategories(r.data.map((c: any) => c.name)));
+    api.get('/categories', { params: { type: 'file' } })
+      .then(r => setCategories(r.data.map((c: any) => c.name)))
+      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -692,13 +696,13 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
           <div>
             <label className="label">Category</label>
             <input
-              list="category-options"
+              list="upload-category-options"
               value={form.category}
               onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
               className="input"
               placeholder="Select or type a category…"
             />
-            <datalist id="category-options">
+            <datalist id="upload-category-options">
               {categories.map(c => <option key={c} value={c} />)}
             </datalist>
           </div>

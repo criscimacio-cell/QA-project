@@ -4,6 +4,11 @@ import { authenticate, requireRole } from '../middleware/auth';
 
 const router = Router();
 
+router.get('/categories/list', authenticate, (req: Request, res: Response) => {
+  const cats = db.prepare("SELECT name, COUNT(ka.id) as count FROM categories LEFT JOIN knowledge_articles ka ON ka.category = categories.name WHERE categories.type = 'knowledge' GROUP BY categories.name ORDER BY categories.name").all();
+  res.json(cats);
+});
+
 router.get('/', authenticate, (req: Request, res: Response) => {
   const { category, status, search } = req.query;
   let query = `SELECT k.*, u.name as author_name FROM knowledge_articles k LEFT JOIN users u ON k.author_id = u.id WHERE 1=1`;
@@ -36,15 +41,6 @@ router.put('/:id', authenticate, (req: Request, res: Response) => {
 router.delete('/:id', authenticate, requireRole('admin', 'lead'), (req: Request, res: Response) => {
   db.prepare('DELETE FROM knowledge_articles WHERE id=?').run(req.params.id);
   res.json({ message: 'Deleted' });
-});
-
-router.get('/categories/list', authenticate, (req: Request, res: Response) => {
-  const cats = ['Troubleshooting', 'RCA', 'Testing Standards', 'Best Practices', 'Onboarding', 'Process Documentation'];
-  const counts = cats.map(cat => {
-    const count = (db.prepare('SELECT COUNT(*) as c FROM knowledge_articles WHERE category = ?').get(cat) as any).c;
-    return { name: cat, count };
-  });
-  res.json(counts);
 });
 
 export default router;

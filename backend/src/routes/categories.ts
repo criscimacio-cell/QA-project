@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import db from '../db';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -23,7 +23,7 @@ router.post('/', authenticate, (req: Request, res: Response) => {
 });
 
 // DELETE /categories/:id  (admin only)
-router.delete('/:id', authenticate, (req: Request, res: Response) => {
+router.delete('/:id', authenticate, requireRole('admin'), (req: Request, res: Response) => {
   db.prepare('DELETE FROM categories WHERE id = ?').run(req.params.id);
   res.json({ message: 'Deleted' });
 });

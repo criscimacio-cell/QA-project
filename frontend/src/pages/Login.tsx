@@ -289,14 +289,6 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="flex items-center gap-2.5 rounded-xl mb-5 text-sm" style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            {error}
-          </div>
-        )}
-
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
@@ -349,6 +341,12 @@ export default function Login() {
               </button>
             </div>
             {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+            {error && (
+              <div className="flex items-center gap-2.5 rounded-xl mt-3 text-sm" style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {error}
+              </div>
+            )}
           </div>
 
           {/* Submit */}

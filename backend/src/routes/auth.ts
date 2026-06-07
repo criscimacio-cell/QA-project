@@ -8,7 +8,22 @@ import { sendPasswordReset } from '../mailer';
 
 const router = Router();
 
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || entry.resetAt < now) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
+    return true;
+  }
+  if (entry.count >= 20) return false;
+  entry.count++;
+  return true;
+}
+
 router.post('/login', (req: Request, res: Response) => {
+  const ip = req.ip || req.socket.remoteAddress || '';
+  if (!checkRateLimit(ip)) { res.status(429).json({ error: 'Too many login attempts, try again in 15 minutes' }); return; }
   const { email, password } = req.body;
   if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }
   const user = db.prepare('SELECT * FROM users WHERE email = ? AND active = 1').get(email) as any;
@@ -17,7 +32,7 @@ router.post('/login', (req: Request, res: Response) => {
   }
   db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(user.id);
   db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'LOGIN', 'user', ?, 'Successful login', ?)").run(user.id, user.id, req.ip || '');
-  const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET(), { expiresIn: (process.env.JWT_EXPIRES_IN || '8h') as any });
+  const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET(), { expiresIn: (process.env.JWT_EXPIRES_IN || '8h') as any, algorithm: 'HS256' });
   const { password_hash, ...safeUser } = user;
   res.json({ token, user: safeUser });
 });

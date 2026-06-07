@@ -31,6 +31,16 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:4173')
   .split(',').map(o => o.trim()).filter(Boolean);
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  // Basic CSP — adjust if serving frontend from same origin
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'");
+  next();
+});
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -48,6 +58,10 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/categories', categoryRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+if (process.env.NODE_ENV !== 'production') {
+  console.warn('⚠️  WARNING: Running with default demo credentials (password123). Change before deploying to production.');
+}
 
 initDb();
 app.listen(PORT, () => console.log(`Q-KTAMP API running on http://localhost:${PORT}`));

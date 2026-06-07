@@ -5,7 +5,7 @@ import { authenticate, requireRole } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/', authenticate, (req: Request, res: Response) => {
+router.get('/', authenticate, requireRole('admin', 'lead', 'engineer'), (req: Request, res: Response) => {
   const users = db.prepare('SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users').all();
   res.json(users);
 });
@@ -18,13 +18,21 @@ router.post('/', authenticate, requireRole('admin'), (req: Request, res: Respons
     const result = db.prepare('INSERT INTO users (name, email, password_hash, role, department, avatar) VALUES (?, ?, ?, ?, ?, ?)').run(name, email, hash, role || 'viewer', department || '', avatar);
     db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'USER_CREATE', 'user', ?, ?, ?)").run(req.user!.userId, result.lastInsertRowid, `Created user: ${email}`, req.ip || '');
     res.json({ id: result.lastInsertRowid, name, email, role });
-  } catch (e: any) {
-    res.status(400).json({ error: e.message });
+  } catch {
+    res.status(400).json({ error: 'Operation failed' });
   }
 });
 
+const VALID_ROLES = ['admin', 'lead', 'engineer', 'viewer'];
+
 router.put('/:id', authenticate, requireRole('admin'), (req: Request, res: Response) => {
   const { name, role, department, active } = req.body;
+  if (parseInt(req.params.id) === req.user!.userId && role !== undefined) {
+    res.status(403).json({ error: 'Cannot change your own role' }); return;
+  }
+  if (role && !VALID_ROLES.includes(role)) {
+    res.status(400).json({ error: 'Invalid role' }); return;
+  }
   db.prepare('UPDATE users SET name=?, role=?, department=?, active=? WHERE id=?').run(name, role, department, active !== undefined ? active : 1, req.params.id);
   db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'USER_UPDATE', 'user', ?, ?, ?)").run(req.user!.userId, req.params.id, `Updated user id=${req.params.id}`, req.ip || '');
   res.json({ message: 'Updated' });

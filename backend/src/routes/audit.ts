@@ -15,9 +15,11 @@ router.get('/', authenticate, requireRole('admin', 'lead'), (req: Request, res: 
   const where = conditions.length ? ' AND ' + conditions.join(' AND ') : '';
   let query = `SELECT al.*, u.name as user_name, u.email as user_email, u.role as user_role FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id WHERE 1=1${where}`;
   query += ' ORDER BY al.created_at DESC';
-  const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
-  query += ` LIMIT ${limit} OFFSET ${offset}`;
-  const logs = db.prepare(query).all(...params);
+  const limitInt = Math.max(1, Math.min(200, parseInt(limit as string) || 50));
+  const offsetInt = Math.max(0, (parseInt(page as string) - 1)) * limitInt;
+  query += ' LIMIT ? OFFSET ?';
+  const logParams = [...params, limitInt, offsetInt];
+  const logs = db.prepare(query).all(...logParams);
   const total = (db.prepare(`SELECT COUNT(*) as c FROM audit_logs al WHERE 1=1${where}`).get(...params) as any).c;
   res.json({ logs, total });
 });

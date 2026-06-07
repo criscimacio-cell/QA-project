@@ -20,7 +20,18 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${safeName}`);
   },
 });
-const upload = multer({ storage, limits: { fileSize: MAX_FILE_SIZE } });
+const upload = multer({
+  storage,
+  limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: (req, file, cb) => {
+    const BLOCKED = ['text/html','application/x-httpd-php','application/x-sh','text/javascript','application/javascript'];
+    if (BLOCKED.includes(file.mimetype)) {
+      cb(new Error('File type not allowed'));
+    } else {
+      cb(null, true);
+    }
+  },
+});
 
 router.get('/', authenticate, (req: Request, res: Response) => {
   const { repository_id, status, project, category, search } = req.query;
@@ -32,6 +43,10 @@ router.get('/', authenticate, (req: Request, res: Response) => {
     WHERE 1=1
   `;
   const params: any[] = [];
+  if (!['admin','lead'].includes(req.user!.role)) {
+    query += " AND (f.owner_id = ? OR f.status IN ('published','approved'))";
+    params.push(req.user!.userId);
+  }
   if (repository_id) { query += ' AND f.repository_id = ?'; params.push(repository_id); }
   if (status) { query += ' AND f.status = ?'; params.push(status); }
   if (project) { query += ' AND f.project = ?'; params.push(project); }
@@ -46,8 +61,12 @@ router.get('/:id', authenticate, (req: Request, res: Response) => {
     SELECT f.*, u.name as owner_name, r.name as repository_name
     FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id
     WHERE f.id = ?
-  `).get(req.params.id);
+  `).get(req.params.id) as any;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  const role = req.user!.role;
+  if (!['admin','lead'].includes(role) && file.owner_id !== req.user!.userId && !['published','approved'].includes(file.status)) {
+    res.status(403).json({ error: 'Forbidden' }); return;
+  }
   const versions = db.prepare('SELECT fv.*, u.name as created_by_name FROM file_versions fv LEFT JOIN users u ON fv.created_by = u.id WHERE fv.file_id = ? ORDER BY fv.version DESC').all(req.params.id);
   db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'VIEW', 'file', ?, ?, ?)").run(req.user!.userId, req.params.id, `Viewed file id=${req.params.id}`, req.ip || '');
   res.json({ ...file as object, versions });
@@ -92,6 +111,8 @@ router.post('/bulk-upload', authenticate, upload.array('files', 20), async (req:
   if (!files?.length) { res.status(400).json({ error: 'No files attached' }); return; }
 
   const { repository_id, project, module, category } = req.body;
+  const repo = db.prepare('SELECT id FROM repositories WHERE id=?').get(repository_id);
+  if (!repo) { res.status(400).json({ error: 'Invalid repository' }); return; }
   const results = [];
 
   for (const f of files) {
@@ -111,11 +132,19 @@ router.post('/bulk-upload', authenticate, upload.array('files', 20), async (req:
 
 router.put('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), (req: Request, res: Response) => {
   const { name, project, module, category, jira_ticket, tags, description } = req.body;
+  if (req.user!.role === 'engineer') {
+    const file = db.prepare('SELECT owner_id FROM files WHERE id=?').get(req.params.id) as any;
+    if (!file || file.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
+  }
   db.prepare("UPDATE files SET name=?, project=?, module=?, category=?, jira_ticket=?, tags=?, description=?, updated_at=datetime('now') WHERE id=?").run(name, project, module, category, jira_ticket, tags, description, req.params.id);
   res.json({ message: 'Updated' });
 });
 
-router.post('/:id/submit', authenticate, async (req: Request, res: Response) => {
+router.post('/:id/submit', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+  if (req.user!.role === 'engineer') {
+    const file = db.prepare('SELECT owner_id FROM files WHERE id=?').get(req.params.id) as any;
+    if (!file || file.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
+  }
   db.prepare("UPDATE files SET status='submitted', updated_at=datetime('now') WHERE id=?").run(req.params.id);
   const file = db.prepare('SELECT f.name, u.name as owner_name FROM files f JOIN users u ON f.owner_id = u.id WHERE f.id=?').get(req.params.id) as any;
 
@@ -131,6 +160,19 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
   const { status, comments } = req.body;
   const validStatuses = ['under_review', 'approved', 'published', 'draft'];
   if (!validStatuses.includes(status)) { res.status(400).json({ error: 'Invalid status' }); return; }
+
+  const VALID_TRANSITIONS: Record<string, string[]> = {
+    'draft':        ['submitted'],
+    'submitted':    ['under_review', 'draft'],
+    'under_review': ['approved', 'draft'],
+    'approved':     ['under_review', 'draft', 'published'],
+    'published':    ['archived', 'draft'],
+  };
+  const current = (db.prepare('SELECT status FROM files WHERE id=?').get(req.params.id) as any)?.status;
+  const allowed = VALID_TRANSITIONS[current] || [];
+  if (!allowed.includes(status)) {
+    res.status(400).json({ error: `Cannot transition from '${current}' to '${status}'` }); return;
+  }
 
   db.prepare("UPDATE files SET status=?, updated_at=datetime('now') WHERE id=?").run(status, req.params.id);
   db.prepare('INSERT INTO approvals (file_id, reviewer_id, status, comments) VALUES (?, ?, ?, ?)').run(req.params.id, req.user!.userId, status, comments || '');
@@ -174,6 +216,9 @@ router.delete('/:id', authenticate, requireRole('admin', 'lead'), (req: Request,
 router.get('/:id/download', authenticate, (req: Request, res: Response) => {
   const file = db.prepare('SELECT * FROM files WHERE id=?').get(req.params.id) as any;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== req.user!.userId && !['published','approved'].includes(file.status)) {
+    res.status(403).json({ error: 'Forbidden' }); return;
+  }
   db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'DOWNLOAD', 'file', ?, ?, ?)").run(req.user!.userId, req.params.id, `Downloaded: ${file.original_name}`, req.ip || '');
   const filePath = path.join(UPLOAD_DIR, file.path);
   if (fs.existsSync(filePath)) {
@@ -189,10 +234,20 @@ router.get('/:id/download', authenticate, (req: Request, res: Response) => {
 router.get('/:id/preview', authenticate, (req: Request, res: Response) => {
   const file = db.prepare('SELECT * FROM files WHERE id=?').get(req.params.id) as any;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== req.user!.userId && !['published','approved'].includes(file.status)) {
+    res.status(403).json({ error: 'Forbidden' }); return;
+  }
   const filePath = path.join(UPLOAD_DIR, file.path);
   if (fs.existsSync(filePath)) {
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.original_name)}"`);
-    res.setHeader('Content-Type', file.mime_type || 'application/octet-stream');
+    const SAFE_INLINE_TYPES = new Set(['image/jpeg','image/png','image/gif','image/webp','image/bmp','application/pdf']);
+    const mimeType = file.mime_type || 'application/octet-stream';
+    if (SAFE_INLINE_TYPES.has(mimeType)) {
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.original_name)}"`);
+    } else {
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.original_name)}"`);
+    }
     fs.createReadStream(filePath).pipe(res);
   } else {
     res.status(404).json({ error: 'No preview available for demo records.' });

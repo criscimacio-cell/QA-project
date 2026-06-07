@@ -682,10 +682,16 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
           <div><label className="label">Module</label><input value={form.module} onChange={e => setForm(p => ({ ...p, module: e.target.value }))} className="input" placeholder="e.g. CF4" /></div>
           <div>
             <label className="label">Category</label>
-            <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="input">
-              <option value="">Select category…</option>
-              {['Test Cases', 'RCA', 'Evidence', 'Test Plan', 'Test Data', 'Bug Report', 'Template', 'Test Scripts', 'Performance'].map(c => <option key={c}>{c}</option>)}
-            </select>
+            <input
+              list="category-options"
+              value={form.category}
+              onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+              className="input"
+              placeholder="Select or type a category…"
+            />
+            <datalist id="category-options">
+              {['Test Cases', 'RCA', 'Evidence', 'Test Plan', 'Test Data', 'Bug Report', 'Template', 'Test Scripts', 'Performance'].map(c => <option key={c} value={c} />)}
+            </datalist>
           </div>
           <div><label className="label">Jira Ticket</label><input value={form.jira_ticket} onChange={e => setForm(p => ({ ...p, jira_ticket: e.target.value }))} className="input" placeholder="e.g. QA-123" /></div>
           <div><label className="label">Version</label><input type="number" value={form.version} onChange={e => setForm(p => ({ ...p, version: e.target.value }))} className="input" min="1" /></div>

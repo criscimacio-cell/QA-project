@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-KonSulTa PCB XML Checker
-Validates PhilHealth KonSulTa XML files against:
+FPE XML Checker
+Validates PhilHealth KonSulTa First Tranche XML files against:
   1. XML well-formedness
   2. DTD structure (KonsultaData_v1.14_1.dtd)
   3. Data Dictionary rules (field formats, valid values, required flags)
   4. Library lookups (Excel reference tables)
+  5. Cross-field conditional rules
+  6. First-tranche rules (pReportStatus must be 'U')
 
 Usage:
-    python xml_checker.py <xml_file> [options]
+    python fpe_xml_checker.py <xml_file> [options]
 
 Options:
     --dtd <file>        Path to DTD file (default: KonsultaData_v1.14_1.dtd beside this script)
@@ -1083,18 +1085,54 @@ def check_cross_field(root: etree._Element, result: Result):
 # Reporting
 # ─────────────────────────────────────────────
 
-def build_report(result: Result, strict: bool) -> str:
+# ─────────────────────────────────────────────
+# First-tranche specific rules
+# ─────────────────────────────────────────────
+
+def check_first_tranche(root: etree._Element, result: Result):
+    """
+    Rules that apply specifically to KonSulTa first tranche XML submissions:
+      - All pReportStatus fields must be 'U' (Unvalidated) on submission
+      - DOCUMENT element is not yet required — warn if present with data
+    """
+    # Every pReportStatus in the document must be 'U' for first tranche
+    for elem in root.iter():
+        val = (elem.get("pReportStatus") or "").strip()
+        if val and val != "U":
+            line = getattr(elem, "sourceline", None)
+            result.add("ERROR", "TRANCHE",
+                f"<{elem.tag}> @pReportStatus='{val}' — "
+                f"first tranche submissions must use 'U' (Unvalidated)",
+                line=line)
+
+    # DOCUMENT is not required in first tranche — warn if populated
+    for elem in root.iter("DOCUMENT"):
+        has_data = any(
+            (elem.get(a) or "").strip()
+            for a in ("pDocumentType", "pDocumentUrl", "pHciCaseNo")
+        )
+        if has_data:
+            line = getattr(elem, "sourceline", None)
+            result.add("WARNING", "TRANCHE",
+                "<DOCUMENT> element is not required in the first tranche "
+                "and will be ignored by PhilHealth",
+                line=line)
+
+
+def build_report(result: Result, strict: bool, first_tranche: bool = False) -> str:
     out = StringIO()
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     out.write(f"\n{'='*70}\n")
-    out.write(f"  KONSULTA PCB XML CHECKER\n")
+    out.write(f"  FPE XML CHECKER — PhilHealth KonSulTa First Tranche\n")
     out.write(f"  Generated : {ts}\n")
     out.write(f"  File      : {result.xml_file}\n")
     if result.dtd_file:
         out.write(f"  DTD       : {result.dtd_file}\n")
     if result.libs_dir:
         out.write(f"  Libraries : {result.libs_dir}\n")
+    if first_tranche:
+        out.write(f"  Mode      : First Tranche (pReportStatus=U enforced)\n")
     out.write(f"{'='*70}\n\n")
 
     by_cat: dict[str, list[Issue]] = {}
@@ -1134,7 +1172,7 @@ def parse_args():
     default_libs = os.path.join(script_dir, "LIBRARIES")
 
     p = argparse.ArgumentParser(
-        description="Validate a KonSulTa PCB XML file.",
+        description="FPE XML Checker — Validate a PhilHealth KonSulTa First Tranche XML file.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("xml_file", help="Path to the XML file to check")
@@ -1188,7 +1226,11 @@ def main() -> int:
     if root is not None:
         check_cross_field(root, result)
 
-    report = build_report(result, strict=args.strict)
+    # 5 – First tranche rules
+    if root is not None:
+        check_first_tranche(root, result)
+
+    report = build_report(result, strict=args.strict, first_tranche=True)
 
     if args.report:
         with open(args.report, "w", encoding="utf-8") as f:

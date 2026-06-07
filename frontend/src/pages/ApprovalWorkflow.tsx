@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GitPullRequest, CheckCircle, XCircle, Clock, FileText, ArrowRight } from 'lucide-react';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
@@ -22,6 +22,11 @@ export default function ApprovalWorkflow() {
   const [newStatus, setNewStatus] = useState('approved');
   const [comment, setComment] = useState('');
 
+  // Drag state
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const dragFile = useRef<any>(null);
+
   const load = () => api.get('/files').then(r => setFiles(r.data.filter((f: any) => f.status !== 'archived')));
   useEffect(() => { load(); }, []);
 
@@ -39,11 +44,42 @@ export default function ApprovalWorkflow() {
     load();
   };
 
+  const handleDragStart = (e: React.DragEvent, f: any) => {
+    dragFile.current = f;
+    setDraggingId(f.id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+    setDragOverStage(null);
+    dragFile.current = null;
+  };
+
+  const handleDragOver = (e: React.DragEvent, stageKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverStage(stageKey);
+  };
+
+  const handleDrop = async (e: React.DragEvent, stageKey: string) => {
+    e.preventDefault();
+    const f = dragFile.current;
+    if (!f || f.status === stageKey) { handleDragEnd(); return; }
+    setDraggingId(null);
+    setDragOverStage(null);
+    dragFile.current = null;
+    // Optimistic update
+    setFiles(prev => prev.map(x => x.id === f.id ? { ...x, status: stageKey } : x));
+    await api.post(`/files/${f.id}/approve`, { status: stageKey, comments: '' });
+    load();
+  };
+
   return (
     <div className="space-y-5 animate-fade-in-up">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Approval Workflow</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage file review and publication pipeline</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage file review and publication pipeline · <span className="text-teal-500 font-medium">Drag cards between columns to move files</span></p>
       </div>
 
       {/* Pipeline stats */}
@@ -64,19 +100,72 @@ export default function ApprovalWorkflow() {
       <div className="flex gap-4 overflow-x-auto pb-4">
         {STAGES.map(stage => {
           const stageFiles = getFilesForStage(stage.key);
+          const isOver = dragOverStage === stage.key;
+          const isDragSource = draggingId !== null && stageFiles.some(f => f.id === draggingId);
+
           return (
-            <div key={stage.key} className={`flex-shrink-0 w-64 border-2 ${stage.color} rounded-xl overflow-hidden`}>
+            <div
+              key={stage.key}
+              className={`flex-shrink-0 w-64 border-2 rounded-xl overflow-hidden transition-all duration-150 ${
+                isOver
+                  ? stage.color + ' ring-2 ring-offset-1 ring-teal-400 scale-[1.01]'
+                  : stage.color
+              }`}
+              onDragOver={e => handleDragOver(e, stage.key)}
+              onDragLeave={() => setDragOverStage(null)}
+              onDrop={e => handleDrop(e, stage.key)}
+            >
               <div className={`${stage.headerColor} px-4 py-3 flex items-center gap-2`}>
                 <stage.icon size={16} className={stage.textColor} />
                 <span className={`font-semibold text-sm ${stage.textColor}`}>{stage.label}</span>
                 <span className="ml-auto text-xs bg-white dark:bg-slate-900 rounded-full px-2 py-0.5 font-bold text-slate-700 dark:text-slate-300">{stageFiles.length}</span>
               </div>
-              <div className="p-2 space-y-2 max-h-[500px] overflow-y-auto bg-white dark:bg-slate-900">
-                {stageFiles.length === 0 ? (
-                  <div className="text-center py-6 text-xs text-slate-400">No files</div>
+
+              <div
+                className={`p-2 space-y-2 min-h-[80px] max-h-[500px] overflow-y-auto transition-colors duration-150 ${
+                  isOver
+                    ? 'bg-teal-50/60 dark:bg-teal-900/10'
+                    : 'bg-white dark:bg-slate-900'
+                }`}
+              >
+                {/* Drop hint */}
+                {isOver && draggingId !== null && !stageFiles.some(f => f.id === draggingId) && (
+                  <div className="border-2 border-dashed border-teal-400 rounded-xl h-16 flex items-center justify-center text-xs text-teal-500 font-medium animate-pulse">
+                    Drop here → {stage.label}
+                  </div>
+                )}
+
+                {stageFiles.length === 0 && !isOver ? (
+                  <div className="text-center py-6 text-xs text-slate-400">
+                    {draggingId !== null ? (
+                      <span className="text-teal-400 font-medium">Drop here</span>
+                    ) : 'No files'}
+                  </div>
                 ) : stageFiles.map(f => (
-                  <div key={f.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl hover:shadow-sm cursor-pointer transition-all" onClick={() => setSelected(f)}>
+                  <div
+                    key={f.id}
+                    draggable
+                    onDragStart={e => handleDragStart(e, f)}
+                    onDragEnd={handleDragEnd}
+                    className={`p-3 rounded-xl transition-all cursor-grab active:cursor-grabbing select-none ${
+                      draggingId === f.id
+                        ? 'opacity-40 scale-95 bg-slate-100 dark:bg-slate-700'
+                        : 'bg-slate-50 dark:bg-slate-800 hover:shadow-md hover:scale-[1.01]'
+                    }`}
+                    onClick={() => { if (draggingId === null) setSelected(f); }}
+                  >
                     <div className="flex items-center gap-2 mb-2">
+                      {/* Drag handle dots */}
+                      <div className="flex flex-col gap-[3px] opacity-30 flex-shrink-0">
+                        <div className="flex gap-[3px]">
+                          <div className="w-1 h-1 rounded-full bg-slate-500" />
+                          <div className="w-1 h-1 rounded-full bg-slate-500" />
+                        </div>
+                        <div className="flex gap-[3px]">
+                          <div className="w-1 h-1 rounded-full bg-slate-500" />
+                          <div className="w-1 h-1 rounded-full bg-slate-500" />
+                        </div>
+                      </div>
                       <FileIcon mimeType={f.mime_type} name={f.original_name} size={16} />
                       <span className="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">{f.name}</span>
                     </div>

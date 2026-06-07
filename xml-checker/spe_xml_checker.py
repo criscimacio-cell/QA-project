@@ -108,7 +108,15 @@ def main() -> int:
     if root is not None:
         check_cross_field(root, result)
 
-    # 5 – Second tranche rules
+    # 5 – Count verification (pEnlistTotalCnt etc.)
+    if root is not None:
+        check_counts(root, result)
+
+    # 6 – Referential integrity (pHciCaseNo linkage)
+    if root is not None:
+        check_referential_integrity(root, result)
+
+    # 7 – Second tranche rules
     if root is not None:
         check_second_tranche(root, result)
 

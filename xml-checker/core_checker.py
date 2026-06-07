@@ -211,8 +211,8 @@ RULES: dict[str, list] = {
 
     # ── ENLISTMENT ──────────────────────────────────────────────────
     "ENLISTMENT": [
-        _r("pHciCaseNo",             21),
-        _r("pHciTransNo",            21),
+        _r("pHciCaseNo",             30),
+        _r("pHciTransNo",            30),
         _r("pEffYear",                4),
         _r("pEnlistStat",             1, {"1","2","3"}),
         _r("pEnlistDate",            10, date=True),
@@ -242,8 +242,8 @@ RULES: dict[str, list] = {
 
     # ── PROFILE ─────────────────────────────────────────────────────
     "PROFILE": [
-        _r("pHciTransNo",            21),
-        _r("pHciCaseNo",             21),
+        _r("pHciTransNo",            30),
+        _r("pHciCaseNo",             30),
         _r("pProfDate",              10, date=True),
         _r("pPatientPin",            12),
         _r("pPatientType",            2, MMDD_VALS),
@@ -420,8 +420,8 @@ RULES: dict[str, list] = {
 
     # ── SOAP ─────────────────────────────────────────────────────────
     "SOAP": [
-        _r("pHciCaseNo",             21),
-        _r("pHciTransNo",            21),
+        _r("pHciCaseNo",             30),
+        _r("pHciTransNo",            30),
         _r("pSoapDate",              10, date=True),
         _r("pPatientPin",            12),
         _r("pPatientType",            2, MMDD_VALS),
@@ -497,8 +497,8 @@ RULES: dict[str, list] = {
 
     # ── MEDICINE ─────────────────────────────────────────────────────
     "MEDICINE": [
-        _r("pHciCaseNo",             21),
-        _r("pHciTransNo",            21),
+        _r("pHciCaseNo",             30),
+        _r("pHciTransNo",            30),
         _r("pCategory",              50, {"NCD","ANTIBIOTIC","OTHERS","-",""}),
         _r("pDrugCode",              30, lib="lib_medicine"),
         _r("pGenericCode",            5, lib="lib_medicine_generic"),
@@ -528,8 +528,8 @@ RULES: dict[str, list] = {
 
     # ── DIAGNOSTICEXAMRESULT header ──────────────────────────────────
     "DIAGNOSTICEXAMRESULT": [
-        _r("pHciCaseNo",             21),
-        _r("pHciTransNo",            21),
+        _r("pHciCaseNo",             30),
+        _r("pHciTransNo",            30),
         _r("pPatientPin",            12),
         _r("pPatientType",            2, MMDD_VALS),
         _r("pMemPin",                12),
@@ -798,8 +798,8 @@ RULES: dict[str, list] = {
 
     # ── DOCUMENT ─────────────────────────────────────────────────────
     "DOCUMENT": [
-        _r("pHciCaseNo",             21),
-        _r("pHciTransNo",            21),
+        _r("pHciCaseNo",             30),
+        _r("pHciTransNo",            30),
         _r("pPatientPin",            12),
         _r("pPatientType",            2, MMDD_VALS),
         _r("pMemPin",                12),
@@ -852,7 +852,10 @@ def check_data_dict(root: etree._Element, libs: dict, result: Result):
         rules = RULES.get(tag)
 
         if rules is None:
-            # not an element we define rules for — skip silently
+            if elem.attrib:
+                result.add("WARNING", "DICT",
+                    f"<{tag}> is not a recognised element — attribute checks skipped",
+                    line=line, path=path)
             for child in elem:
                 walk(child, f"{path}/{child.tag}")
             return
@@ -1061,6 +1064,55 @@ def check_cross_field(root: etree._Element, result: Result):
                     "FBS or RBS result expected because FAMHIST has "
                     "Diabetes Mellitus (pMdiseaseCode='006')",
                     line=line)
+
+
+# ─────────────────────────────────────────────
+# Count verification
+# ─────────────────────────────────────────────
+
+def check_counts(root: etree._Element, result: Result):
+    """Verify pEnlistTotalCnt / pProfileTotalCnt / pSoapTotalCnt on PCB root."""
+    line = getattr(root, "sourceline", None)
+    checks = [
+        ("pEnlistTotalCnt",  "ENLISTMENT"),
+        ("pProfileTotalCnt", "PROFILE"),
+        ("pSoapTotalCnt",    "SOAP"),
+    ]
+    for attr, tag in checks:
+        declared = _get(root, attr)
+        if not declared:
+            continue
+        try:
+            declared_n = int(float(declared))
+        except ValueError:
+            continue
+        actual_n = len(root.findall(f".//{tag}"))
+        if declared_n != actual_n:
+            result.add("ERROR", "COUNTS",
+                f"<PCB> @{attr}='{declared_n}' but document contains "
+                f"{actual_n} <{tag}> element(s)",
+                line=line)
+
+
+# ─────────────────────────────────────────────
+# Referential integrity
+# ─────────────────────────────────────────────
+
+def check_referential_integrity(root: etree._Element, result: Result):
+    """Verify pHciCaseNo on SOAP/PROFILE/MEDICINE/DIAGNOSTICEXAMRESULT
+    references an ENLISTMENT pHciCaseNo present in the same document."""
+    enrolled = {_get(e, "pHciCaseNo")
+                for e in root.iter("ENLISTMENT")
+                if _get(e, "pHciCaseNo")}
+
+    for tag in ("PROFILE", "SOAP", "MEDICINE", "DIAGNOSTICEXAMRESULT"):
+        for elem in root.iter(tag):
+            case_no = _get(elem, "pHciCaseNo")
+            if case_no and case_no not in enrolled:
+                result.add("ERROR", "REF",
+                    f"<{tag}> @pHciCaseNo='{case_no}' has no matching "
+                    f"<ENLISTMENT> in this document",
+                    line=getattr(elem, "sourceline", None))
 
 
 # ─────────────────────────────────────────────

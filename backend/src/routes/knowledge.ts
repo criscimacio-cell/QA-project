@@ -26,13 +26,13 @@ router.get('/:id', authenticate, (req: Request, res: Response) => {
   res.json(article);
 });
 
-router.post('/', authenticate, (req: Request, res: Response) => {
+router.post('/', authenticate, requireRole('admin', 'lead', 'engineer'), (req: Request, res: Response) => {
   const { title, content, category, tags } = req.body;
   const result = db.prepare('INSERT INTO knowledge_articles (title, content, category, author_id, status, tags) VALUES (?, ?, ?, ?, ?, ?)').run(title, content || '', category || '', req.user!.userId, 'draft', tags || '');
   res.json({ id: result.lastInsertRowid });
 });
 
-router.put('/:id', authenticate, (req: Request, res: Response) => {
+router.put('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), (req: Request, res: Response) => {
   const { title, content, category, tags, status } = req.body;
   db.prepare("UPDATE knowledge_articles SET title=?, content=?, category=?, tags=?, status=?, updated_at=datetime('now') WHERE id=?").run(title, content, category, tags, status || 'draft', req.params.id);
   res.json({ message: 'Updated' });

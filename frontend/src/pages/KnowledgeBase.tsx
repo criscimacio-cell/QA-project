@@ -7,6 +7,14 @@ import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_CATEGORIES = ['Troubleshooting', 'RCA', 'Testing Standards', 'Best Practices', 'Onboarding', 'Process Documentation'];
 
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/on\w+="[^"]*"/gi, '')
+    .replace(/on\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '');
+}
+
 const CAT_COLORS: Record<string, string> = {
   Troubleshooting: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800',
   RCA: 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-800',
@@ -163,7 +171,7 @@ export default function KnowledgeBase() {
                 ))}
               </div>
             )}
-            <div className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800 pt-4" dangerouslySetInnerHTML={{ __html: selected.content || '<p>No content yet.</p>' }} />
+            <div className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800 pt-4" dangerouslySetInnerHTML={{ __html: sanitizeHtml(selected.content || '<p>No content yet.</p>') }} />
           </div>
         </Modal>
       )}

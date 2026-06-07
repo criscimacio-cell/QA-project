@@ -365,7 +365,7 @@ export default function Dashboard() {
                   style={{ background: STATUS_COLORS[s.status] || '#9ca3af' }}
                 />
                 <span className="text-slate-400 capitalize flex-1">
-                  {s.status.replace('_', ' ')}
+                  {(s.status || '').replace('_', ' ')}
                 </span>
                 <span className="font-bold text-slate-100">{s.count}</span>
               </div>

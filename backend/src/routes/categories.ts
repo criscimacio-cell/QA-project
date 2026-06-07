@@ -14,7 +14,7 @@ router.get('/', authenticate, (req: Request, res: Response) => {
 });
 
 // POST /categories  — create if not exists, return the category
-router.post('/', authenticate, (req: Request, res: Response) => {
+router.post('/', authenticate, requireRole('admin', 'lead', 'engineer'), (req: Request, res: Response) => {
   const { name, type = 'file' } = req.body;
   if (!name?.trim()) { res.status(400).json({ error: 'Name required' }); return; }
   db.prepare('INSERT OR IGNORE INTO categories (name, type) VALUES (?, ?)').run(name.trim(), type);

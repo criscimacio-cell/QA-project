@@ -36,7 +36,7 @@ export default function AuditLog() {
 
   const exportCSV = () => {
     const header = 'Timestamp,User,Role,Action,Entity,Details,IP\n';
-    const rows = logs.map(l => `"${l.created_at}","${l.user_name}","${l.user_role}","${l.action}","${l.entity_type}","${l.details}","${l.ip_address}"`).join('\n');
+    const rows = logs.map(l => `"${l.created_at}","${l.user_name ?? 'System'}","${l.user_role ?? ''}","${l.action}","${l.entity_type}","${l.details}","${l.ip_address}"`).join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'audit-log.csv'; a.click();
@@ -61,6 +61,7 @@ export default function AuditLog() {
           <div key={s.action} className="card p-3 text-center">
             <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{s.count}</div>
             <div className={`text-xs mt-0.5 font-medium px-2 py-0.5 rounded-full inline-block ${ACTION_STYLES[s.action] || 'bg-slate-100 text-slate-600'}`}>{s.action}</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">on this page</div>
           </div>
         ))}
       </div>

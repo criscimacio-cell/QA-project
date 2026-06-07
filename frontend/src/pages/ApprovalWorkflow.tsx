@@ -26,6 +26,8 @@ export default function ApprovalWorkflow() {
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const dragFile = useRef<any>(null);
+  // Per-column drag counter to avoid flicker from child dragLeave events
+  const dragCounters = useRef<Record<string, number>>({});
 
   const load = () => api.get('/files').then(r => setFiles(r.data.filter((f: any) => f.status !== 'archived')));
   useEffect(() => { load(); }, []);
@@ -40,11 +42,17 @@ export default function ApprovalWorkflow() {
   };
 
   const quickMove = async (f: any, status: string) => {
-    await api.post(`/files/${f.id}/approve`, { status, comments: '' });
-    load();
+    try {
+      await api.post(`/files/${f.id}/approve`, { status, comments: '' });
+      load();
+    } catch {
+      alert('Failed to move file. Please try again.');
+      load();
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, f: any) => {
+    if (!isLead) return;
     dragFile.current = f;
     setDraggingId(f.id);
     e.dataTransfer.effectAllowed = 'move';
@@ -54,6 +62,7 @@ export default function ApprovalWorkflow() {
     setDraggingId(null);
     setDragOverStage(null);
     dragFile.current = null;
+    dragCounters.current = {};
   };
 
   const handleDragOver = (e: React.DragEvent, stageKey: string) => {
@@ -69,10 +78,17 @@ export default function ApprovalWorkflow() {
     setDraggingId(null);
     setDragOverStage(null);
     dragFile.current = null;
+    dragCounters.current = {};
     // Optimistic update
     setFiles(prev => prev.map(x => x.id === f.id ? { ...x, status: stageKey } : x));
-    await api.post(`/files/${f.id}/approve`, { status: stageKey, comments: '' });
-    load();
+    try {
+      await api.post(`/files/${f.id}/approve`, { status: stageKey, comments: '' });
+      load();
+    } catch {
+      // Rollback optimistic update
+      load();
+      alert('Failed to move file. Please try again.');
+    }
   };
 
   return (
@@ -112,7 +128,17 @@ export default function ApprovalWorkflow() {
                   : stage.color
               }`}
               onDragOver={e => handleDragOver(e, stage.key)}
-              onDragLeave={() => setDragOverStage(null)}
+              onDragEnter={() => {
+                dragCounters.current[stage.key] = (dragCounters.current[stage.key] || 0) + 1;
+                setDragOverStage(stage.key);
+              }}
+              onDragLeave={() => {
+                dragCounters.current[stage.key] = (dragCounters.current[stage.key] || 0) - 1;
+                if (dragCounters.current[stage.key] <= 0) {
+                  dragCounters.current[stage.key] = 0;
+                  setDragOverStage(null);
+                }
+              }}
               onDrop={e => handleDrop(e, stage.key)}
             >
               <div className={`${stage.headerColor} px-4 py-3 flex items-center gap-2`}>
@@ -144,7 +170,7 @@ export default function ApprovalWorkflow() {
                 ) : stageFiles.map(f => (
                   <div
                     key={f.id}
-                    draggable
+                    draggable={isLead}
                     onDragStart={e => handleDragStart(e, f)}
                     onDragEnd={handleDragEnd}
                     className={`p-3 rounded-xl transition-all cursor-grab active:cursor-grabbing select-none ${
@@ -217,7 +243,7 @@ export default function ApprovalWorkflow() {
             </div>
             {isLead && (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button onClick={() => { setApproveTarget(selected); setSelected(null); setApproveModal(true); }} className="btn-primary w-full justify-center">Update Status</button>
+                <button onClick={() => { setApproveTarget(selected); setSelected(null); setNewStatus('approved'); setComment(''); setApproveModal(true); }} className="btn-primary w-full justify-center">Update Status</button>
               </div>
             )}
           </div>

@@ -35,6 +35,7 @@ router.post('/logout', authenticate, (req: Request, res: Response) => {
 
 router.post('/change-password', authenticate, (req: Request, res: Response) => {
   const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) { res.status(400).json({ error: 'Both currentPassword and newPassword are required' }); return; }
   if (!newPassword || newPassword.length < 8) { res.status(400).json({ error: 'New password must be at least 8 characters' }); return; }
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user!.userId) as any;
   if (!user || !bcrypt.compareSync(currentPassword, user.password_hash)) {

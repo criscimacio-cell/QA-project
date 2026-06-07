@@ -109,7 +109,7 @@ router.post('/bulk-upload', authenticate, upload.array('files', 20), async (req:
   res.json({ uploaded: results.length, files: results });
 });
 
-router.put('/:id', authenticate, (req: Request, res: Response) => {
+router.put('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), (req: Request, res: Response) => {
   const { name, project, module, category, jira_ticket, tags, description } = req.body;
   db.prepare("UPDATE files SET name=?, project=?, module=?, category=?, jira_ticket=?, tags=?, description=?, updated_at=datetime('now') WHERE id=?").run(name, project, module, category, jira_ticket, tags, description, req.params.id);
   res.json({ message: 'Updated' });
@@ -144,14 +144,14 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
   res.json({ message: 'Status updated' });
 });
 
-router.post('/:id/archive', authenticate, (req: Request, res: Response) => {
+router.post('/:id/archive', authenticate, requireRole('admin', 'lead'), (req: Request, res: Response) => {
   db.prepare("UPDATE files SET status='archived', updated_at=datetime('now') WHERE id=?").run(req.params.id);
   db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'ARCHIVE', 'file', ?, 'Archived file', ?)").run(req.user!.userId, req.params.id, req.ip || '');
   res.json({ message: 'Archived' });
 });
 
 // Restore archived file
-router.post('/:id/restore', authenticate, requireRole('admin', 'lead', 'engineer'), (req: Request, res: Response) => {
+router.post('/:id/restore', authenticate, requireRole('admin', 'lead'), (req: Request, res: Response) => {
   db.prepare("UPDATE files SET status='draft', updated_at=datetime('now') WHERE id=?").run(req.params.id);
   db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'RESTORE', 'file', ?, 'Restored file from archive', ?)").run(req.user!.userId, req.params.id, req.ip || '');
   res.json({ message: 'Restored to draft' });

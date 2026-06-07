@@ -29,7 +29,7 @@ router.get('/stats', authenticate, (req: Request, res: Response) => {
   const topFiles = db.prepare(`
     SELECT f.name, f.project, f.category, COUNT(*) as downloads
     FROM audit_logs al JOIN files f ON al.entity_id = f.id
-    WHERE al.action = 'DOWNLOAD'
+    WHERE al.action = 'DOWNLOAD' AND al.entity_type = 'file'
     GROUP BY f.id ORDER BY downloads DESC LIMIT 5
   `).all();
 

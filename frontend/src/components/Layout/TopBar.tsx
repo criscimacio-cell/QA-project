@@ -178,6 +178,12 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                 ) : notifs.map((n, i) => (
                   <div
                     key={n.id}
+                    onClick={async () => {
+                      if (n.read) return;
+                      await api.post(`/notifications/${n.id}/read`);
+                      setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+                      setNotifCount(c => Math.max(0, c - 1));
+                    }}
                     className={`notif-item px-4 py-3 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
                       !n.read ? 'bg-teal-50/50 dark:bg-teal-900/10' : ''
                     }`}

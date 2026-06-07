@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 const ROLES = ['admin', 'lead', 'engineer', 'viewer'];
 
 export default function UserManagement() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -30,6 +30,7 @@ export default function UserManagement() {
   };
 
   const toggleActive = async (u: any) => {
+    if (u.id === user?.id) { alert("You cannot deactivate your own account."); return; }
     await api.put(`/users/${u.id}`, { ...u, active: u.active ? 0 : 1 }); load();
   };
 

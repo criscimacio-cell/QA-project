@@ -50,7 +50,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6 pt-20 sm:pt-20"
       role="dialog"
       aria-modal="true"
     >

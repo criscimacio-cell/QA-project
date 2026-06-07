@@ -1,8 +1,8 @@
 """
-FPE XML Checker — PhilHealth KonSulTa First Tranche validator.
+SPE XML Checker — PhilHealth KonSulTa Second Tranche validator.
 
 Usage:
-    python fpe_xml_checker.py <xml_file> [options]
+    python spe_xml_checker.py <xml_file> [options]
 
 Options:
     --dtd <file>        Path to DTD file (default: KonsultaData_v1.14_1.dtd beside this script)
@@ -16,40 +16,57 @@ Exit codes:  0 = pass   1 = errors found   2 = usage / file not found
 
 from core_checker import *
 
+_ALLOWED_DOC_TYPES = {"EKAS", "EPRESS", "OTH", ""}
 
-def check_first_tranche(root, result):
+
+def check_second_tranche(root, result):
     """
-    Rules that apply specifically to KonSulTa first tranche XML submissions:
-      - All pReportStatus fields must be 'U' (Unvalidated) on submission
-      - DOCUMENT element is not yet required — warn if present with data
+    Rules that apply specifically to KonSulTa second tranche XML submissions.
     """
-    # Every pReportStatus in the document must be 'U' for first tranche
     for elem in root.iter():
         val = (elem.get("pReportStatus") or "").strip()
-        if val and val != "U":
-            line = getattr(elem, "sourceline", None)
+        if not val:
+            continue
+
+        line = getattr(elem, "sourceline", None)
+        tag  = elem.tag
+
+        # Rule 1: pReportStatus must be 'V' or 'F'
+        if val not in ("V", "F"):
             result.add("ERROR", "TRANCHE",
-                f"<{elem.tag}> @pReportStatus='{val}' — "
-                f"first tranche submissions must use 'U' (Unvalidated)",
+                f"<{tag}> @pReportStatus='{val}' — second tranche submissions "
+                f"must use 'V' (Validated) or 'F' (Failed)",
                 line=line)
 
-    # DOCUMENT is not required in first tranche — warn if populated
-    for elem in root.iter("DOCUMENT"):
-        has_data = any(
-            (elem.get(a) or "").strip()
-            for a in ("pDocumentType", "pDocumentUrl", "pHciCaseNo")
-        )
-        if has_data:
-            line = getattr(elem, "sourceline", None)
+        remarks = (elem.get("pDeficiencyRemarks") or "").strip()
+
+        # Rule 2: pDeficiencyRemarks required when pReportStatus='F'
+        if val == "F" and not remarks:
+            result.add("ERROR", "TRANCHE",
+                f"<{tag}> @pDeficiencyRemarks is required when @pReportStatus='F'",
+                line=line)
+
+        # Rule 3: pDeficiencyRemarks should be empty when pReportStatus != 'F'
+        if val != "F" and remarks:
             result.add("WARNING", "TRANCHE",
-                "<DOCUMENT> element is not required in the first tranche "
-                "and will be ignored by PhilHealth",
+                f"<{tag}> @pDeficiencyRemarks should be empty when "
+                f"@pReportStatus is not 'F'",
+                line=line)
+
+    # Rule 4: DOCUMENT pDocumentType must be in allowed set
+    for elem in root.iter("DOCUMENT"):
+        doc_type = (elem.get("pDocumentType") or "").strip()
+        if doc_type not in _ALLOWED_DOC_TYPES:
+            line = getattr(elem, "sourceline", None)
+            result.add("ERROR", "TRANCHE",
+                f"<DOCUMENT> @pDocumentType='{doc_type}' not in allowed values "
+                f"['EKAS', 'EPRESS', 'OTH']",
                 line=line)
 
 
 def parse_args():
     return make_arg_parser(
-        "FPE XML Checker — Validate a PhilHealth KonSulTa First Tranche XML file."
+        "SPE XML Checker — Validate a PhilHealth KonSulTa Second Tranche XML file."
     ).parse_args()
 
 
@@ -91,13 +108,13 @@ def main() -> int:
     if root is not None:
         check_cross_field(root, result)
 
-    # 5 – First tranche rules
+    # 5 – Second tranche rules
     if root is not None:
-        check_first_tranche(root, result)
+        check_second_tranche(root, result)
 
     report = build_report(result, strict=args.strict,
-                          title="FPE XML CHECKER",
-                          mode_label="First Tranche (pReportStatus=U enforced)")
+                          title="SPE XML CHECKER",
+                          mode_label="Second Tranche (pReportStatus=V/F enforced)")
 
     if args.report:
         with open(args.report, "w", encoding="utf-8") as f:

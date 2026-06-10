@@ -48,6 +48,10 @@ class Issue:
     line:      int | None = None
     path:      str | None = None
 
+    @property
+    def ora_code(self):
+        return ORA_CODES.get(self.category, "ORA-20000")
+
 @dataclass
 class Result:
     xml_file:  str
@@ -186,6 +190,18 @@ MMDD_VALS    = {"MM", "DD"}
 PKG_VALS     = {"P", "E", "K"}
 UVF_VALS     = {"U", "V", "F"}
 LAB_STATUS   = {"D", "N", "X", "W"}
+
+ORA_CODES = {
+    "SYNTAX":  "ORA-20001",
+    "DTD":     "ORA-20002",
+    "DICT":    "ORA-20003",
+    "TYPE":    "ORA-20004",
+    "LIBRARY": "ORA-20005",
+    "COUNTS":  "ORA-20006",
+    "REF":     "ORA-20007",
+    "CROSS":   "ORA-20008",
+    "TRANCHE": "ORA-20009",
+}
 
 
 def _r(attr, max_b=None, vals=None, date=False, num=False, lib=None, multi=False):
@@ -1144,9 +1160,10 @@ def build_report(result: Result, strict: bool,
     for cat, issues in by_cat.items():
         out.write(f"  [{cat}]\n")
         for i in issues:
-            lvl = c(f"  {i.level:<8}", i.level)
-            loc = f"  line {i.line}" if i.line else ""
-            pth = f"  @ {i.path}" if i.path else ""
+            ora  = ORA_CODES.get(i.category, "ORA-20000")
+            lvl  = c(f"  {ora}  {i.level:<8}", i.level)
+            loc  = f"  line {i.line}" if i.line else ""
+            pth  = f"  @ {i.path}" if i.path else ""
             out.write(f"{lvl} {i.message}{loc}{pth}\n")
         out.write("\n")
 

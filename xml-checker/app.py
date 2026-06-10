@@ -12,12 +12,14 @@ Security design:
 - Flask request logging does not log file contents
 """
 
+import csv
+import io
 import logging
 import os
 import sys
 import tempfile
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 # ── path setup ───────────────────────────────────────────────────────────────
@@ -69,6 +71,7 @@ def _issues_to_dicts(issues):
         {
             "level":    i.level,
             "category": i.category,
+            "ora_code": i.ora_code,
             "message":  i.message,
             "line":     i.line,
         }
@@ -174,61 +177,58 @@ def index():
     return send_from_directory(os.path.join(_HERE, "templates"), "index.html")
 
 
-@app.route("/api/check", methods=["POST"])
-def api_check():
-    # ── tranche validation ────────────────────────────────────────────
+def _parse_and_validate_request():
+    """
+    Shared helper: validate tranche + uploaded file from the current request.
+    Returns (xml_bytes, tranche) on success, or a Flask error response tuple.
+    """
     tranche_raw = request.form.get("tranche", "")
     tranche = tranche_raw.strip().lower()
     if tranche not in VALID_TRANCHES:
-        return _safe_error(
-            'Invalid tranche. Must be "first" or "second".', 400
-        )
+        return None, _safe_error('Invalid tranche. Must be "first" or "second".', 400)
 
-    # ── file presence ─────────────────────────────────────────────────
     if "file" not in request.files:
-        return _safe_error("No file part in the request.", 400)
+        return None, _safe_error("No file part in the request.", 400)
 
     upload = request.files["file"]
-
     if not upload or not upload.filename:
-        return _safe_error("No file selected.", 400)
+        return None, _safe_error("No file selected.", 400)
 
-    # ── extension check ───────────────────────────────────────────────
     filename = upload.filename
     if not filename.lower().endswith(".xml"):
-        return _safe_error("Only .xml files are accepted.", 415)
+        return None, _safe_error("Only .xml files are accepted.", 415)
 
-    # ── content-type check ────────────────────────────────────────────
     ct = (upload.content_type or "").split(";")[0].strip().lower()
     if ct and ct not in ALLOWED_CONTENT_TYPES:
-        return _safe_error(
-            "Invalid content type. Only XML files are accepted.", 415
-        )
+        return None, _safe_error("Invalid content type. Only XML files are accepted.", 415)
 
-    # ── read into memory (the only disk write happens inside run_check) ──
     xml_bytes = upload.read()
 
-    # ── size check (belt-and-suspenders after MAX_CONTENT_LENGTH) ────
     if len(xml_bytes) > MAX_UPLOAD_BYTES:
-        return _safe_error("File exceeds the 10 MB size limit.", 413)
+        return None, _safe_error("File exceeds the 10 MB size limit.", 413)
 
     if len(xml_bytes) == 0:
-        return _safe_error("Uploaded file is empty.", 400)
+        return None, _safe_error("Uploaded file is empty.", 400)
 
-    # ── run validation ────────────────────────────────────────────────
+    return (xml_bytes, tranche), None
+
+
+@app.route("/api/check", methods=["POST"])
+def api_check():
+    parsed, err = _parse_and_validate_request()
+    if err is not None:
+        return err
+    xml_bytes, tranche = parsed
+
     try:
         result = run_check(xml_bytes, tranche)
     except Exception:
-        # Log the full traceback server-side but never expose it to the caller
         app.logger.exception("Unexpected error during XML validation")
         return _safe_error("An internal error occurred during validation.", 500)
 
-    # ── build response ────────────────────────────────────────────────
     errors   = _issues_to_dicts(result.errors)
     warnings = _issues_to_dicts(result.warnings)
-    infos    = _issues_to_dicts(
-        [i for i in result.issues if i.level == "INFO"]
-    )
+    infos    = _issues_to_dicts([i for i in result.issues if i.level == "INFO"])
     all_issues = _issues_to_dicts(result.issues)
     plain_report = _build_plain_report(result, tranche)
 
@@ -240,6 +240,53 @@ def api_check():
         "issues":   all_issues,
         "report":   plain_report,
     })
+
+
+@app.route("/api/export/txt", methods=["POST"])
+def export_txt():
+    parsed, err = _parse_and_validate_request()
+    if err is not None:
+        return err
+    xml_bytes, tranche = parsed
+
+    try:
+        result = run_check(xml_bytes, tranche)
+    except Exception:
+        app.logger.exception("Unexpected error during XML validation")
+        return _safe_error("An internal error occurred during validation.", 500)
+
+    plain_report = _build_plain_report(result, tranche)
+    return Response(
+        plain_report,
+        mimetype="text/plain",
+        headers={"Content-Disposition": 'attachment; filename="validation_report.txt"'},
+    )
+
+
+@app.route("/api/export/csv", methods=["POST"])
+def export_csv():
+    parsed, err = _parse_and_validate_request()
+    if err is not None:
+        return err
+    xml_bytes, tranche = parsed
+
+    try:
+        result = run_check(xml_bytes, tranche)
+    except Exception:
+        app.logger.exception("Unexpected error during XML validation")
+        return _safe_error("An internal error occurred during validation.", 500)
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["ORA_CODE", "LEVEL", "CATEGORY", "MESSAGE", "LINE"])
+    for i in result.issues:
+        writer.writerow([i.ora_code, i.level, i.category, i.message, i.line or ""])
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="validation_report.csv"'},
+    )
 
 
 @app.errorhandler(413)

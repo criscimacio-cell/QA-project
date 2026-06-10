@@ -389,6 +389,20 @@
       <div v-if="showReport" class="report-box">{{ result.report }}</div>
     </div>
 
+    <!-- Export buttons -->
+    <div style="margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+      <button class="btn btn-primary" @click="exportReport('txt')" :disabled="exporting">
+        📄 Export TXT
+      </button>
+      <button class="btn btn-primary" @click="exportReport('csv')" :disabled="exporting">
+        📊 Export CSV
+      </button>
+      <span v-if="exporting" class="spinner-wrap">
+        <div class="spinner"></div>
+        <span>Preparing download…</span>
+      </span>
+    </div>
+
     <!-- Reset -->
     <button class="btn btn-secondary" @click="resetForm">↩ Check Another File</button>
 
@@ -408,8 +422,10 @@ createApp({
   setup() {
     const tranche      = ref('first');
     const selectedFile = ref(null);
+    const uploadedFile = ref(null);   // file ref kept after successful check for export
     const dragging     = ref(false);
     const loading      = ref(false);
+    const exporting    = ref(false);
     const errorMsg     = ref('');
     const result       = ref(null);
     const showReport   = ref(false);
@@ -497,6 +513,7 @@ createApp({
           ...data.infos,
         ];
 
+        uploadedFile.value = selectedFile.value;
         result.value = data;
         showReport.value  = false;
 
@@ -513,6 +530,40 @@ createApp({
       }
     }
 
+    // ── export ────────────────────────────────────────────────────────
+    async function exportReport(format) {
+      if (!uploadedFile.value || exporting.value) return;
+      exporting.value = true;
+      try {
+        const formData = new FormData();
+        formData.append('file', uploadedFile.value);
+        formData.append('tranche', tranche.value);
+
+        const response = await fetch(`/api/export/${format}`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          errorMsg.value = data.error || `Export failed (${response.status}).`;
+          return;
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `validation_report.${format}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        errorMsg.value = 'Export failed — is the server running?';
+      } finally {
+        exporting.value = false;
+      }
+    }
+
     // ── ui helpers ────────────────────────────────────────────────────
     function toggleCategory(cat) {
       const s = new Set(openCategories.value);
@@ -523,6 +574,7 @@ createApp({
     function resetForm() {
       result.value       = null;
       selectedFile.value = null;
+      uploadedFile.value = null;
       errorMsg.value     = '';
       showReport.value   = false;
       openCategories.value = new Set();
@@ -530,10 +582,10 @@ createApp({
     }
 
     return {
-      tranche, selectedFile, dragging, loading, errorMsg,
+      tranche, selectedFile, uploadedFile, dragging, loading, exporting, errorMsg,
       result, showReport, openCategories, groupedIssues,
       triggerFileInput, onFileSelected, onDrop, clearFile,
-      submitCheck, toggleCategory, resetForm,
+      submitCheck, exportReport, toggleCategory, resetForm,
     };
   }
 }).mount('#app');

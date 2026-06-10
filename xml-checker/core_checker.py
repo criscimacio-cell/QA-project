@@ -198,21 +198,21 @@ RULES: dict[str, list] = {
 
     # ── PCB (root) ──────────────────────────────────────────────────
     "PCB": [
-        _r("pUsername",              21),
-        _r("pPassword",              21),
-        _r("pHciAccreNo",            21),
-        _r("pPMCCNo",                21),
+        _r("pUsername",              None),   # DD: VARCHAR2, no byte size given
+        _r("pPassword",              None),   # DD: VARCHAR2, no byte size given
+        _r("pHciAccreNo",            None),   # DD: VARCHAR2, no byte size given
+        _r("pPMCCNo",                None),   # DD: VARCHAR2, no byte size given
         _r("pEnlistTotalCnt",        None, num=True),
         _r("pProfileTotalCnt",       None, num=True),
         _r("pSoapTotalCnt",          None, num=True),
-        _r("pCertificationId",       21),
-        _r("pHciTransmittalNumber",  21),
+        _r("pCertificationId",       21),     # DD: VARCHAR2 21 BYTE
+        _r("pHciTransmittalNumber",  21),     # DD: VARCHAR2 21 BYTE
     ],
 
     # ── ENLISTMENT ──────────────────────────────────────────────────
     "ENLISTMENT": [
-        _r("pHciCaseNo",             30),
-        _r("pHciTransNo",            30),
+        _r("pHciCaseNo",             21),     # DD: VARCHAR2 21 BYTE
+        _r("pHciTransNo",            21),     # DD: VARCHAR2 21 BYTE
         _r("pEffYear",                4),
         _r("pEnlistStat",             1, {"1","2","3"}),
         _r("pEnlistDate",            10, date=True),
@@ -242,12 +242,12 @@ RULES: dict[str, list] = {
 
     # ── PROFILE ─────────────────────────────────────────────────────
     "PROFILE": [
-        _r("pHciTransNo",            30),
-        _r("pHciCaseNo",             30),
+        _r("pHciTransNo",            21),     # DD: VARCHAR2 21 BYTE
+        _r("pHciCaseNo",             21),     # DD: VARCHAR2 21 BYTE
         _r("pProfDate",              10, date=True),
         _r("pPatientPin",            12),
         _r("pPatientType",            2, MMDD_VALS),
-        _r("pPatientAge",            21),
+        _r("pPatientAge",            None, num=True),   # DD: VARCHAR2, no byte size; age is numeric
         _r("pMemPin",                12),
         _r("pEffYear",                4),
         _r("pATC",                   10),
@@ -420,8 +420,8 @@ RULES: dict[str, list] = {
 
     # ── SOAP ─────────────────────────────────────────────────────────
     "SOAP": [
-        _r("pHciCaseNo",             30),
-        _r("pHciTransNo",            30),
+        _r("pHciCaseNo",             21),     # DD: VARCHAR2 21 BYTE
+        _r("pHciTransNo",            21),     # DD: VARCHAR2 21 BYTE
         _r("pSoapDate",              10, date=True),
         _r("pPatientPin",            12),
         _r("pPatientType",            2, MMDD_VALS),
@@ -497,8 +497,8 @@ RULES: dict[str, list] = {
 
     # ── MEDICINE ─────────────────────────────────────────────────────
     "MEDICINE": [
-        _r("pHciCaseNo",             30),
-        _r("pHciTransNo",            30),
+        _r("pHciCaseNo",             21),     # DD: VARCHAR2 21 BYTE
+        _r("pHciTransNo",            21),     # DD: VARCHAR2 21 BYTE
         _r("pCategory",              50, {"NCD","ANTIBIOTIC","OTHERS","-",""}),
         _r("pDrugCode",              30, lib="lib_medicine"),
         _r("pGenericCode",            5, lib="lib_medicine_generic"),
@@ -528,8 +528,8 @@ RULES: dict[str, list] = {
 
     # ── DIAGNOSTICEXAMRESULT header ──────────────────────────────────
     "DIAGNOSTICEXAMRESULT": [
-        _r("pHciCaseNo",             30),
-        _r("pHciTransNo",            30),
+        _r("pHciCaseNo",             21),     # DD: VARCHAR2 21 BYTE
+        _r("pHciTransNo",            21),     # DD: VARCHAR2 21 BYTE
         _r("pPatientPin",            12),
         _r("pPatientType",            2, MMDD_VALS),
         _r("pMemPin",                12),
@@ -623,7 +623,7 @@ RULES: dict[str, list] = {
         _r("pDataCollection",      None, {"S1","S2","S3",""}),
         _r("pFindings",            None, {"P","N",""}),
         _r("pRemarks",             2000),
-        _r("pNoPlusses",             50),
+        _r("pNoPlusses",              5),   # DD: VARCHAR2 5 BYTE
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
@@ -677,8 +677,8 @@ RULES: dict[str, list] = {
     "ECG": [
         _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
-        _r("pFindings",            2000),
-        _r("pRemarks",             2000),
+        _r("pFindings",            None, num=True),   # DD: NUMBER (1=Normal, 2=With Findings)
+        _r("pRemarks",             1000),             # DD: VARCHAR2 1000 BYTE (was 2000)
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
@@ -709,8 +709,8 @@ RULES: dict[str, list] = {
     "PAPSMEAR": [
         _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
-        _r("pFindings",            2000),
-        _r("pImpression",          2000),
+        _r("pFindings",             500),   # DD: VARCHAR2 500 BYTE
+        _r("pImpression",           500),   # DD: VARCHAR2 500 BYTE
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
@@ -751,7 +751,7 @@ RULES: dict[str, list] = {
     "CREATININE": [
         _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
-        _r("pFindings",            2000),
+        _r("pFindings",             100),   # DD: VARCHAR2 100 BYTE
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
@@ -763,7 +763,7 @@ RULES: dict[str, list] = {
     "PPDTest": [
         _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
-        _r("pFindings",            2000),
+        _r("pFindings",            1000),   # DD: VARCHAR2 1000 BYTE
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
@@ -775,7 +775,7 @@ RULES: dict[str, list] = {
     "HbA1c": [
         _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
-        _r("pFindings",            2000),
+        _r("pFindings",            1000),   # DD: VARCHAR2 1000 BYTE
         _r("pDateAdded",             10, date=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
@@ -798,8 +798,8 @@ RULES: dict[str, list] = {
 
     # ── DOCUMENT ─────────────────────────────────────────────────────
     "DOCUMENT": [
-        _r("pHciCaseNo",             30),
-        _r("pHciTransNo",            30),
+        _r("pHciCaseNo",             21),     # DD: VARCHAR2 21 BYTE
+        _r("pHciTransNo",            21),     # DD: VARCHAR2 21 BYTE
         _r("pPatientPin",            12),
         _r("pPatientType",            2, MMDD_VALS),
         _r("pMemPin",                12),

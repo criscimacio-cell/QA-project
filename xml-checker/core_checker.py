@@ -327,7 +327,7 @@ RULES: dict[str, list] = {
     ],
 
     "PREGHIST": [
-        _r("pPregCnt",             None, num=True),
+        _r("pPregCnt",             None),   # DD: VARCHAR2, not NUMBER
         _r("pDeliveryCnt",         None, num=True),
         _r("pDeliveryTyp",            1, {"N","O","B","X"}),
         _r("pFullTermCnt",         None, num=True),
@@ -620,8 +620,8 @@ RULES: dict[str, list] = {
     "SPUTUM": [
         _r("pReferralFacility",    1000),
         _r("pLabDate",               10, date=True),
-        _r("pDataCollection",      None, {"S1","S2","S3",""}),
-        _r("pFindings",            None, {"P","N",""}),
+        _r("pDataCollection",      None, {"1","2","3","X",""}),   # DD: 1=First,2=Second,3=Third,X=N/A
+        _r("pFindings",            None, {"1","2",""}),            # DD: 1=Essentially Normal,2=With Findings
         _r("pRemarks",             2000),
         _r("pNoPlusses",              5),   # DD: VARCHAR2 5 BYTE
         _r("pDateAdded",             10, date=True),

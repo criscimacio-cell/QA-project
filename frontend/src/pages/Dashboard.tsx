@@ -119,7 +119,11 @@ function StatCard({
 const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
   LOGIN:    { bg: 'rgba(16,185,129,0.1)', text: '#FBBF24' },
   UPLOAD:   { bg: 'rgba(59,130,246,0.1)', text: '#2563eb' },
+<<<<<<< Updated upstream
   DOWNLOAD: { bg: 'rgba(139,92,246,0.1)', text: '#F59E0B' },
+=======
+  DOWNLOAD: { bg: 'rgba(139,92,246,0.1)', text: '#7c3aed' },
+>>>>>>> Stashed changes
   APPROVE:  { bg: 'rgba(245,158,11,0.1)', text: '#D97706' },
   DELETE:   { bg: 'rgba(239,68,68,0.1)', text: '#dc2626' },
   VIEW:     { bg: 'rgba(100,116,139,0.1)', text: '#475569' },

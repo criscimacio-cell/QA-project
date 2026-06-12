@@ -42,7 +42,11 @@ export default function TestDataLibrary() {
         {[
           { label: 'Test Cases', count: files.filter(f => f.category === 'Test Cases').length, gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)' },
           { label: 'Templates', count: files.filter(f => f.category === 'Template').length, gradient: 'linear-gradient(135deg,#10b981,#FBBF24)' },
+<<<<<<< Updated upstream
           { label: 'Test Scripts', count: files.filter(f => f.category === 'Test Scripts').length, gradient: 'linear-gradient(135deg,#FBBF24,#F59E0B)' },
+=======
+          { label: 'Test Scripts', count: files.filter(f => f.category === 'Test Scripts').length, gradient: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+>>>>>>> Stashed changes
           { label: 'Test Data', count: files.filter(f => f.category === 'Test Data').length, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)' },
         ].map(s => (
           <div key={s.label} className="card p-4 flex items-center gap-3">

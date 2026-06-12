@@ -180,18 +180,18 @@ export default function SearchResults() {
           {(filter === 'all' || filter === 'knowledge') && results.knowledge?.length > 0 && (
             <div className="space-y-3 mt-4">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                <BookOpen size={18} className="text-purple-500" /> Knowledge Articles
+                <BookOpen size={18} className="text-amber-500" /> Knowledge Articles
               </h2>
               {results.knowledge.map((a: any) => (
-                <div key={a.id} className="card p-4 hover:shadow-md hover:border-purple-200 dark:hover:border-purple-800 transition-all">
+                <div key={a.id} className="card p-4 hover:shadow-md hover:border-amber-200 dark:hover:border-amber-800 transition-all">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                      <BookOpen size={18} className="text-purple-600 dark:text-purple-400" />
+                    <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                      <BookOpen size={18} className="text-amber-600 dark:text-amber-400" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-slate-900 dark:text-slate-100"><HL text={a.title} q={q} /></h3>
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        <span className="text-purple-600 dark:text-purple-400 font-medium">{a.category}</span> · {a.author_name} · {new Date(a.updated_at).toLocaleDateString()}
+                        <span className="text-amber-600 dark:text-amber-400 font-medium">{a.category}</span> · {a.author_name} · {new Date(a.updated_at).toLocaleDateString()}
                       </div>
                       {a.tags && (
                         <div className="flex gap-1 flex-wrap mt-1.5">

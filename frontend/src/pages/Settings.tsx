@@ -195,7 +195,7 @@ export default function Settings() {
 
                 {/* Status message */}
                 {avatarMsg && !avatarPreview && (
-                  <p className={`text-xs mt-2 font-medium ${avatarMsg.includes('failed') || avatarMsg.includes('failed') ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                  <p className={`text-xs mt-2 font-medium ${/fail|error|only|large|invalid/i.test(avatarMsg) ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
                     {avatarMsg}
                   </p>
                 )}

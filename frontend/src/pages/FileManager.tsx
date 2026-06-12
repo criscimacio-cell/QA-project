@@ -81,8 +81,12 @@ export default function FileManager() {
       setApproveError('Please provide a reason (min 10 characters)');
       return;
     }
-    await api.post(`/files/${selected.id}/approve`, { status: approveStatus, comments: approveComment });
-    setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); load();
+    try {
+      await api.post(`/files/${selected.id}/approve`, { status: approveStatus, comments: approveComment });
+      setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); load();
+    } catch (err: any) {
+      setApproveError(err?.response?.data?.error || 'Failed to update status');
+    }
   };
 
   const doArchive = async (id: number) => {

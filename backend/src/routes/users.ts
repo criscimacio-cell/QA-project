@@ -7,6 +7,8 @@ import db from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
+fs.mkdirSync(path.join(UPLOAD_DIR, 'avatars'), { recursive: true });
+
 const avatarStorage = multer.diskStorage({
   destination: path.join(UPLOAD_DIR, 'avatars'),
   filename: (req, file, cb) => {
@@ -68,7 +70,6 @@ router.delete('/:id', authenticate, requireRole('admin'), (req: Request, res: Re
 router.put('/me/avatar', authenticate, avatarUpload.single('avatar'), (req: Request, res: Response) => {
   const f = req.file;
   if (!f) { res.status(400).json({ error: 'No image uploaded' }); return; }
-  fs.mkdirSync(path.join(UPLOAD_DIR, 'avatars'), { recursive: true });
   // Delete old avatar file if it was a local upload
   const existing = db.prepare('SELECT avatar FROM users WHERE id=?').get(req.user!.userId) as any;
   if (existing?.avatar?.startsWith('/api/users/') && existing.avatar.includes('/avatar')) {
@@ -100,8 +101,16 @@ router.get('/:id/avatar', (req: Request, res: Response) => {
       return;
     }
   }
-  // Fall back to redirect to dicebear
-  res.redirect(user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${req.params.id}`);
+  // Fall back to dicebear (never redirect to our own avatar URL to avoid loops)
+  const seed = encodeURIComponent(req.params.id);
+  res.redirect(`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`);
+});
+
+// Multer error → JSON
+router.use((err: any, req: Request, res: Response, next: Function) => {
+  if (err?.code === 'LIMIT_FILE_SIZE') { res.status(400).json({ error: 'Image too large (max 2 MB)' }); return; }
+  if (err?.message) { res.status(400).json({ error: err.message }); return; }
+  next(err);
 });
 
 export default router;

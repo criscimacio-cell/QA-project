@@ -74,7 +74,7 @@ router.get('/:id', authenticate, (req: Request, res: Response) => {
 });
 
 // Single upload
-router.post('/upload', authenticate, upload.single('file'), async (req: Request, res: Response) => {
+router.post('/upload', authenticate, requireRole('admin', 'lead', 'engineer'), upload.single('file'), async (req: Request, res: Response) => {
   const { repository_id, project, module, category, jira_ticket, tags, description, version, change_log } = req.body;
   const f = req.file;
   if (!f) { res.status(400).json({ error: 'No file attached' }); return; }
@@ -107,7 +107,7 @@ router.post('/upload', authenticate, upload.single('file'), async (req: Request,
 });
 
 // Bulk upload
-router.post('/bulk-upload', authenticate, upload.array('files', 20), async (req: Request, res: Response) => {
+router.post('/bulk-upload', authenticate, requireRole('admin', 'lead', 'engineer'), upload.array('files', 20), async (req: Request, res: Response) => {
   const files = req.files as Express.Multer.File[];
   if (!files?.length) { res.status(400).json({ error: 'No files attached' }); return; }
 
@@ -164,7 +164,7 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
 
   const VALID_TRANSITIONS: Record<string, string[]> = {
     'draft':        ['submitted'],
-    'submitted':    ['under_review', 'draft'],
+    'submitted':    ['under_review', 'approved', 'draft'],
     'under_review': ['approved', 'draft'],
     'approved':     ['under_review', 'draft', 'published'],
     'published':    ['archived', 'draft'],
@@ -273,6 +273,13 @@ router.get('/:id/versions/:version/download', authenticate, (req: Request, res: 
   } else {
     res.status(404).json({ error: 'Version file not found on disk.' });
   }
+});
+
+// Multer error → JSON (must be 4-arg middleware)
+router.use((err: any, req: Request, res: Response, next: Function) => {
+  if (err?.code === 'LIMIT_FILE_SIZE') { res.status(400).json({ error: 'File too large (max 50 MB)' }); return; }
+  if (err?.message) { res.status(400).json({ error: err.message }); return; }
+  next(err);
 });
 
 export default router;

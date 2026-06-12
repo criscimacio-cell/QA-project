@@ -170,6 +170,240 @@ function FigureRight() {
   );
 }
 
+/* ─── Post-login morph overlay ─────────────────────────────────── */
+function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPulse: boolean; fadingOut: boolean }) {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 20,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      background: '#eef2f7',
+      opacity: fadingOut ? 0 : 1,
+      transition: fadingOut ? 'opacity 0.45s ease' : 'none',
+      pointerEvents: fadingOut ? 'none' : 'all',
+    }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+        {/* Ring 1 */}
+        {ringPulse && (
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: 80, height: 80, borderRadius: 22,
+            transform: 'translate(-50%,-50%)',
+            border: '2px solid rgba(8,164,156,0.5)',
+            animation: 'ringExpand 0.55s ease-out forwards',
+            pointerEvents: 'none',
+          }} />
+        )}
+        {/* Ring 2 */}
+        {ringPulse && (
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: 80, height: 80, borderRadius: 22,
+            transform: 'translate(-50%,-50%)',
+            border: '1.5px solid rgba(8,164,156,0.25)',
+            animation: 'ringExpand 0.55s ease-out 0.18s forwards',
+            pointerEvents: 'none',
+          }} />
+        )}
+        {/* Logo icon */}
+        <div style={{
+          width: grown ? 80 : 40, height: grown ? 80 : 40,
+          borderRadius: grown ? 22 : 10,
+          background: 'linear-gradient(135deg,#08a49c,#06b6d4)',
+          boxShadow: '0 8px 32px rgba(8,164,156,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: [
+            'width 0.5s cubic-bezier(0.34,1.3,0.64,1)',
+            'height 0.5s cubic-bezier(0.34,1.3,0.64,1)',
+            'border-radius 0.5s cubic-bezier(0.34,1.3,0.64,1)',
+          ].join(','),
+        }}>
+          <svg width={grown ? 34 : 18} height={grown ? 34 : 18} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"
+            style={{ transition: 'width 0.5s cubic-bezier(0.34,1.3,0.64,1), height 0.5s cubic-bezier(0.34,1.3,0.64,1)' }}>
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+          </svg>
+        </div>
+        {/* Wordmark */}
+        <div style={{
+          overflow: 'hidden',
+          opacity: grown ? 1 : 0,
+          maxHeight: grown ? 40 : 0,
+          transition: 'opacity 0.35s ease 0.3s, max-height 0.35s ease 0.3s',
+        }}>
+          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 20, color: '#0f172a', letterSpacing: '0.04em' }}>Q-KTAMP</span>
+        </div>
+        {/* Subtitle */}
+        <div style={{
+          opacity: grown ? 1 : 0,
+          transform: grown ? 'translateY(0)' : 'translateY(6px)',
+          transition: 'opacity 0.3s ease 0.55s, transform 0.3s ease 0.55s',
+          marginTop: -10,
+        }}>
+          <span style={{ fontSize: 11, color: '#5a8a86', letterSpacing: '0.04em' }}>Loading your workspace…</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Post-login dashboard preview ─────────────────────────────── */
+function DashboardPreview({ visible }: { visible: boolean }) {
+  const anim = (delay: string, dur: string, from: string, easing = 'ease') =>
+    visible ? {
+      animation: `dbReveal ${dur} ${easing} ${delay} forwards`,
+      ['--db-from' as string]: from,
+      opacity: 0,
+    } as React.CSSProperties : { opacity: 0 } as React.CSSProperties;
+
+  const NAV_ITEMS = ['Dashboard','Test Files','Knowledge','Approvals','Reports'];
+  const BARS = [52, 74, 43, 90, 67];
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 10,
+      opacity: visible ? 1 : 0,
+      transition: 'opacity 0.15s ease',
+      pointerEvents: visible ? 'all' : 'none',
+      fontFamily: "'DM Sans',sans-serif",
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        ...anim('0.05s','0.38s','translateY(-18px)','cubic-bezier(0.25,0.8,0.4,1)'),
+        height: 56, background: 'white', borderBottom: '1px solid #e2e8f0',
+        display: 'flex', alignItems: 'center', padding: '0 24px', gap: 12,
+        boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+      }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#08a49c,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+          </svg>
+        </div>
+        <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 15, color: '#0f172a' }}>Q-KTAMP</span>
+        <div style={{ flex: 1 }} />
+        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(8,164,156,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#08a49c' }}>A</span>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', height: 'calc(100% - 56px)' }}>
+        {/* Sidebar */}
+        <div style={{
+          ...anim('0.14s','0.38s','translateX(-18px)','cubic-bezier(0.25,0.8,0.4,1)'),
+          width: 200, background: 'white', borderRight: '1px solid #e2e8f0',
+          padding: '20px 12px', display: 'flex', flexDirection: 'column', gap: 4,
+        }}>
+          {NAV_ITEMS.map((item, i) => (
+            <div key={item} style={{
+              ...anim(`${0.20 + i * 0.09}s`,'0.3s','translateX(-10px)'),
+              padding: '9px 14px', borderRadius: 10,
+              background: i === 0 ? 'rgba(8,164,156,0.1)' : 'transparent',
+              color: i === 0 ? '#08a49c' : '#64748b',
+              fontSize: 13, fontWeight: i === 0 ? 700 : 500,
+            }}>
+              {item}
+            </div>
+          ))}
+        </div>
+
+        {/* Main area */}
+        <div style={{ flex: 1, background: '#eef2f7', padding: 24, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Stat cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+            {[
+              { label: 'Total Files', val: '248', delta: '+12%', color: '#08a49c' },
+              { label: 'Test Cases', val: '1,093', delta: '+5%', color: '#06b6d4' },
+              { label: 'Pass Rate', val: '94.2%', delta: '+1.8%', color: '#0d9488' },
+            ].map((card, i) => (
+              <div key={card.label} style={{
+                ...anim(`${0.26 + i * 0.10}s`,'0.36s','translateY(14px) scale(0.97)','cubic-bezier(0.34,1.2,0.64,1)'),
+                background: 'white', borderRadius: 14, padding: '18px 20px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+              }}>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{card.val}</div>
+                <div style={{ fontSize: 11, color: card.color, fontWeight: 700, marginTop: 4 }}>{card.delta} this week</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Chart + Files row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            {/* Chart panel */}
+            <div style={{
+              ...anim('0.55s','0.36s','translateY(14px) scale(0.97)','cubic-bezier(0.34,1.2,0.64,1)'),
+              background: 'white', borderRadius: 14, padding: '18px 20px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+            }}>
+              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>Weekly Uploads</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 80 }}>
+                {BARS.map((h, i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                    <div style={{
+                      width: '100%', borderRadius: '4px 4px 0 0',
+                      background: 'linear-gradient(180deg,#08a49c,#5eead4)',
+                      height: `${h}%`,
+                      transformOrigin: 'bottom',
+                      opacity: visible ? 1 : 0,
+                      animation: visible ? `dbBar 0.38s ease ${0.72 + i * 0.05}s forwards` : 'none',
+                    }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Files panel */}
+            <div style={{
+              ...anim('0.65s','0.36s','translateY(14px) scale(0.97)','cubic-bezier(0.34,1.2,0.64,1)'),
+              background: 'white', borderRadius: 14, padding: '18px 20px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+            }}>
+              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Recent Files</div>
+              {[
+                { name: 'test-plan-v3.pdf', badge: 'Approved', color: '#08a49c' },
+                { name: 'regression-suite.xlsx', badge: 'Review', color: '#f59e0b' },
+                { name: 'api-test-cases.json', badge: 'Draft', color: '#94a3b8' },
+              ].map((row, i) => (
+                <div key={row.name} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '7px 0', borderBottom: i < 2 ? '1px solid #f1f5f9' : 'none',
+                  opacity: 0,
+                  animation: visible ? `dbReveal 0.3s ease ${0.78 + i * 0.13}s forwards` : 'none',
+                  ['--db-from' as string]: 'translateX(10px)',
+                }}>
+                  <span style={{ fontSize: 12, color: '#334155', fontWeight: 500 }}>{row.name}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: row.color, background: `${row.color}18`, padding: '3px 8px', borderRadius: 6 }}>{row.badge}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Toast */}
+      <div style={{
+        position: 'absolute', bottom: 28, right: 28,
+        display: 'flex', alignItems: 'center', gap: 10,
+        background: 'white', borderRadius: 12, padding: '12px 18px',
+        boxShadow: '0 8px 28px rgba(0,0,0,0.12)',
+        border: '1px solid rgba(8,164,156,0.15)',
+        opacity: 0,
+        animation: visible ? 'dbReveal 0.38s ease 1.1s forwards' : 'none',
+        ['--db-from' as string]: 'translateY(10px)',
+      }}>
+        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(8,164,156,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#08a49c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Welcome back!</div>
+          <div style={{ fontSize: 11, color: '#94a3b8' }}>Redirecting to dashboard…</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main component ───────────────────────────────────────────── */
 export default function Login() {
   const { login } = useAuth();
@@ -183,8 +417,25 @@ export default function Login() {
   const [errors, setErrors]     = useState<Record<string, string>>({});
   const [filledRole, setFilledRole] = useState('');
 
+  const [phase, setPhase] = useState<'idle'|'slideOut'|'morph'|'dashboard'>('idle');
+  const [morphGrown, setMorphGrown] = useState(false);
+  const [ringPulse, setRingPulse] = useState(false);
+  const [morphFading, setMorphFading] = useState(false);
+
   const emailInputRef = useRef<HTMLInputElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
+
+  // Post-login animation sequence
+  useEffect(() => {
+    if (phase !== 'slideOut') return;
+    const ts: ReturnType<typeof setTimeout>[] = [];
+    ts.push(setTimeout(() => { setPhase('morph'); }, 460));
+    ts.push(setTimeout(() => { setMorphGrown(true); }, 460 + 60));
+    ts.push(setTimeout(() => { setRingPulse(true); }, 460 + 600));
+    ts.push(setTimeout(() => { setMorphFading(true); setPhase('dashboard'); }, 460 + 1500));
+    ts.push(setTimeout(() => { navigate('/'); }, 460 + 1500 + 1200));
+    return () => ts.forEach(clearTimeout);
+  }, [phase, navigate]);
 
   // Typewriter on email placeholder
   useEffect(() => {
@@ -243,7 +494,7 @@ export default function Login() {
     setLoading(true); setError('');
     try {
       await login(email, password);
-      navigate('/');
+      setPhase('slideOut');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
     } finally {
@@ -259,6 +510,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif", background: '#eef2f7' }}>
+
+      {/* ── Post-login overlays ── */}
+      {(phase === 'morph' || phase === 'dashboard') && (
+        <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />
+      )}
+      <DashboardPreview visible={phase === 'dashboard'} />
 
       {/* ── Background blobs ── */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }} xmlns="http://www.w3.org/2000/svg">
@@ -319,7 +576,8 @@ export default function Login() {
       {/* ════════════════════════════════════
           LEFT — Login form
       ════════════════════════════════════ */}
-      <div className="relative z-10 flex flex-col items-center justify-center w-full md:w-[48%] px-8 py-12">
+      <div className="relative z-10 flex flex-col items-center justify-center w-full md:w-[48%] px-8 py-12"
+        style={phase === 'slideOut' ? { opacity: 0, transform: 'translateX(-55px) scale(0.96)', transition: 'opacity 0.5s ease, transform 0.5s ease', pointerEvents: 'none' } : undefined}>
 
       <div style={{ width: '100%', maxWidth: 420 }}>
 
@@ -524,6 +782,18 @@ export default function Login() {
           to   { opacity: 1; transform: translateY(0); }
         }
         @media (prefers-reduced-motion: no-preference) {
+          @keyframes ringExpand {
+            from { transform: translate(-50%,-50%) scale(1); opacity: 0.7; }
+            to   { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
+          }
+          @keyframes dbReveal {
+            from { opacity: 0; transform: var(--db-from, translateY(0)); }
+            to   { opacity: 1; transform: translateY(0) translateX(0) scale(1); }
+          }
+          @keyframes dbBar {
+            from { transform: scaleY(0); opacity: 0; }
+            to   { transform: scaleY(1); opacity: 1; }
+          }
           @keyframes blobMorph1 {
             0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
             33%  { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }

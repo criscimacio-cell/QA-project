@@ -84,7 +84,7 @@ export default function AppLayout() {
             zIndex: 0,
           }}
         />
-        {/* Orb 4 – indigo mid-right */}
+        {/* Orb 4 – amber mid-right */}
         <div
           className="fixed rounded-full"
           style={{

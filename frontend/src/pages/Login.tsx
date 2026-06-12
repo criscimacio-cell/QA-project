@@ -429,14 +429,15 @@ export default function Login() {
   // Post-login animation sequence — runs once when loginSuccess flips to true
   useEffect(() => {
     if (!loginSuccess) return;
+    console.log('[anim] loginSuccess fired, starting sequence');
     setPhase('slideOut');
     const ts: ReturnType<typeof setTimeout>[] = [];
-    ts.push(setTimeout(() => setPhase('morph'),          460));
-    ts.push(setTimeout(() => setMorphGrown(true),        520));
-    ts.push(setTimeout(() => setRingPulse(true),        1060));
-    ts.push(setTimeout(() => { setMorphFading(true); setPhase('dashboard'); }, 1960));
-    ts.push(setTimeout(() => navigate('/'),             3160));
-    return () => ts.forEach(clearTimeout);
+    ts.push(setTimeout(() => { console.log('[anim] morph'); setPhase('morph'); },          460));
+    ts.push(setTimeout(() => { console.log('[anim] grown'); setMorphGrown(true); },        520));
+    ts.push(setTimeout(() => { console.log('[anim] ring');  setRingPulse(true); },        1060));
+    ts.push(setTimeout(() => { console.log('[anim] dashboard'); setMorphFading(true); setPhase('dashboard'); }, 1960));
+    ts.push(setTimeout(() => { console.log('[anim] navigate'); navigate('/'); },          3160));
+    return () => { console.log('[anim] cleanup'); ts.forEach(clearTimeout); };
   }, [loginSuccess, navigate]);
 
   // Typewriter on email placeholder
@@ -496,6 +497,7 @@ export default function Login() {
     setLoading(true); setError('');
     try {
       await login(email, password);
+      console.log('[anim] login OK, setting loginSuccess');
       setLoginSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid credentials. Please try again.');

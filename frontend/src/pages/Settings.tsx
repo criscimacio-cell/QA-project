@@ -156,7 +156,7 @@ export default function Settings() {
                   <button
                     onClick={() => avatarInputRef.current?.click()}
                     className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110"
-                    style={{ background: 'linear-gradient(135deg,#065F46,#059669)', border: '2px solid white' }}
+                    style={{ background: 'linear-gradient(135deg,#7C3AED,#8B5CF6)', border: '2px solid white' }}
                     title="Change profile photo"
                   >
                     <Camera size={12} color="white" />
@@ -217,7 +217,7 @@ export default function Settings() {
           {activeSection === 'Security' && (
             <div className="card p-6">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-                <Key size={18} className="text-[#065F46]" /> Change Password
+                <Key size={18} className="text-[#7C3AED]" /> Change Password
               </h2>
               {pwMsg && <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-400">{pwMsg}</div>}
               {pwErr && <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">{pwErr}</div>}
@@ -258,7 +258,7 @@ export default function Settings() {
           {activeSection === 'Storage' && (
             <div className="card p-6">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-                <SettingsIcon size={18} className="text-[#065F46]" /> Platform Information
+                <SettingsIcon size={18} className="text-[#7C3AED]" /> Platform Information
               </h2>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {[
@@ -282,7 +282,7 @@ export default function Settings() {
           {activeSection === 'Categories' && (
             <div className="card p-6 space-y-5">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                <Tag size={18} className="text-[#065F46]" /> Category Manager
+                <Tag size={18} className="text-[#7C3AED]" /> Category Manager
               </h2>
 
               {/* Add category */}
@@ -313,7 +313,7 @@ export default function Settings() {
               )}
 
               {catLoading ? (
-                <div className="flex justify-center py-8"><RefreshCw size={20} className="animate-spin text-[#065F46]" /></div>
+                <div className="flex justify-center py-8"><RefreshCw size={20} className="animate-spin text-[#7C3AED]" /></div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {(['file', 'knowledge'] as const).map(type => {

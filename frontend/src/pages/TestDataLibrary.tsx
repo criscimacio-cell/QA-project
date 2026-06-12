@@ -41,7 +41,7 @@ export default function TestDataLibrary() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Test Cases', count: files.filter(f => f.category === 'Test Cases').length, gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)' },
-          { label: 'Templates', count: files.filter(f => f.category === 'Template').length, gradient: 'linear-gradient(135deg,#10b981,#059669)' },
+          { label: 'Templates', count: files.filter(f => f.category === 'Template').length, gradient: 'linear-gradient(135deg,#10b981,#8B5CF6)' },
           { label: 'Test Scripts', count: files.filter(f => f.category === 'Test Scripts').length, gradient: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
           { label: 'Test Data', count: files.filter(f => f.category === 'Test Data').length, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)' },
         ].map(s => (
@@ -71,7 +71,7 @@ export default function TestDataLibrary() {
       {/* Category pills */}
       <div className="flex gap-2 flex-wrap">
         {CATEGORIES.map(cat => (
-          <button key={cat} onClick={() => setCategory(cat)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${category === cat ? 'bg-[#065F46] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+          <button key={cat} onClick={() => setCategory(cat)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${category === cat ? 'bg-[#7C3AED] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
             {cat}
           </button>
         ))}

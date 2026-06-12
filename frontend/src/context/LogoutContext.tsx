@@ -27,7 +27,7 @@ function LogoutOverlay({
         position: 'fixed', inset: 0, zIndex: 50,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         gap: 10,
-        background: '#FFF8E7',
+        background: '#FAFAFA',
         opacity: fading ? 0 : visible ? 1 : 0,
         transition: fading ? 'opacity 0.3s ease' : 'opacity 0.4s ease',
         pointerEvents: 'none',
@@ -40,7 +40,7 @@ function LogoutOverlay({
             <div style={{
               position: 'absolute', top: '50%', left: '50%',
               width: 80, height: 80, borderRadius: 22,
-              border: '2px solid rgba(6,95,70,0.5)',
+              border: '2px solid rgba(124,58,237,0.5)',
               animation: 'ringOut 0.55s ease-out forwards',
               pointerEvents: 'none',
             }} />
@@ -50,7 +50,7 @@ function LogoutOverlay({
             <div style={{
               position: 'absolute', top: '50%', left: '50%',
               width: 80, height: 80, borderRadius: 22,
-              border: '1.5px solid rgba(6,95,70,0.25)',
+              border: '1.5px solid rgba(124,58,237,0.25)',
               animation: 'ringOut 0.55s ease-out 0.18s forwards',
               pointerEvents: 'none',
             }} />
@@ -61,8 +61,8 @@ function LogoutOverlay({
             width: shrunk ? 28 : 80,
             height: shrunk ? 28 : 80,
             borderRadius: shrunk ? 6 : 22,
-            background: 'linear-gradient(135deg,#065F46,#059669)',
-            boxShadow: shrunk ? 'none' : '0 8px 32px rgba(6,95,70,0.4)',
+            background: 'linear-gradient(135deg,#7C3AED,#8B5CF6)',
+            boxShadow: shrunk ? 'none' : '0 8px 32px rgba(124,58,237,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: [
               'width 0.5s cubic-bezier(0.4,0,0.2,1)',

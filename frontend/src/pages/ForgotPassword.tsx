@@ -27,14 +27,14 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-      <button onClick={toggle} className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl glass text-slate-600 dark:text-slate-300 hover:text-[#065F46] transition-all hover:scale-105">
+      <button onClick={toggle} className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl glass text-slate-600 dark:text-slate-300 hover:text-[#7C3AED] transition-all hover:scale-105">
         {dark ? <Sun size={17} /> : <Moon size={17} />}
       </button>
 
       <div className="w-full max-w-md animate-fade-in-up">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: 'linear-gradient(135deg, #065F46, #059669)', boxShadow: '0 8px 24px rgba(6,95,70,0.35)' }}>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: 'linear-gradient(135deg, #7C3AED, #8B5CF6)', boxShadow: '0 8px 24px rgba(124,58,237,0.35)' }}>
             <Layers size={28} className="text-white" />
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Qlarity</h1>
@@ -44,7 +44,7 @@ export default function ForgotPassword() {
           {sent ? (
             <div className="text-center space-y-4 animate-scale-in">
               <div className="w-16 h-16 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center mx-auto">
-                <CheckCircle2 size={32} className="text-[#065F46]" />
+                <CheckCircle2 size={32} className="text-[#7C3AED]" />
               </div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Check your email</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -86,7 +86,7 @@ export default function ForgotPassword() {
               </form>
 
               <div className="mt-5 text-center">
-                <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-[#065F46] transition-colors">
+                <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-[#7C3AED] transition-colors">
                   <ArrowLeft size={14} /> Back to Sign In
                 </Link>
               </div>

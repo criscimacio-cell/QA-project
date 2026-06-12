@@ -86,7 +86,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
           className="flex items-center justify-between px-6 py-4 flex-shrink-0"
           style={{
             borderBottom: '1px solid var(--border)',
-            background: 'linear-gradient(135deg, rgba(6,95,70,0.05), rgba(167,243,208,0.02))',
+            background: 'linear-gradient(135deg, rgba(124,58,237,0.05), rgba(196,181,253,0.02))',
           }}
         >
           <div>
@@ -96,7 +96,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             {/* Gradient accent line */}
             <div
               className="h-0.5 w-8 rounded-full mt-1"
-              style={{ background: 'linear-gradient(90deg, #065F46, #059669)' }}
+              style={{ background: 'linear-gradient(90deg, #7C3AED, #8B5CF6)' }}
             />
           </div>
           <button

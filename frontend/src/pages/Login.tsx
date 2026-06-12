@@ -16,20 +16,20 @@ function DashboardMockup() {
   return (
     <svg viewBox="0 0 440 520" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 440 }}>
       {/* Card shadow */}
-      <rect x="18" y="22" width="404" height="476" rx="22" fill="rgba(6,95,70,0.10)" />
+      <rect x="18" y="22" width="404" height="476" rx="22" fill="rgba(124,58,237,0.10)" />
       {/* Card body */}
       <rect x="10" y="14" width="404" height="476" rx="20" fill="white" />
-      <rect x="10" y="14" width="404" height="476" rx="20" stroke="rgba(6,95,70,0.15)" strokeWidth="1.5" />
+      <rect x="10" y="14" width="404" height="476" rx="20" stroke="rgba(124,58,237,0.15)" strokeWidth="1.5" />
 
       {/* Top bar */}
       <rect x="10" y="14" width="404" height="50" rx="20" fill="#f8fffe" />
       <rect x="10" y="44" width="404" height="20" fill="#f8fffe" />
-      <circle cx="42" cy="39" r="10" fill="rgba(6,95,70,0.12)" />
-      <circle cx="42" cy="39" r="5" fill="#065F46" opacity="0.7" />
+      <circle cx="42" cy="39" r="10" fill="rgba(124,58,237,0.12)" />
+      <circle cx="42" cy="39" r="5" fill="#7C3AED" opacity="0.7" />
       <rect x="62" y="33" width="80" height="8" rx="4" fill="#0f172a" opacity="0.7" />
       <rect x="62" y="45" width="50" height="5" rx="2.5" fill="#94a3b8" opacity="0.5" />
-      <rect x="330" y="29" width="64" height="22" rx="11" fill="rgba(6,95,70,0.1)" />
-      <rect x="340" y="35" width="44" height="9" rx="4.5" fill="#065F46" opacity="0.6" />
+      <rect x="330" y="29" width="64" height="22" rx="11" fill="rgba(124,58,237,0.1)" />
+      <rect x="340" y="35" width="44" height="9" rx="4.5" fill="#7C3AED" opacity="0.6" />
 
       {/* Divider */}
       <line x1="10" y1="64" x2="414" y2="64" stroke="#e2e8f0" strokeWidth="1" />
@@ -39,22 +39,22 @@ function DashboardMockup() {
       {/* Pie chart */}
       <circle cx="100" cy="145" r="38" fill="#f0fdfc" />
       {/* Segments */}
-      <path d="M100,145 L100,107 A38,38 0 0,1 133,164 Z" fill="#065F46" opacity="0.9"/>
-      <path d="M100,145 L133,164 A38,38 0 0,1 85,181 Z" fill="#059669" opacity="0.8"/>
-      <path d="M100,145 L85,181 A38,38 0 0,1 68,120 Z" fill="#A7F3D0" opacity="0.7"/>
+      <path d="M100,145 L100,107 A38,38 0 0,1 133,164 Z" fill="#7C3AED" opacity="0.9"/>
+      <path d="M100,145 L133,164 A38,38 0 0,1 85,181 Z" fill="#8B5CF6" opacity="0.8"/>
+      <path d="M100,145 L85,181 A38,38 0 0,1 68,120 Z" fill="#C4B5FD" opacity="0.7"/>
       <path d="M100,145 L68,120 A38,38 0 0,1 100,107 Z" fill="#e2e8f0" opacity="0.9"/>
       {/* Donut draw animation overlay */}
-      <circle cx="100" cy="145" r="28" fill="none" stroke="#065F46" strokeWidth="6" strokeLinecap="round"
+      <circle cx="100" cy="145" r="28" fill="none" stroke="#7C3AED" strokeWidth="6" strokeLinecap="round"
         strokeDasharray="0 176" opacity="0.4"
         style={{ transformOrigin: '100px 145px', transform: 'rotate(-90deg)', animation: 'donutDraw 1.8s ease-out 0.3s forwards' }}/>
       <circle cx="100" cy="145" r="18" fill="white" />
-      <text x="100" y="149" textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="10" fontWeight="700" fill="#065F46">72%</text>
+      <text x="100" y="149" textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="10" fontWeight="700" fill="#7C3AED">72%</text>
       {/* Legend */}
-      <circle cx="155" cy="120" r="5" fill="#065F46" opacity="0.9"/>
+      <circle cx="155" cy="120" r="5" fill="#7C3AED" opacity="0.9"/>
       <text x="165" y="124" fontFamily="DM Sans,sans-serif" fontSize="10" fill="#475569">Passed</text>
-      <circle cx="155" cy="137" r="5" fill="#059669" opacity="0.8"/>
+      <circle cx="155" cy="137" r="5" fill="#8B5CF6" opacity="0.8"/>
       <text x="165" y="141" fontFamily="DM Sans,sans-serif" fontSize="10" fill="#475569">Failed</text>
-      <circle cx="155" cy="154" r="5" fill="#A7F3D0" opacity="0.7"/>
+      <circle cx="155" cy="154" r="5" fill="#C4B5FD" opacity="0.7"/>
       <text x="165" y="158" fontFamily="DM Sans,sans-serif" fontSize="10" fill="#475569">Skipped</text>
       <circle cx="155" cy="171" r="5" fill="#e2e8f0"/>
       <text x="165" y="175" fontFamily="DM Sans,sans-serif" fontSize="10" fill="#475569">Pending</text>
@@ -80,8 +80,8 @@ function DashboardMockup() {
       ))}
       <defs>
         <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#065F46"/>
-          <stop offset="100%" stopColor="#A7F3D0" stopOpacity="0.5"/>
+          <stop offset="0%" stopColor="#7C3AED"/>
+          <stop offset="100%" stopColor="#C4B5FD" stopOpacity="0.5"/>
         </linearGradient>
       </defs>
 
@@ -90,16 +90,16 @@ function DashboardMockup() {
       <text x="30" y="362" fontFamily="DM Sans,sans-serif" fontSize="11" fill="#64748b" fontWeight="600" letterSpacing="0.05em">RECENT FILES</text>
 
       {[
-        { label: 'test-plan-v3.pdf',      status: 'Approved', sc: '#065F46', sb: 'rgba(6,95,70,0.1)',  y: 386, delay: '0.8s' },
+        { label: 'test-plan-v3.pdf',      status: 'Approved', sc: '#7C3AED', sb: 'rgba(124,58,237,0.1)',  y: 386, delay: '0.8s' },
         { label: 'regression-suite.xlsx', status: 'Review',   sc: '#f59e0b', sb: 'rgba(245,158,11,0.1)', y: 414, delay: '1.1s' },
         { label: 'api-test-cases.json',   status: 'Draft',    sc: '#94a3b8', sb: 'rgba(148,163,184,0.1)',y: 442, delay: '1.4s' },
-        { label: 'load-test-results.csv', status: 'Approved', sc: '#065F46', sb: 'rgba(6,95,70,0.1)',  y: 470, delay: '1.7s' },
+        { label: 'load-test-results.csv', status: 'Approved', sc: '#7C3AED', sb: 'rgba(124,58,237,0.1)',  y: 470, delay: '1.7s' },
       ].map(row => (
         <g key={row.y} style={{ animation: `rowSlideIn 0.5s ease-out ${row.delay} both` }}>
           <rect x="24" y={row.y - 14} width="366" height="24" rx="6" fill={row.sb} />
-          <circle cx="40" cy={row.y} r="7" fill="rgba(6,95,70,0.12)"/>
-          <rect x="50" y={row.y - 4} width="3" height="8" rx="1.5" fill="#065F46" opacity="0.6"/>
-          <rect x="56" y={row.y - 5} width="3" height="10" rx="1.5" fill="#059669" opacity="0.5"/>
+          <circle cx="40" cy={row.y} r="7" fill="rgba(124,58,237,0.12)"/>
+          <rect x="50" y={row.y - 4} width="3" height="8" rx="1.5" fill="#7C3AED" opacity="0.6"/>
+          <rect x="56" y={row.y - 5} width="3" height="10" rx="1.5" fill="#8B5CF6" opacity="0.5"/>
           <text x="70" y={row.y + 4} fontFamily="DM Sans,sans-serif" fontSize="10" fill="#334155">{row.label}</text>
           <rect x="320" y={row.y - 9} width="58" height="16" rx="8" fill={row.sb} />
           <text x="349" y={row.y + 4} textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="9" fontWeight="600" fill={row.sc}>{row.status}</text>
@@ -115,25 +115,25 @@ function FigureLeft() {
     <svg viewBox="0 0 120 200" fill="none" style={{ width: 90, flexShrink: 0 }}>
       {/* head */}
       <circle cx="60" cy="32" r="20" fill="#b2f0ec"/>
-      <circle cx="60" cy="32" r="20" stroke="#065F46" strokeWidth="1.5" strokeDasharray="4 3"/>
+      <circle cx="60" cy="32" r="20" stroke="#7C3AED" strokeWidth="1.5" strokeDasharray="4 3"/>
       {/* eyes */}
       <circle cx="53" cy="30" r="3" fill="#0f172a"/>
       <circle cx="67" cy="30" r="3" fill="#0f172a"/>
       <path d="M54,40 Q60,46 66,40" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
       {/* body */}
-      <rect x="38" y="55" width="44" height="58" rx="12" fill="#065F46" opacity="0.85"/>
+      <rect x="38" y="55" width="44" height="58" rx="12" fill="#7C3AED" opacity="0.85"/>
       {/* collar detail */}
       <path d="M60,55 L52,70 L60,66 L68,70 Z" fill="white" opacity="0.3"/>
       {/* left arm holding chart */}
-      <path d="M38,70 Q18,75 14,90" stroke="#065F46" strokeWidth="10" strokeLinecap="round" fill="none" opacity="0.8"/>
+      <path d="M38,70 Q18,75 14,90" stroke="#7C3AED" strokeWidth="10" strokeLinecap="round" fill="none" opacity="0.8"/>
       {/* right arm */}
-      <path d="M82,70 Q100,78 104,90" stroke="#065F46" strokeWidth="10" strokeLinecap="round" fill="none" opacity="0.8"/>
+      <path d="M82,70 Q100,78 104,90" stroke="#7C3AED" strokeWidth="10" strokeLinecap="round" fill="none" opacity="0.8"/>
       {/* chart in left hand */}
-      <rect x="2" y="84" width="34" height="26" rx="5" fill="white" stroke="rgba(6,95,70,0.3)" strokeWidth="1"/>
-      <rect x="7"  y="98" width="5" height="8"  rx="1.5" fill="#A7F3D0"/>
-      <rect x="14" y="93" width="5" height="13" rx="1.5" fill="#065F46"/>
-      <rect x="21" y="96" width="5" height="10" rx="1.5" fill="#059669"/>
-      <rect x="28" y="90" width="5" height="16" rx="1.5" fill="#054035"/>
+      <rect x="2" y="84" width="34" height="26" rx="5" fill="white" stroke="rgba(124,58,237,0.3)" strokeWidth="1"/>
+      <rect x="7"  y="98" width="5" height="8"  rx="1.5" fill="#C4B5FD"/>
+      <rect x="14" y="93" width="5" height="13" rx="1.5" fill="#7C3AED"/>
+      <rect x="21" y="96" width="5" height="10" rx="1.5" fill="#8B5CF6"/>
+      <rect x="28" y="90" width="5" height="16" rx="1.5" fill="#6D28D9"/>
       {/* legs */}
       <rect x="44" y="110" width="16" height="52" rx="8" fill="#0f172a" opacity="0.7"/>
       <rect x="64" y="110" width="16" height="52" rx="8" fill="#0f172a" opacity="0.7"/>
@@ -154,11 +154,11 @@ function FigureRight() {
       <circle cx="67" cy="28" r="2.5" fill="#0f172a"/>
       <path d="M54,38 Q60,44 66,38" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
       {/* body */}
-      <rect x="40" y="52" width="40" height="56" rx="12" fill="#059669" opacity="0.85"/>
+      <rect x="40" y="52" width="40" height="56" rx="12" fill="#8B5CF6" opacity="0.85"/>
       <path d="M60,52 L53,66 L60,62 L67,66 Z" fill="white" opacity="0.25"/>
       {/* arms */}
-      <path d="M40,68 Q22,80 20,96" stroke="#059669" strokeWidth="9" strokeLinecap="round" fill="none" opacity="0.8"/>
-      <path d="M80,68 Q98,76 100,88" stroke="#059669" strokeWidth="9" strokeLinecap="round" fill="none" opacity="0.8"/>
+      <path d="M40,68 Q22,80 20,96" stroke="#8B5CF6" strokeWidth="9" strokeLinecap="round" fill="none" opacity="0.8"/>
+      <path d="M80,68 Q98,76 100,88" stroke="#8B5CF6" strokeWidth="9" strokeLinecap="round" fill="none" opacity="0.8"/>
       {/* pointing hand */}
       <circle cx="100" cy="91" r="7" fill="#b2f0ec"/>
       {/* legs */}
@@ -176,7 +176,7 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
     <div style={{
       position: 'absolute', inset: 0, zIndex: 20,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      background: '#FFF8E7',
+      background: '#FAFAFA',
       opacity: fadingOut ? 0 : 1,
       transition: fadingOut ? 'opacity 0.45s ease' : 'none',
       pointerEvents: fadingOut ? 'none' : 'all',
@@ -188,7 +188,7 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
             position: 'absolute', top: '50%', left: '50%',
             width: 80, height: 80, borderRadius: 22,
             transform: 'translate(-50%,-50%)',
-            border: '2px solid rgba(6,95,70,0.5)',
+            border: '2px solid rgba(124,58,237,0.5)',
             animation: 'ringExpand 0.55s ease-out forwards',
             pointerEvents: 'none',
           }} />
@@ -199,7 +199,7 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
             position: 'absolute', top: '50%', left: '50%',
             width: 80, height: 80, borderRadius: 22,
             transform: 'translate(-50%,-50%)',
-            border: '1.5px solid rgba(6,95,70,0.25)',
+            border: '1.5px solid rgba(124,58,237,0.25)',
             animation: 'ringExpand 0.55s ease-out 0.18s forwards',
             pointerEvents: 'none',
           }} />
@@ -208,8 +208,8 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
         <div style={{
           width: grown ? 80 : 40, height: grown ? 80 : 40,
           borderRadius: grown ? 22 : 10,
-          background: 'linear-gradient(135deg,#065F46,#059669)',
-          boxShadow: '0 8px 32px rgba(6,95,70,0.4)',
+          background: 'linear-gradient(135deg,#7C3AED,#8B5CF6)',
+          boxShadow: '0 8px 32px rgba(124,58,237,0.4)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: [
             'width 0.5s cubic-bezier(0.34,1.3,0.64,1)',
@@ -312,7 +312,7 @@ export default function Login() {
       d.style.cssText = `
         position:absolute;
         width:4px;height:4px;border-radius:50%;
-        background:rgba(6,95,70,0.55);
+        background:rgba(124,58,237,0.55);
         left:${Math.random()*100}%;top:${Math.random()*100}%;
         --dx:${dx}px;--dy:${dy}px;
         animation:floatParticle ${3 + Math.random()*4}s ease-in-out ${Math.random()*3}s infinite;
@@ -355,7 +355,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif", background: '#FFF8E7' }}>
+    <div className="min-h-screen w-full flex relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif", background: '#FAFAFA' }}>
+
 
       {/* ── Post-login morph overlay ── */}
       {(phase === 'morph') && (
@@ -388,21 +389,21 @@ export default function Login() {
             }
           `}</style>
         </defs>
-        <path style={{ animation: 'morphBlob1 12s ease-in-out infinite' }} fill="rgba(6,95,70,0.10)" />
-        <path style={{ animation: 'morphBlob2 15s ease-in-out infinite' }} fill="rgba(167,243,208,0.08)" />
-        <path style={{ animation: 'morphBlob3 18s ease-in-out infinite' }} fill="rgba(94,234,212,0.08)" />
+        <path style={{ animation: 'morphBlob1 12s ease-in-out infinite' }} fill="rgba(124,58,237,0.10)" />
+        <path style={{ animation: 'morphBlob2 15s ease-in-out infinite' }} fill="rgba(196,181,253,0.08)" />
+        <path style={{ animation: 'morphBlob3 18s ease-in-out infinite' }} fill="rgba(124,58,237,0.05)" />
       </svg>
 
       {/* Decorative orbs */}
-      <div className="absolute pointer-events-none" style={{ width: 200, height: 200, borderRadius: '50%', top: -60, right: '38%', background: 'radial-gradient(circle, rgba(6,95,70,0.18) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ width: 160, height: 160, borderRadius: '50%', bottom: 60, left: '36%', background: 'radial-gradient(circle, rgba(167,243,208,0.18) 0%, transparent 70%)', filter: 'blur(36px)', zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ width: 120, height: 120, borderRadius: '50%', top: '40%', right: 80, background: 'radial-gradient(circle, rgba(94,234,212,0.2) 0%, transparent 70%)', filter: 'blur(28px)', zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ width: 200, height: 200, borderRadius: '50%', top: -60, right: '38%', background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ width: 160, height: 160, borderRadius: '50%', bottom: 60, left: '36%', background: 'radial-gradient(circle, rgba(196,181,253,0.18) 0%, transparent 70%)', filter: 'blur(36px)', zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ width: 120, height: 120, borderRadius: '50%', top: '40%', right: 80, background: 'radial-gradient(circle, rgba(196,181,253,0.2) 0%, transparent 70%)', filter: 'blur(28px)', zIndex: 0 }} />
 
       {/* Theme toggle */}
       <button
         onClick={toggle}
         className="fixed top-5 right-5 z-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all hover:scale-105"
-        style={{ background: 'white', border: '1px solid rgba(6,95,70,0.2)', color: '#065F46', boxShadow: '0 2px 8px rgba(6,95,70,0.12)' }}
+        style={{ background: 'white', border: '1px solid rgba(124,58,237,0.2)', color: '#7C3AED', boxShadow: '0 2px 8px rgba(124,58,237,0.12)' }}
         title={dark ? 'Light mode' : 'Dark mode'}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -414,9 +415,9 @@ export default function Login() {
       </button>
 
       {/* ── Morphing blob divs ── */}
-      <div className="absolute pointer-events-none" style={{ width: 280, height: 280, top: '10%', left: '-8%', borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', background: 'rgba(6,95,70,0.08)', animation: 'blobMorph1 7s ease-in-out infinite', zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ width: 220, height: 220, bottom: '12%', left: '18%', borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%', background: 'rgba(6,95,70,0.07)', animation: 'blobMorph2 8s ease-in-out infinite', zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ width: 200, height: 200, top: '55%', right: '5%', borderRadius: '50% 50% 30% 70% / 50% 70% 30% 50%', background: 'rgba(6,95,70,0.06)', animation: 'blobMorph3 10s ease-in-out infinite', zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ width: 280, height: 280, top: '10%', left: '-8%', borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', background: 'rgba(124,58,237,0.08)', animation: 'blobMorph1 7s ease-in-out infinite', zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ width: 220, height: 220, bottom: '12%', left: '18%', borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%', background: 'rgba(124,58,237,0.07)', animation: 'blobMorph2 8s ease-in-out infinite', zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ width: 200, height: 200, top: '55%', right: '5%', borderRadius: '50% 50% 30% 70% / 50% 70% 30% 50%', background: 'rgba(124,58,237,0.06)', animation: 'blobMorph3 10s ease-in-out infinite', zIndex: 0 }} />
 
       {/* ════════════════════════════════════
           LEFT — Login form
@@ -428,7 +429,7 @@ export default function Login() {
 
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-10" style={{ animation: 'fadeInField 0.5s ease both' }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#065F46,#059669)', boxShadow: '0 4px 14px rgba(6,95,70,0.35)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#7C3AED,#8B5CF6)', boxShadow: '0 4px 14px rgba(124,58,237,0.35)' }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
             </svg>
@@ -465,7 +466,7 @@ export default function Login() {
                 onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(p => ({ ...p, email: '' })); }}
                 placeholder="you@company.com"
                 style={{ width: '100%', paddingLeft: 42, paddingRight: 16, height: 46, borderRadius: 12, border: `1.5px solid ${errors.email ? '#f87171' : '#e2e8f0'}`, background: 'white', fontSize: 14, color: '#0f172a', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box' }}
-                onFocus={e => { e.target.style.borderColor = errors.email ? '#f87171' : '#065F46'; e.target.style.boxShadow = `0 0 0 3px ${errors.email ? 'rgba(248,113,113,0.18)' : 'rgba(6,95,70,0.12)'}`; }}
+                onFocus={e => { e.target.style.borderColor = errors.email ? '#f87171' : '#7C3AED'; e.target.style.boxShadow = `0 0 0 3px ${errors.email ? 'rgba(248,113,113,0.18)' : 'rgba(124,58,237,0.12)'}`; }}
                 onBlur={e => { e.target.style.borderColor = errors.email ? '#f87171' : '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
               />
             </div>
@@ -476,7 +477,7 @@ export default function Login() {
           <div style={{ animation: 'fadeInField 0.6s ease 0.18s both' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
               <label style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Password</label>
-              <Link to="/forgot-password" style={{ fontSize: 13, color: '#065F46', fontWeight: 500, textDecoration: 'none' }}>
+              <Link to="/forgot-password" style={{ fontSize: 13, color: '#7C3AED', fontWeight: 500, textDecoration: 'none' }}>
                 Forgot password?
               </Link>
             </div>
@@ -490,7 +491,7 @@ export default function Login() {
                 onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(p => ({ ...p, password: '' })); }}
                 placeholder="••••••••"
                 style={{ width: '100%', paddingLeft: 42, paddingRight: 44, height: 46, borderRadius: 12, border: `1.5px solid ${errors.password ? '#f87171' : '#e2e8f0'}`, background: 'white', fontSize: 14, color: '#0f172a', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box' }}
-                onFocus={e => { e.target.style.borderColor = errors.password ? '#f87171' : '#065F46'; e.target.style.boxShadow = `0 0 0 3px ${errors.password ? 'rgba(248,113,113,0.18)' : 'rgba(6,95,70,0.12)'}`; }}
+                onFocus={e => { e.target.style.borderColor = errors.password ? '#f87171' : '#7C3AED'; e.target.style.boxShadow = `0 0 0 3px ${errors.password ? 'rgba(248,113,113,0.18)' : 'rgba(124,58,237,0.12)'}`; }}
                 onBlur={e => { e.target.style.borderColor = errors.password ? '#f87171' : '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
               />
               <button type="button" tabIndex={-1} onClick={() => setShowPw(s => !s)}
@@ -514,18 +515,18 @@ export default function Login() {
               disabled={loading || Object.values(errors).some(Boolean)}
               style={{
                 width: '100%', height: 48, borderRadius: 12, border: 'none',
-                background: 'linear-gradient(135deg, #065F46 0%, #059669 100%)',
+                background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
                 color: 'white', fontWeight: 700, fontSize: 15,
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                 letterSpacing: '0.03em', cursor: (loading || Object.values(errors).some(Boolean)) ? 'not-allowed' : 'pointer',
                 opacity: (loading || Object.values(errors).some(Boolean)) ? 0.7 : 1,
-                boxShadow: '0 4px 18px rgba(6,95,70,0.38)',
+                boxShadow: '0 4px 18px rgba(124,58,237,0.38)',
                 transition: 'box-shadow 0.2s, transform 0.15s',
                 animation: (loading || Object.values(errors).some(Boolean)) ? 'none' : 'btnPulse 3s ease-in-out infinite',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
-              onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(6,95,70,0.55)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; } }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 18px rgba(6,95,70,0.38)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+              onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(124,58,237,0.55)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; } }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 18px rgba(124,58,237,0.38)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
             >
               {loading ? (
                 <><span style={{ width: 16, height: 16, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }}/> Signing in…</>
@@ -564,7 +565,7 @@ export default function Login() {
             ))}
           </div>
           <p style={{ fontSize: 11, textAlign: 'center', color: '#94a3b8', marginTop: 10 }}>
-            Password: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#065F46' }}>password123</span>
+            Password: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#7C3AED' }}>password123</span>
           </p>
         </div>
 
@@ -590,8 +591,8 @@ export default function Login() {
           background: 'rgba(255,255,255,0.82)',
           backdropFilter: 'blur(20px)',
           borderRadius: 24,
-          border: '1.5px solid rgba(6,95,70,0.15)',
-          boxShadow: '0 24px 60px rgba(6,95,70,0.12), 0 4px 16px rgba(0,0,0,0.06)',
+          border: '1.5px solid rgba(124,58,237,0.15)',
+          boxShadow: '0 24px 60px rgba(124,58,237,0.12), 0 4px 16px rgba(0,0,0,0.06)',
           padding: '28px 28px 24px',
           animation: 'floatCard 5s ease-in-out infinite',
           position: 'relative',
@@ -603,8 +604,8 @@ export default function Login() {
               <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 16, color: '#0f172a' }}>QA Dashboard</div>
               <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Last updated: just now</div>
             </div>
-            <div style={{ padding: '6px 14px', borderRadius: 20, background: 'rgba(6,95,70,0.1)', fontSize: 12, fontWeight: 700, color: '#065F46', display: 'flex', alignItems: 'center', gap: 5 }}>
-              Live <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#065F46', animation: 'liveBlink 1.2s steps(1) infinite' }} />
+            <div style={{ padding: '6px 14px', borderRadius: 20, background: 'rgba(124,58,237,0.1)', fontSize: 12, fontWeight: 700, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 5 }}>
+              Live <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#7C3AED', animation: 'liveBlink 1.2s steps(1) infinite' }} />
             </div>
           </div>
           <DashboardMockup />
@@ -674,8 +675,8 @@ export default function Login() {
             50%  { transform: translate(var(--dx),var(--dy)); opacity: 0.15; }
           }
           @keyframes btnPulse {
-            0%,100% { box-shadow: 0 4px 18px rgba(6,95,70,0.38); }
-            50%  { box-shadow: 0 4px 32px rgba(6,95,70,0.65), 0 0 0 8px rgba(6,95,70,0.08); }
+            0%,100% { box-shadow: 0 4px 18px rgba(124,58,237,0.38); }
+            50%  { box-shadow: 0 4px 32px rgba(124,58,237,0.65), 0 0 0 8px rgba(124,58,237,0.08); }
           }
         }
       `}</style>

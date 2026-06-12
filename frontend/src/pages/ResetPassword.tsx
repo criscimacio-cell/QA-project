@@ -44,17 +44,17 @@ export default function ResetPassword() {
 
   const strength = password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : /[A-Z]/.test(password) && /[0-9]/.test(password) ? 4 : 3;
   const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-  const strengthColor = ['', 'bg-red-400', 'bg-amber-400', 'bg-[#7C3AED]', 'bg-green-500'];
+  const strengthColor = ['', 'bg-red-400', 'bg-amber-400', 'bg-[#F59E0B]', 'bg-green-500'];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-      <button onClick={toggle} className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl glass text-slate-600 dark:text-slate-300 hover:text-[#7C3AED] transition-all hover:scale-105">
+      <button onClick={toggle} className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl glass text-slate-600 dark:text-slate-300 hover:text-[#F59E0B] transition-all hover:scale-105">
         {dark ? <Sun size={17} /> : <Moon size={17} />}
       </button>
 
       <div className="w-full max-w-md animate-fade-in-up">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: 'linear-gradient(135deg, #7C3AED, #8B5CF6)', boxShadow: '0 8px 24px rgba(124,58,237,0.35)' }}>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)', boxShadow: '0 8px 24px rgba(245,158,11,0.35)' }}>
             <Layers size={28} className="text-white" />
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Qlarity</h1>
@@ -63,7 +63,7 @@ export default function ResetPassword() {
         <div className="card p-8">
           {valid === null && (
             <div className="text-center py-8">
-              <div className="animate-spin w-8 h-8 border-2 border-[#7C3AED] border-t-transparent rounded-full mx-auto" />
+              <div className="animate-spin w-8 h-8 border-2 border-[#F59E0B] border-t-transparent rounded-full mx-auto" />
               <p className="text-sm text-slate-500 mt-3">Validating reset link…</p>
             </div>
           )}
@@ -82,12 +82,12 @@ export default function ResetPassword() {
           {valid === true && done && (
             <div className="text-center space-y-4 animate-scale-in">
               <div className="w-16 h-16 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center mx-auto">
-                <CheckCircle2 size={32} className="text-[#7C3AED]" />
+                <CheckCircle2 size={32} className="text-[#F59E0B]" />
               </div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Password Reset!</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">Your password has been updated. Redirecting to login…</p>
               <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-[#7C3AED] rounded-full" style={{ animation: 'progressBar 3s linear forwards' }} />
+                <div className="h-full bg-[#F59E0B] rounded-full" style={{ animation: 'progressBar 3s linear forwards' }} />
               </div>
             </div>
           )}
@@ -122,7 +122,7 @@ export default function ResetPassword() {
                           <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= strength ? strengthColor[strength] : 'bg-slate-200 dark:bg-slate-700'}`} />
                         ))}
                       </div>
-                      <p className={`text-xs font-medium ${strength <= 1 ? 'text-red-500' : strength === 2 ? 'text-amber-500' : 'text-[#7C3AED]'}`}>{strengthLabel[strength]}</p>
+                      <p className={`text-xs font-medium ${strength <= 1 ? 'text-red-500' : strength === 2 ? 'text-amber-500' : 'text-[#F59E0B]'}`}>{strengthLabel[strength]}</p>
                     </div>
                   )}
                 </div>
@@ -133,7 +133,7 @@ export default function ResetPassword() {
                     <input type={showPw ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)} required className="input pl-9" placeholder="Re-enter your password" />
                     {confirm.length > 0 && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        {confirm === password ? <CheckCircle2 size={15} className="text-[#7C3AED]" /> : <XCircle size={15} className="text-red-400" />}
+                        {confirm === password ? <CheckCircle2 size={15} className="text-[#F59E0B]" /> : <XCircle size={15} className="text-red-400" />}
                       </div>
                     )}
                   </div>

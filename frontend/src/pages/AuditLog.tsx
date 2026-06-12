@@ -80,7 +80,7 @@ export default function AuditLog() {
       <div className="card overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin w-6 h-6 border-2 border-[#7C3AED] border-t-transparent rounded-full" />
+            <div className="animate-spin w-6 h-6 border-2 border-[#F59E0B] border-t-transparent rounded-full" />
           </div>
         ) : (
           <div className="overflow-x-auto">

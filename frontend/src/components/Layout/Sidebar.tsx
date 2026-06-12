@@ -95,7 +95,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             >
               Qlarity
             </div>
-            <div className="text-xs font-medium" style={{ color: 'rgba(196,181,253,0.85)' }}>
+            <div className="text-xs font-medium" style={{ color: 'rgba(252,211,77,0.85)' }}>
               QA Asset Platform
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             {!collapsed && (
               <div
                 className="px-3 mb-2 text-xs font-bold uppercase tracking-widest animate-fade-in"
-                style={{ color: 'rgba(196,181,253,0.5)' }}
+                style={{ color: 'rgba(252,211,77,0.5)' }}
               >
                 {section.section}
               </div>
@@ -220,7 +220,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}
           >
             <div className="relative flex-shrink-0">
-              <div style={{ padding: '2px', background: 'rgba(196,181,253,0.4)', borderRadius: '50%' }}>
+              <div style={{ padding: '2px', background: 'rgba(252,211,77,0.4)', borderRadius: '50%' }}>
                 <img
                   src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
                   alt=""
@@ -235,7 +235,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               </div>
               <div
                 className="text-xs font-medium capitalize mt-0.5 truncate"
-                style={{ color: '#C4B5FD' }}
+                style={{ color: '#FCD34D' }}
               >
                 {user?.role}
               </div>
@@ -244,7 +244,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ) : (
           <div className="flex justify-center">
             <div className="relative">
-              <div style={{ padding: '2px', background: 'rgba(196,181,253,0.4)', borderRadius: '50%' }}>
+              <div style={{ padding: '2px', background: 'rgba(252,211,77,0.4)', borderRadius: '50%' }}>
                 <img
                   src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
                   alt=""
@@ -261,11 +261,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* ── Collapse toggle ── */}
       <button
         onClick={onToggle}
-        className="absolute -right-3.5 top-[4.5rem] w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 z-50 bg-white hover:bg-[#7C3AED] hover:text-white"
+        className="absolute -right-3.5 top-[4.5rem] w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 z-50 bg-white hover:bg-[#F59E0B] hover:text-white"
         style={{
-          border: '1.5px solid rgba(196,181,253,0.6)',
+          border: '1.5px solid rgba(252,211,77,0.6)',
           boxShadow: '0 2px 12px rgba(30,27,75,0.3)',
-          color: '#7C3AED',
+          color: '#F59E0B',
         }}
       >
         {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}

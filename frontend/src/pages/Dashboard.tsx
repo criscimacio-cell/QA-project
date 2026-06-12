@@ -82,7 +82,7 @@ function StatCard({
       {/* Top shimmer line */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.4), transparent)' }}
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent)' }}
       />
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
@@ -97,7 +97,7 @@ function StatCard({
           </p>
           {sub && (
             <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
-              <ArrowUpRight size={11} className="text-[#7C3AED]" />
+              <ArrowUpRight size={11} className="text-[#F59E0B]" />
               {sub}
             </p>
           )}
@@ -117,18 +117,18 @@ function StatCard({
 }
 
 const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
-  LOGIN:    { bg: 'rgba(16,185,129,0.1)', text: '#8B5CF6' },
+  LOGIN:    { bg: 'rgba(16,185,129,0.1)', text: '#FBBF24' },
   UPLOAD:   { bg: 'rgba(59,130,246,0.1)', text: '#2563eb' },
   DOWNLOAD: { bg: 'rgba(139,92,246,0.1)', text: '#7c3aed' },
-  APPROVE:  { bg: 'rgba(124,58,237,0.1)', text: '#6D28D9' },
+  APPROVE:  { bg: 'rgba(245,158,11,0.1)', text: '#D97706' },
   DELETE:   { bg: 'rgba(239,68,68,0.1)', text: '#dc2626' },
   VIEW:     { bg: 'rgba(100,116,139,0.1)', text: '#475569' },
   SEARCH:   { bg: 'rgba(245,158,11,0.1)', text: '#d97706' },
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  published: '#7C3AED',
-  approved: '#6D28D9',
+  published: '#F59E0B',
+  approved: '#D97706',
   submitted: '#3b82f6',
   under_review: '#f59e0b',
   draft: '#9ca3af',
@@ -210,7 +210,7 @@ export default function Dashboard() {
       <div
         className="relative rounded-2xl p-5 overflow-hidden animate-fade-in-up"
         style={{
-          background: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 50%, #0891b2 100%)',
+          background: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 50%, #0891b2 100%)',
           backgroundSize: '200% 200%',
           animation: 'gradient-shift 10s ease infinite, fadeInUp 0.45s cubic-bezier(0.16,1,0.3,1) both',
         }}
@@ -228,7 +228,7 @@ export default function Dashboard() {
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={16} className="text-[#C4B5FD]" />
+              <Sparkles size={16} className="text-[#FCD34D]" />
               <span className="text-white/90 text-sm font-medium">{greeting}</span>
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight">
@@ -253,7 +253,7 @@ export default function Dashboard() {
                 }}
               >
                 <div className="text-2xl font-extrabold text-white leading-none">{s.val}</div>
-                <div className="text-[#C4B5FD]/80 text-xs mt-0.5 font-medium">{s.label}</div>
+                <div className="text-[#FCD34D]/80 text-xs mt-0.5 font-medium">{s.label}</div>
               </div>
             ))}
           </div>
@@ -262,9 +262,9 @@ export default function Dashboard() {
 
       {/* ── Stats grid (all 8 in one 4-col grid) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard icon={Files}     label="Total Files"     value={stats.totalFiles}           sub="Active assets"     gradient="linear-gradient(135deg,#7C3AED,#8B5CF6)"  delay={0}   />
+        <StatCard icon={Files}     label="Total Files"     value={stats.totalFiles}           sub="Active assets"     gradient="linear-gradient(135deg,#F59E0B,#FBBF24)"  delay={0}   />
         <StatCard icon={Users}     label="Active Users"    value={stats.activeUsers}          sub="Team members"      gradient="linear-gradient(135deg,#3b82f6,#6366f1)"  delay={60}  />
-        <StatCard icon={Upload}    label="Uploaded Today"  value={stats.uploadedToday}        sub="New files"         gradient="linear-gradient(135deg,#10b981,#8B5CF6)"  delay={120} />
+        <StatCard icon={Upload}    label="Uploaded Today"  value={stats.uploadedToday}        sub="New files"         gradient="linear-gradient(135deg,#10b981,#FBBF24)"  delay={120} />
         <StatCard icon={Clock}     label="Pending Review"  value={stats.pendingApprovals}     sub="Awaiting approval" gradient="linear-gradient(135deg,#f59e0b,#d97706)"  delay={180} />
         <StatCard icon={BookOpen}  label="KB Articles"     value={stats.totalKB}              sub="Published guides"  gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)"  delay={240} />
         <StatCard icon={HardDrive} label="Total Storage"   value={formatBytes(stats.totalSize)} sub="Used capacity"  gradient="linear-gradient(135deg,#ef4444,#dc2626)"  delay={300} />
@@ -287,9 +287,9 @@ export default function Dashboard() {
             <div
               className="px-2.5 py-1 rounded-lg text-xs font-semibold"
               style={{
-                background: 'rgba(124,58,237,0.1)',
-                color: '#7C3AED',
-                border: '1px solid rgba(124,58,237,0.2)',
+                background: 'rgba(245,158,11,0.1)',
+                color: '#F59E0B',
+                border: '1px solid rgba(245,158,11,0.2)',
               }}
             >
               ↑ Active
@@ -299,8 +299,8 @@ export default function Dashboard() {
             <LineChart data={stats.uploadTrend} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis
@@ -319,9 +319,9 @@ export default function Dashboard() {
               <Line
                 type="monotone"
                 dataKey="count"
-                stroke="#7C3AED"
+                stroke="#F59E0B"
                 strokeWidth={2.5}
-                dot={{ fill: '#7C3AED', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                dot={{ fill: '#F59E0B', r: 4, strokeWidth: 2, stroke: '#fff' }}
                 activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
               />
             </LineChart>
@@ -387,8 +387,8 @@ export default function Dashboard() {
             <BarChart data={stats.repositoryStats} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#7C3AED" />
-                  <stop offset="100%" stopColor="#8B5CF6" />
+                  <stop offset="0%" stopColor="#F59E0B" />
+                  <stop offset="100%" stopColor="#FBBF24" />
                 </linearGradient>
               </defs>
               <XAxis
@@ -482,7 +482,7 @@ export default function Dashboard() {
             </div>
             <span
               className="text-xs font-semibold px-2.5 py-1 rounded-lg"
-              style={{ background: 'rgba(124,58,237,0.1)', color: '#7C3AED' }}
+              style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}
             >
               All time
             </span>
@@ -528,7 +528,7 @@ export default function Dashboard() {
                     <div className="flex-shrink-0 text-right">
                       <span
                         className="text-xs font-bold"
-                        style={{ color: '#7C3AED' }}
+                        style={{ color: '#F59E0B' }}
                       >
                         {f.downloads}
                       </span>
@@ -550,7 +550,7 @@ export default function Dashboard() {
               {
                 label: 'Published Files',
                 value: stats.statusBreakdown?.find((s: any) => s.status === 'published')?.count || 0,
-                color: '#8B5CF6',
+                color: '#FBBF24',
                 bg: 'rgba(16,185,129,0.08)',
               },
             ].map(s => (

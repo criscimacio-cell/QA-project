@@ -65,7 +65,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
         <div
           className={`relative flex items-center rounded-xl transition-all duration-300 ${
             searchFocused
-              ? 'shadow-[0_0_0_2px_rgba(124,58,237,0.35)]'
+              ? 'shadow-[0_0_0_2px_rgba(245,158,11,0.35)]'
               : ''
           }`}
           style={{
@@ -73,7 +73,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
               ? (dark ? 'rgba(15,23,42,0.9)' : 'rgba(248,250,252,1)')
               : (dark ? 'rgba(30,41,59,0.6)' : 'rgba(248,250,252,0.9)'),
             border: searchFocused
-              ? '1px solid rgba(124,58,237,0.4)'
+              ? '1px solid rgba(245,158,11,0.4)'
               : (dark ? '1px solid rgba(51,65,85,0.5)' : '1px solid rgba(226,232,240,0.8)'),
             backdropFilter: 'blur(12px)',
           }}
@@ -81,7 +81,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
           <Search
             size={15}
             className={`absolute left-3.5 transition-colors duration-200 ${
-              searchFocused ? 'text-[#7C3AED]' : 'text-slate-500'
+              searchFocused ? 'text-[#F59E0B]' : 'text-slate-500'
             }`}
           />
           <input
@@ -110,7 +110,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
         {/* Theme toggle */}
         <button
           onClick={toggle}
-          className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#7C3AED] dark:hover:text-[#C4B5FD] transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50"
+          className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#F59E0B] dark:hover:text-[#FCD34D] transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50"
           title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           <div className="transition-all duration-300" style={{ transform: dark ? 'rotate(0deg)' : 'rotate(180deg)' }}>
@@ -121,11 +121,11 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
         {/* Notifications */}
         <div className="relative" ref={notifRef}>
           <button
-            className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#7C3AED] dark:hover:text-[#C4B5FD] transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50"
+            className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#F59E0B] dark:hover:text-[#FCD34D] transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50"
             onClick={() => { setShowNotif(s => !s); setShowUser(false); }}
             title="Notifications"
           >
-            <Bell size={17} className={notifCount > 0 ? 'text-[#7C3AED]' : ''} />
+            <Bell size={17} className={notifCount > 0 ? 'text-[#F59E0B]' : ''} />
             {notifCount > 0 && (
               <>
                 <span className="notification-badge">{notifCount > 9 ? '9+' : notifCount}</span>
@@ -147,7 +147,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
               <div
                 className="flex items-center justify-between px-4 py-3.5 border-b border-slate-200 dark:border-slate-700/50"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(124,58,237,0.07), rgba(196,181,253,0.04))',
+                  background: 'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(252,211,77,0.04))',
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -155,7 +155,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                   {notifCount > 0 && (
                     <span
                       className="px-1.5 py-0.5 rounded-full text-xs font-bold text-white"
-                      style={{ background: 'linear-gradient(135deg, #7C3AED, #8B5CF6)' }}
+                      style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}
                     >
                       {notifCount}
                     </span>
@@ -164,7 +164,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                 <button
                   onClick={markAllRead}
                   className="text-xs font-medium hover:underline transition-colors"
-                  style={{ color: '#7C3AED' }}
+                  style={{ color: '#F59E0B' }}
                 >
                   Mark all read
                 </button>
@@ -196,7 +196,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                         className="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0"
                         style={{
                           background: !n.read
-                            ? 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(196,181,253,0.1))'
+                            ? 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(252,211,77,0.1))'
                             : 'rgba(100,116,139,0.08)',
                         }}
                       >
@@ -216,7 +216,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                       {!n.read && (
                         <div
                           className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
-                          style={{ background: '#7C3AED', boxShadow: '0 0 6px rgba(124,58,237,0.5)' }}
+                          style={{ background: '#F59E0B', boxShadow: '0 0 6px rgba(245,158,11,0.5)' }}
                         />
                       )}
                     </div>
@@ -231,7 +231,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                 <button
                   onClick={markAllRead}
                   className="text-xs font-medium transition-colors hover:underline"
-                  style={{ color: '#7C3AED' }}
+                  style={{ color: '#F59E0B' }}
                 >
                   Mark all as read
                 </button>
@@ -246,7 +246,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
         {/* User menu */}
         <div className="relative" ref={userRef}>
           <button
-            className="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 hover:border-[#7C3AED]/50"
+            className="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 hover:border-[#F59E0B]/50"
             onClick={() => { setShowUser(s => !s); setShowNotif(false); }}
           >
             <div className="relative flex-shrink-0">
@@ -254,7 +254,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                 src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
                 alt=""
                 className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800"
-                style={{ border: '2px solid rgba(124,58,237,0.4)' }}
+                style={{ border: '2px solid rgba(245,158,11,0.4)' }}
               />
               <span className="online-indicator" />
             </div>
@@ -262,7 +262,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
               <div className="text-xs font-semibold text-slate-800 dark:text-white leading-none">
                 {user?.name?.split(' ')[0]}
               </div>
-              <div className="text-xs capitalize leading-none mt-0.5 font-medium" style={{ color: '#7C3AED' }}>
+              <div className="text-xs capitalize leading-none mt-0.5 font-medium" style={{ color: '#F59E0B' }}>
                 {user?.role}
               </div>
             </div>
@@ -284,7 +284,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
               <div
                 className="px-4 py-3.5 border-b border-slate-200 dark:border-slate-700/50"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(124,58,237,0.07), rgba(196,181,253,0.04))',
+                  background: 'linear-gradient(135deg, rgba(245,158,11,0.07), rgba(252,211,77,0.04))',
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -293,7 +293,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                       src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
                       alt=""
                       className="w-9 h-9 rounded-full bg-slate-200"
-                      style={{ border: '2px solid rgba(124,58,237,0.35)' }}
+                      style={{ border: '2px solid rgba(245,158,11,0.35)' }}
                     />
                     <span className="online-indicator" style={{ width: '9px', height: '9px' }} />
                   </div>
@@ -313,9 +313,9 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                 <button onClick={() => { setShowUser(false); navigate('/settings'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
                   <div
                     className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(124,58,237,0.1)' }}
+                    style={{ background: 'rgba(245,158,11,0.1)' }}
                   >
-                    <User size={13} style={{ color: '#7C3AED' }} />
+                    <User size={13} style={{ color: '#F59E0B' }} />
                   </div>
                   <span className="font-medium">My Profile</span>
                 </button>

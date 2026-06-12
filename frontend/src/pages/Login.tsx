@@ -421,21 +421,23 @@ export default function Login() {
   const [morphGrown, setMorphGrown] = useState(false);
   const [ringPulse, setRingPulse] = useState(false);
   const [morphFading, setMorphFading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
 
-  // Post-login animation sequence
+  // Post-login animation sequence — runs once when loginSuccess flips to true
   useEffect(() => {
-    if (phase !== 'slideOut') return;
+    if (!loginSuccess) return;
+    setPhase('slideOut');
     const ts: ReturnType<typeof setTimeout>[] = [];
-    ts.push(setTimeout(() => { setPhase('morph'); }, 460));
-    ts.push(setTimeout(() => { setMorphGrown(true); }, 460 + 60));
-    ts.push(setTimeout(() => { setRingPulse(true); }, 460 + 600));
-    ts.push(setTimeout(() => { setMorphFading(true); setPhase('dashboard'); }, 460 + 1500));
-    ts.push(setTimeout(() => { navigate('/'); }, 460 + 1500 + 1200));
+    ts.push(setTimeout(() => setPhase('morph'),          460));
+    ts.push(setTimeout(() => setMorphGrown(true),        520));
+    ts.push(setTimeout(() => setRingPulse(true),        1060));
+    ts.push(setTimeout(() => { setMorphFading(true); setPhase('dashboard'); }, 1960));
+    ts.push(setTimeout(() => navigate('/'),             3160));
     return () => ts.forEach(clearTimeout);
-  }, [phase, navigate]);
+  }, [loginSuccess, navigate]);
 
   // Typewriter on email placeholder
   useEffect(() => {
@@ -494,7 +496,7 @@ export default function Login() {
     setLoading(true); setError('');
     try {
       await login(email, password);
-      setPhase('slideOut');
+      setLoginSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
     } finally {

@@ -99,7 +99,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 filter: 'drop-shadow(0 0 6px rgba(8,164,156,0.5))',
               }}
             >
-              Q-KTAMP
+              Qlarity
             </div>
             <div className="text-xs text-slate-500 font-medium">
               QA Asset Platform

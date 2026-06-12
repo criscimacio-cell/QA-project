@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 
 const {
   SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS,
-  EMAIL_FROM = 'Q-KTAMP <noreply@qtamp.local>',
+  EMAIL_FROM = 'Qlarity <noreply@qtamp.local>',
   APP_URL = 'http://localhost:5173',
   NODE_ENV = 'development',
 } = process.env;
@@ -29,10 +29,10 @@ async function send(to: string, subject: string, html: string) {
 export async function sendPasswordReset(to: string, name: string, token: string) {
   const link = `${APP_URL}/reset-password?token=${token}`;
   console.log(`\n🔑 Password Reset Link (dev): ${link}\n`);
-  await send(to, 'Reset your Q-KTAMP password', `
+  await send(to, 'Reset your Qlarity password', `
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <div style="background:linear-gradient(135deg,#08a49c,#06b6d4);border-radius:12px;padding:24px;text-align:center;margin-bottom:24px">
-        <h1 style="color:#fff;margin:0;font-size:22px">Q-KTAMP</h1>
+        <h1 style="color:#fff;margin:0;font-size:22px">Qlarity</h1>
         <p style="color:rgba(255,255,255,0.8);margin:4px 0 0">QA Asset Platform</p>
       </div>
       <h2 style="color:#0f172a">Hi ${name},</h2>
@@ -55,30 +55,30 @@ export async function sendApprovalNotification(to: string, name: string, fileNam
     approved: '✅ Approved', published: '🚀 Published',
     under_review: '👀 Under Review', draft: '↩️ Returned to Draft',
   };
-  await send(to, `File ${statusLabel[status] || status} — Q-KTAMP`, `
+  await send(to, `File ${statusLabel[status] || status} — Qlarity`, `
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <div style="background:linear-gradient(135deg,#08a49c,#06b6d4);border-radius:12px;padding:24px;text-align:center;margin-bottom:24px">
-        <h1 style="color:#fff;margin:0;font-size:22px">Q-KTAMP</h1>
+        <h1 style="color:#fff;margin:0;font-size:22px">Qlarity</h1>
       </div>
       <h2 style="color:#0f172a">Hi ${name},</h2>
       <p style="color:#475569">Your file <strong>"${fileName}"</strong> status has been updated to:</p>
       <div style="background:#f0fdfc;border:1px solid #99f6e4;border-radius:8px;padding:16px;text-align:center;margin:20px 0">
         <span style="font-size:20px;font-weight:700;color:#0d9488">${statusLabel[status] || status}</span>
       </div>
-      <p style="color:#94a3b8;font-size:13px">Log in to Q-KTAMP to view the full details.</p>
+      <p style="color:#94a3b8;font-size:13px">Log in to Qlarity to view the full details.</p>
     </div>
   `);
 }
 
 export async function sendUploadNotification(to: string, reviewerName: string, uploaderName: string, fileName: string) {
-  await send(to, `New file pending review — Q-KTAMP`, `
+  await send(to, `New file pending review — Qlarity`, `
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px">
       <div style="background:linear-gradient(135deg,#08a49c,#06b6d4);border-radius:12px;padding:24px;text-align:center;margin-bottom:24px">
-        <h1 style="color:#fff;margin:0;font-size:22px">Q-KTAMP</h1>
+        <h1 style="color:#fff;margin:0;font-size:22px">Qlarity</h1>
       </div>
       <h2 style="color:#0f172a">Hi ${reviewerName},</h2>
       <p style="color:#475569"><strong>${uploaderName}</strong> submitted <strong>"${fileName}"</strong> for your review.</p>
-      <p style="color:#94a3b8;font-size:13px">Log in to Q-KTAMP to review and approve.</p>
+      <p style="color:#94a3b8;font-size:13px">Log in to Qlarity to review and approve.</p>
     </div>
   `);
 }

@@ -229,7 +229,7 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
           maxHeight: grown ? 40 : 0,
           transition: 'opacity 0.35s ease 0.3s, max-height 0.35s ease 0.3s',
         }}>
-          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 20, color: '#0f172a', letterSpacing: '0.04em' }}>Q-KTAMP</span>
+          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 20, color: '#0f172a', letterSpacing: '0.04em' }}>Qlarity</span>
         </div>
         {/* Subtitle */}
         <div style={{
@@ -433,7 +433,7 @@ export default function Login() {
               <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
             </svg>
           </div>
-          <span className="font-extrabold text-lg tracking-wide" style={{ color: '#0f172a', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Q-KTAMP</span>
+          <span className="font-extrabold text-lg tracking-wide" style={{ color: '#0f172a', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Qlarity</span>
         </div>
 
         {/* Heading */}

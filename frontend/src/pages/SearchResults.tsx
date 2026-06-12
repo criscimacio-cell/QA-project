@@ -84,7 +84,7 @@ export default function SearchResults() {
       {!q && (
         <div className="card p-12 text-center">
           <Search size={48} className="mx-auto mb-4 opacity-20 text-slate-400" />
-          <p className="text-lg font-medium text-slate-600 dark:text-slate-300">Search Q-KTAMP</p>
+          <p className="text-lg font-medium text-slate-600 dark:text-slate-300">Search Qlarity</p>
           <p className="text-sm mt-1 text-slate-400">Search across files, knowledge articles, Jira tickets, tags, and more</p>
           <div className="mt-6 flex flex-wrap gap-2 justify-center">
             {['CF4 Pemisc', 'ETL Template', 'API Testing', 'RCA Report', 'QA-123'].map(s => (

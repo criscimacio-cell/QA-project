@@ -37,7 +37,7 @@ export default function ForgotPassword() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: 'linear-gradient(135deg, #08a49c, #06b6d4)', boxShadow: '0 8px 24px rgba(8,164,156,0.35)' }}>
             <Layers size={28} className="text-white" />
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Q-KTAMP</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">Qlarity</h1>
         </div>
 
         <div className="card p-8">

@@ -64,6 +64,6 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 initDb();
-app.listen(PORT, () => console.log(`Q-KTAMP API running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Qlarity API running on http://localhost:${PORT}`));
 
 export default app;

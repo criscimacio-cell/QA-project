@@ -262,7 +262,7 @@ export default function Settings() {
               </h2>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {[
-                  ['Platform', 'Q-KTAMP v1.0.0'],
+                  ['Platform', 'Qlarity v1.0.0'],
                   ['Environment', 'Production'],
                   ['Database', 'SQLite (WAL Mode)'],
                   ['Authentication', 'JWT (8h sessions)'],

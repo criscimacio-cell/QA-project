@@ -91,7 +91,7 @@ function LogoutOverlay({
             <span style={{
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontWeight: 500, fontSize: 20, color: '#0d2e2b', letterSpacing: '0.08em',
-            }}>Q-KTAMP</span>
+            }}>Qlarity</span>
           </div>
 
           {/* Subtitle */}

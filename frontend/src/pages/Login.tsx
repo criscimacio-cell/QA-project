@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const DEMO_USERS = [
   { email: 'admin@qa.com',     role: 'Admin',    color: '#ef4444' },
-  { email: 'lead@qa.com',      role: 'Lead',     color: '#8b5cf6' },
+  { email: 'lead@qa.com',      role: 'Lead',     color: '#FBBF24' },
   { email: 'engineer1@qa.com', role: 'Engineer', color: '#3b82f6' },
   { email: 'viewer@qa.com',    role: 'Viewer',   color: '#64748b' },
 ];

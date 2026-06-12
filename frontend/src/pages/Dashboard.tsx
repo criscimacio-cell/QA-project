@@ -119,7 +119,7 @@ function StatCard({
 const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
   LOGIN:    { bg: 'rgba(16,185,129,0.1)', text: '#FBBF24' },
   UPLOAD:   { bg: 'rgba(59,130,246,0.1)', text: '#2563eb' },
-  DOWNLOAD: { bg: 'rgba(139,92,246,0.1)', text: '#7c3aed' },
+  DOWNLOAD: { bg: 'rgba(139,92,246,0.1)', text: '#F59E0B' },
   APPROVE:  { bg: 'rgba(245,158,11,0.1)', text: '#D97706' },
   DELETE:   { bg: 'rgba(239,68,68,0.1)', text: '#dc2626' },
   VIEW:     { bg: 'rgba(100,116,139,0.1)', text: '#475569' },
@@ -266,7 +266,7 @@ export default function Dashboard() {
         <StatCard icon={Users}     label="Active Users"    value={stats.activeUsers}          sub="Team members"      gradient="linear-gradient(135deg,#3b82f6,#6366f1)"  delay={60}  />
         <StatCard icon={Upload}    label="Uploaded Today"  value={stats.uploadedToday}        sub="New files"         gradient="linear-gradient(135deg,#10b981,#FBBF24)"  delay={120} />
         <StatCard icon={Clock}     label="Pending Review"  value={stats.pendingApprovals}     sub="Awaiting approval" gradient="linear-gradient(135deg,#f59e0b,#d97706)"  delay={180} />
-        <StatCard icon={BookOpen}  label="KB Articles"     value={stats.totalKB}              sub="Published guides"  gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)"  delay={240} />
+        <StatCard icon={BookOpen}  label="KB Articles"     value={stats.totalKB}              sub="Published guides"  gradient="linear-gradient(135deg,#FBBF24,#F59E0B)"  delay={240} />
         <StatCard icon={HardDrive} label="Total Storage"   value={formatBytes(stats.totalSize)} sub="Used capacity"  gradient="linear-gradient(135deg,#ef4444,#dc2626)"  delay={300} />
         <StatCard icon={Activity}  label="Audit Events"    value={stats.auditEventsToday}     sub="Last 24 hours"     gradient="linear-gradient(135deg,#6366f1,#4f46e5)"  delay={360} />
         <StatCard icon={TrendingUp}label="This Week"       value={stats.uploadGrowth}         sub="Upload growth"     gradient="linear-gradient(135deg,#f97316,#ea580c)"  delay={420} />

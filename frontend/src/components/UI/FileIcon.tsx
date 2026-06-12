@@ -9,7 +9,7 @@ export default function FileIcon({ mimeType = '', name = '', size = 20 }: FileIc
     if (mime.includes('excel') || mime.includes('spreadsheet') || ext === 'xlsx' || ext === 'xls' || ext === 'csv') return '#16a34a';
     if (mime.includes('word') || mime.includes('document') || ext === 'docx' || ext === 'doc') return '#2563eb';
     if (mime.includes('powerpoint') || mime.includes('presentation') || ext === 'pptx' || ext === 'ppt') return '#ea580c';
-    if (mime.includes('zip') || mime.includes('compressed') || ext === 'zip') return '#7c3aed';
+    if (mime.includes('zip') || mime.includes('compressed') || ext === 'zip') return '#F59E0B';
     if (mime.includes('json') || ext === 'json') return '#d97706';
     if (mime.includes('xml') || ext === 'xml') return '#0891b2';
     if (mime.includes('image') || ext === 'png' || ext === 'jpg' || ext === 'jpeg') return '#ec4899';

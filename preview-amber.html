@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qlarity — Amber on Obsidian Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --obsidian:   #09090B;
+    --obsidian-2: #111113;
+    --obsidian-3: #18181B;
+    --amber:      #F59E0B;
+    --amber-light:#FCD34D;
+    --amber-dim:  #78350F;
+    --surface:    #FAFAF9;
+    --card:       #FFFFFF;
+    --border:     #E7E5E4;
+    --text:       #1C1917;
+    --muted:      #78716C;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #F5F5F4;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding: 40px;
+  }
+
+  h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: #78716c; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px; }
+
+  /* ═══════════════════════════════════════
+     PALETTE CHIPS
+  ═══════════════════════════════════════ */
+  .palette-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .chip {
+    display: flex; flex-direction: column; gap: 8px;
+    width: 110px;
+  }
+  .chip-swatch {
+    height: 72px; border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .chip-label { font-size: 11px; font-weight: 600; color: #57534e; }
+  .chip-hex   { font-size: 10px; color: #a8a29e; font-family: monospace; }
+
+  /* ═══════════════════════════════════════
+     SHELL PREVIEW
+  ═══════════════════════════════════════ */
+  .shell {
+    display: flex;
+    height: 560px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 228px;
+    flex-shrink: 0;
+    background: var(--obsidian);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .sidebar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, rgba(245,158,11,0.04) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  .sidebar-logo {
+    padding: 20px 16px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--amber);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 16px rgba(245,158,11,0.35);
+  }
+  .logo-icon svg { color: #09090B; }
+  .logo-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; color: #fff; letter-spacing: -0.01em; }
+  .logo-sub  { font-size: 10px; color: rgba(255,255,255,0.3); font-weight: 500; margin-top: 1px; }
+
+  .sidebar-section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+    padding: 16px 16px 6px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    margin: 1px 8px;
+    border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .nav-item svg { flex-shrink: 0; opacity: 0.5; }
+
+  .nav-item.active {
+    background: rgba(245,158,11,0.12);
+    color: var(--amber);
+    font-weight: 600;
+  }
+  .nav-item.active svg { opacity: 1; }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -8px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 55%;
+    background: var(--amber);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 8px rgba(245,158,11,0.6);
+  }
+  .nav-item.hover {
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.7);
+  }
+  .nav-item.hover svg { opacity: 0.7; }
+
+  .sidebar-user {
+    margin-top: auto;
+    padding: 12px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .user-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+  }
+  .user-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #09090B;
+    flex-shrink: 0;
+  }
+  .user-name { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.75); }
+  .user-role { font-size: 10px; color: var(--amber); font-weight: 500; opacity: 0.85; }
+
+  /* MAIN */
+  .main { flex: 1; background: var(--surface); display: flex; flex-direction: column; overflow: hidden; }
+
+  /* TOPBAR */
+  .topbar {
+    height: 56px; background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .search-bar {
+    flex: 1; max-width: 360px;
+    height: 34px;
+    background: #F5F5F4;
+    border: 1px solid #E7E5E4;
+    border-radius: 8px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 12px;
+    font-size: 12px; color: #a8a29e;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .topbar-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: #F5F5F4; border: 1px solid #E7E5E4;
+    display: flex; align-items: center; justify-content: center;
+    color: #78716c; cursor: pointer;
+  }
+  .topbar-user {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px 4px 4px;
+    background: #F5F5F4; border: 1px solid #E7E5E4;
+    border-radius: 8px; cursor: pointer;
+  }
+  .topbar-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #09090B;
+  }
+  .topbar-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .topbar-role { font-size: 10px; color: var(--amber); font-weight: 600; }
+
+  /* CONTENT */
+  .content { flex: 1; padding: 20px; overflow: hidden; display: flex; flex-direction: column; gap: 16px; }
+
+  .page-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: var(--text); }
+  .page-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--amber);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .stat-card.accent::before { opacity: 1; }
+  .stat-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-value { font-size: 22px; font-weight: 800; color: var(--text); margin-top: 4px; letter-spacing: -0.03em; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .stat-sub { font-size: 10px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 3px; }
+  .stat-sub .up { color: #16a34a; font-weight: 600; }
+  .stat-icon {
+    position: absolute; right: 12px; top: 12px;
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stat-icon.amber-icon { background: rgba(245,158,11,0.1); color: var(--amber); }
+  .stat-icon.green-icon { background: rgba(22,163,74,0.1); color: #16a34a; }
+  .stat-icon.blue-icon  { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .stat-icon.red-icon   { background: rgba(239,68,68,0.1);  color: #ef4444; }
+
+  .cards-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; min-height: 0; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    overflow: hidden;
+  }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .card-sub { font-size: 11px; color: var(--muted); }
+
+  /* file row */
+  .file-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid #F5F5F4;
+  }
+  .file-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: #F5F5F4; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 13px;
+  }
+  .file-name  { font-size: 12px; font-weight: 600; color: var(--text); }
+  .file-meta  { font-size: 10px; color: var(--muted); }
+  .file-badge {
+    margin-left: auto; padding: 2px 8px; border-radius: 999px;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .badge-approved { background: rgba(245,158,11,0.1); color: var(--amber); }
+  .badge-review   { background: rgba(59,130,246,0.1);  color: #3b82f6; }
+  .badge-draft    { background: rgba(120,113,108,0.1); color: #78716c; }
+  .badge-published{ background: rgba(22,163,74,0.1);   color: #16a34a; }
+
+  /* chart placeholder */
+  .mini-chart {
+    flex: 1; display: flex; align-items: flex-end; gap: 6px; padding: 0 4px;
+  }
+  .bar {
+    flex: 1; border-radius: 4px 4px 0 0;
+    background: rgba(245,158,11,0.15);
+    transition: background 0.2s;
+    position: relative;
+  }
+  .bar.active { background: var(--amber); }
+  .bar.medium { background: rgba(245,158,11,0.5); }
+
+  /* ═══════════════════════════════════════
+     COMPONENTS ROW
+  ═══════════════════════════════════════ */
+  .components-grid { display: flex; flex-wrap: wrap; gap: 24px; }
+  .component-block { display: flex; flex-direction: column; gap: 10px; }
+  .component-label { font-size: 11px; font-weight: 600; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-primary { background: var(--amber); color: #09090B; box-shadow: 0 2px 8px rgba(245,158,11,0.35); }
+  .btn-secondary { background: #FAFAF9; color: var(--text); border: 1px solid #E7E5E4; }
+  .btn-ghost { background: transparent; color: var(--muted); }
+  .btn-danger { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+
+  /* Badges */
+  .badges-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .b-approved  { background: rgba(245,158,11,0.12); color: #B45309; border: 1px solid rgba(245,158,11,0.25); }
+  .b-published { background: rgba(22,163,74,0.1);   color: #15803d; border: 1px solid rgba(22,163,74,0.2); }
+  .b-review    { background: rgba(59,130,246,0.1);   color: #1d4ed8; border: 1px solid rgba(59,130,246,0.2); }
+  .b-draft     { background: rgba(120,113,108,0.1);  color: #57534e; border: 1px solid rgba(120,113,108,0.2); }
+  .b-admin     { background: rgba(220,38,38,0.1);    color: #b91c1c; border: 1px solid rgba(220,38,38,0.2); }
+  .b-lead      { background: rgba(124,58,237,0.1);   color: #6d28d9; border: 1px solid rgba(124,58,237,0.2); }
+
+  /* Input */
+  .input-demo {
+    width: 220px; height: 36px;
+    border: 1px solid #E7E5E4;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 13px; color: var(--text);
+    background: white;
+    outline: none;
+  }
+  .input-demo.focused {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+  }
+
+  /* ═══════════════════════════════════════
+     LOGIN PREVIEW
+  ═══════════════════════════════════════ */
+  .login-shell {
+    display: flex;
+    height: 480px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06);
+  }
+  .login-left {
+    width: 420px; flex-shrink: 0;
+    background: white;
+    padding: 48px 44px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .login-logo {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 36px;
+  }
+  .login-logo-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--amber);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 16px rgba(245,158,11,0.4);
+  }
+  .login-logo-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; color: var(--text); }
+  .login-heading { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 26px; color: var(--text); line-height: 1.2; margin-bottom: 6px; }
+  .login-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .login-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .login-input {
+    width: 100%; height: 42px; border-radius: 10px;
+    border: 1.5px solid #E7E5E4;
+    padding: 0 14px; font-size: 13px; color: var(--text);
+    background: white; margin-bottom: 14px; outline: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .login-input.active { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(245,158,11,0.12); }
+  .login-btn {
+    width: 100%; height: 42px; border-radius: 10px;
+    background: var(--amber); border: none;
+    font-size: 14px; font-weight: 700; color: #09090B;
+    cursor: pointer; margin-top: 4px;
+    box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+    font-family: 'Inter', sans-serif;
+  }
+
+  .login-right {
+    flex: 1;
+    background: var(--obsidian);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px;
+    position: relative; overflow: hidden;
+  }
+  /* Amber orb */
+  .login-right::before {
+    content: '';
+    position: absolute;
+    width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%);
+    top: -80px; right: -80px;
+    filter: blur(40px);
+  }
+  .login-right::after {
+    content: '';
+    position: absolute;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%);
+    bottom: -60px; left: -40px;
+    filter: blur(30px);
+  }
+  .login-headline {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 28px; font-weight: 800;
+    color: white; text-align: center;
+    line-height: 1.25; margin-bottom: 12px;
+    position: relative; z-index: 1;
+  }
+  .login-headline span { color: var(--amber); }
+  .login-desc {
+    font-size: 13px; color: rgba(255,255,255,0.45);
+    text-align: center; line-height: 1.6;
+    max-width: 280px; position: relative; z-index: 1;
+    margin-bottom: 32px;
+  }
+  .feature-pills { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px; position: relative; z-index: 1; }
+  .feature-pill {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+  .pill-text { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500; }
+
+  /* ═══════════════════════════════════════
+     SECTION HEADER
+  ═══════════════════════════════════════ */
+  .section {
+    background: white;
+    border: 1px solid #E7E5E4;
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .section-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 20px; font-weight: 800; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .section-desc { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+
+  /* tag */
+  .tag {
+    display: inline-flex; align-items: center;
+    padding: 3px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    background: rgba(245,158,11,0.12); color: #B45309;
+    border: 1px solid rgba(245,158,11,0.2);
+    margin-left: 8px; vertical-align: middle;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     PALETTE REFERENCE
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">Amber on Obsidian <span class="tag">Precision Dark</span></div>
+  <div class="section-desc">The only palette in the QA space. Amber = quality signal, attention, precision. Obsidian = authority, focus, zero noise.</div>
+  <div class="palette-row">
+    <div class="chip">
+      <div class="chip-swatch" style="background:#09090B; border:1px solid #27272a;"></div>
+      <div class="chip-label">Obsidian</div>
+      <div class="chip-hex">#09090B · Sidebar bg</div>
+    </div>
+    <div class="chip">
+      <div class="chip-swatch" style="background:#18181B; border:1px solid #27272a;"></div>
+      <div class="chip-label">Obsidian-2</div>
+      <div class="chip-hex">#18181B · Hover states</div>
+    </div>
+    <div class="chip">
+      <div class="chip-swatch" style="background:#F59E0B;"></div>
+      <div class="chip-label">Amber</div>
+      <div class="chip-hex">#F59E0B · Primary / CTA</div>
+    </div>
+    <div class="chip">
+      <div class="chip-swatch" style="background:#FCD34D;"></div>
+      <div class="chip-label">Amber Light</div>
+      <div class="chip-hex">#FCD34D · Active icons</div>
+    </div>
+    <div class="chip">
+      <div class="chip-swatch" style="background:#78350F; border:1px solid #92400e;"></div>
+      <div class="chip-label">Amber Dim</div>
+      <div class="chip-hex">#78350F · Badge text</div>
+    </div>
+    <div class="chip">
+      <div class="chip-swatch" style="background:#FAFAF9; border:1px solid #e7e5e4;"></div>
+      <div class="chip-label">Surface</div>
+      <div class="chip-hex">#FAFAF9 · Page bg</div>
+    </div>
+    <div class="chip">
+      <div class="chip-swatch" style="background:#FFFFFF; border:1px solid #e7e5e4;"></div>
+      <div class="chip-label">Card</div>
+      <div class="chip-hex">#FFFFFF · Card bg</div>
+    </div>
+    <div class="chip">
+      <div class="chip-swatch" style="background:#1C1917;"></div>
+      <div class="chip-label">Text</div>
+      <div class="chip-hex">#1C1917 · Body text</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD SHELL
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">Dashboard Preview</div>
+  <div class="section-desc">Full layout — sidebar, topbar, stat cards, file list, chart.</div>
+
+  <div class="shell">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-text">Qlarity</div>
+          <div class="logo-sub">QA Asset Platform</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section-label">Main</div>
+      <div class="nav-item active">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item hover">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Repositories
+      </div>
+      <div class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        File Manager
+      </div>
+      <div class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </div>
+
+      <div class="sidebar-section-label">Content</div>
+      <div class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Knowledge Base
+      </div>
+      <div class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        Test Data
+      </div>
+      <div class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+        Approvals
+      </div>
+
+      <div class="sidebar-user">
+        <div class="user-card">
+          <div class="user-avatar">JD</div>
+          <div>
+            <div class="user-name">Jean Dela Cruz</div>
+            <div class="user-role">admin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN AREA -->
+    <div class="main">
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="search-bar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Search files, tickets…
+        </div>
+        <div class="topbar-actions">
+          <div class="topbar-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div class="topbar-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          </div>
+          <div style="width:1px;height:20px;background:#E7E5E4;margin:0 4px;"></div>
+          <div class="topbar-user">
+            <div class="topbar-avatar">J</div>
+            <div>
+              <div class="topbar-name">Jean</div>
+              <div class="topbar-role">admin</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE CONTENT -->
+      <div class="content">
+        <div>
+          <div class="page-title">Good morning, Jean 👋</div>
+          <div class="page-sub">Here's what's happening in your QA workspace today.</div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card accent">
+            <div class="stat-icon amber-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="stat-label">Total Files</div>
+            <div class="stat-value">1,284</div>
+            <div class="stat-sub"><span class="up">↑ 12%</span> vs last week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="stat-label">Approved</div>
+            <div class="stat-value">847</div>
+            <div class="stat-sub"><span class="up">↑ 8%</span> this month</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-label">Active Users</div>
+            <div class="stat-value">24</div>
+            <div class="stat-sub">3 online now</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="stat-label">Pending Review</div>
+            <div class="stat-value">17</div>
+            <div class="stat-sub">Needs attention</div>
+          </div>
+        </div>
+
+        <div class="cards-row">
+          <!-- Files -->
+          <div class="card">
+            <div>
+              <div class="card-title">Recent Files</div>
+              <div class="card-sub">Latest activity across repositories</div>
+            </div>
+            <div>
+              <div class="file-row">
+                <div class="file-icon">📄</div>
+                <div>
+                  <div class="file-name">test-plan-v3.pdf</div>
+                  <div class="file-meta">Uploaded 2h ago · 2.4 MB</div>
+                </div>
+                <div class="file-badge badge-approved">Approved</div>
+              </div>
+              <div class="file-row">
+                <div class="file-icon">📊</div>
+                <div>
+                  <div class="file-name">regression-suite.xlsx</div>
+                  <div class="file-meta">Uploaded 4h ago · 1.1 MB</div>
+                </div>
+                <div class="file-badge badge-review">In Review</div>
+              </div>
+              <div class="file-row">
+                <div class="file-icon">🗂️</div>
+                <div>
+                  <div class="file-name">api-test-results.json</div>
+                  <div class="file-meta">Uploaded 6h ago · 880 KB</div>
+                </div>
+                <div class="file-badge badge-published">Published</div>
+              </div>
+              <div class="file-row" style="border-bottom:none;">
+                <div class="file-icon">📝</div>
+                <div>
+                  <div class="file-name">load-test-notes.md</div>
+                  <div class="file-meta">Uploaded yesterday · 24 KB</div>
+                </div>
+                <div class="file-badge badge-draft">Draft</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div class="card">
+            <div>
+              <div class="card-title">Upload Activity</div>
+              <div class="card-sub">Files uploaded per day, last 7 days</div>
+            </div>
+            <div class="mini-chart">
+              <div class="bar" style="height:45%;"></div>
+              <div class="bar" style="height:62%;"></div>
+              <div class="bar" style="height:38%;"></div>
+              <div class="bar medium" style="height:75%;"></div>
+              <div class="bar" style="height:55%;"></div>
+              <div class="bar active" style="height:88%;"></div>
+              <div class="bar medium" style="height:70%;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:#a8a29e;padding:0 2px;">
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     LOGIN PREVIEW
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">Login Page Preview</div>
+  <div class="section-desc">Clean left form, obsidian right panel with amber brand messaging.</div>
+
+  <div class="login-shell">
+    <!-- Left -->
+    <div class="login-left">
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#09090B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+        </div>
+        <div class="login-logo-text">Qlarity</div>
+      </div>
+
+      <div class="login-heading">Welcome back 👋</div>
+      <div class="login-sub">Sign in to your QA workspace</div>
+
+      <div class="login-label">Email</div>
+      <input class="login-input active" type="email" value="jean@stash.ph" readonly />
+
+      <div class="login-label">Password</div>
+      <input class="login-input" type="password" value="••••••••" readonly />
+
+      <button class="login-btn">Sign in to Qlarity</button>
+    </div>
+
+    <!-- Right -->
+    <div class="login-right">
+      <div class="login-headline">Clarity in every<br><span>QA decision.</span></div>
+      <div class="login-desc">One platform for test plans, approvals, and assets. No chaos, just signal.</div>
+      <div class="feature-pills">
+        <div class="feature-pill">
+          <div class="pill-dot"></div>
+          <div class="pill-text">Role-based approval workflows</div>
+        </div>
+        <div class="feature-pill">
+          <div class="pill-dot"></div>
+          <div class="pill-text">Centralised test asset repository</div>
+        </div>
+        <div class="feature-pill">
+          <div class="pill-dot"></div>
+          <div class="pill-text">Full audit trail & version history</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     COMPONENTS
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">Components</div>
+  <div class="section-desc">Every interactive element in the new palette.</div>
+
+  <div class="components-grid">
+
+    <div class="component-block">
+      <div class="component-label">Buttons</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-primary">Upload File</button>
+        <button class="btn btn-secondary">Cancel</button>
+        <button class="btn btn-ghost">View all</button>
+        <button class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+
+    <div class="component-block">
+      <div class="component-label">Status Badges</div>
+      <div class="badges-row">
+        <div class="badge b-approved">● Approved</div>
+        <div class="badge b-published">● Published</div>
+        <div class="badge b-review">● In Review</div>
+        <div class="badge b-draft">● Draft</div>
+      </div>
+    </div>
+
+    <div class="component-block">
+      <div class="component-label">Role Badges</div>
+      <div class="badges-row">
+        <div class="badge b-admin">● admin</div>
+        <div class="badge b-lead">● lead</div>
+        <div class="badge b-review">● engineer</div>
+        <div class="badge b-draft">● viewer</div>
+      </div>
+    </div>
+
+    <div class="component-block">
+      <div class="component-label">Input (focused)</div>
+      <input class="input-demo focused" value="test-plan-v3.pdf" readonly />
+    </div>
+
+    <div class="component-block">
+      <div class="component-label">Input (default)</div>
+      <input class="input-demo" placeholder="Search files…" readonly />
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

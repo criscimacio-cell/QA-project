@@ -53,7 +53,7 @@ export default function AppLayout() {
           style={{
             width: '600px', height: '600px',
             top: '-200px', left: '-150px',
-            background: 'radial-gradient(circle, rgba(8,164,156,0.18) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(6,95,70,0.18) 0%, transparent 70%)',
             filter: 'blur(60px)',
             animation: 'float-orb 18s ease-in-out infinite',
             zIndex: 0,
@@ -65,7 +65,7 @@ export default function AppLayout() {
           style={{
             width: '700px', height: '700px',
             bottom: '-250px', right: '-200px',
-            background: 'radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(167,243,208,0.14) 0%, transparent 70%)',
             filter: 'blur(80px)',
             animation: 'float-orb-2 22s ease-in-out infinite',
             zIndex: 0,
@@ -104,8 +104,8 @@ export default function AppLayout() {
           className="fixed top-0 left-0 z-[9999] h-[2.5px] transition-all duration-150 ease-out"
           style={{
             width: `${progressWidth}%`,
-            background: 'linear-gradient(90deg, #08a49c, #06b6d4, #5eead4)',
-            boxShadow: '0 0 10px rgba(8,164,156,0.7), 0 0 4px rgba(6,182,212,0.5)',
+            background: 'linear-gradient(90deg, #065F46, #059669, #A7F3D0)',
+            boxShadow: '0 0 10px rgba(6,95,70,0.7), 0 0 4px rgba(167,243,208,0.5)',
             opacity: progressWidth === 0 ? 0 : 1,
           }}
         >
@@ -113,7 +113,7 @@ export default function AppLayout() {
           <div
             className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full"
             style={{
-              background: 'rgba(8,164,156,0.6)',
+              background: 'rgba(6,95,70,0.6)',
               filter: 'blur(4px)',
               transform: 'translateY(-50%) scale(1)',
             }}

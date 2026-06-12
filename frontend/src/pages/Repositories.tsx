@@ -80,7 +80,7 @@ function TreeNode({
       <div
         className={`group flex items-center gap-1.5 py-1.5 pr-2 rounded-lg cursor-pointer text-sm transition-all select-none ${
           isSelected
-            ? 'bg-[#08a49c]/10 text-[#08a49c] dark:bg-[#08a49c]/15'
+            ? 'bg-[#065F46]/10 text-[#065F46] dark:bg-[#065F46]/15'
             : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
         }`}
         style={{ paddingLeft: `${8 + level * 16}px` }}
@@ -96,7 +96,7 @@ function TreeNode({
         {/* folder icon */}
         {shouldOpen && hasChildren
           ? <FolderOpen size={15} className="flex-shrink-0 text-amber-400" />
-          : <Folder size={15} className={`flex-shrink-0 ${level === 0 ? 'text-[#08a49c]' : 'text-amber-400'}`} />
+          : <Folder size={15} className={`flex-shrink-0 ${level === 0 ? 'text-[#065F46]' : 'text-amber-400'}`} />
         }
 
         <span className="flex-1 truncate text-[13px] font-medium">{node.name}</span>
@@ -125,7 +125,7 @@ function TreeNode({
               <div className="absolute right-0 top-5 z-50 w-44 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 text-xs animate-scale-in">
                 <button onClick={() => { onAddSub(node); setMenuOpen(false); }}
                   className="flex items-center gap-2 w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
-                  <FolderPlus size={13} className="text-[#08a49c]" /> Add Sub-folder
+                  <FolderPlus size={13} className="text-[#065F46]" /> Add Sub-folder
                 </button>
                 <button onClick={() => { onEdit(node); setMenuOpen(false); }}
                   className="flex items-center gap-2 w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
@@ -287,7 +287,7 @@ export default function Repositories() {
                 <button
                   onClick={() => openCreate(null)}
                   title="New root repository"
-                  className="p-1 rounded hover:bg-[#08a49c]/10 text-[#08a49c] transition-colors"
+                  className="p-1 rounded hover:bg-[#065F46]/10 text-[#065F46] transition-colors"
                 >
                   <Plus size={14} />
                 </button>
@@ -302,7 +302,7 @@ export default function Repositories() {
               value={treeSearch}
               onChange={e => setTreeSearch(e.target.value)}
               placeholder="Find repository…"
-              className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 placeholder-slate-400 outline-none focus:border-[#08a49c] transition-colors"
+              className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 placeholder-slate-400 outline-none focus:border-[#065F46] transition-colors"
             />
           </div>
         </div>
@@ -314,7 +314,7 @@ export default function Repositories() {
               <Database size={28} className="opacity-30" />
               <p className="text-xs text-center">No repositories yet</p>
               {isLead && (
-                <button onClick={() => openCreate(null)} className="text-xs text-[#08a49c] hover:underline font-medium">
+                <button onClick={() => openCreate(null)} className="text-xs text-[#065F46] hover:underline font-medium">
                   + Create one
                 </button>
               )}
@@ -336,7 +336,7 @@ export default function Repositories() {
           <div className="flex-shrink-0 p-3 border-t border-slate-100 dark:border-slate-800">
             <button
               onClick={() => openCreate(null)}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-[#08a49c] border border-dashed border-[#08a49c]/40 hover:border-[#08a49c] hover:bg-[#08a49c]/5 transition-all"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-[#065F46] border border-dashed border-[#065F46]/40 hover:border-[#065F46] hover:bg-[#065F46]/5 transition-all"
             >
               <Plus size={13} /> New Repository
             </button>
@@ -358,7 +358,7 @@ export default function Repositories() {
                 {i > 0 && <ChevronRight size={12} className="text-slate-300" />}
                 <span className={i === breadcrumb.length - 1
                   ? 'font-semibold text-slate-900 dark:text-slate-100'
-                  : 'text-slate-400 hover:text-[#08a49c] cursor-pointer transition-colors'}>
+                  : 'text-slate-400 hover:text-[#065F46] cursor-pointer transition-colors'}>
                   {b}
                 </span>
               </span>
@@ -377,8 +377,8 @@ export default function Repositories() {
 
           {/* View toggle */}
           <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-            <button onClick={() => setView('list')} className={`p-1.5 transition-colors ${view === 'list' ? 'bg-[#08a49c] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><List size={14} /></button>
-            <button onClick={() => setView('grid')} className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-[#08a49c] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={14} /></button>
+            <button onClick={() => setView('list')} className={`p-1.5 transition-colors ${view === 'list' ? 'bg-[#065F46] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><List size={14} /></button>
+            <button onClick={() => setView('grid')} className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-[#065F46] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={14} /></button>
           </div>
 
           {selected && isLead && (
@@ -405,7 +405,7 @@ export default function Repositories() {
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center h-32">
-              <RefreshCw size={18} className="animate-spin text-[#08a49c]" />
+              <RefreshCw size={18} className="animate-spin text-[#065F46]" />
             </div>
           ) : (
             <>
@@ -444,7 +444,7 @@ export default function Repositories() {
                       <div
                         key={c.id}
                         onClick={() => setSelected(c.id)}
-                        className="card p-3 cursor-pointer hover:border-[#08a49c]/40 hover:shadow-md transition-all group"
+                        className="card p-3 cursor-pointer hover:border-[#065F46]/40 hover:shadow-md transition-all group"
                       >
                         <Folder size={26} className="text-amber-400 mb-2 group-hover:text-amber-500 transition-colors" />
                         <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{c.name}</div>
@@ -454,7 +454,7 @@ export default function Repositories() {
                     {isLead && (
                       <button
                         onClick={() => openCreate(selected, selectedRepo?.name)}
-                        className="card p-3 flex flex-col items-center justify-center gap-1.5 border-dashed cursor-pointer hover:border-[#08a49c]/50 hover:bg-[#08a49c]/5 transition-all text-slate-400 hover:text-[#08a49c]"
+                        className="card p-3 flex flex-col items-center justify-center gap-1.5 border-dashed cursor-pointer hover:border-[#065F46]/50 hover:bg-[#065F46]/5 transition-all text-slate-400 hover:text-[#065F46]"
                       >
                         <Plus size={20} />
                         <span className="text-[10px] font-medium">New folder</span>
@@ -677,7 +677,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
     <Modal open={open} onClose={onClose} title="Upload File" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div
-          className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${uploadErrors.file ? 'border-red-400' : 'border-slate-200 dark:border-slate-700 hover:border-[#08a49c]/50'}`}
+          className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${uploadErrors.file ? 'border-red-400' : 'border-slate-200 dark:border-slate-700 hover:border-[#065F46]/50'}`}
         >
           {file ? (
             <div className="flex items-center justify-center gap-3">
@@ -691,7 +691,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
           ) : (
             <label className="cursor-pointer">
               <Upload size={28} className="mx-auto mb-2 text-slate-300" />
-              <p className="text-sm text-slate-500 mb-1">Drop a file here or <span className="text-[#08a49c] font-medium">browse</span></p>
+              <p className="text-sm text-slate-500 mb-1">Drop a file here or <span className="text-[#065F46] font-medium">browse</span></p>
               <p className="text-xs text-slate-400">Excel, PDF, Word, ZIP, JSON, XML, CSV, Images</p>
               <input type="file" className="hidden" onChange={e => {
                 const f = e.target.files?.[0];

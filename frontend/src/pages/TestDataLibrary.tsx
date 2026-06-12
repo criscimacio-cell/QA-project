@@ -71,7 +71,7 @@ export default function TestDataLibrary() {
       {/* Category pills */}
       <div className="flex gap-2 flex-wrap">
         {CATEGORIES.map(cat => (
-          <button key={cat} onClick={() => setCategory(cat)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${category === cat ? 'bg-[#08a49c] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+          <button key={cat} onClick={() => setCategory(cat)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${category === cat ? 'bg-[#065F46] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
             {cat}
           </button>
         ))}

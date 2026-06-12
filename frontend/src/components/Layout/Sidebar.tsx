@@ -48,15 +48,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       )}
       style={{
         boxShadow: dark
-          ? '2px 0 40px rgba(0,0,0,0.5), 1px 0 0 rgba(8,164,156,0.08)'
-          : '2px 0 20px rgba(0,0,0,0.06)',
+          ? '2px 0 40px rgba(0,0,0,0.5)'
+          : '2px 0 20px rgba(0,0,0,0.15)',
       }}
     >
-      {/* Subtle teal gradient overlay (dark mode only) */}
+      {/* Subtle overlay */}
       <div
-        className="absolute inset-0 pointer-events-none hidden dark:block"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(180deg, rgba(8,164,156,0.05) 0%, transparent 30%, rgba(6,182,212,0.03) 100%)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 30%, rgba(0,0,0,0.05) 100%)',
         }}
       />
 
@@ -64,24 +64,25 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div
         className={clsx(
           'relative z-10 flex items-center gap-3 px-3 border-b transition-all duration-300',
-          'border-slate-200/80 dark:border-slate-800/60',
+          'border-white/10',
           collapsed ? 'py-[1.125rem] justify-center' : 'py-[1.125rem] px-4',
         )}
         style={{
-          background: 'linear-gradient(135deg, rgba(8,164,156,0.08), rgba(6,182,212,0.04))',
+          background: 'rgba(0,0,0,0.1)',
         }}
       >
         {/* Animated border line at bottom of logo area */}
         <div
           className="absolute bottom-0 left-4 right-4 h-px"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(8,164,156,0.3), transparent)' }}
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)' }}
         />
 
         <div
           className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300"
           style={{
-            background: 'linear-gradient(135deg, #08a49c, #06b6d4)',
-            boxShadow: '0 4px 14px rgba(8,164,156,0.4)',
+            background: 'rgba(255,255,255,0.15)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+            border: '1px solid rgba(255,255,255,0.2)',
           }}
         >
           <Layers size={17} className="text-white" style={{ animation: collapsed ? 'none' : 'float 4s ease-in-out infinite' }} />
@@ -90,18 +91,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {!collapsed && (
           <div className="animate-fade-in overflow-hidden">
             <div
-              className="font-extrabold text-sm tracking-tight"
-              style={{
-                background: 'linear-gradient(135deg, #5eead4, #06b6d4)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                filter: 'drop-shadow(0 0 6px rgba(8,164,156,0.5))',
-              }}
+              className="font-extrabold text-sm tracking-tight text-white"
             >
               Qlarity
             </div>
-            <div className="text-xs text-slate-500 font-medium">
+            <div className="text-xs font-medium" style={{ color: 'rgba(167,243,208,0.8)' }}>
               QA Asset Platform
             </div>
           </div>
@@ -114,7 +108,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <div key={section.section}>
             {!collapsed && (
               <div
-                className="px-3 mb-2 text-xs font-bold uppercase tracking-widest animate-fade-in text-slate-400 dark:text-teal-400/50"
+                className="px-3 mb-2 text-xs font-bold uppercase tracking-widest animate-fade-in"
+                style={{ color: 'rgba(167,243,208,0.5)' }}
               >
                 {section.section}
               </div>
@@ -146,8 +141,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         className={clsx(
                           'sidebar-icon flex-shrink-0',
                           isActive
-                            ? 'text-[#08a49c] dark:text-[#5eead4]'
-                            : 'text-slate-500 dark:text-slate-500',
+                            ? 'text-[#065F46]'
+                            : 'text-white/60',
                         )}
                       />
                       {!collapsed && (
@@ -198,8 +193,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         className={clsx(
                           'sidebar-icon flex-shrink-0',
                           isActive
-                            ? 'text-[#08a49c] dark:text-[#5eead4]'
-                            : 'text-slate-500 dark:text-slate-500',
+                            ? 'text-[#065F46]'
+                            : 'text-white/60',
                         )}
                       />
                       {!collapsed && (
@@ -216,17 +211,16 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* ── User card ── */}
       <div
-        className="relative z-10 p-3 border-t border-slate-200 dark:border-slate-800/60"
-        style={{
-          background: 'linear-gradient(135deg, rgba(8,164,156,0.04), rgba(6,182,212,0.02))',
-        }}
+        className="relative z-10 p-3 border-t"
+        style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.1)' }}
       >
         {!collapsed ? (
           <div
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl"
+            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}
           >
             <div className="relative flex-shrink-0">
-              <div style={{ padding: '2px', background: 'linear-gradient(135deg, #08a49c, #06b6d4)', borderRadius: '50%' }}>
+              <div style={{ padding: '2px', background: '#A7F3D0', borderRadius: '50%' }}>
                 <img
                   src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
                   alt=""
@@ -236,12 +230,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <span className="online-indicator" />
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <div className="text-xs font-semibold text-slate-800 dark:text-white truncate leading-none">
+              <div className="text-xs font-semibold text-white truncate leading-none">
                 {user?.name}
               </div>
               <div
                 className="text-xs font-medium capitalize mt-0.5 truncate"
-                style={{ color: '#08a49c' }}
+                style={{ color: '#A7F3D0' }}
               >
                 {user?.role}
               </div>
@@ -250,7 +244,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ) : (
           <div className="flex justify-center">
             <div className="relative">
-              <div style={{ padding: '2px', background: 'linear-gradient(135deg, #08a49c, #06b6d4)', borderRadius: '50%' }}>
+              <div style={{ padding: '2px', background: '#A7F3D0', borderRadius: '50%' }}>
                 <img
                   src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
                   alt=""
@@ -267,11 +261,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* ── Collapse toggle ── */}
       <button
         onClick={onToggle}
-        className="absolute -right-3.5 top-[4.5rem] w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 z-50 bg-white dark:bg-slate-900 hover:bg-[#08a49c] hover:text-white"
+        className="absolute -right-3.5 top-[4.5rem] w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 z-50 bg-white hover:bg-[#065F46] hover:text-white"
         style={{
-          border: '1.5px solid rgba(8,164,156,0.4)',
-          boxShadow: '0 2px 12px rgba(8,164,156,0.25)',
-          color: '#08a49c',
+          border: '1.5px solid rgba(6,95,70,0.4)',
+          boxShadow: '0 2px 12px rgba(6,95,70,0.25)',
+          color: '#065F46',
         }}
       >
         {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}

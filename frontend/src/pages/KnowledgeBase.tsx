@@ -161,7 +161,7 @@ export default function KnowledgeBase() {
           {['All', ...kbCategories].map(cat => {
             const count = cat === 'All' ? articles.length : articles.filter(a => a.category === cat).length;
             return (
-              <button key={cat} onClick={() => setCategory(cat)} className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${category === cat ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+              <button key={cat} onClick={() => setCategory(cat)} className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${category === cat ? 'bg-[#A7F3D0]/30 dark:bg-emerald-900/20 text-[#065F46] dark:text-[#A7F3D0] font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                 <span>{cat}</span>
                 <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full px-2">{count}</span>
               </button>
@@ -178,7 +178,7 @@ export default function KnowledgeBase() {
               <p className="text-xs mt-1 text-slate-400">Try a different category or search term</p>
             </div>
           ) : articles.map(a => (
-            <div key={a.id} onClick={() => openArticle(a)} className="card p-5 cursor-pointer hover:shadow-md hover:border-teal-200 dark:hover:border-teal-800 transition-all group">
+            <div key={a.id} onClick={() => openArticle(a)} className="card p-5 cursor-pointer hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -187,14 +187,14 @@ export default function KnowledgeBase() {
                     )}
                     <StatusBadge status={a.status} />
                   </div>
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">{a.title}</h3>
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-[#065F46] dark:group-hover:text-[#A7F3D0] transition-colors">{a.title}</h3>
                   <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
                     <span className="flex items-center gap-1"><User size={11} />{a.author_name}</span>
                     <span className="flex items-center gap-1"><Clock size={11} />{new Date(a.updated_at).toLocaleDateString()}</span>
                     {a.tags && <span className="flex items-center gap-1"><Tag size={11} />{a.tags.split(',').slice(0, 3).join(', ')}</span>}
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-slate-300 group-hover:text-teal-400 flex-shrink-0 mt-1 transition-colors" />
+                <ChevronRight size={18} className="text-slate-300 group-hover:text-[#A7F3D0] flex-shrink-0 mt-1 transition-colors" />
               </div>
             </div>
           ))}

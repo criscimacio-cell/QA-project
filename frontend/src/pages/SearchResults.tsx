@@ -73,7 +73,7 @@ export default function SearchResults() {
             { id: 'files', label: `Files (${results.files?.length || 0})` },
             { id: 'knowledge', label: `Knowledge (${results.knowledge?.length || 0})` },
           ].map(f => (
-            <button key={f.id} onClick={() => setFilter(f.id)} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === f.id ? 'bg-[#08a49c] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}>
+            <button key={f.id} onClick={() => setFilter(f.id)} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === f.id ? 'bg-[#065F46] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}>
               {f.label}
             </button>
           ))}
@@ -99,7 +99,7 @@ export default function SearchResults() {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-2 border-[#08a49c] border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-2 border-[#065F46] border-t-transparent rounded-full" />
         </div>
       )}
 
@@ -121,7 +121,7 @@ export default function SearchResults() {
           {(filter === 'all' || filter === 'files') && results.files?.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                <FileText size={18} className="text-[#08a49c]" /> Files
+                <FileText size={18} className="text-[#065F46]" /> Files
               </h2>
               {results.files.map((f: any) => (
                 <div key={f.id} className="card p-4 hover:shadow-md hover:border-teal-200 dark:hover:border-teal-800 transition-all">

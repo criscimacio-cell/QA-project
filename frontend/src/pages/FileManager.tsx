@@ -194,7 +194,7 @@ export default function FileManager() {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-16"><RefreshCw size={20} className="animate-spin text-[#08a49c]" /></div>
+          <div className="flex items-center justify-center py-16"><RefreshCw size={20} className="animate-spin text-[#065F46]" /></div>
         ) : files.length === 0 ? (
           <div className="text-center py-16 text-slate-400 text-sm">No files found</div>
         ) : (
@@ -235,7 +235,7 @@ export default function FileManager() {
                       <div className="flex items-center gap-1">
                         <button onClick={() => openFile(f)} title="Details" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Eye size={14} /></button>
                         {isPreviewable(f) && (
-                          <button onClick={() => openPreview(f)} title="Preview" className="p-1.5 rounded hover:bg-[#08a49c]/10 text-[#08a49c]">
+                          <button onClick={() => openPreview(f)} title="Preview" className="p-1.5 rounded hover:bg-[#065F46]/10 text-[#065F46]">
                             {f.mime_type?.startsWith('image/') ? <Image size={14} /> : <FileText size={14} />}
                           </button>
                         )}
@@ -244,7 +244,7 @@ export default function FileManager() {
                           <button onClick={() => doRestore(f.id)} title="Restore" className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500"><RotateCcw size={14} /></button>
                         ) : isLead ? (
                           <>
-                            <button onClick={() => { setSelected(f); setShowApprove(true); }} title="Review" className="p-1.5 rounded hover:bg-[#08a49c]/10 text-[#08a49c]">
+                            <button onClick={() => { setSelected(f); setShowApprove(true); }} title="Review" className="p-1.5 rounded hover:bg-[#065F46]/10 text-[#065F46]">
                               <GitBranch size={14} />
                             </button>
                             <button onClick={() => doArchive(f.id)} title="Archive" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
@@ -292,7 +292,7 @@ export default function FileManager() {
                 <div className="space-y-2">
                   {selected.versions.map((v: any) => (
                     <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
-                      <span className="text-xs bg-[#08a49c]/10 text-[#08a49c] px-2 py-0.5 rounded font-mono">v{v.version}</span>
+                      <span className="text-xs bg-[#065F46]/10 text-[#065F46] px-2 py-0.5 rounded font-mono">v{v.version}</span>
                       <span className="text-slate-500">{v.change_log}</span>
                       <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString()}</span>
                       <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version"><Download size={12} /></button>
@@ -352,7 +352,7 @@ export default function FileManager() {
             onDragLeave={() => setDragOver(false)}
             onDrop={onDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver ? 'border-[#08a49c] bg-[#08a49c]/5' : 'border-slate-200 dark:border-slate-700 hover:border-[#08a49c]/50'}`}
+            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver ? 'border-[#065F46] bg-[#065F46]/5' : 'border-slate-200 dark:border-slate-700 hover:border-[#065F46]/50'}`}
           >
             <Upload size={28} className="mx-auto mb-3 text-slate-400" />
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Drop files here or click to browse</p>
@@ -374,7 +374,7 @@ export default function FileManager() {
           )}
 
           {bulkProgress && (
-            <p className={`text-sm text-center font-medium ${bulkProgress.includes('complete') ? 'text-[#08a49c]' : bulkProgress.includes('fail') ? 'text-red-500' : 'text-slate-600 dark:text-slate-400'}`}>
+            <p className={`text-sm text-center font-medium ${bulkProgress.includes('complete') ? 'text-[#065F46]' : bulkProgress.includes('fail') ? 'text-red-500' : 'text-slate-600 dark:text-slate-400'}`}>
               {bulkProgress}
             </p>
           )}

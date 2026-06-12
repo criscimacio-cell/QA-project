@@ -9,7 +9,7 @@ const STAGES = [
   { key: 'draft', label: 'Draft', icon: FileText, color: 'border-slate-300 dark:border-slate-600', headerColor: 'bg-slate-100 dark:bg-slate-800', textColor: 'text-slate-600 dark:text-slate-400' },
   { key: 'submitted', label: 'Submitted', icon: ArrowRight, color: 'border-blue-300 dark:border-blue-700', headerColor: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400' },
   { key: 'under_review', label: 'Under Review', icon: Clock, color: 'border-amber-300 dark:border-amber-700', headerColor: 'bg-amber-50 dark:bg-amber-900/20', textColor: 'text-amber-600 dark:text-amber-400' },
-  { key: 'approved', label: 'Approved', icon: CheckCircle, color: 'border-teal-300 dark:border-teal-700', headerColor: 'bg-teal-50 dark:bg-teal-900/20', textColor: 'text-teal-600 dark:text-teal-400' },
+  { key: 'approved', label: 'Approved', icon: CheckCircle, color: 'border-emerald-300 dark:border-emerald-700', headerColor: 'bg-[#A7F3D0]/20 dark:bg-emerald-900/20', textColor: 'text-[#065F46] dark:text-[#A7F3D0]' },
   { key: 'published', label: 'Published', icon: CheckCircle, color: 'border-emerald-300 dark:border-emerald-700', headerColor: 'bg-emerald-50 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400' },
 ];
 
@@ -99,7 +99,7 @@ export default function ApprovalWorkflow() {
     <div className="space-y-5 animate-fade-in-up">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Approval Workflow</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage file review and publication pipeline · <span className="text-teal-500 font-medium">Drag cards between columns to move files</span></p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage file review and publication pipeline · <span className="text-[#065F46] font-medium">Drag cards between columns to move files</span></p>
       </div>
 
       {/* Pipeline stats */}
@@ -128,7 +128,7 @@ export default function ApprovalWorkflow() {
               key={stage.key}
               className={`flex-shrink-0 w-64 border-2 rounded-xl overflow-hidden transition-all duration-150 ${
                 isOver
-                  ? stage.color + ' ring-2 ring-offset-1 ring-teal-400 scale-[1.01]'
+                  ? stage.color + ' ring-2 ring-offset-1 ring-[#065F46] scale-[1.01]'
                   : stage.color
               }`}
               onDragOver={e => handleDragOver(e, stage.key)}
@@ -154,13 +154,13 @@ export default function ApprovalWorkflow() {
               <div
                 className={`p-2 space-y-2 min-h-[80px] max-h-[500px] overflow-y-auto transition-colors duration-150 ${
                   isOver
-                    ? 'bg-teal-50/60 dark:bg-teal-900/10'
+                    ? 'bg-emerald-50/60 dark:bg-emerald-900/10'
                     : 'bg-white dark:bg-slate-900'
                 }`}
               >
                 {/* Drop hint */}
                 {isOver && draggingId !== null && !stageFiles.some(f => f.id === draggingId) && (
-                  <div className="border-2 border-dashed border-teal-400 rounded-xl h-16 flex items-center justify-center text-xs text-teal-500 font-medium animate-pulse">
+                  <div className="border-2 border-dashed border-teal-400 rounded-xl h-16 flex items-center justify-center text-xs text-[#065F46] font-medium animate-pulse">
                     Drop here → {stage.label}
                   </div>
                 )}

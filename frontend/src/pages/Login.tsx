@@ -406,9 +406,12 @@ function DashboardPreview({ visible }: { visible: boolean }) {
 
 /* ─── Main component ───────────────────────────────────────────── */
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user, refreshUser } = useAuth();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
+
+  // Redirect already-logged-in users immediately
+  useEffect(() => { if (user) navigate('/', { replace: true }); }, []);
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]     = useState(false);
@@ -436,7 +439,7 @@ export default function Login() {
     ts.push(setTimeout(() => { console.log('[anim] grown'); setMorphGrown(true); },        520));
     ts.push(setTimeout(() => { console.log('[anim] ring');  setRingPulse(true); },        1060));
     ts.push(setTimeout(() => { console.log('[anim] dashboard'); setMorphFading(true); setPhase('dashboard'); }, 1960));
-    ts.push(setTimeout(() => { console.log('[anim] navigate'); navigate('/'); },          3160));
+    ts.push(setTimeout(() => { console.log('[anim] navigate'); refreshUser().finally(() => navigate('/')); }, 3160));
     return () => { console.log('[anim] cleanup'); ts.forEach(clearTimeout); };
   }, [loginSuccess, navigate]);
 

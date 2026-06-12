@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -43,6 +43,10 @@ function DashboardMockup() {
       <path d="M100,145 L133,164 A38,38 0 0,1 85,181 Z" fill="#06b6d4" opacity="0.8"/>
       <path d="M100,145 L85,181 A38,38 0 0,1 68,120 Z" fill="#5eead4" opacity="0.7"/>
       <path d="M100,145 L68,120 A38,38 0 0,1 100,107 Z" fill="#e2e8f0" opacity="0.9"/>
+      {/* Donut draw animation overlay */}
+      <circle cx="100" cy="145" r="28" fill="none" stroke="#08a49c" strokeWidth="6" strokeLinecap="round"
+        strokeDasharray="0 176" opacity="0.4"
+        style={{ transformOrigin: '100px 145px', transform: 'rotate(-90deg)', animation: 'donutDraw 1.8s ease-out 0.3s forwards' }}/>
       <circle cx="100" cy="145" r="18" fill="white" />
       <text x="100" y="149" textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="10" fontWeight="700" fill="#08a49c">72%</text>
       {/* Legend */}
@@ -61,15 +65,16 @@ function DashboardMockup() {
 
       {/* Bars */}
       {[
-        { x: 40,  h: 44, label: 'Mon', pct: '44' },
-        { x: 95,  h: 62, label: 'Tue', pct: '62' },
-        { x: 150, h: 38, label: 'Wed', pct: '38' },
-        { x: 205, h: 78, label: 'Thu', pct: '78' },
-        { x: 260, h: 55, label: 'Fri', pct: '55' },
-        { x: 315, h: 30, label: 'Sat', pct: '30' },
+        { x: 40,  h: 44, label: 'Mon', pct: '44', delay: '0s' },
+        { x: 95,  h: 62, label: 'Tue', pct: '62', delay: '0.1s' },
+        { x: 150, h: 38, label: 'Wed', pct: '38', delay: '0.2s' },
+        { x: 205, h: 78, label: 'Thu', pct: '78', delay: '0.3s' },
+        { x: 260, h: 55, label: 'Fri', pct: '55', delay: '0.4s' },
+        { x: 315, h: 30, label: 'Sat', pct: '30', delay: '0.5s' },
       ].map(b => (
         <g key={b.label}>
-          <rect x={b.x} y={310 - b.h} width="36" height={b.h} rx="6" fill="url(#barGrad)" opacity="0.85"/>
+          <rect x={b.x} y={310 - b.h} width="36" height={b.h} rx="6" fill="url(#barGrad)" opacity="0.85"
+            style={{ transformOrigin: `${b.x + 18}px 310px`, animation: `barGrow 1.2s ease-out ${b.delay} both` }}/>
           <text x={b.x + 18} y="325" textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="9" fill="#94a3b8">{b.label}</text>
         </g>
       ))}
@@ -85,12 +90,12 @@ function DashboardMockup() {
       <text x="30" y="362" fontFamily="DM Sans,sans-serif" fontSize="11" fill="#64748b" fontWeight="600" letterSpacing="0.05em">RECENT FILES</text>
 
       {[
-        { label: 'test-plan-v3.pdf',      status: 'Approved', sc: '#08a49c', sb: 'rgba(8,164,156,0.1)',  y: 386 },
-        { label: 'regression-suite.xlsx', status: 'Review',   sc: '#f59e0b', sb: 'rgba(245,158,11,0.1)', y: 414 },
-        { label: 'api-test-cases.json',   status: 'Draft',    sc: '#94a3b8', sb: 'rgba(148,163,184,0.1)',y: 442 },
-        { label: 'load-test-results.csv', status: 'Approved', sc: '#08a49c', sb: 'rgba(8,164,156,0.1)',  y: 470 },
+        { label: 'test-plan-v3.pdf',      status: 'Approved', sc: '#08a49c', sb: 'rgba(8,164,156,0.1)',  y: 386, delay: '0.8s' },
+        { label: 'regression-suite.xlsx', status: 'Review',   sc: '#f59e0b', sb: 'rgba(245,158,11,0.1)', y: 414, delay: '1.1s' },
+        { label: 'api-test-cases.json',   status: 'Draft',    sc: '#94a3b8', sb: 'rgba(148,163,184,0.1)',y: 442, delay: '1.4s' },
+        { label: 'load-test-results.csv', status: 'Approved', sc: '#08a49c', sb: 'rgba(8,164,156,0.1)',  y: 470, delay: '1.7s' },
       ].map(row => (
-        <g key={row.y}>
+        <g key={row.y} style={{ animation: `rowSlideIn 0.5s ease-out ${row.delay} both` }}>
           <rect x="24" y={row.y - 14} width="366" height="24" rx="6" fill={row.sb} />
           <circle cx="40" cy={row.y} r="7" fill="rgba(8,164,156,0.12)"/>
           <rect x="50" y={row.y - 4} width="3" height="8" rx="1.5" fill="#08a49c" opacity="0.6"/>
@@ -178,6 +183,50 @@ export default function Login() {
   const [errors, setErrors]     = useState<Record<string, string>>({});
   const [filledRole, setFilledRole] = useState('');
 
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const particlesRef = useRef<HTMLDivElement>(null);
+
+  // Typewriter on email placeholder
+  useEffect(() => {
+    const text = 'admin@qa.com';
+    let i = 0;
+    let fwd = true;
+    const el = emailInputRef.current;
+    if (!el) return;
+    const tick = () => {
+      if (el.value) return; // stop if user typed
+      el.placeholder = text.slice(0, i) + '|';
+      if (fwd) { i++; if (i > text.length) { fwd = false; } }
+      else { i--; if (i < 0) { i = 0; fwd = true; } }
+    };
+    const id = setInterval(tick, 120);
+    return () => clearInterval(id);
+  }, []);
+
+  // Floating particles
+  useEffect(() => {
+    const container = particlesRef.current;
+    if (!container) return;
+    const particles: HTMLDivElement[] = [];
+    for (let n = 0; n < 18; n++) {
+      const d = document.createElement('div');
+      const dx = (Math.random() - 0.5) * 60;
+      const dy = (Math.random() - 0.5) * 60;
+      d.style.cssText = `
+        position:absolute;
+        width:4px;height:4px;border-radius:50%;
+        background:rgba(8,164,156,0.55);
+        left:${Math.random()*100}%;top:${Math.random()*100}%;
+        --dx:${dx}px;--dy:${dy}px;
+        animation:floatParticle ${3 + Math.random()*4}s ease-in-out ${Math.random()*3}s infinite;
+        pointer-events:none;
+      `;
+      container.appendChild(d);
+      particles.push(d);
+    }
+    return () => particles.forEach(d => d.remove());
+  }, []);
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!email.trim()) e.email = 'Email is required';
@@ -262,6 +311,11 @@ export default function Login() {
         </svg>
       </button>
 
+      {/* ── Morphing blob divs ── */}
+      <div className="absolute pointer-events-none" style={{ width: 280, height: 280, top: '10%', left: '-8%', borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', background: 'rgba(8,164,156,0.08)', animation: 'blobMorph1 7s ease-in-out infinite', zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ width: 220, height: 220, bottom: '12%', left: '18%', borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%', background: 'rgba(8,164,156,0.07)', animation: 'blobMorph2 8s ease-in-out infinite', zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ width: 200, height: 200, top: '55%', right: '5%', borderRadius: '50% 50% 30% 70% / 50% 70% 30% 50%', background: 'rgba(8,164,156,0.06)', animation: 'blobMorph3 10s ease-in-out infinite', zIndex: 0 }} />
+
       {/* ════════════════════════════════════
           LEFT — Login form
       ════════════════════════════════════ */}
@@ -302,6 +356,7 @@ export default function Login() {
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
               </svg>
               <input
+                ref={emailInputRef}
                 type="email"
                 value={email}
                 onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(p => ({ ...p, email: '' })); }}
@@ -363,6 +418,7 @@ export default function Login() {
                 opacity: (loading || Object.values(errors).some(Boolean)) ? 0.7 : 1,
                 boxShadow: '0 4px 18px rgba(8,164,156,0.38)',
                 transition: 'box-shadow 0.2s, transform 0.15s',
+                animation: (loading || Object.values(errors).some(Boolean)) ? 'none' : 'btnPulse 3s ease-in-out infinite',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
               onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(8,164,156,0.55)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; } }}
@@ -416,11 +472,13 @@ export default function Login() {
           RIGHT — Illustration panel
       ════════════════════════════════════ */}
       <div className="hidden md:flex flex-col items-center justify-center flex-1 relative z-10 px-8 py-12">
+        {/* Particles layer */}
+        <div ref={particlesRef} className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }} />
 
         {/* Figures row */}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', width: '100%', maxWidth: 480, marginBottom: -24, zIndex: 2, position: 'relative', paddingBottom: 0 }}>
-          <FigureLeft />
-          <FigureRight />
+          <div style={{ animation: 'bobLeft 2.5s ease-in-out infinite' }}><FigureLeft /></div>
+          <div style={{ animation: 'bobRight 2.5s ease-in-out 1.2s infinite' }}><FigureRight /></div>
         </div>
 
         {/* Floating dashboard card */}
@@ -442,7 +500,9 @@ export default function Login() {
               <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 16, color: '#0f172a' }}>QA Dashboard</div>
               <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Last updated: just now</div>
             </div>
-            <div style={{ padding: '6px 14px', borderRadius: 20, background: 'rgba(8,164,156,0.1)', fontSize: 12, fontWeight: 700, color: '#08a49c' }}>Live ●</div>
+            <div style={{ padding: '6px 14px', borderRadius: 20, background: 'rgba(8,164,156,0.1)', fontSize: 12, fontWeight: 700, color: '#08a49c', display: 'flex', alignItems: 'center', gap: 5 }}>
+              Live <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#08a49c', animation: 'liveBlink 1.2s steps(1) infinite' }} />
+            </div>
           </div>
           <DashboardMockup />
         </div>
@@ -462,6 +522,54 @@ export default function Login() {
         @keyframes fadeInField {
           from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: no-preference) {
+          @keyframes blobMorph1 {
+            0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            33%  { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+            66%  { border-radius: 50% 50% 20% 80% / 25% 80% 20% 75%; }
+          }
+          @keyframes blobMorph2 {
+            0%,100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            50%  { border-radius: 70% 30% 40% 60% / 60% 40% 70% 30%; }
+          }
+          @keyframes blobMorph3 {
+            0%,100% { border-radius: 50% 50% 30% 70% / 50% 70% 30% 50%; }
+            40%  { border-radius: 30% 70% 60% 40% / 70% 30% 50% 50%; }
+            80%  { border-radius: 70% 30% 50% 50% / 30% 60% 40% 70%; }
+          }
+          @keyframes bobLeft {
+            0%,100% { transform: translateY(0px); }
+            50%  { transform: translateY(-10px); }
+          }
+          @keyframes bobRight {
+            0%,100% { transform: translateY(0px); }
+            50%  { transform: translateY(-10px); }
+          }
+          @keyframes barGrow {
+            from { transform: scaleY(0); }
+            to   { transform: scaleY(1); }
+          }
+          @keyframes donutDraw {
+            from { stroke-dasharray: 0 176; }
+            to   { stroke-dasharray: 127 176; }
+          }
+          @keyframes rowSlideIn {
+            from { opacity: 0; transform: translateX(12px); }
+            to   { opacity: 1; transform: translateX(0); }
+          }
+          @keyframes liveBlink {
+            0%,49% { opacity: 1; }
+            50%,100% { opacity: 0.2; }
+          }
+          @keyframes floatParticle {
+            0%,100% { transform: translate(0,0); opacity: 0.6; }
+            50%  { transform: translate(var(--dx),var(--dy)); opacity: 0.15; }
+          }
+          @keyframes btnPulse {
+            0%,100% { box-shadow: 0 4px 18px rgba(8,164,156,0.38); }
+            50%  { box-shadow: 0 4px 32px rgba(8,164,156,0.65), 0 0 0 8px rgba(8,164,156,0.08); }
+          }
         }
       `}</style>
     </div>

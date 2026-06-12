@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { LogoutProvider } from './context/LogoutContext';
 import AppLayout from './components/Layout/AppLayout';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
@@ -58,7 +59,9 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <AppRoutes />
+          <LogoutProvider>
+            <AppRoutes />
+          </LogoutProvider>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

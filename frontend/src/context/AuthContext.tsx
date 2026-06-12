@@ -54,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.post('/auth/logout').catch(() => {});
     localStorage.removeItem('token');
     setUser(null);
-    window.location.href = '/login';
+    // Navigation is handled by the caller (LogoutContext) so the animation
+    // can complete before the page changes.
   };
 
   return (

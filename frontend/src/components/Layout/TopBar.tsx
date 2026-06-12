@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Bell, Sun, Moon, LogOut, User, ChevronDown, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLogout } from '../../context/LogoutContext';
 import api from '../../api/client';
 
 interface TopBarProps { sidebarWidth: number; }
 
 export default function TopBar({ sidebarWidth }: TopBarProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { triggerLogout } = useLogout();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -321,7 +323,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                 <div className="mx-3 my-1 h-px bg-slate-200 dark:bg-slate-800/60" />
 
                 <button
-                  onClick={logout}
+                  onClick={triggerLogout}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-900/20 transition-colors"
                 >
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 bg-red-50 dark:bg-red-900/30">

@@ -441,7 +441,7 @@ function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
         }}
       />
 
-      {/* Baby cow — smaller, offset lower, slightly delayed float */}
+      {/* Baby cow — smaller, beside mama at same level */}
       <div
         ref={babyRef}
         style={{
@@ -449,8 +449,8 @@ function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
           filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(245,158,11,0.07))',
           animation: 'cowFloat 3.2s ease-in-out 0.8s infinite',
           flexShrink: 0,
-          alignSelf: 'flex-end',
-          marginBottom: '12%',
+          alignSelf: 'center',
+          marginTop: 80,
         }}
       />
     </div>

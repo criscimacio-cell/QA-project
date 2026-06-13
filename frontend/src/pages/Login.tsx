@@ -327,7 +327,7 @@ function ParticleTrail() {
   return <canvas ref={canvasRef} style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:50 }} />;
 }
 
-/* ─── Owl mascot with cursor-tracking eyes ──────────────────────────── */
+/* ─── Owl mascot — holding the login form ───────────────────────────── */
 function OwlMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number; y: number }> }) {
   const leftPupilRef  = useRef<SVGCircleElement>(null);
   const rightPupilRef = useRef<SVGCircleElement>(null);
@@ -335,17 +335,17 @@ function OwlMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
 
   useEffect(() => {
     const EYES = [
-      { ref: leftPupilRef,  cx: 98,  cy: 108 },
-      { ref: rightPupilRef, cx: 142, cy: 108 },
+      { ref: leftPupilRef,  cx: 196, cy: 194 },
+      { ref: rightPupilRef, cx: 264, cy: 194 },
     ];
-    const MAX = 6;
+    const MAX = 8;
     let raf: number;
     const loop = () => {
       const svg = svgRef.current;
       if (svg) {
         const rect = svg.getBoundingClientRect();
-        const mx = (mouseRef.current.x - rect.left) * (240 / rect.width);
-        const my = (mouseRef.current.y - rect.top)  * (300 / rect.height);
+        const mx = (mouseRef.current.x - rect.left) * (460 / rect.width);
+        const my = (mouseRef.current.y - rect.top)  * (700 / rect.height);
         EYES.forEach(({ ref, cx, cy }) => {
           const el = ref.current;
           if (!el) return;
@@ -363,93 +363,120 @@ function OwlMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
     return () => cancelAnimationFrame(raf);
   }, [mouseRef]);
 
+  const colStyle: React.CSSProperties = {
+    position: 'absolute', right: 0, width: '42%',
+    top: 0, bottom: 0, pointerEvents: 'none',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    overflow: 'visible',
+  };
+
+  /* Shared SVG dimensions — same viewBox on both layers so they align */
+  const VB = "0 0 460 700";
+
   return (
-    <div style={{
-      position: 'absolute', right: '43%', top: '50%',
-      transform: 'translateY(-50%)',
-      zIndex: 6, pointerEvents: 'none',
-      animation: 'owlBob 3.5s ease-in-out infinite',
-      filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.6))',
-    }}>
-      <svg ref={svgRef} viewBox="0 0 240 300" width="260" height="325">
-        <defs>
-          <radialGradient id="owlBodyGrad" cx="40%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#b45309"/>
-            <stop offset="100%" stopColor="#78350f"/>
-          </radialGradient>
-          <radialGradient id="owlBellyGrad" cx="50%" cy="25%" r="65%">
-            <stop offset="0%" stopColor="#fbbf24"/>
-            <stop offset="100%" stopColor="#d97706"/>
-          </radialGradient>
-        </defs>
+    <>
+      {/* ── Layer 1: body + wings — BEHIND the form (z:4) ── */}
+      <div style={{ ...colStyle, zIndex: 4, filter: 'drop-shadow(0 32px 64px rgba(0,0,0,0.72))' }}>
+        <div style={{ animation: 'owlBob 3.5s ease-in-out infinite' }}>
+          <svg viewBox={VB} width={460} height={700} style={{ overflow: 'visible' }}>
+            <defs>
+              <radialGradient id="owlBodyGrad" cx="40%" cy="35%" r="65%">
+                <stop offset="0%" stopColor="#b45309"/>
+                <stop offset="100%" stopColor="#78350f"/>
+              </radialGradient>
+              <radialGradient id="owlBellyGrad" cx="50%" cy="25%" r="65%">
+                <stop offset="0%" stopColor="#fbbf24"/>
+                <stop offset="100%" stopColor="#d97706"/>
+              </radialGradient>
+            </defs>
 
-        {/* ── Wings ── */}
-        <path d="M 68 185 Q 10 200 6 262 Q 10 292 50 296 Q 70 290 78 272 L 86 210 Z" fill="#78350f"/>
-        <path d="M 68 185 Q 16 204 14 264 Q 20 284 50 286 Q 66 280 74 264 L 82 212 Z" fill="#92400e"/>
-        <path d="M 172 185 Q 230 200 234 262 Q 230 292 190 296 Q 170 290 162 272 L 154 210 Z" fill="#78350f"/>
-        <path d="M 172 185 Q 224 204 226 264 Q 220 284 190 286 Q 174 280 166 264 L 158 212 Z" fill="#92400e"/>
+            {/* ── Left wing sweeping around left side of form ── */}
+            <path d="M 148 395 Q 30 410 16 520 Q 24 574 92 576 Q 122 568 134 540 L 155 425 Z" fill="#78350f"/>
+            <path d="M 148 395 Q 42 412 32 512 Q 40 560 92 556 Q 118 548 130 522 L 151 427 Z" fill="#92400e"/>
 
-        {/* Wing feather detail */}
-        <path d="M 22 240 Q 38 232 52 248" stroke="#6b2d0a" strokeWidth="1.5" fill="none" opacity="0.5"/>
-        <path d="M 18 258 Q 36 248 54 264" stroke="#6b2d0a" strokeWidth="1.5" fill="none" opacity="0.4"/>
-        <path d="M 218 240 Q 202 232 188 248" stroke="#6b2d0a" strokeWidth="1.5" fill="none" opacity="0.5"/>
-        <path d="M 222 258 Q 204 248 186 264" stroke="#6b2d0a" strokeWidth="1.5" fill="none" opacity="0.4"/>
+            {/* ── Right wing sweeping around right side of form ── */}
+            <path d="M 312 395 Q 430 410 444 520 Q 436 574 368 576 Q 338 568 326 540 L 305 425 Z" fill="#78350f"/>
+            <path d="M 312 395 Q 418 412 428 512 Q 420 560 368 556 Q 342 548 330 522 L 309 427 Z" fill="#92400e"/>
 
-        {/* ── Body ── */}
-        <ellipse cx="120" cy="210" rx="60" ry="66" fill="url(#owlBodyGrad)"/>
-        {/* Belly */}
-        <ellipse cx="120" cy="222" rx="36" ry="48" fill="url(#owlBellyGrad)" opacity="0.84"/>
-        {/* Feather arcs */}
-        <path d="M 100 196 Q 120 205 140 196" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.55"/>
-        <path d="M 96  210 Q 120 220 144 210" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.5"/>
-        <path d="M 97  224 Q 120 234 143 224" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.45"/>
-        <path d="M 98  238 Q 120 247 142 238" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.38"/>
-        <path d="M 100 252 Q 120 260 140 252" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.3"/>
+            {/* Wing feather details */}
+            <path d="M 36 488 Q 58 476 78 496" stroke="#6b2d0a" strokeWidth="2" fill="none" opacity="0.5"/>
+            <path d="M 28 512 Q 54 498 78 518" stroke="#6b2d0a" strokeWidth="2" fill="none" opacity="0.4"/>
+            <path d="M 424 488 Q 402 476 382 496" stroke="#6b2d0a" strokeWidth="2" fill="none" opacity="0.5"/>
+            <path d="M 432 512 Q 406 498 382 518" stroke="#6b2d0a" strokeWidth="2" fill="none" opacity="0.4"/>
 
-        {/* ── Feet / talons ── */}
-        <g stroke="#b45309" strokeWidth="3" strokeLinecap="round" fill="none">
-          <path d="M 86 272 L 70 296 M 78 292 L 64 306 M 78 292 L 74 308 M 86 272 L 82 308 M 86 272 L 96 306"/>
-        </g>
-        <g stroke="#b45309" strokeWidth="3" strokeLinecap="round" fill="none">
-          <path d="M 154 272 L 170 296 M 162 292 L 148 306 M 162 292 L 158 308 M 154 272 L 158 308 M 154 272 L 144 306"/>
-        </g>
+            {/* ── Body (center, behind form card) ── */}
+            <ellipse cx="230" cy="470" rx="95" ry="110" fill="url(#owlBodyGrad)"/>
+            {/* Belly */}
+            <ellipse cx="230" cy="490" rx="58" ry="78" fill="url(#owlBellyGrad)" opacity="0.84"/>
+            {/* Feather arcs on belly */}
+            <path d="M 203 454 Q 230 465 257 454" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.55"/>
+            <path d="M 198 471 Q 230 483 262 471" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.5"/>
+            <path d="M 198 488 Q 230 500 262 488" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.45"/>
+            <path d="M 200 505 Q 230 515 260 505" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.38"/>
+            <path d="M 204 521 Q 230 530 256 521" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.3"/>
 
-        {/* ── Head ── */}
-        <circle cx="120" cy="110" r="64" fill="url(#owlBodyGrad)"/>
+            {/* Neck stub connecting body to head */}
+            <ellipse cx="230" cy="330" rx="54" ry="58" fill="url(#owlBodyGrad)"/>
 
-        {/* Ear tufts */}
-        <path d="M 78 70 Q 66 36 82 26 Q 96 44 90 74 Z" fill="#78350f"/>
-        <path d="M 162 70 Q 174 36 158 26 Q 144 44 150 74 Z" fill="#78350f"/>
-        {/* Tuft highlight */}
-        <path d="M 80 68 Q 71 42 82 34 Q 90 48 86 70 Z" fill="#92400e" opacity="0.5"/>
-        <path d="M 160 68 Q 169 42 158 34 Q 150 48 154 70 Z" fill="#92400e" opacity="0.5"/>
+            {/* ── Talons ── */}
+            <g stroke="#b45309" strokeWidth="3.5" strokeLinecap="round" fill="none">
+              <path d="M 178 574 L 158 606 M 168 600 L 150 618 M 168 600 L 163 622 M 178 574 L 174 618 M 178 574 L 194 614"/>
+            </g>
+            <g stroke="#b45309" strokeWidth="3.5" strokeLinecap="round" fill="none">
+              <path d="M 282 574 L 302 606 M 292 600 L 310 618 M 292 600 L 297 622 M 282 574 L 286 618 M 282 574 L 266 614"/>
+            </g>
+          </svg>
+        </div>
+      </div>
 
-        {/* Face disc */}
-        <ellipse cx="120" cy="114" rx="46" ry="44" fill="#b45309" opacity="0.3"/>
+      {/* ── Layer 2: head only — ABOVE the form (z:8) ── */}
+      <div style={{ ...colStyle, zIndex: 8 }}>
+        <div style={{ animation: 'owlBob 3.5s ease-in-out infinite' }}>
+          <svg ref={svgRef} viewBox={VB} width={460} height={700} style={{ overflow: 'visible' }}>
+            <defs>
+              <radialGradient id="owlHeadGrad" cx="40%" cy="35%" r="65%">
+                <stop offset="0%" stopColor="#b45309"/>
+                <stop offset="100%" stopColor="#78350f"/>
+              </radialGradient>
+            </defs>
 
-        {/* ── Left eye ── */}
-        <circle cx="98"  cy="108" r="26" fill="#111827"/>
-        <circle cx="98"  cy="108" r="22" fill="#fefce8"/>
-        <circle cx="98"  cy="108" r="15" fill="#F59E0B"/>
-        <circle ref={leftPupilRef} cx="98" cy="108" r="9" fill="#0a0f1e"/>
-        <circle cx="94"  cy="103" r="3.5" fill="white" opacity="0.88"/>
+            {/* ── Head ── */}
+            <circle cx="230" cy="198" r="90" fill="url(#owlHeadGrad)"/>
 
-        {/* ── Right eye ── */}
-        <circle cx="142" cy="108" r="26" fill="#111827"/>
-        <circle cx="142" cy="108" r="22" fill="#fefce8"/>
-        <circle cx="142" cy="108" r="15" fill="#F59E0B"/>
-        <circle ref={rightPupilRef} cx="142" cy="108" r="9" fill="#0a0f1e"/>
-        <circle cx="138" cy="103" r="3.5" fill="white" opacity="0.88"/>
+            {/* Ear tufts */}
+            <path d="M 182 150 Q 166 106 184 86 Q 202 108 198 152 Z" fill="#78350f"/>
+            <path d="M 278 150 Q 294 106 276 86 Q 258 108 262 152 Z" fill="#78350f"/>
+            <path d="M 184 148 Q 172 112 185 98 Q 197 118 193 148 Z" fill="#92400e" opacity="0.5"/>
+            <path d="M 276 148 Q 288 112 275 98 Q 263 118 267 148 Z" fill="#92400e" opacity="0.5"/>
 
-        {/* Beak */}
-        <path d="M 112 127 L 120 145 L 128 127 Z" fill="#d97706"/>
-        <path d="M 112 127 L 120 136 L 128 127 Z" fill="#92400e" opacity="0.5"/>
+            {/* Face disc */}
+            <ellipse cx="230" cy="204" rx="62" ry="58" fill="#b45309" opacity="0.3"/>
 
-        {/* Forehead feather detail */}
-        <path d="M 88 80 Q 120 72 152 80" stroke="#92400e" strokeWidth="1.5" fill="none" opacity="0.35"/>
-        <path d="M 84 92 Q 120 82 156 92" stroke="#92400e" strokeWidth="1.5" fill="none" opacity="0.3"/>
-      </svg>
-    </div>
+            {/* ── Left eye ── */}
+            <circle cx="196" cy="194" r="31" fill="#111827"/>
+            <circle cx="196" cy="194" r="27" fill="#fefce8"/>
+            <circle cx="196" cy="194" r="19" fill="#F59E0B"/>
+            <circle ref={leftPupilRef} cx="196" cy="194" r="12" fill="#0a0f1e"/>
+            <circle cx="191" cy="188" r="4.5" fill="white" opacity="0.88"/>
+
+            {/* ── Right eye ── */}
+            <circle cx="264" cy="194" r="31" fill="#111827"/>
+            <circle cx="264" cy="194" r="27" fill="#fefce8"/>
+            <circle cx="264" cy="194" r="19" fill="#F59E0B"/>
+            <circle ref={rightPupilRef} cx="264" cy="194" r="12" fill="#0a0f1e"/>
+            <circle cx="259" cy="188" r="4.5" fill="white" opacity="0.88"/>
+
+            {/* Beak */}
+            <path d="M 220 222 L 230 248 L 240 222 Z" fill="#d97706"/>
+            <path d="M 220 222 L 230 235 L 240 222 Z" fill="#92400e" opacity="0.5"/>
+
+            {/* Forehead feathers */}
+            <path d="M 186 160 Q 230 150 274 160" stroke="#92400e" strokeWidth="1.5" fill="none" opacity="0.35"/>
+            <path d="M 182 176 Q 230 164 278 176" stroke="#92400e" strokeWidth="1.5" fill="none" opacity="0.3"/>
+          </svg>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -861,8 +888,8 @@ export default function Login() {
 
         /* ── Owl ── */
         @keyframes owlBob {
-          0%,100% { transform: translateY(-50%); }
-          50%     { transform: translateY(calc(-50% - 10px)); }
+          0%,100% { transform: translateY(0); }
+          50%     { transform: translateY(-14px); }
         }
         @keyframes cursorBlink {
           0%,100% { opacity: 0.9; }

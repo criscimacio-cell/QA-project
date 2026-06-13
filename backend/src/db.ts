@@ -154,7 +154,7 @@ export function initDb() {
   }
 
   // Seed KB articles — runs independently so existing databases get articles too
-  const existingKb = db.prepare('SELECT COUNT(*) as c FROM knowledge_articles WHERE category != "General"').get() as any;
+  const existingKb = db.prepare("SELECT COUNT(*) as c FROM knowledge_articles WHERE category != 'General'").get() as any;
   if (existingKb.c === 0) {
     const insertKb = db.prepare(`
       INSERT INTO knowledge_articles (title, content, category, author_id, status, tags, created_at, updated_at)

@@ -4,112 +4,164 @@ import {
   Activity, TrendingUp, ArrowUpRight, Sparkles
 } from 'lucide-react';
 
-/* ── 3D tilt hook ── */
+/* ── Live clock ── */
+function useClock() {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return time;
+}
+
+/* ── Typing text hook ── */
+function useTyping(text: string, speed = 38) {
+  const [displayed, setDisplayed] = useState('');
+  useEffect(() => {
+    setDisplayed('');
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, speed);
+    return () => clearInterval(id);
+  }, [text, speed]);
+  return displayed;
+}
+
+/* ── 3D tilt + specular highlight hook ── */
 function useTilt(intensity = 12) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current; if (!el) return;
+    const shine = el.querySelector<HTMLDivElement>('.tilt-shine');
     const onMove = (e: MouseEvent) => {
       const rect = el.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width - 0.5;
-      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      const y = (e.clientY - rect.top)  / rect.height - 0.5;
       el.style.transform = `perspective(800px) rotateY(${x * intensity}deg) rotateX(${-y * intensity}deg) translateZ(8px) scale(1.02)`;
+      if (shine) {
+        shine.style.opacity = '1';
+        shine.style.background = `radial-gradient(circle at ${(x+0.5)*100}% ${(y+0.5)*100}%, rgba(255,255,255,0.10) 0%, transparent 65%)`;
+      }
     };
-    const onLeave = () => { el.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) translateZ(0) scale(1)'; };
+    const onLeave = () => {
+      el.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) translateZ(0) scale(1)';
+      if (shine) shine.style.opacity = '0';
+    };
+    el.style.transition = 'transform 0.15s ease-out';
     el.addEventListener('mousemove', onMove);
     el.addEventListener('mouseleave', onLeave);
     return () => { el.removeEventListener('mousemove', onMove); el.removeEventListener('mouseleave', onLeave); };
   }, [intensity]);
   return ref;
 }
-import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell
-} from 'recharts';
-import api from '../api/client';
-import { useAuth } from '../context/AuthContext';
-import FileIcon from '../components/UI/FileIcon';
 
 /* ── Animated counter hook ── */
 function useCountUp(target: number, duration = 900, active = false) {
   const [value, setValue] = useState(0);
   const raf = useRef<number | null>(null);
-
   useEffect(() => {
     if (!active || typeof target !== 'number' || isNaN(target)) return;
     const start = performance.now();
-    const from = 0;
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease-out-quart
       const eased = 1 - Math.pow(1 - progress, 4);
-      setValue(Math.round(from + (target - from) * eased));
+      setValue(Math.round(target * eased));
       if (progress < 1) raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
     return () => { if (raf.current) cancelAnimationFrame(raf.current); };
   }, [target, duration, active]);
-
   return value;
 }
 
-/* ── Stat card with animated counter + 3D tilt ── */
+/* ── Circular progress ring ── */
+function RingProgress({ pct, color, size = 52, stroke = 3.5 }: { pct: number; color: string; size?: number; stroke?: number }) {
+  const r = (size - stroke * 2) / 2;
+  const circ = 2 * Math.PI * r;
+  const [offset, setOffset] = useState(circ);
+  useEffect(() => {
+    const t = setTimeout(() => setOffset(circ * (1 - Math.min(pct, 1))), 120);
+    return () => clearTimeout(t);
+  }, [pct, circ]);
+  return (
+    <svg width={size} height={size} style={{ position: 'absolute', top: 0, right: 0, transform: 'rotate(-90deg)' }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
+      <circle
+        cx={size/2} cy={size/2} r={r} fill="none"
+        stroke={color} strokeWidth={stroke}
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{ transition: 'stroke-dashoffset 1.1s cubic-bezier(0.4,0,0.2,1)', filter: `drop-shadow(0 0 4px ${color})` }}
+      />
+    </svg>
+  );
+}
+
+/* ── Stat card: ring + 3D tilt + countUp ── */
 function StatCard({
-  icon: Icon, label, value, sub, gradient, delay = 0,
+  icon: Icon, label, value, sub, gradient, ringColor, ringPct = 0.6, delay = 0,
 }: {
   icon: any; label: string; value: number | string;
-  sub?: string; gradient: string; delay?: number;
+  sub?: string; gradient: string; ringColor?: string; ringPct?: number; delay?: number;
 }) {
   const [visible, setVisible] = useState(false);
   const tiltRef = useTilt(10);
   const isNumeric = typeof value === 'number';
-  const count = useCountUp(isNumeric ? (value as number) : 0, 900, visible && isNumeric);
+  const count = useCountUp(isNumeric ? (value as number) : 0, 1000, visible && isNumeric);
+  const displayValue = isNumeric ? count : value;
+  const rc = ringColor || '#F59E0B';
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), delay);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setVisible(true), delay);
+    return () => clearTimeout(t);
   }, [delay]);
-
-  const displayValue = isNumeric ? count : value;
 
   return (
     <div
       ref={tiltRef}
-      className="stat-card-dark card-3d p-5 animate-fade-in-up"
-      style={{ animationDelay: `${delay}ms`, opacity: 0 }}
+      className="stat-card-dark card-3d p-5"
+      style={{
+        opacity: 0,
+        animation: `fadeSlideUp 0.45s cubic-bezier(0.22,1,0.36,1) ${delay}ms both`,
+        position: 'relative', overflow: 'hidden',
+        willChange: 'transform',
+      }}
     >
       {/* Top shimmer line */}
-      <div
-        className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent)' }}
-      />
-      <div className="flex items-start justify-between">
+      <div className="absolute top-0 left-0 right-0 h-px"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent)' }} />
+      {/* Specular highlight layer */}
+      <div className="tilt-shine absolute inset-0 rounded-2xl pointer-events-none"
+        style={{ opacity: 0, transition: 'opacity 0.15s ease', zIndex: 1 }} />
+
+      <div className="relative z-10 flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            {label}
-          </p>
-          <p
-            className="stat-number-neon mt-2"
-            style={{ animation: visible ? 'countUp 0.4s ease forwards' : 'none' }}
-          >
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
+          <p className="stat-number-neon mt-2"
+            style={{ animation: visible ? 'countUp 0.4s ease forwards' : 'none' }}>
             {displayValue}
           </p>
           {sub && (
             <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
-              <ArrowUpRight size={11} className="text-[#F59E0B]" />
-              {sub}
+              <ArrowUpRight size={11} className="text-[#F59E0B]" />{sub}
             </p>
           )}
         </div>
-        <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ml-4"
-          style={{
-            background: gradient,
-            boxShadow: '0 6px 20px rgba(0,0,0,0.3)',
-          }}
-        >
-          <Icon size={22} className="text-white" />
+
+        {/* Icon with animated ring */}
+        <div style={{ position: 'relative', width: 52, height: 52, flexShrink: 0, marginLeft: 12 }}>
+          <RingProgress pct={visible ? ringPct : 0} color={rc} size={52} stroke={3} />
+          <div
+            className="absolute inset-1.5 rounded-xl flex items-center justify-center"
+            style={{ background: gradient, boxShadow: `0 4px 16px rgba(0,0,0,0.3), 0 0 12px ${rc}33` }}
+          >
+            <Icon size={19} className="text-white" />
+          </div>
         </div>
       </div>
     </div>
@@ -207,60 +259,104 @@ export default function Dashboard() {
 
   if (!stats) return <DashboardSkeleton />;
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const clock = useClock();
+  const hour = clock.getHours();
+  const greetingWord = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const firstName = user?.name?.split(' ')[0] || 'there';
+  const typedGreeting = useTyping(`${greetingWord}, ${firstName} 👋`, 40);
+  const timeStr = clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const dateStr = clock.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
     <div className="space-y-5 animate-fade-in-up">
 
-      {/* ── Header / Greeting ── */}
+      {/* ── Aurora Hero Banner ── */}
       <div
-        className="relative rounded-2xl p-5 overflow-hidden animate-fade-in-up"
+        className="relative rounded-2xl overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 50%, #0891b2 100%)',
-          backgroundSize: '200% 200%',
-          animation: 'gradient-shift 10s ease infinite, fadeInUp 0.45s cubic-bezier(0.16,1,0.3,1) both',
+          background: '#0d0d14',
+          border: '1px solid rgba(245,158,11,0.15)',
+          animation: 'fadeSlideUp 0.5s cubic-bezier(0.22,1,0.36,1) both',
+          minHeight: 130,
         }}
       >
-        {/* Decorative blobs */}
-        <div
-          className="absolute -top-8 -right-8 w-48 h-48 rounded-full opacity-20"
-          style={{ background: 'rgba(255,255,255,0.3)', filter: 'blur(30px)' }}
-        />
-        <div
-          className="absolute -bottom-4 left-1/3 w-32 h-32 rounded-full opacity-10"
-          style={{ background: 'rgba(255,255,255,0.5)', filter: 'blur(20px)' }}
-        />
+        {/* Aurora bands */}
+        {[
+          { top: '-20%', h: 160, colors: 'rgba(245,158,11,0.18) 20%, rgba(139,92,246,0.12) 60%, transparent 90%', dur: '12s', del: '0s' },
+          { top: '30%',  h: 120, colors: 'rgba(20,184,166,0.10) 10%, rgba(245,158,11,0.14) 55%, transparent 85%', dur: '17s', del: '-5s' },
+          { top: '65%',  h: 100, colors: 'rgba(139,92,246,0.08) 15%, rgba(20,184,166,0.08) 60%, transparent 90%', dur: '22s', del: '-9s' },
+        ].map((b, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: 0, right: 0, top: b.top, height: b.h,
+            background: `linear-gradient(90deg, transparent 0%, ${b.colors}, transparent 100%)`,
+            filter: 'blur(28px)',
+            animation: `auroraDrift ${b.dur} ease-in-out ${b.del} infinite`,
+            pointerEvents: 'none',
+          }} />
+        ))}
 
-        <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
+        {/* Dot grid overlay */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }} />
+
+        {/* Glow orb top-right */}
+        <div style={{
+          position: 'absolute', top: -40, right: -40, width: 200, height: 200,
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%)',
+          filter: 'blur(30px)', pointerEvents: 'none',
+        }} />
+
+        <div className="relative z-10 flex items-center justify-between flex-wrap gap-4 p-6">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={16} className="text-[#FCD34D]" />
-              <span className="text-white/90 text-sm font-medium">{greeting}</span>
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles size={14} style={{ color: '#F59E0B' }} />
+              <span style={{ fontSize: 11, color: 'rgba(245,158,11,0.7)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                {dateStr}
+              </span>
             </div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              {user?.name?.split(' ')[0]} 👋
+            <h1 style={{
+              fontSize: 26, fontWeight: 800, color: 'white', letterSpacing: '-0.02em',
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              minHeight: 34,
+            }}>
+              {typedGreeting}
+              <span style={{ animation: 'cursorBlink 0.8s step-end infinite', color: '#F59E0B' }}>|</span>
             </h1>
-            <p className="text-white/90/80 text-sm mt-1">
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: 6 }}>
               Here's what's happening with your QA assets today.
             </p>
           </div>
+
           <div className="flex items-center gap-3 flex-wrap">
+            {/* Live clock */}
+            <div style={{
+              padding: '10px 18px', borderRadius: 14, textAlign: 'center',
+              background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+              backdropFilter: 'blur(12px)',
+            }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#F59E0B', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', fontFamily: 'monospace' }}>
+                {timeStr}
+              </div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Live
+              </div>
+            </div>
+
+            {/* Quick stats */}
             {[
-              { label: 'Total Files', val: stats.totalFiles },
-              { label: 'Pending', val: stats.pendingApprovals },
+              { label: 'Total Files', val: stats.totalFiles, color: '#F59E0B' },
+              { label: 'Pending', val: stats.pendingApprovals, color: '#ef4444' },
             ].map(s => (
-              <div
-                key={s.label}
-                className="px-4 py-3 rounded-xl text-center"
-                style={{
-                  background: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(255,255,255,0.25)',
-                }}
-              >
-                <div className="text-2xl font-extrabold text-white leading-none">{s.val}</div>
-                <div className="text-[#FCD34D]/80 text-xs mt-0.5 font-medium">{s.label}</div>
+              <div key={s.label} style={{
+                padding: '10px 18px', borderRadius: 14, textAlign: 'center',
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)',
+                backdropFilter: 'blur(12px)',
+              }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: s.color, letterSpacing: '-0.02em' }}>{s.val}</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -269,14 +365,14 @@ export default function Dashboard() {
 
       {/* ── Stats grid (all 8 in one 4-col grid) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard icon={Files}     label="Total Files"     value={stats.totalFiles}           sub="Active assets"     gradient="linear-gradient(135deg,#F59E0B,#FBBF24)"  delay={0}   />
-        <StatCard icon={Users}     label="Active Users"    value={stats.activeUsers}          sub="Team members"      gradient="linear-gradient(135deg,#3b82f6,#6366f1)"  delay={60}  />
-        <StatCard icon={Upload}    label="Uploaded Today"  value={stats.uploadedToday}        sub="New files"         gradient="linear-gradient(135deg,#10b981,#FBBF24)"  delay={120} />
-        <StatCard icon={Clock}     label="Pending Review"  value={stats.pendingApprovals}     sub="Awaiting approval" gradient="linear-gradient(135deg,#f59e0b,#d97706)"  delay={180} />
-        <StatCard icon={BookOpen}  label="KB Articles"     value={stats.totalKB}              sub="Published guides"  gradient="linear-gradient(135deg,#FBBF24,#F59E0B)"  delay={240} />
-        <StatCard icon={HardDrive} label="Total Storage"   value={formatBytes(stats.totalSize)} sub="Used capacity"  gradient="linear-gradient(135deg,#ef4444,#dc2626)"  delay={300} />
-        <StatCard icon={Activity}  label="Audit Events"    value={stats.auditEventsToday}     sub="Last 24 hours"     gradient="linear-gradient(135deg,#6366f1,#4f46e5)"  delay={360} />
-        <StatCard icon={TrendingUp}label="This Week"       value={stats.uploadGrowth}         sub="Upload growth"     gradient="linear-gradient(135deg,#f97316,#ea580c)"  delay={420} />
+        <StatCard icon={Files}      label="Total Files"     value={stats.totalFiles}              sub="Active assets"     gradient="linear-gradient(135deg,#F59E0B,#FBBF24)"  ringColor="#F59E0B"  ringPct={0.78} delay={0}   />
+        <StatCard icon={Users}      label="Active Users"    value={stats.activeUsers}             sub="Team members"      gradient="linear-gradient(135deg,#3b82f6,#6366f1)"  ringColor="#6366f1"  ringPct={0.55} delay={80}  />
+        <StatCard icon={Upload}     label="Uploaded Today"  value={stats.uploadedToday}           sub="New files"         gradient="linear-gradient(135deg,#10b981,#34d399)"  ringColor="#10b981"  ringPct={0.40} delay={160} />
+        <StatCard icon={Clock}      label="Pending Review"  value={stats.pendingApprovals}        sub="Awaiting approval" gradient="linear-gradient(135deg,#f59e0b,#d97706)"  ringColor="#ef4444"  ringPct={Math.min((stats.pendingApprovals||0)/10,1)} delay={240} />
+        <StatCard icon={BookOpen}   label="KB Articles"     value={stats.totalKB}                 sub="Published guides"  gradient="linear-gradient(135deg,#FBBF24,#F59E0B)"  ringColor="#FBBF24"  ringPct={0.65} delay={320} />
+        <StatCard icon={HardDrive}  label="Total Storage"   value={formatBytes(stats.totalSize)}  sub="Used capacity"     gradient="linear-gradient(135deg,#ef4444,#dc2626)"  ringColor="#ef4444"  ringPct={0.50} delay={400} />
+        <StatCard icon={Activity}   label="Audit Events"    value={stats.auditEventsToday}        sub="Last 24 hours"     gradient="linear-gradient(135deg,#6366f1,#4f46e5)"  ringColor="#6366f1"  ringPct={0.72} delay={480} />
+        <StatCard icon={TrendingUp} label="This Week"       value={stats.uploadGrowth}            sub="Upload growth"     gradient="linear-gradient(135deg,#f97316,#ea580c)"  ringColor="#f97316"  ringPct={0.85} delay={560} />
       </div>
 
       {/* ── Charts Row ── */}

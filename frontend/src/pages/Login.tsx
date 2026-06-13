@@ -327,32 +327,8 @@ function ParticleTrail() {
   return <canvas ref={canvasRef} style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:50 }} />;
 }
 
-/* ─── Click-to-fling hook ───────────────────────────────────────────── */
-function useShapeFling() {
-  const [flung, setFlung] = useState<Record<string, { dx: number; dy: number; rot: number; scale: number }>>({});
-  const fling = (id: string) => {
-    if (flung[id]) return;
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 60 + Math.random() * 80;
-    const rot = (Math.random() - 0.5) * 360;
-    setFlung(prev => ({ ...prev, [id]: { dx: Math.cos(angle)*dist, dy: Math.sin(angle)*dist, rot, scale: 1.5+Math.random()*0.8 } }));
-    setTimeout(() => setFlung(prev => { const n = { ...prev }; delete n[id]; return n; }), 700);
-  };
-  const style = (id: string, base?: React.CSSProperties): React.CSSProperties => {
-    const f = flung[id];
-    return {
-      ...base, cursor: 'pointer',
-      transition: f ? 'transform 0.35s cubic-bezier(0.22,1,0.36,1),opacity 0.35s ease' : 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1),opacity 0.5s ease',
-      transform: f ? `translate(${f.dx}px,${f.dy}px) rotate(${f.rot}deg) scale(${f.scale})` : 'translate(0,0) rotate(0deg) scale(1)',
-      opacity: f ? 0.05 : undefined,
-    };
-  };
-  return { fling, style };
-}
-
-/* ─── Floating flingable shapes ─────────────────────────────────────── */
+/* ─── Floating background shapes ────────────────────────────────────── */
 function FloatingBackground() {
-  const { fling, style } = useShapeFling();
   return (
     <>
       {/* Large ambient glow orbs */}
@@ -362,7 +338,7 @@ function FloatingBackground() {
       <div className="orb orb-white-xl" style={{ width:500, height:500, bottom:'-15%', left:'30%', animationDelay:'-10s', animationDuration:'24s' }} />
       <div className="orb orb-amber-xl" style={{ width:450, height:450, bottom:'-10%', right:'-5%', animationDelay:'-4s', animationDuration:'16s' }} />
 
-      {/* Clickable medium orbs */}
+      {/* Medium floating orbs */}
       {[
         { id:'o1', cls:'orb-amber-md', w:130, t:'15%', l:'10%',  d:'-1s',  dur:'10s' },
         { id:'o2', cls:'orb-white-md', w:100, t:'60%', l:'5%',   d:'-4s',  dur:'9s'  },
@@ -372,8 +348,8 @@ function FloatingBackground() {
         { id:'o6', cls:'orb-white-md', w:80,  t:'30%', l:'80%',  d:'-9s',  dur:'14s' },
         { id:'o7', cls:'orb-amber-md', w:60,  t:'85%', l:'88%',  d:'-3s',  dur:'10s' },
       ].map(o => (
-        <div key={o.id} onClick={() => fling(o.id)} className={`orb ${o.cls}`}
-          style={style(o.id, { width:o.w, height:o.w, top:o.t, left:o.l, animationDelay:o.d, animationDuration:o.dur })} />
+        <div key={o.id} className={`orb ${o.cls}`}
+          style={{ width:o.w, height:o.w, top:o.t, left:o.l, animationDelay:o.d, animationDuration:o.dur }} />
       ))}
 
       {/* Twinkling stars */}
@@ -399,34 +375,6 @@ function FloatingBackground() {
       <div className="ring ring-1" style={{ width:140, height:140, top:'10%', left:'78%', animationDelay:'-3.5s', animationDuration:'7s' }} />
       <div className="ring ring-2" style={{ width:100, height:100, top:'80%', left:'42%', animationDelay:'-7s',   animationDuration:'9s' }} />
 
-      {/* Clickable diamonds */}
-      {[
-        { id:'d1', top:'20%', left:'28%', d:'-1s',  size:28, st:'#F59E0B', sw:1.5, pts:'14,0 28,14 14,28 0,14' },
-        { id:'d2', top:'50%', left:'10%', d:'-4s',  size:20, st:'white',   sw:1,   pts:'10,0 20,10 10,20 0,10' },
-        { id:'d3', top:'35%', left:'55%', d:'-7s',  size:36, st:'#F59E0B', sw:1.5, pts:'18,0 36,18 18,36 0,18' },
-        { id:'d4', top:'75%', left:'20%', d:'-2s',  size:24, st:'white',   sw:1,   pts:'12,0 24,12 12,24 0,12' },
-        { id:'d5', top:'15%', left:'82%', d:'-5s',  size:30, st:'#F59E0B', sw:1.5, pts:'15,0 30,15 15,30 0,15' },
-        { id:'d6', top:'62%', left:'75%', d:'-3s',  size:22, st:'white',   sw:1,   pts:'11,0 22,11 11,22 0,11' },
-      ].map(d => (
-        <svg key={d.id} onClick={() => fling(d.id)} className="geo-float"
-          style={style(d.id, { position:'absolute', top:d.top, left:d.left, animationDelay:d.d, opacity:0.55 })}
-          width={d.size} height={d.size} viewBox={`0 0 ${d.size} ${d.size}`}>
-          <polygon points={d.pts} fill="none" stroke={d.st} strokeWidth={d.sw}/>
-        </svg>
-      ))}
-
-      {/* Clickable hexagons */}
-      {[
-        { id:'h1', top:'10%', left:'48%', d:'0s',  dur:'30s', w:52, rev:false, pts:'24,2 44,14 44,34 24,46 4,34 4,14', vb:'0 0 48 48', st:'#F59E0B', sw:1.2 },
-        { id:'h2', top:'65%', left:'32%', d:'-3s', dur:'40s', w:64, rev:true,  pts:'32,2 60,18 60,46 32,62 4,46 4,18', vb:'0 0 64 64', st:'white',   sw:1   },
-        { id:'h3', top:'40%', left:'85%', d:'-8s', dur:'28s', w:44, rev:false, pts:'24,2 44,14 44,34 24,46 4,34 4,14', vb:'0 0 48 48', st:'#F59E0B', sw:1.2 },
-      ].map(h => (
-        <svg key={h.id} onClick={() => fling(h.id)} className={h.rev ? 'geo-spin-rev' : 'geo-spin'}
-          style={style(h.id, { position:'absolute', top:h.top, left:h.left, opacity:0.45, animationDelay:h.d, animationDuration:h.dur })}
-          width={h.w} height={h.w} viewBox={h.vb}>
-          <polygon points={h.pts} fill="none" stroke={h.st} strokeWidth={h.sw}/>
-        </svg>
-      ))}
 
       {/* Drifting lines */}
       <div className="drift-line" style={{ top:'20%', width:220, animationDelay:'-1s' }} />
@@ -818,19 +766,6 @@ export default function Login() {
         @keyframes expandRing {
           0%   { transform:scale(0.3); opacity:0.8; }
           100% { transform:scale(2.2); opacity:0; }
-        }
-
-        /* ── Floating geometry ── */
-        .geo-float { position:absolute; animation:geoFloat 12s ease-in-out infinite; }
-        @keyframes geoFloat {
-          0%,100% { transform:translateY(0) rotate(0deg); }
-          50%     { transform:translateY(-20px) rotate(8deg); }
-        }
-        .geo-spin     { position:absolute; animation:geoSpin 30s linear infinite; }
-        .geo-spin-rev { position:absolute; animation:geoSpin 40s linear infinite reverse; }
-        @keyframes geoSpin {
-          from { transform:rotate(0deg); }
-          to   { transform:rotate(360deg); }
         }
 
         /* ── Drifting lines ── */

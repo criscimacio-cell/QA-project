@@ -167,93 +167,90 @@ export default function Login() {
       )}
 
       {/* ══════════════════════════════════════════════════════════
-          BACKGROUND decorative circles (like reference image)
+          BACKGROUND — 2 large decorative circles, lower-left
+          (matches reference image placement)
       ══════════════════════════════════════════════════════════ */}
-      <div style={{ position: 'absolute', width: 220, height: 220, borderRadius: '50%', top: '55%', left: '4%',  background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 140, height: 140, borderRadius: '50%', top: '65%', left: '12%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width:  90, height:  90, borderRadius: '50%', top: '15%', left: '38%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width:  55, height:  55, borderRadius: '50%', top: '30%', left: '30%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width:  35, height:  35, borderRadius: '50%', top: '72%', left: '34%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 260, height: 260, borderRadius: '50%', top: '52%', left: '2%',  background: 'rgba(255,255,255,0.055)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%', top: '62%', left: '14%', background: 'rgba(255,255,255,0.045)', pointerEvents: 'none' }} />
+      {/* Small accent circles */}
+      <div style={{ position: 'absolute', width: 40, height: 40, borderRadius: '50%', top: '30%', left: '35%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 22, height: 22, borderRadius: '50%', top: '72%', left: '38%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
       {/* Stars */}
-      <div style={{ position: 'absolute', width: 4, height: 4, borderRadius: '50%', top: '18%', left: '8%',  background: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 3, height: 3, borderRadius: '50%', top: '40%', left: '5%',  background: 'rgba(255,255,255,0.4)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 3, height: 3, borderRadius: '50%', top: '25%', left: '20%', background: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 5, height: 5, borderRadius: '50%', top: '10%', left: '42%', background: AMBER, opacity: 0.4, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 3, height: 3, borderRadius: '50%', top: '80%', left: '22%', background: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 4, height: 4, borderRadius: '50%', top: '14%', left: '8%',  background: 'rgba(255,255,255,0.55)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 3, height: 3, borderRadius: '50%', top: '38%', left: '4%',  background: 'rgba(255,255,255,0.4)',  pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 3, height: 3, borderRadius: '50%', top: '22%', left: '22%', background: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: 5, height: 5, borderRadius: '50%', top: '8%',  left: '44%', background: AMBER, opacity: 0.35, pointerEvents: 'none' }} />
 
       {/* ══════════════════════════════════════════════════════════
-          WHITE CLOUD BLOB — full-screen SVG, covers right side
-          (login form sits inside this area)
+          FULL-SCREEN SVG — white cloud blob + smoke trail
       ══════════════════════════════════════════════════════════ */}
       <svg
         viewBox="0 0 1440 900"
         preserveAspectRatio="xMidYMid slice"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }}
       >
-        {/* Main cloud blob — left edge has 3 organic bumps, like the reference */}
+        {/*
+          Cloud blob path.
+          Draw clockwise: top-left of cloud → top-right → bottom-right →
+          bottom of cloud → UP the bumpy left edge → back to start.
+          Baseline x≈810. Bumps protrude to x≈630.
+        */}
+        {/* Cloud blob — 3 bumps in upper left edge, smooth bottom */}
         <path d="
-          M 1440,0
-          L 860,0
-          C 680,-10 560,80  620,200
-          C 540,230 480,330 540,430
-          C 460,470 440,580 520,660
-          C 560,730 680,760 840,740
-          L 1440,740
+          M 820,0
+          L 1440,0
+          L 1440,900
+          L 820,900
+          Q 580,820 780,700
+          Q 560,560 780,440
+          Q 560,300 780,160
+          Q 790,60 820,0
           Z
-        " fill="white" />
-        {/* Extend cloud to full height at bottom */}
-        <path d="
-          M 1440,700 L 820,700
-          C 700,720 640,780 700,860
-          L 1440,860 Z
-        " fill="white" opacity="0.9"/>
-        {/* Smoke/cloud trail circles — diagonal from rocket area (≈30%,55%) toward cloud */}
-        <circle cx="530" cy="490" r="18" fill="white" opacity="0.15"/>
-        <circle cx="564" cy="476" r="24" fill="white" opacity="0.17"/>
-        <circle cx="600" cy="462" r="30" fill="white" opacity="0.19"/>
-        <circle cx="642" cy="450" r="38" fill="white" opacity="0.21"/>
-        <circle cx="688" cy="440" r="46" fill="white" opacity="0.23"/>
-        {/* Smaller smoke puffs higher up near rocket */}
-        <circle cx="442" cy="528" r="12" fill="white" opacity="0.12"/>
-        <circle cx="486" cy="510" r="16" fill="white" opacity="0.14"/>
+        " fill="white"/>
+
+        {/* Smoke trail — diagonal from rocket exhaust to cloud.
+            Near-solid opacity needed on black bg to read as white smoke. */}
+        <circle cx="328" cy="476" r="9"  fill="white" opacity="0.55"/>
+        <circle cx="364" cy="466" r="14" fill="white" opacity="0.65"/>
+        <circle cx="408" cy="457" r="20" fill="white" opacity="0.72"/>
+        <circle cx="458" cy="450" r="27" fill="white" opacity="0.80"/>
+        <circle cx="514" cy="445" r="35" fill="white" opacity="0.86"/>
+        <circle cx="577" cy="441" r="44" fill="white" opacity="0.91"/>
+        <circle cx="648" cy="439" r="54" fill="white" opacity="0.94"/>
       </svg>
 
       {/* ══════════════════════════════════════════════════════════
-          ROCKET SVG — mid-left, angled ~45° upper-right
+          ROCKET — center-left, ~45% height, angled upper-right
       ══════════════════════════════════════════════════════════ */}
       <div style={{
-        position: 'absolute', left: '18%', top: '28%',
+        position: 'absolute',
+        left: '14%', top: '34%',
         zIndex: 3, pointerEvents: 'none',
         animation: 'rocketFloat 4s ease-in-out infinite',
+        transformOrigin: 'center center',
       }}>
-        <svg viewBox="0 0 160 220" width="130" height="180" style={{ transform: 'rotate(45deg)' }}>
-          {/* Rocket body */}
-          <rect x="52" y="60" width="56" height="100" rx="28" fill="white"/>
-          <rect x="60" y="63" width="40" height="88"  rx="22" fill="rgba(240,240,240,0.6)"/>
-
+        {/* Rotate whole rocket ~45° pointing upper-right, nose up-right, exhaust down-left */}
+        <svg viewBox="0 0 120 180" width="148" height="222" style={{ transform: 'rotate(-45deg)' }}>
+          {/* Body */}
+          <rect x="38" y="48" width="44" height="84" rx="22" fill="white"/>
+          <rect x="44" y="51" width="32" height="74" rx="18" fill="rgba(230,230,240,0.55)"/>
           {/* Nose cone */}
-          <path d="M52,60 Q80,0 108,60" fill="white"/>
-          <path d="M60,60 Q80,8  100,60" fill="rgba(245,245,245,0.7)"/>
-
+          <path d="M38,48 Q60,2 82,48" fill="white"/>
+          <path d="M44,48 Q60,8 76,48" fill="rgba(240,240,245,0.65)"/>
           {/* Porthole */}
-          <circle cx="80" cy="98" r="16" fill="#e879f9" opacity="0.9"/>
-          <circle cx="80" cy="98" r="11" fill="#a855f7"/>
-          <circle cx="75" cy="93" r="4"  fill="white" opacity="0.7"/>
-
+          <circle cx="60" cy="82" r="13" fill="#e879f9" opacity="0.95"/>
+          <circle cx="60" cy="82" r="9"  fill="#c026d3"/>
+          <circle cx="56" cy="78" r="3"  fill="white" opacity="0.75"/>
           {/* Left fin */}
-          <path d="M52,128 L24,162 L52,148 Z" fill="#e879f9"/>
-          <path d="M52,128 L30,158 L52,144 Z" fill="white" opacity="0.3"/>
-
+          <path d="M38,106 L16,132 L38,122 Z" fill="#e879f9"/>
           {/* Right fin */}
-          <path d="M108,128 L136,162 L108,148 Z" fill="#e879f9"/>
-          <path d="M108,128 L130,158 L108,144 Z" fill="white" opacity="0.3"/>
-
+          <path d="M82,106 L104,132 L82,122 Z" fill="#e879f9"/>
           {/* Exhaust flames */}
-          <ellipse cx="70"  cy="166" rx="8"  ry="14" fill="#FCD34D" opacity="0.9"/>
-          <ellipse cx="90"  cy="166" rx="8"  ry="14" fill="#FCD34D" opacity="0.9"/>
-          <ellipse cx="80"  cy="170" rx="10" ry="18" fill="#F59E0B" opacity="0.8"/>
-          <ellipse cx="74"  cy="176" rx="5"  ry="10" fill="white"   opacity="0.5"/>
-          <ellipse cx="86"  cy="176" rx="5"  ry="10" fill="white"   opacity="0.5"/>
+          <ellipse cx="52" cy="138" rx="7"  ry="12" fill="#FCD34D" opacity="0.9"/>
+          <ellipse cx="68" cy="138" rx="7"  ry="12" fill="#FCD34D" opacity="0.9"/>
+          <ellipse cx="60" cy="142" rx="9"  ry="16" fill="#F59E0B" opacity="0.8"/>
+          <ellipse cx="55" cy="148" rx="4"  ry="8"  fill="white"   opacity="0.45"/>
+          <ellipse cx="65" cy="148" rx="4"  ry="8"  fill="white"   opacity="0.45"/>
         </svg>
       </div>
 
@@ -416,7 +413,7 @@ export default function Login() {
               type="submit"
               disabled={loading}
               style={{
-                width: '100%', height: 46, borderRadius: 999, border: 'none',
+                width: '100%', height: 46, borderRadius: 8, border: 'none',
                 background: AMBER,
                 color: '#09090B', fontWeight: 700, fontSize: 14,
                 fontFamily: "'Plus Jakarta Sans', sans-serif",

@@ -379,12 +379,13 @@ function useCowEyes(
 
 /* ─── Cow mascot: mama + baby ────────────────────────────────────────── */
 function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number; y: number }> }) {
-  const mamaRef = useRef<HTMLDivElement>(null);
-  const babyRef = useRef<HTMLDivElement>(null);
+  const mamaRef   = useRef<HTMLDivElement>(null);
+  const babyRef   = useRef<HTMLDivElement>(null);
+  const mediumRef = useRef<HTMLDivElement>(null);
 
-  /* Fetch and inject SVG for mama cow */
-  useEffect(() => {
-    const el = mamaRef.current;
+  /* Inject SVG into all three cows */
+  const injectCow = (ref: React.RefObject<HTMLDivElement>) => {
+    const el = ref.current;
     if (!el) return;
     fetch('/the-cow-svgrepo-com.svg')
       .then(r => r.text())
@@ -394,26 +395,19 @@ function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
         if (svg) { svg.style.width = '100%'; svg.style.height = '100%'; svg.style.overflow = 'visible'; }
       })
       .catch(() => {});
-    return () => { const c = (el as any).__cowCleanup; if (c) c(); };
-  }, []);
+  };
 
-  /* Fetch and inject SVG for baby cow */
-  useEffect(() => {
-    const el = babyRef.current;
-    if (!el) return;
-    fetch('/the-cow-svgrepo-com.svg')
-      .then(r => r.text())
-      .then(svgText => {
-        el.innerHTML = svgText;
-        const svg = el.querySelector('svg');
-        if (svg) { svg.style.width = '100%'; svg.style.height = '100%'; svg.style.overflow = 'visible'; }
-      })
-      .catch(() => {});
-    return () => { const c = (el as any).__cowCleanup; if (c) c(); };
-  }, []);
+  useEffect(() => { injectCow(mamaRef);   return () => { const c = (mamaRef.current   as any)?.__cowCleanup; if (c) c(); }; }, []);
+  useEffect(() => { injectCow(babyRef);   return () => { const c = (babyRef.current   as any)?.__cowCleanup; if (c) c(); }; }, []);
+  useEffect(() => { injectCow(mediumRef); return () => { const c = (mediumRef.current as any)?.__cowCleanup; if (c) c(); }; }, []);
 
-  useCowEyes(mamaRef, mouseRef, 7);
-  useCowEyes(babyRef, mouseRef, 4);
+  useCowEyes(mamaRef,   mouseRef, 7);
+  useCowEyes(babyRef,   mouseRef, 4);
+  useCowEyes(mediumRef, mouseRef, 5);
+
+  /* Feet-alignment offsets (SVG has ~22% empty space below hooves)
+     mama=560 → 123px gap  |  medium=300 → 66px gap  |  baby=220 → 48px gap
+     All relative to mama's gap: medium needs +57px, baby needs +75px        */
 
   return (
     <div style={{
@@ -430,7 +424,20 @@ function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
         filter: 'blur(36px)', pointerEvents: 'none',
       }} />
 
-      {/* Mama cow — bigger */}
+      {/* Medium cow — left side, bigger than baby */}
+      <div
+        ref={mediumRef}
+        style={{
+          width: 300, height: 300,
+          filter: 'drop-shadow(0 16px 36px rgba(0,0,0,0.65)) drop-shadow(0 0 24px rgba(245,158,11,0.07))',
+          animation: 'cowFloat 3.6s ease-in-out 0.4s infinite',
+          flexShrink: 0,
+          marginRight: -160,
+          marginBottom: 57,
+        }}
+      />
+
+      {/* Mama cow */}
       <div
         ref={mamaRef}
         style={{
@@ -442,9 +449,7 @@ function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
         }}
       />
 
-      {/* Baby cow — smaller, feet aligned to mama's feet
-           SVG empty space below hooves ≈ 22% of height.
-           Mama: 0.22×560=123px, Baby: 0.22×220=48px → lift baby by 75px */}
+      {/* Baby cow — right side, smallest */}
       <div
         ref={babyRef}
         style={{

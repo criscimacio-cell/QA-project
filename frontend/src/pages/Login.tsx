@@ -335,16 +335,16 @@ function OwlMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
 
   useEffect(() => {
     const EYES = [
-      { ref: leftPupilRef,  cx: 82, cy: 98 },
-      { ref: rightPupilRef, cx: 118, cy: 98 },
+      { ref: leftPupilRef,  cx: 98,  cy: 108 },
+      { ref: rightPupilRef, cx: 142, cy: 108 },
     ];
-    const MAX = 5;
+    const MAX = 6;
     let raf: number;
     const loop = () => {
       const svg = svgRef.current;
       if (svg) {
         const rect = svg.getBoundingClientRect();
-        const mx = (mouseRef.current.x - rect.left) * (200 / rect.width);
+        const mx = (mouseRef.current.x - rect.left) * (240 / rect.width);
         const my = (mouseRef.current.y - rect.top)  * (300 / rect.height);
         EYES.forEach(({ ref, cx, cy }) => {
           const el = ref.current;
@@ -369,9 +369,9 @@ function OwlMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
       transform: 'translateY(-50%)',
       zIndex: 6, pointerEvents: 'none',
       animation: 'owlBob 3.5s ease-in-out infinite',
-      filter: 'drop-shadow(0 18px 36px rgba(0,0,0,0.55))',
+      filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.6))',
     }}>
-      <svg ref={svgRef} viewBox="0 0 200 300" width="185" height="278">
+      <svg ref={svgRef} viewBox="0 0 240 300" width="260" height="325">
         <defs>
           <radialGradient id="owlBodyGrad" cx="40%" cy="35%" r="65%">
             <stop offset="0%" stopColor="#b45309"/>
@@ -381,94 +381,73 @@ function OwlMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
             <stop offset="0%" stopColor="#fbbf24"/>
             <stop offset="100%" stopColor="#d97706"/>
           </radialGradient>
-          <radialGradient id="owlScreenGrad" cx="50%" cy="40%" r="65%">
-            <stop offset="0%" stopColor="#1e3a5f"/>
-            <stop offset="100%" stopColor="#0a0f1e"/>
-          </radialGradient>
         </defs>
 
-        {/* ── Laptop screen ── */}
-        <rect x="10" y="148" width="180" height="130" rx="8" fill="#1f2937"/>
-        <rect x="16" y="154" width="168" height="118" rx="5" fill="url(#owlScreenGrad)"/>
-        {/* Code lines */}
-        <rect x="24" y="163" width="72"  height="3" rx="1.5" fill="#60a5fa" opacity="0.80"/>
-        <rect x="24" y="172" width="50"  height="3" rx="1.5" fill="#34d399" opacity="0.75"/>
-        <rect x="24" y="181" width="84"  height="3" rx="1.5" fill="#fbbf24" opacity="0.70"/>
-        <rect x="24" y="190" width="55"  height="3" rx="1.5" fill="#60a5fa" opacity="0.65"/>
-        <rect x="24" y="199" width="76"  height="3" rx="1.5" fill="#34d399" opacity="0.60"/>
-        <rect x="24" y="208" width="44"  height="3" rx="1.5" fill="#fbbf24" opacity="0.55"/>
-        <rect x="24" y="217" width="66"  height="3" rx="1.5" fill="#60a5fa" opacity="0.50"/>
-        <rect x="24" y="226" width="38"  height="3" rx="1.5" fill="#34d399" opacity="0.45"/>
-        {/* Blinking cursor */}
-        <rect x="66" y="225" width="2" height="7" rx="1" fill="white" style={{ animation:'cursorBlink 1s step-end infinite' }}/>
-        {/* Hinge */}
-        <rect x="10" y="276" width="180" height="6" rx="3" fill="#374151"/>
-        {/* Keyboard base */}
-        <rect x="6"  y="281" width="188" height="14" rx="5" fill="#1f2937"/>
-        {/* Key hints */}
-        {[18,30,42,54,66,82,98,114,126,138,150,162].map((x,i) => (
-          <rect key={i} x={x} y="283" width={i===5||i===6?20:9} height="5" rx="1.2" fill="#374151"/>
-        ))}
-        {/* Touchpad */}
-        <rect x="76" y="291" width="48" height="3" rx="1.5" fill="#374151"/>
-
         {/* ── Wings ── */}
-        <path d="M 56 178 Q 14 192 12 238 Q 14 262 44 264 Q 58 260 64 246 L 70 198 Z" fill="#78350f"/>
-        <path d="M 56 178 Q 20 195 18 240 Q 22 256 44 256 Q 55 252 61 240 L 66 200 Z" fill="#92400e"/>
-        <path d="M 144 178 Q 186 192 188 238 Q 186 262 156 264 Q 142 260 136 246 L 130 198 Z" fill="#78350f"/>
-        <path d="M 144 178 Q 180 195 182 240 Q 178 256 156 256 Q 145 252 139 240 L 134 200 Z" fill="#92400e"/>
+        <path d="M 68 185 Q 10 200 6 262 Q 10 292 50 296 Q 70 290 78 272 L 86 210 Z" fill="#78350f"/>
+        <path d="M 68 185 Q 16 204 14 264 Q 20 284 50 286 Q 66 280 74 264 L 82 212 Z" fill="#92400e"/>
+        <path d="M 172 185 Q 230 200 234 262 Q 230 292 190 296 Q 170 290 162 272 L 154 210 Z" fill="#78350f"/>
+        <path d="M 172 185 Q 224 204 226 264 Q 220 284 190 286 Q 174 280 166 264 L 158 212 Z" fill="#92400e"/>
+
+        {/* Wing feather detail */}
+        <path d="M 22 240 Q 38 232 52 248" stroke="#6b2d0a" strokeWidth="1.5" fill="none" opacity="0.5"/>
+        <path d="M 18 258 Q 36 248 54 264" stroke="#6b2d0a" strokeWidth="1.5" fill="none" opacity="0.4"/>
+        <path d="M 218 240 Q 202 232 188 248" stroke="#6b2d0a" strokeWidth="1.5" fill="none" opacity="0.5"/>
+        <path d="M 222 258 Q 204 248 186 264" stroke="#6b2d0a" strokeWidth="1.5" fill="none" opacity="0.4"/>
 
         {/* ── Body ── */}
-        <ellipse cx="100" cy="196" rx="50" ry="54" fill="url(#owlBodyGrad)"/>
+        <ellipse cx="120" cy="210" rx="60" ry="66" fill="url(#owlBodyGrad)"/>
         {/* Belly */}
-        <ellipse cx="100" cy="207" rx="30" ry="38" fill="url(#owlBellyGrad)" opacity="0.82"/>
+        <ellipse cx="120" cy="222" rx="36" ry="48" fill="url(#owlBellyGrad)" opacity="0.84"/>
         {/* Feather arcs */}
-        <path d="M 85 186 Q 100 193 115 186" stroke="#b45309" strokeWidth="1.3" fill="none" opacity="0.5"/>
-        <path d="M 81 198 Q 100 206 119 198" stroke="#b45309" strokeWidth="1.3" fill="none" opacity="0.45"/>
-        <path d="M 82 210 Q 100 218 118 210" stroke="#b45309" strokeWidth="1.3" fill="none" opacity="0.4"/>
-        <path d="M 84 222 Q 100 229 116 222" stroke="#b45309" strokeWidth="1.3" fill="none" opacity="0.35"/>
+        <path d="M 100 196 Q 120 205 140 196" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.55"/>
+        <path d="M 96  210 Q 120 220 144 210" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.5"/>
+        <path d="M 97  224 Q 120 234 143 224" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.45"/>
+        <path d="M 98  238 Q 120 247 142 238" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.38"/>
+        <path d="M 100 252 Q 120 260 140 252" stroke="#b45309" strokeWidth="1.4" fill="none" opacity="0.3"/>
+
+        {/* ── Feet / talons ── */}
+        <g stroke="#b45309" strokeWidth="3" strokeLinecap="round" fill="none">
+          <path d="M 86 272 L 70 296 M 78 292 L 64 306 M 78 292 L 74 308 M 86 272 L 82 308 M 86 272 L 96 306"/>
+        </g>
+        <g stroke="#b45309" strokeWidth="3" strokeLinecap="round" fill="none">
+          <path d="M 154 272 L 170 296 M 162 292 L 148 306 M 162 292 L 158 308 M 154 272 L 158 308 M 154 272 L 144 306"/>
+        </g>
 
         {/* ── Head ── */}
-        <circle cx="100" cy="98" r="52" fill="url(#owlBodyGrad)"/>
+        <circle cx="120" cy="110" r="64" fill="url(#owlBodyGrad)"/>
 
         {/* Ear tufts */}
-        <path d="M 66 62 Q 57 34 70 26 Q 81 41 77 65 Z" fill="#78350f"/>
-        <path d="M 134 62 Q 143 34 130 26 Q 119 41 123 65 Z" fill="#78350f"/>
+        <path d="M 78 70 Q 66 36 82 26 Q 96 44 90 74 Z" fill="#78350f"/>
+        <path d="M 162 70 Q 174 36 158 26 Q 144 44 150 74 Z" fill="#78350f"/>
+        {/* Tuft highlight */}
+        <path d="M 80 68 Q 71 42 82 34 Q 90 48 86 70 Z" fill="#92400e" opacity="0.5"/>
+        <path d="M 160 68 Q 169 42 158 34 Q 150 48 154 70 Z" fill="#92400e" opacity="0.5"/>
 
         {/* Face disc */}
-        <ellipse cx="100" cy="100" rx="38" ry="36" fill="#b45309" opacity="0.28"/>
+        <ellipse cx="120" cy="114" rx="46" ry="44" fill="#b45309" opacity="0.3"/>
 
         {/* ── Left eye ── */}
-        <circle cx="82" cy="98" r="21" fill="#111827"/>
-        <circle cx="82" cy="98" r="18" fill="#fefce8"/>
-        <circle cx="82" cy="98" r="12" fill="#F59E0B"/>
-        <circle ref={leftPupilRef} cx="82" cy="98" r="7" fill="#0a0f1e"/>
-        <circle cx="79" cy="95" r="2.8" fill="white" opacity="0.85"/>
+        <circle cx="98"  cy="108" r="26" fill="#111827"/>
+        <circle cx="98"  cy="108" r="22" fill="#fefce8"/>
+        <circle cx="98"  cy="108" r="15" fill="#F59E0B"/>
+        <circle ref={leftPupilRef} cx="98" cy="108" r="9" fill="#0a0f1e"/>
+        <circle cx="94"  cy="103" r="3.5" fill="white" opacity="0.88"/>
 
         {/* ── Right eye ── */}
-        <circle cx="118" cy="98" r="21" fill="#111827"/>
-        <circle cx="118" cy="98" r="18" fill="#fefce8"/>
-        <circle cx="118" cy="98" r="12" fill="#F59E0B"/>
-        <circle ref={rightPupilRef} cx="118" cy="98" r="7" fill="#0a0f1e"/>
-        <circle cx="115" cy="95" r="2.8" fill="white" opacity="0.85"/>
+        <circle cx="142" cy="108" r="26" fill="#111827"/>
+        <circle cx="142" cy="108" r="22" fill="#fefce8"/>
+        <circle cx="142" cy="108" r="15" fill="#F59E0B"/>
+        <circle ref={rightPupilRef} cx="142" cy="108" r="9" fill="#0a0f1e"/>
+        <circle cx="138" cy="103" r="3.5" fill="white" opacity="0.88"/>
 
         {/* Beak */}
-        <path d="M 93 115 L 100 130 L 107 115 Z" fill="#d97706"/>
-        <path d="M 93 115 L 100 123 L 107 115 Z" fill="#92400e" opacity="0.45"/>
+        <path d="M 112 127 L 120 145 L 128 127 Z" fill="#d97706"/>
+        <path d="M 112 127 L 120 136 L 128 127 Z" fill="#92400e" opacity="0.5"/>
 
-        {/* ── Talons ── */}
-        <g stroke="#b45309" strokeWidth="2.8" strokeLinecap="round" fill="none">
-          <path d="M 58 262 L 48 282"/>
-          <path d="M 58 262 L 56 284"/>
-          <path d="M 58 262 L 63 283"/>
-          <path d="M 58 262 L 70 280"/>
-        </g>
-        <g stroke="#b45309" strokeWidth="2.8" strokeLinecap="round" fill="none">
-          <path d="M 142 262 L 132 280"/>
-          <path d="M 142 262 L 139 284"/>
-          <path d="M 142 262 L 145 283"/>
-          <path d="M 142 262 L 152 282"/>
-        </g>
+        {/* Forehead feather detail */}
+        <path d="M 88 80 Q 120 72 152 80" stroke="#92400e" strokeWidth="1.5" fill="none" opacity="0.35"/>
+        <path d="M 84 92 Q 120 82 156 92" stroke="#92400e" strokeWidth="1.5" fill="none" opacity="0.3"/>
       </svg>
     </div>
   );

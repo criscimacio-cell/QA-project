@@ -195,31 +195,14 @@ export default function Login() {
           bottom of cloud → UP the bumpy left edge → back to start.
           Baseline x≈810. Bumps protrude to x≈630.
         */}
-        {/* Cloud blob — 3 bumps on left edge, sealed bottom-right corner.
-            FIX 1: path closes to (1440,900) before Z so no dark gap. */}
-        <path d="
-          M 820,0
-          L 1440,0
-          L 1440,900
-          L 1440,900
-          L 900,900
-          Q 650,870 780,760
-          Q 560,640 780,520
-          Q 560,390 780,260
-          Q 790,100 820,0
-          Z
-        " fill="white"/>
-
-        {/* FIX 3: Smoke trail — diagonal upper-right toward cloud.
-            Rocket exhaust is lower-left of rocket (~220,510).
-            Trail grows as it approaches the cloud edge (~630,430). */}
-        <circle cx="248" cy="506" r="9"  fill="white" opacity="0.55"/>
-        <circle cx="290" cy="492" r="14" fill="white" opacity="0.63"/>
-        <circle cx="338" cy="477" r="20" fill="white" opacity="0.70"/>
-        <circle cx="392" cy="463" r="27" fill="white" opacity="0.78"/>
-        <circle cx="452" cy="450" r="35" fill="white" opacity="0.84"/>
-        <circle cx="518" cy="439" r="44" fill="white" opacity="0.90"/>
-        <circle cx="592" cy="430" r="54" fill="white" opacity="0.94"/>
+        {/* Smoke trail — diagonal upper-right, white on dark bg */}
+        <circle cx="248" cy="506" r="9"  fill="white" opacity="0.18"/>
+        <circle cx="290" cy="492" r="14" fill="white" opacity="0.22"/>
+        <circle cx="338" cy="477" r="20" fill="white" opacity="0.26"/>
+        <circle cx="392" cy="463" r="27" fill="white" opacity="0.30"/>
+        <circle cx="452" cy="450" r="35" fill="white" opacity="0.34"/>
+        <circle cx="518" cy="439" r="44" fill="white" opacity="0.38"/>
+        <circle cx="592" cy="430" r="54" fill="white" opacity="0.42"/>
       </svg>
 
       {/* ══════════════════════════════════════════════════════════

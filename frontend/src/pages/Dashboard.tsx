@@ -1,4 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
+import api from '../api/client';
+import {
+  ResponsiveContainer, LineChart, Line, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell
+} from 'recharts';
 import {
   Files, Users, Upload, Clock, BookOpen, HardDrive,
   Activity, TrendingUp, ArrowUpRight, Sparkles
@@ -252,13 +258,6 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<any>(null);
-
-  useEffect(() => {
-    api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => {});
-  }, []);
-
-  if (!stats) return <DashboardSkeleton />;
-
   const clock = useClock();
   const hour = clock.getHours();
   const greetingWord = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -266,6 +265,12 @@ export default function Dashboard() {
   const typedGreeting = useTyping(`${greetingWord}, ${firstName} 👋`, 40);
   const timeStr = clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateStr = clock.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+
+  useEffect(() => {
+    api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => {});
+  }, []);
+
+  if (!stats) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-5 animate-fade-in-up">

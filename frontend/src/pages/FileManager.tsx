@@ -55,6 +55,17 @@ export default function FileManager() {
   // Preview state
   const [showPreview, setShowPreview] = useState(false);
   const [previewFile, setPreviewFile] = useState<any>(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!previewFile) { setPreviewBlobUrl(null); return; }
+    const token = localStorage.getItem('token');
+    fetch(`/api/files/${previewFile.id}/preview`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.blob() : Promise.reject())
+      .then(blob => setPreviewBlobUrl(URL.createObjectURL(blob)))
+      .catch(() => setPreviewBlobUrl(null));
+    return () => { setPreviewBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; }); };
+  }, [previewFile?.id]);
 
   const load = (overrides?: { search?: string; project?: string; category?: string }) => {
     setLoading(true);
@@ -397,16 +408,15 @@ export default function FileManager() {
       {previewFile && (
         <Modal open={showPreview} onClose={() => { setShowPreview(false); setPreviewFile(null); }} title={`Preview: ${previewFile.name || previewFile.original_name}`} size="lg">
           <div className="flex flex-col items-center gap-4">
-            {previewFile.mime_type?.startsWith('image/') ? (
+            {previewFile.mime_type?.startsWith('image/') && previewBlobUrl ? (
               <img
-                src={`/api/files/${previewFile.id}/preview`}
+                src={previewBlobUrl}
                 alt={previewFile.name}
                 className="max-w-full max-h-[60vh] rounded-lg object-contain"
-                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
-            ) : previewFile.mime_type === 'application/pdf' ? (
+            ) : previewFile.mime_type === 'application/pdf' && previewBlobUrl ? (
               <iframe
-                src={`/api/files/${previewFile.id}/preview`}
+                src={previewBlobUrl}
                 className="w-full h-[60vh] rounded-lg border border-slate-200 dark:border-slate-700"
                 title="PDF Preview"
               />

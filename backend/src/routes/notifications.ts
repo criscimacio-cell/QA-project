@@ -14,8 +14,16 @@ router.post('/:id/read', authenticate, (req: Request, res: Response) => {
   db.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?').run(req.params.id, req.user!.userId);
   res.json({ message: 'Marked as read' });
 });
+router.put('/:id/read', authenticate, (req: Request, res: Response) => {
+  db.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?').run(req.params.id, req.user!.userId);
+  res.json({ message: 'Marked as read' });
+});
 
 router.post('/read-all', authenticate, (req: Request, res: Response) => {
+  db.prepare('UPDATE notifications SET read = 1 WHERE user_id = ?').run(req.user!.userId);
+  res.json({ message: 'All marked as read' });
+});
+router.put('/read-all', authenticate, (req: Request, res: Response) => {
   db.prepare('UPDATE notifications SET read = 1 WHERE user_id = ?').run(req.user!.userId);
   res.json({ message: 'All marked as read' });
 });

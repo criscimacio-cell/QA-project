@@ -33,6 +33,13 @@ router.get('/', authenticate, requireRole('admin', 'lead', 'engineer'), (req: Re
   res.json(users);
 });
 
+router.get('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), (req: Request, res: Response) => {
+  if (req.params.id === 'me') { return; } // handled elsewhere
+  const user = db.prepare('SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users WHERE id = ?').get(req.params.id);
+  if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  res.json(user);
+});
+
 router.post('/', authenticate, requireRole('admin'), (req: Request, res: Response) => {
   const { name, email, password, role, department } = req.body;
   const hash = bcrypt.hashSync(password || 'password123', 10);
@@ -63,6 +70,19 @@ router.put('/:id', authenticate, requireRole('admin'), (req: Request, res: Respo
 
 router.delete('/:id', authenticate, requireRole('admin'), (req: Request, res: Response) => {
   db.prepare('UPDATE users SET active=0 WHERE id=?').run(req.params.id);
+  db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'USER_DEACTIVATE', 'user', ?, ?, ?)").run(req.user!.userId, req.params.id, `Deactivated user id=${req.params.id}`, req.ip || '');
+  res.json({ message: 'Deactivated' });
+});
+
+router.put('/:id/activate', authenticate, requireRole('admin'), (req: Request, res: Response) => {
+  db.prepare('UPDATE users SET active=1 WHERE id=?').run(req.params.id);
+  db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'USER_ACTIVATE', 'user', ?, ?, ?)").run(req.user!.userId, req.params.id, `Activated user id=${req.params.id}`, req.ip || '');
+  res.json({ message: 'Activated' });
+});
+
+router.put('/:id/deactivate', authenticate, requireRole('admin'), (req: Request, res: Response) => {
+  db.prepare('UPDATE users SET active=0 WHERE id=?').run(req.params.id);
+  db.prepare("INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (?, 'USER_DEACTIVATE', 'user', ?, ?, ?)").run(req.user!.userId, req.params.id, `Deactivated user id=${req.params.id}`, req.ip || '');
   res.json({ message: 'Deactivated' });
 });
 

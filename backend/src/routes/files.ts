@@ -73,6 +73,14 @@ router.get('/:id', authenticate, (req: Request, res: Response) => {
   res.json({ ...file as object, versions });
 });
 
+// Standalone versions list
+router.get('/:id/versions', authenticate, (req: Request, res: Response) => {
+  const file = db.prepare('SELECT id FROM files WHERE id = ?').get(req.params.id);
+  if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  const versions = db.prepare('SELECT fv.*, u.name as created_by_name FROM file_versions fv LEFT JOIN users u ON fv.created_by = u.id WHERE fv.file_id = ? ORDER BY fv.version DESC').all(req.params.id);
+  res.json(versions);
+});
+
 // Single upload
 router.post('/upload', authenticate, requireRole('admin', 'lead', 'engineer'), upload.single('file'), async (req: Request, res: Response) => {
   const { repository_id, project, module, category, jira_ticket, tags, description, version, change_log } = req.body;

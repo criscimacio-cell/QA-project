@@ -35,12 +35,16 @@ router.post('/', authenticate, requireRole('admin', 'lead'), (req: Request, res:
 });
 
 router.put('/:id', authenticate, requireRole('admin', 'lead'), (req: Request, res: Response) => {
+  const existing = db.prepare('SELECT id FROM repositories WHERE id=?').get(req.params.id);
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
   const { name, description } = req.body;
   db.prepare('UPDATE repositories SET name=?, description=? WHERE id=?').run(name, description, req.params.id);
   res.json({ message: 'Updated' });
 });
 
 router.delete('/:id', authenticate, requireRole('admin'), (req: Request, res: Response) => {
+  const existing = db.prepare('SELECT id FROM repositories WHERE id=?').get(req.params.id);
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
   db.prepare('DELETE FROM repositories WHERE id=?').run(req.params.id);
   res.json({ message: 'Deleted' });
 });

@@ -25,6 +25,7 @@ export default function ApprovalWorkflow() {
   // Drag state
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [flashId, setFlashId] = useState<number | null>(null);
   const dragFile = useRef<any>(null);
   // Per-column drag counter to avoid flicker from child dragLeave events
   const dragCounters = useRef<Record<string, number>>({});
@@ -48,6 +49,8 @@ export default function ApprovalWorkflow() {
   const quickMove = async (f: any, status: string) => {
     try {
       await api.post(`/files/${f.id}/approve`, { status, comments: '' });
+      setFlashId(f.id);
+      setTimeout(() => setFlashId(null), 700);
       load();
     } catch {
       alert('Failed to move file. Please try again.');
@@ -85,6 +88,8 @@ export default function ApprovalWorkflow() {
     dragCounters.current = {};
     // Optimistic update
     setFiles(prev => prev.map(x => x.id === f.id ? { ...x, status: stageKey } : x));
+    setFlashId(f.id);
+    setTimeout(() => setFlashId(null), 700);
     try {
       await api.post(`/files/${f.id}/approve`, { status: stageKey, comments: '' });
       load();
@@ -171,7 +176,7 @@ export default function ApprovalWorkflow() {
                       <span className="text-teal-400 font-medium">Drop here</span>
                     ) : 'No files'}
                   </div>
-                ) : stageFiles.map(f => (
+                ) : stageFiles.map((f, cardIdx) => (
                   <div
                     key={f.id}
                     draggable={isLead}
@@ -182,6 +187,12 @@ export default function ApprovalWorkflow() {
                         ? 'opacity-40 scale-95 bg-slate-100 dark:bg-slate-700'
                         : 'bg-slate-50 dark:bg-slate-800 hover:shadow-md hover:scale-[1.01]'
                     }`}
+                    style={{
+                      animation: flashId === f.id
+                        ? 'flashAmber 0.6s ease-out both'
+                        : `rowStagger 0.28s ease both`,
+                      animationDelay: flashId === f.id ? '0s' : `${cardIdx * 0.03}s`,
+                    }}
                     onClick={() => { if (draggingId === null) setSelected(f); }}
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -247,7 +258,7 @@ export default function ApprovalWorkflow() {
             </div>
             {isLead && (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button onClick={() => { setApproveTarget(selected); setSelected(null); setNewStatus('approved'); setComment(''); setApproveModal(true); }} className="btn-primary w-full justify-center">Update Status</button>
+                <button onClick={() => { setApproveTarget(selected); setSelected(null); setNewStatus('approved'); setComment(''); setApproveModal(true); }} className="btn-primary w-full justify-center" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>Update Status</button>
               </div>
             )}
           </div>

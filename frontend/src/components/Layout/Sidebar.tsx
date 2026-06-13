@@ -120,38 +120,48 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               </div>
             )}
             <div className="space-y-0.5">
-              {section.items.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
-                  title={collapsed ? item.label : undefined}
-                  className={({ isActive }) =>
-                    clsx(
-                      isActive ? 'sidebar-link-active' : 'sidebar-link',
-                      collapsed && 'justify-center !px-0 !pl-0',
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <span className="nav-indicator" />}
-                      <item.icon
-                        size={18}
-                        className={clsx(
-                          'sidebar-icon flex-shrink-0',
-                          isActive
-                            ? 'text-white'
-                            : 'text-white/60',
-                        )}
-                      />
-                      {!collapsed && (
-                        <span className="truncate transition-all duration-200">{item.label}</span>
+              {section.items.map((item, itemIdx) => {
+                const sectionOffset = nav.indexOf(section);
+                const globalIdx = nav.slice(0, sectionOffset).reduce((acc, s) => acc + s.items.length, 0) + itemIdx;
+                return (
+                  <div key={item.to} style={{ animation: 'fadeSlideIn 0.3s ease both', animationDelay: `${globalIdx * 0.05}s` }}>
+                    <NavLink
+                      to={item.to}
+                      end={item.to === '/'}
+                      title={collapsed ? item.label : undefined}
+                      className={({ isActive }) =>
+                        clsx(
+                          isActive ? 'sidebar-link-active' : 'sidebar-link',
+                          collapsed && 'justify-center !px-0 !pl-0',
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          {isActive && (
+                            <span
+                              className="nav-indicator"
+                              style={{ animation: 'navIndicatorIn 0.2s ease forwards, pulsingDot 1.8s ease-in-out infinite 0.2s' }}
+                            />
+                          )}
+                          <item.icon
+                            size={18}
+                            className={clsx(
+                              'sidebar-icon flex-shrink-0',
+                              isActive
+                                ? 'text-white'
+                                : 'text-white/60',
+                            )}
+                          />
+                          {!collapsed && (
+                            <span className="truncate transition-all duration-200">{item.label}</span>
+                          )}
+                        </>
                       )}
-                    </>
-                  )}
-                </NavLink>
-              ))}
+                    </NavLink>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -173,37 +183,47 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               </div>
             )}
             <div className="space-y-0.5">
-              {adminNav.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  title={collapsed ? item.label : undefined}
-                  className={({ isActive }) =>
-                    clsx(
-                      isActive ? 'sidebar-link-active' : 'sidebar-link',
-                      collapsed && 'justify-center !px-0 !pl-0',
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <span className="nav-indicator" />}
-                      <item.icon
-                        size={18}
-                        className={clsx(
-                          'sidebar-icon flex-shrink-0',
-                          isActive
-                            ? 'text-white'
-                            : 'text-white/60',
-                        )}
-                      />
-                      {!collapsed && (
-                        <span className="truncate">{item.label}</span>
+              {adminNav.map((item, itemIdx) => {
+                const totalMainItems = nav.reduce((acc, s) => acc + s.items.length, 0);
+                const globalIdx = totalMainItems + itemIdx;
+                return (
+                  <div key={item.to} style={{ animation: 'fadeSlideIn 0.3s ease both', animationDelay: `${globalIdx * 0.05}s` }}>
+                    <NavLink
+                      to={item.to}
+                      title={collapsed ? item.label : undefined}
+                      className={({ isActive }) =>
+                        clsx(
+                          isActive ? 'sidebar-link-active' : 'sidebar-link',
+                          collapsed && 'justify-center !px-0 !pl-0',
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          {isActive && (
+                            <span
+                              className="nav-indicator"
+                              style={{ animation: 'navIndicatorIn 0.2s ease forwards, pulsingDot 1.8s ease-in-out infinite 0.2s' }}
+                            />
+                          )}
+                          <item.icon
+                            size={18}
+                            className={clsx(
+                              'sidebar-icon flex-shrink-0',
+                              isActive
+                                ? 'text-white'
+                                : 'text-white/60',
+                            )}
+                          />
+                          {!collapsed && (
+                            <span className="truncate">{item.label}</span>
+                          )}
+                        </>
                       )}
-                    </>
-                  )}
-                </NavLink>
-              ))}
+                    </NavLink>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -266,6 +286,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           border: '1.5px solid rgba(252,211,77,0.6)',
           boxShadow: '0 2px 12px rgba(30,27,75,0.3)',
           color: '#F59E0B',
+          transition: 'all 0.2s ease',
         }}
       >
         {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}

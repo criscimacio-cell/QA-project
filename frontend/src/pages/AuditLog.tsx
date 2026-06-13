@@ -79,8 +79,10 @@ export default function AuditLog() {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin w-6 h-6 border-2 border-[#F59E0B] border-t-transparent rounded-full" />
+          <div className="p-4 space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="shimmer-bg rounded-lg" style={{ height: 48, marginBottom: 8 }} />
+            ))}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -93,8 +95,8 @@ export default function AuditLog() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {logs.map(l => (
-                  <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                {logs.map((l, index) => (
+                  <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50" style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
                     <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">{new Date(l.created_at).toLocaleString()}</td>
                     <td className="px-4 py-3">
                       <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{l.user_name || 'System'}</div>

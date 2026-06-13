@@ -176,13 +176,20 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 function DashboardSkeleton() {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="skeleton h-10 w-72 rounded-xl" />
+      <div className="shimmer-bg rounded-lg" style={{ height: 48, marginBottom: 8 }} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="card p-5 space-y-3">
-            <div className="skeleton h-3 w-20 rounded" />
-            <div className="skeleton h-8 w-16 rounded" />
-            <div className="skeleton h-2 w-24 rounded" />
+            <div className="shimmer-bg rounded-lg" style={{ height: 12, marginBottom: 8 }} />
+            <div className="shimmer-bg rounded-lg" style={{ height: 32, marginBottom: 8 }} />
+            <div className="shimmer-bg rounded-lg" style={{ height: 8 }} />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="card p-5">
+            <div className="shimmer-bg rounded-lg" style={{ height: 200, marginBottom: 8 }} />
           </div>
         ))}
       </div>
@@ -276,7 +283,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Upload Trend */}
-        <div className="stat-card-dark p-5 lg:col-span-2 animate-fade-in-up stagger-4">
+        <div className="stat-card-dark p-5 lg:col-span-2 animate-fade-in-up stagger-4" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.3s' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-white text-sm">
@@ -329,7 +336,7 @@ export default function Dashboard() {
         </div>
 
         {/* Status Breakdown */}
-        <div className="stat-card-dark p-5 animate-fade-in-up stagger-5">
+        <div className="stat-card-dark p-5 animate-fade-in-up stagger-5" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.38s' }}>
           <div className="mb-5">
             <h3 className="font-bold text-white text-sm">File Status</h3>
             <p className="text-xs text-slate-500 mt-0.5">Distribution</p>
@@ -440,8 +447,8 @@ export default function Dashboard() {
               return (
                 <div
                   key={item.id}
-                  className="activity-item flex items-start gap-3 animate-fade-in-up"
-                  style={{ animationDelay: `${idx * 50}ms` }}
+                  className="activity-item flex items-start gap-3"
+                  style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${idx * 0.06}s` }}
                 >
                   <img
                     src={item.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.user_id}`}

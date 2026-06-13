@@ -247,68 +247,60 @@ export default function Login() {
 
         {/* Rocket + smoke SVG illustration */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 2 }}>
-          <svg viewBox="0 0 380 280" fill="none" xmlns="http://www.w3.org/2000/svg"
-            style={{ width: '100%', maxWidth: 380, filter: 'drop-shadow(0 8px 32px rgba(245,158,11,0.18))' }}>
+          <svg viewBox="0 0 340 320" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style={{ width: '100%', maxWidth: 340, filter: 'drop-shadow(0 8px 40px rgba(245,158,11,0.25))', animation: 'rocketFloat 4s ease-in-out infinite' }}>
 
-            {/* Smoke trail / cloud puffs — growing rightward */}
-            {/* Leftmost smallest puff */}
-            <circle cx="155" cy="168" r="18" fill="white" opacity="0.12"/>
-            <circle cx="178" cy="172" r="24" fill="white" opacity="0.14"/>
-            <circle cx="206" cy="174" r="30" fill="white" opacity="0.16"/>
-            <circle cx="240" cy="176" r="36" fill="white" opacity="0.18"/>
-            <circle cx="278" cy="178" r="42" fill="white" opacity="0.20"/>
-            <circle cx="320" cy="180" r="48" fill="white" opacity="0.22"/>
-            <circle cx="365" cy="182" r="54" fill="white" opacity="0.24"/>
+            {/* Stars */}
+            <circle cx="30"  cy="30"  r="2.5" fill="white" opacity="0.7"/>
+            <circle cx="290" cy="25"  r="2"   fill="white" opacity="0.5"/>
+            <circle cx="20"  cy="200" r="2"   fill="white" opacity="0.4"/>
+            <circle cx="80"  cy="15"  r="1.5" fill="white" opacity="0.8"/>
+            <circle cx="310" cy="100" r="2.5" fill="#F59E0B" opacity="0.6"/>
+            <circle cx="50"  cy="270" r="1.5" fill="white" opacity="0.5"/>
+            <circle cx="250" cy="280" r="2"   fill="white" opacity="0.4"/>
+            <circle cx="130" cy="10"  r="1.5" fill="white" opacity="0.6"/>
 
-            {/* Secondary layer of smoke for volume */}
-            <circle cx="190" cy="185" r="20" fill="rgba(200,200,200,0.10)"/>
-            <circle cx="225" cy="190" r="28" fill="rgba(200,200,200,0.10)"/>
-            <circle cx="265" cy="192" r="34" fill="rgba(200,200,200,0.10)"/>
-            <circle cx="310" cy="194" r="40" fill="rgba(200,200,200,0.10)"/>
-            <circle cx="360" cy="196" r="46" fill="rgba(200,200,200,0.10)"/>
+            {/* Smoke trail — big puffy circles fanning right from rocket exhaust */}
+            <circle cx="215" cy="215" r="22"  fill="white" opacity="0.18"/>
+            <circle cx="245" cy="225" r="30"  fill="white" opacity="0.20"/>
+            <circle cx="278" cy="232" r="38"  fill="white" opacity="0.22"/>
+            <circle cx="315" cy="238" r="46"  fill="white" opacity="0.24"/>
+            <circle cx="340" cy="244" r="52"  fill="white" opacity="0.26"/>
+            {/* Second smoke layer */}
+            <circle cx="230" cy="238" r="18"  fill="rgba(255,255,255,0.12)"/>
+            <circle cx="262" cy="248" r="26"  fill="rgba(255,255,255,0.12)"/>
+            <circle cx="300" cy="255" r="34"  fill="rgba(255,255,255,0.12)"/>
 
-            {/* Rocket group — rotated -42deg, pointing up-left */}
-            <g transform="translate(130, 140) rotate(-42)" style={{ animation: 'rocketFloat 4s ease-in-out infinite' }}>
-              {/* Rocket body */}
-              <rect x="-18" y="-50" width="36" height="70" rx="18" fill="#F59E0B"/>
-              <rect x="-14" y="-48" width="28" height="60" rx="15" fill="#FBBF24" opacity="0.6"/>
+            {/* Rocket group — pointing upper-right at -45deg */}
+            <g transform="translate(160, 160) rotate(-45)">
+              {/* Body */}
+              <rect x="-24" y="-68" width="48" height="90" rx="24" fill="#F59E0B"/>
+              <rect x="-18" y="-65" width="36" height="78" rx="20" fill="#FBBF24" opacity="0.55"/>
 
-              {/* Rocket nose cone */}
-              <ellipse cx="0" cy="-50" rx="18" ry="12" fill="#D97706"/>
-              <path d="M-18,-50 Q0,-88 18,-50" fill="#F59E0B"/>
-              <path d="M-14,-50 Q0,-82 14,-50" fill="#FBBF24" opacity="0.7"/>
+              {/* Nose cone */}
+              <path d="M-24,-68 Q0,-120 24,-68" fill="#D97706"/>
+              <path d="M-18,-68 Q0,-112 18,-68" fill="#FBBF24" opacity="0.65"/>
 
-              {/* Window */}
-              <circle cx="0" cy="-20" r="9" fill="white" opacity="0.9"/>
-              <circle cx="0" cy="-20" r="6" fill="#bfdbfe"/>
-              <circle cx="-2" cy="-22" r="2" fill="white" opacity="0.8"/>
+              {/* Porthole */}
+              <circle cx="0" cy="-28" r="13" fill="white" opacity="0.95"/>
+              <circle cx="0" cy="-28" r="9"  fill="#93c5fd"/>
+              <circle cx="-3" cy="-31" r="3.5" fill="white" opacity="0.85"/>
 
-              {/* Left wing */}
-              <path d="M-18,10 L-34,32 L-18,24 Z" fill="#D97706"/>
-              <path d="M-18,10 L-30,28 L-18,22 Z" fill="#F59E0B" opacity="0.7"/>
+              {/* Left fin */}
+              <path d="M-24,12 L-48,46 L-24,34 Z" fill="#D97706"/>
+              <path d="M-24,12 L-42,40 L-24,30 Z" fill="#FBBF24" opacity="0.6"/>
 
-              {/* Right wing */}
-              <path d="M18,10 L34,32 L18,24 Z" fill="#D97706"/>
-              <path d="M18,10 L30,28 L18,22 Z" fill="#F59E0B" opacity="0.7"/>
-
-              {/* Bottom fin detail */}
-              <rect x="-4" y="18" width="8" height="6" rx="2" fill="#92400e" opacity="0.5"/>
+              {/* Right fin */}
+              <path d="M24,12 L48,46 L24,34 Z" fill="#D97706"/>
+              <path d="M24,12 L42,40 L24,30 Z" fill="#FBBF24" opacity="0.6"/>
 
               {/* Exhaust flames */}
-              <ellipse cx="-6" cy="26" rx="5" ry="9" fill="#FCD34D" opacity="0.9"/>
-              <ellipse cx="6" cy="26" rx="5" ry="9" fill="#FCD34D" opacity="0.9"/>
-              <ellipse cx="0" cy="28" rx="6" ry="12" fill="#F59E0B" opacity="0.8"/>
-              <ellipse cx="-4" cy="30" rx="3" ry="7" fill="white" opacity="0.5"/>
-              <ellipse cx="4" cy="30" rx="3" ry="7" fill="white" opacity="0.5"/>
+              <ellipse cx="-9" cy="30" rx="7"  ry="14" fill="#FCD34D" opacity="0.95"/>
+              <ellipse cx="9"  cy="30" rx="7"  ry="14" fill="#FCD34D" opacity="0.95"/>
+              <ellipse cx="0"  cy="34" rx="9"  ry="18" fill="#F59E0B"  opacity="0.85"/>
+              <ellipse cx="-5" cy="38" rx="4"  ry="10" fill="white"    opacity="0.55"/>
+              <ellipse cx="5"  cy="38" rx="4"  ry="10" fill="white"    opacity="0.55"/>
             </g>
-
-            {/* Stars scattered around rocket */}
-            <circle cx="60" cy="60" r="2" fill="white" opacity="0.6"/>
-            <circle cx="320" cy="40" r="1.5" fill="white" opacity="0.5"/>
-            <circle cx="40" cy="180" r="1.5" fill="white" opacity="0.4"/>
-            <circle cx="100" cy="40" r="1" fill="white" opacity="0.7"/>
-            <circle cx="280" cy="80" r="2" fill="#F59E0B" opacity="0.5"/>
-            <circle cx="75" cy="220" r="1.5" fill="white" opacity="0.5"/>
           </svg>
         </div>
 
@@ -349,27 +341,26 @@ export default function Login() {
       {/* ════════════════════════════════════
           CLOUD DIVIDER — organic boundary
       ════════════════════════════════════ */}
-      <div style={{ position: 'absolute', left: 'calc(55% - 60px)', top: 0, bottom: 0, width: 120, zIndex: 10, pointerEvents: 'none' }}>
-        <svg viewBox="0 0 120 900" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+      <div style={{ position: 'absolute', left: 'calc(55% - 110px)', top: 0, bottom: 0, width: 200, zIndex: 10, pointerEvents: 'none', overflow: 'visible' }}>
+        <svg viewBox="0 0 200 1000" preserveAspectRatio="none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
           <path d="
-            M120,0 L120,900 L60,900
-            Q10,882 28,846
-            Q-8,828 22,792
-            Q-8,774 28,738
-            Q-8,720 22,684
-            Q-8,666 28,630
-            Q-8,612 22,576
-            Q-8,558 28,522
-            Q-8,504 22,468
-            Q-8,450 28,414
-            Q-8,396 22,360
-            Q-8,342 28,306
-            Q-8,288 22,252
-            Q-8,234 28,198
-            Q-8,180 22,144
-            Q-8,126 28,90
-            Q-8,72 22,36
-            Q36,4 60,0 Z
+            M200,0 L200,1000 L130,1000
+            Q 30,975  110,935
+            Q 10,910  110,870
+            Q 10,845  110,805
+            Q 10,780  110,740
+            Q 10,715  110,675
+            Q 10,650  110,610
+            Q 10,585  110,545
+            Q 10,520  110,480
+            Q 10,455  110,415
+            Q 10,390  110,350
+            Q 10,325  110,285
+            Q 10,260  110,220
+            Q 10,195  110,155
+            Q 10,130  110,90
+            Q 10,65   110,25
+            Q 155,0 200,0 Z
           " fill="white"/>
         </svg>
       </div>
@@ -528,8 +519,8 @@ export default function Login() {
           50% { transform: translateY(-12px); }
         }
         @keyframes rocketFloat {
-          0%, 100% { transform: rotate(-42deg) translateY(0px); }
-          50% { transform: rotate(-42deg) translateY(-10px); }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-14px); }
         }
         @keyframes fadeInField {
           from { opacity: 0; transform: translateY(12px); }

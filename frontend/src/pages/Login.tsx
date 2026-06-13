@@ -327,6 +327,153 @@ function ParticleTrail() {
   return <canvas ref={canvasRef} style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:50 }} />;
 }
 
+/* ─── Owl mascot with cursor-tracking eyes ──────────────────────────── */
+function OwlMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number; y: number }> }) {
+  const leftPupilRef  = useRef<SVGCircleElement>(null);
+  const rightPupilRef = useRef<SVGCircleElement>(null);
+  const svgRef        = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    const EYES = [
+      { ref: leftPupilRef,  cx: 82, cy: 98 },
+      { ref: rightPupilRef, cx: 118, cy: 98 },
+    ];
+    const MAX = 5;
+    let raf: number;
+    const loop = () => {
+      const svg = svgRef.current;
+      if (svg) {
+        const rect = svg.getBoundingClientRect();
+        const mx = (mouseRef.current.x - rect.left) * (200 / rect.width);
+        const my = (mouseRef.current.y - rect.top)  * (300 / rect.height);
+        EYES.forEach(({ ref, cx, cy }) => {
+          const el = ref.current;
+          if (!el) return;
+          const dx = mx - cx, dy = my - cy;
+          const dist = Math.hypot(dx, dy);
+          const ox = dist > 0 ? (dx / dist) * Math.min(dist / 10, MAX) : 0;
+          const oy = dist > 0 ? (dy / dist) * Math.min(dist / 10, MAX) : 0;
+          el.setAttribute('cx', String(cx + ox));
+          el.setAttribute('cy', String(cy + oy));
+        });
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [mouseRef]);
+
+  return (
+    <div style={{
+      position: 'absolute', right: '43%', top: '50%',
+      transform: 'translateY(-50%)',
+      zIndex: 6, pointerEvents: 'none',
+      animation: 'owlBob 3.5s ease-in-out infinite',
+      filter: 'drop-shadow(0 18px 36px rgba(0,0,0,0.55))',
+    }}>
+      <svg ref={svgRef} viewBox="0 0 200 300" width="185" height="278">
+        <defs>
+          <radialGradient id="owlBodyGrad" cx="40%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#b45309"/>
+            <stop offset="100%" stopColor="#78350f"/>
+          </radialGradient>
+          <radialGradient id="owlBellyGrad" cx="50%" cy="25%" r="65%">
+            <stop offset="0%" stopColor="#fbbf24"/>
+            <stop offset="100%" stopColor="#d97706"/>
+          </radialGradient>
+          <radialGradient id="owlScreenGrad" cx="50%" cy="40%" r="65%">
+            <stop offset="0%" stopColor="#1e3a5f"/>
+            <stop offset="100%" stopColor="#0a0f1e"/>
+          </radialGradient>
+        </defs>
+
+        {/* ── Laptop screen ── */}
+        <rect x="10" y="148" width="180" height="130" rx="8" fill="#1f2937"/>
+        <rect x="16" y="154" width="168" height="118" rx="5" fill="url(#owlScreenGrad)"/>
+        {/* Code lines */}
+        <rect x="24" y="163" width="72"  height="3" rx="1.5" fill="#60a5fa" opacity="0.80"/>
+        <rect x="24" y="172" width="50"  height="3" rx="1.5" fill="#34d399" opacity="0.75"/>
+        <rect x="24" y="181" width="84"  height="3" rx="1.5" fill="#fbbf24" opacity="0.70"/>
+        <rect x="24" y="190" width="55"  height="3" rx="1.5" fill="#60a5fa" opacity="0.65"/>
+        <rect x="24" y="199" width="76"  height="3" rx="1.5" fill="#34d399" opacity="0.60"/>
+        <rect x="24" y="208" width="44"  height="3" rx="1.5" fill="#fbbf24" opacity="0.55"/>
+        <rect x="24" y="217" width="66"  height="3" rx="1.5" fill="#60a5fa" opacity="0.50"/>
+        <rect x="24" y="226" width="38"  height="3" rx="1.5" fill="#34d399" opacity="0.45"/>
+        {/* Blinking cursor */}
+        <rect x="66" y="225" width="2" height="7" rx="1" fill="white" style={{ animation:'cursorBlink 1s step-end infinite' }}/>
+        {/* Hinge */}
+        <rect x="10" y="276" width="180" height="6" rx="3" fill="#374151"/>
+        {/* Keyboard base */}
+        <rect x="6"  y="281" width="188" height="14" rx="5" fill="#1f2937"/>
+        {/* Key hints */}
+        {[18,30,42,54,66,82,98,114,126,138,150,162].map((x,i) => (
+          <rect key={i} x={x} y="283" width={i===5||i===6?20:9} height="5" rx="1.2" fill="#374151"/>
+        ))}
+        {/* Touchpad */}
+        <rect x="76" y="291" width="48" height="3" rx="1.5" fill="#374151"/>
+
+        {/* ── Wings ── */}
+        <path d="M 56 178 Q 14 192 12 238 Q 14 262 44 264 Q 58 260 64 246 L 70 198 Z" fill="#78350f"/>
+        <path d="M 56 178 Q 20 195 18 240 Q 22 256 44 256 Q 55 252 61 240 L 66 200 Z" fill="#92400e"/>
+        <path d="M 144 178 Q 186 192 188 238 Q 186 262 156 264 Q 142 260 136 246 L 130 198 Z" fill="#78350f"/>
+        <path d="M 144 178 Q 180 195 182 240 Q 178 256 156 256 Q 145 252 139 240 L 134 200 Z" fill="#92400e"/>
+
+        {/* ── Body ── */}
+        <ellipse cx="100" cy="196" rx="50" ry="54" fill="url(#owlBodyGrad)"/>
+        {/* Belly */}
+        <ellipse cx="100" cy="207" rx="30" ry="38" fill="url(#owlBellyGrad)" opacity="0.82"/>
+        {/* Feather arcs */}
+        <path d="M 85 186 Q 100 193 115 186" stroke="#b45309" strokeWidth="1.3" fill="none" opacity="0.5"/>
+        <path d="M 81 198 Q 100 206 119 198" stroke="#b45309" strokeWidth="1.3" fill="none" opacity="0.45"/>
+        <path d="M 82 210 Q 100 218 118 210" stroke="#b45309" strokeWidth="1.3" fill="none" opacity="0.4"/>
+        <path d="M 84 222 Q 100 229 116 222" stroke="#b45309" strokeWidth="1.3" fill="none" opacity="0.35"/>
+
+        {/* ── Head ── */}
+        <circle cx="100" cy="98" r="52" fill="url(#owlBodyGrad)"/>
+
+        {/* Ear tufts */}
+        <path d="M 66 62 Q 57 34 70 26 Q 81 41 77 65 Z" fill="#78350f"/>
+        <path d="M 134 62 Q 143 34 130 26 Q 119 41 123 65 Z" fill="#78350f"/>
+
+        {/* Face disc */}
+        <ellipse cx="100" cy="100" rx="38" ry="36" fill="#b45309" opacity="0.28"/>
+
+        {/* ── Left eye ── */}
+        <circle cx="82" cy="98" r="21" fill="#111827"/>
+        <circle cx="82" cy="98" r="18" fill="#fefce8"/>
+        <circle cx="82" cy="98" r="12" fill="#F59E0B"/>
+        <circle ref={leftPupilRef} cx="82" cy="98" r="7" fill="#0a0f1e"/>
+        <circle cx="79" cy="95" r="2.8" fill="white" opacity="0.85"/>
+
+        {/* ── Right eye ── */}
+        <circle cx="118" cy="98" r="21" fill="#111827"/>
+        <circle cx="118" cy="98" r="18" fill="#fefce8"/>
+        <circle cx="118" cy="98" r="12" fill="#F59E0B"/>
+        <circle ref={rightPupilRef} cx="118" cy="98" r="7" fill="#0a0f1e"/>
+        <circle cx="115" cy="95" r="2.8" fill="white" opacity="0.85"/>
+
+        {/* Beak */}
+        <path d="M 93 115 L 100 130 L 107 115 Z" fill="#d97706"/>
+        <path d="M 93 115 L 100 123 L 107 115 Z" fill="#92400e" opacity="0.45"/>
+
+        {/* ── Talons ── */}
+        <g stroke="#b45309" strokeWidth="2.8" strokeLinecap="round" fill="none">
+          <path d="M 58 262 L 48 282"/>
+          <path d="M 58 262 L 56 284"/>
+          <path d="M 58 262 L 63 283"/>
+          <path d="M 58 262 L 70 280"/>
+        </g>
+        <g stroke="#b45309" strokeWidth="2.8" strokeLinecap="round" fill="none">
+          <path d="M 142 262 L 132 280"/>
+          <path d="M 142 262 L 139 284"/>
+          <path d="M 142 262 L 145 283"/>
+          <path d="M 142 262 L 152 282"/>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 /* ─── Floating background shapes ────────────────────────────────────── */
 function FloatingBackground() {
   return (
@@ -544,6 +691,9 @@ export default function Login() {
         }} />
       ))}
 
+      {/* ── Owl mascot beside form ── */}
+      <OwlMascot mouseRef={mouseRef} />
+
       {/* ── Left: brand & demo pills ── */}
       <div style={{ position:'absolute', left:'5%', top:'8%', zIndex:6, maxWidth:340 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
@@ -728,6 +878,16 @@ export default function Login() {
         @keyframes fall {
           from { transform: translateY(0) rotate(0deg);   opacity: 0.8; }
           to   { transform: translateY(110vh) rotate(540deg); opacity: 0; }
+        }
+
+        /* ── Owl ── */
+        @keyframes owlBob {
+          0%,100% { transform: translateY(-50%); }
+          50%     { transform: translateY(calc(-50% - 10px)); }
+        }
+        @keyframes cursorBlink {
+          0%,100% { opacity: 0.9; }
+          50%     { opacity: 0; }
         }
 
         /* ── 9. Click ripple ── */

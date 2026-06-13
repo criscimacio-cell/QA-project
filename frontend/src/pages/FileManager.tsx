@@ -159,7 +159,7 @@ export default function FileManager() {
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">File Manager</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage all QA files and assets</p>
         </div>
-        <button onClick={() => setShowBulkUpload(true)} className="btn-primary">
+        <button onClick={() => setShowBulkUpload(true)} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>
           <Upload size={15} /> Bulk Upload
         </button>
       </div>
@@ -194,7 +194,11 @@ export default function FileManager() {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-16"><RefreshCw size={20} className="animate-spin text-[#F59E0B]" /></div>
+          <div className="p-4 space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="shimmer-bg rounded-lg" style={{ height: 48, marginBottom: 8 }} />
+            ))}
+          </div>
         ) : files.length === 0 ? (
           <div className="text-center py-16 text-slate-400 text-sm">No files found</div>
         ) : (
@@ -208,8 +212,8 @@ export default function FileManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {files.map(f => (
-                  <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                {files.map((f, index) => (
+                  <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50" style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 max-w-[220px]">
                         <FileIcon mimeType={f.mime_type} name={f.original_name} size={18} />

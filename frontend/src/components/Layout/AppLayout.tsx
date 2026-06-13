@@ -130,7 +130,7 @@ export default function AppLayout() {
       >
         <div className="p-6">
           {/* Page transition wrapper - key on pathname for re-mount animation */}
-          <div key={location.pathname} className="page-transition-wrapper">
+          <div key={location.pathname} className="page-transition-wrapper anim-fade-slide-up">
             <Outlet />
           </div>
         </div>

@@ -56,7 +56,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 transition-all duration-300"
+        className="absolute inset-0 anim-backdrop-in transition-all duration-300"
         style={{
           background: 'rgba(0,0,0,0.45)',
           backdropFilter: 'blur(6px)',
@@ -69,7 +69,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
       {/* Panel */}
       <div
         ref={panelRef}
-        className={`relative w-full ${sizes[size]} max-h-[90vh] flex flex-col overflow-hidden rounded-2xl z-10`}
+        className={`relative w-full ${sizes[size]} max-h-[90vh] flex flex-col overflow-hidden rounded-2xl z-10 anim-modal-in`}
         style={{
           background: 'var(--card)',
           border: '1px solid var(--border)',

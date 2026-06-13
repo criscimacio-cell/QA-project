@@ -189,7 +189,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                     className={`notif-item px-4 py-3 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
                       !n.read ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''
                     }`}
-                    style={{ animationDelay: `${i * 40}ms` }}
+                    style={{ animation: 'slideInRight 0.25s ease both', animationDelay: `${i * 0.04}s` }}
                   >
                     <div className="flex items-start gap-3">
                       <div
@@ -212,6 +212,8 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                         <div className="text-xs text-slate-400 dark:text-slate-600 mt-1">
                           {new Date(n.created_at).toLocaleString()}
                         </div>
+                        {/* Age bar */}
+                        <div style={{ height: 2, background: 'rgba(245,158,11,0.5)', width: '30%', marginTop: 4 }} />
                       </div>
                       {!n.read && (
                         <div

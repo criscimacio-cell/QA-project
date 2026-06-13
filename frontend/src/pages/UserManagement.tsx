@@ -60,7 +60,7 @@ export default function UserManagement() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage team members and access control</p>
         </div>
         {isAdmin && (
-          <button onClick={() => { setEditing(null); setErrors({}); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); setShowModal(true); }} className="btn-primary">
+          <button onClick={() => { setEditing(null); setErrors({}); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); setShowModal(true); }} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>
             <Plus size={16} /> Add User
           </button>
         )}
@@ -126,8 +126,8 @@ export default function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {users.map(u => (
-                <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              {users.map((u, index) => (
+                <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50" style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <img src={u.avatar} alt="" className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0" />
@@ -193,7 +193,7 @@ export default function UserManagement() {
           <div><label className="label">Department</label><input value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="input" placeholder="QA Department" /></div>
           <div className="flex gap-2 justify-end pt-2">
             <button onClick={closeModal} className="btn-secondary">Cancel</button>
-            <button onClick={save} className="btn-primary">{editing ? 'Save Changes' : 'Create User'}</button>
+            <button onClick={save} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>{editing ? 'Save Changes' : 'Create User'}</button>
           </div>
         </div>
       </Modal>

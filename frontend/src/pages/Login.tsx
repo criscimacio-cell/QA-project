@@ -71,35 +71,44 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
 function FloatingBackground() {
   return (
     <>
-      {/* Large ambient glow orbs */}
-      <div className="orb orb-amber-xl" style={{ width: 520, height: 520, top: '-12%', left: '-8%' }} />
-      <div className="orb orb-white-xl" style={{ width: 400, height: 400, top: '30%', left: '28%', animationDelay: '-3s', animationDuration: '18s' }} />
-      <div className="orb orb-amber-xl" style={{ width: 300, height: 300, bottom: '-8%', right: '38%', animationDelay: '-8s', animationDuration: '22s' }} />
+      {/* Large ambient glow orbs — spread across full width */}
+      <div className="orb orb-amber-xl" style={{ width: 700, height: 700, top: '-20%', left: '-10%' }} />
+      <div className="orb orb-white-xl" style={{ width: 600, height: 600, top: '20%', left: '25%', animationDelay: '-3s', animationDuration: '18s' }} />
+      <div className="orb orb-amber-xl" style={{ width: 600, height: 600, top: '-15%', right: '-10%', animationDelay: '-6s', animationDuration: '20s' }} />
+      <div className="orb orb-white-xl" style={{ width: 500, height: 500, bottom: '-15%', left: '30%', animationDelay: '-10s', animationDuration: '24s' }} />
+      <div className="orb orb-amber-xl" style={{ width: 450, height: 450, bottom: '-10%', right: '-5%', animationDelay: '-4s', animationDuration: '16s' }} />
 
-      {/* Medium floating orbs */}
-      <div className="orb orb-amber-md" style={{ width: 120, height: 120, top: '18%', left: '42%', animationDelay: '-1s' }} />
-      <div className="orb orb-white-md" style={{ width: 90,  height: 90,  top: '62%', left: '8%',  animationDelay: '-4s', animationDuration: '9s' }} />
-      <div className="orb orb-amber-md" style={{ width: 70,  height: 70,  top: '78%', left: '52%', animationDelay: '-6s', animationDuration: '11s' }} />
-      <div className="orb orb-white-md" style={{ width: 55,  height: 55,  top: '10%', left: '62%', animationDelay: '-2s', animationDuration: '8s' }} />
-      <div className="orb orb-amber-md" style={{ width: 80,  height: 80,  top: '45%', left: '20%', animationDelay: '-9s', animationDuration: '14s' }} />
+      {/* Medium floating orbs — full width scatter */}
+      <div className="orb orb-amber-md" style={{ width: 130, height: 130, top: '15%', left: '10%',  animationDelay: '-1s' }} />
+      <div className="orb orb-white-md" style={{ width: 100, height: 100, top: '60%', left: '5%',   animationDelay: '-4s', animationDuration: '9s' }} />
+      <div className="orb orb-amber-md" style={{ width: 90,  height: 90,  top: '40%', left: '45%',  animationDelay: '-7s', animationDuration: '12s' }} />
+      <div className="orb orb-white-md" style={{ width: 70,  height: 70,  top: '8%',  left: '70%',  animationDelay: '-2s', animationDuration: '8s' }} />
+      <div className="orb orb-amber-md" style={{ width: 110, height: 110, top: '72%', left: '55%',  animationDelay: '-5s', animationDuration: '11s' }} />
+      <div className="orb orb-white-md" style={{ width: 80,  height: 80,  top: '30%', left: '80%',  animationDelay: '-9s', animationDuration: '14s' }} />
+      <div className="orb orb-amber-md" style={{ width: 60,  height: 60,  top: '85%', left: '88%',  animationDelay: '-3s', animationDuration: '10s' }} />
 
-      {/* Twinkling star particles */}
+      {/* Twinkling star particles — across full page */}
       {[
-        { top: '6%',  left: '15%',  size: 3, delay: '0s' },
-        { top: '13%', left: '38%',  size: 2, delay: '-1s' },
-        { top: '22%', left: '7%',   size: 4, delay: '-2s' },
-        { top: '33%', left: '55%',  size: 2, delay: '-0.5s' },
-        { top: '41%', left: '3%',   size: 3, delay: '-3s' },
-        { top: '55%', left: '34%',  size: 2, delay: '-1.5s' },
-        { top: '67%', left: '16%',  size: 4, delay: '-4s' },
-        { top: '73%', left: '44%',  size: 2, delay: '-2.5s' },
-        { top: '82%', left: '5%',   size: 3, delay: '-0.8s' },
-        { top: '88%', left: '26%',  size: 2, delay: '-3.5s' },
-        { top: '15%', left: '50%',  size: 3, delay: '-5s' },
-        { top: '50%', left: '60%',  size: 2, delay: '-1.2s' },
-        { top: '30%', left: '25%',  size: 2, delay: '-6s' },
-        { top: '92%', left: '38%',  size: 3, delay: '-2.2s' },
-        { top: '5%',  left: '30%',  size: 2, delay: '-4.5s' },
+        { top: '5%',  left: '8%',   size: 3, delay: '0s'    },
+        { top: '12%', left: '32%',  size: 2, delay: '-1s'   },
+        { top: '18%', left: '58%',  size: 4, delay: '-2s'   },
+        { top: '8%',  left: '78%',  size: 2, delay: '-0.5s' },
+        { top: '25%', left: '4%',   size: 3, delay: '-3s'   },
+        { top: '32%', left: '50%',  size: 2, delay: '-1.5s' },
+        { top: '38%', left: '88%',  size: 3, delay: '-4s'   },
+        { top: '45%', left: '20%',  size: 2, delay: '-2.5s' },
+        { top: '52%', left: '65%',  size: 4, delay: '-0.8s' },
+        { top: '60%', left: '38%',  size: 2, delay: '-3.5s' },
+        { top: '68%', left: '92%',  size: 3, delay: '-5s'   },
+        { top: '74%', left: '14%',  size: 2, delay: '-1.2s' },
+        { top: '80%', left: '72%',  size: 3, delay: '-6s'   },
+        { top: '88%', left: '28%',  size: 2, delay: '-2.2s' },
+        { top: '93%', left: '48%',  size: 4, delay: '-4.5s' },
+        { top: '3%',  left: '52%',  size: 2, delay: '-3.8s' },
+        { top: '48%', left: '96%',  size: 3, delay: '-1.8s' },
+        { top: '22%', left: '42%',  size: 2, delay: '-7s'   },
+        { top: '65%', left: '82%',  size: 3, delay: '-2.8s' },
+        { top: '90%', left: '60%',  size: 2, delay: '-5.5s' },
       ].map((s, i) => (
         <div key={i} className="star" style={{
           top: s.top, left: s.left,
@@ -108,37 +117,50 @@ function FloatingBackground() {
         }} />
       ))}
 
-      {/* Expanding amber rings */}
-      <div className="ring ring-1" style={{ width: 160, height: 160, top: '20%', left: '15%' }} />
-      <div className="ring ring-2" style={{ width: 100, height: 100, top: '60%', left: '40%', animationDelay: '-2.5s' }} />
-      <div className="ring ring-3" style={{ width: 200, height: 200, top: '70%', left: '5%',  animationDelay: '-5s' }} />
+      {/* Expanding amber rings — full page spread */}
+      <div className="ring ring-1" style={{ width: 180, height: 180, top: '18%', left: '12%' }} />
+      <div className="ring ring-2" style={{ width: 120, height: 120, top: '55%', left: '60%', animationDelay: '-2.5s' }} />
+      <div className="ring ring-3" style={{ width: 220, height: 220, top: '65%', left: '4%',  animationDelay: '-5s' }} />
+      <div className="ring ring-1" style={{ width: 140, height: 140, top: '10%', left: '78%', animationDelay: '-3.5s', animationDuration: '7s' }} />
+      <div className="ring ring-2" style={{ width: 100, height: 100, top: '80%', left: '42%', animationDelay: '-7s',   animationDuration: '9s' }} />
 
-      {/* Floating geometric diamonds */}
-      <svg className="geo-float" style={{ position:'absolute', top:'25%', left:'30%', animationDelay:'-1s', opacity:0.12, pointerEvents:'none' }} width="28" height="28" viewBox="0 0 28 28">
+      {/* Floating geometric diamonds — full width */}
+      <svg className="geo-float" style={{ position:'absolute', top:'20%', left:'28%', animationDelay:'-1s', opacity:0.14, pointerEvents:'none' }} width="28" height="28" viewBox="0 0 28 28">
         <polygon points="14,0 28,14 14,28 0,14" fill="none" stroke="#F59E0B" strokeWidth="1.5"/>
       </svg>
-      <svg className="geo-float" style={{ position:'absolute', top:'55%', left:'12%', animationDelay:'-4s', opacity:0.1, pointerEvents:'none' }} width="20" height="20" viewBox="0 0 20 20">
+      <svg className="geo-float" style={{ position:'absolute', top:'50%', left:'10%', animationDelay:'-4s', opacity:0.11, pointerEvents:'none' }} width="20" height="20" viewBox="0 0 20 20">
         <polygon points="10,0 20,10 10,20 0,10" fill="none" stroke="white" strokeWidth="1"/>
       </svg>
-      <svg className="geo-float" style={{ position:'absolute', top:'38%', left:'48%', animationDelay:'-7s', opacity:0.13, pointerEvents:'none' }} width="36" height="36" viewBox="0 0 36 36">
+      <svg className="geo-float" style={{ position:'absolute', top:'35%', left:'55%', animationDelay:'-7s', opacity:0.13, pointerEvents:'none' }} width="36" height="36" viewBox="0 0 36 36">
         <polygon points="18,0 36,18 18,36 0,18" fill="none" stroke="#F59E0B" strokeWidth="1.5"/>
       </svg>
-      <svg className="geo-float" style={{ position:'absolute', top:'82%', left:'22%', animationDelay:'-2s', opacity:0.09, pointerEvents:'none' }} width="24" height="24" viewBox="0 0 24 24">
+      <svg className="geo-float" style={{ position:'absolute', top:'75%', left:'20%', animationDelay:'-2s', opacity:0.1, pointerEvents:'none' }} width="24" height="24" viewBox="0 0 24 24">
         <polygon points="12,0 24,12 12,24 0,12" fill="none" stroke="white" strokeWidth="1"/>
       </svg>
+      <svg className="geo-float" style={{ position:'absolute', top:'15%', left:'82%', animationDelay:'-5s', opacity:0.12, pointerEvents:'none' }} width="30" height="30" viewBox="0 0 30 30">
+        <polygon points="15,0 30,15 15,30 0,15" fill="none" stroke="#F59E0B" strokeWidth="1.5"/>
+      </svg>
+      <svg className="geo-float" style={{ position:'absolute', top:'62%', left:'75%', animationDelay:'-3s', opacity:0.1, pointerEvents:'none' }} width="22" height="22" viewBox="0 0 22 22">
+        <polygon points="11,0 22,11 11,22 0,11" fill="none" stroke="white" strokeWidth="1"/>
+      </svg>
 
-      {/* Floating hexagons */}
-      <svg className="geo-spin" style={{ position:'absolute', top:'12%', left:'55%', opacity:0.08, pointerEvents:'none' }} width="48" height="48" viewBox="0 0 48 48">
+      {/* Floating hexagons — spread right side too */}
+      <svg className="geo-spin" style={{ position:'absolute', top:'10%', left:'48%', opacity:0.09, pointerEvents:'none' }} width="52" height="52" viewBox="0 0 48 48">
         <polygon points="24,2 44,14 44,34 24,46 4,34 4,14" fill="none" stroke="#F59E0B" strokeWidth="1.2"/>
       </svg>
-      <svg className="geo-spin-rev" style={{ position:'absolute', top:'70%', left:'36%', opacity:0.07, pointerEvents:'none', animationDelay:'-3s' }} width="64" height="64" viewBox="0 0 64 64">
+      <svg className="geo-spin-rev" style={{ position:'absolute', top:'65%', left:'32%', opacity:0.08, pointerEvents:'none', animationDelay:'-3s' }} width="64" height="64" viewBox="0 0 64 64">
         <polygon points="32,2 60,18 60,46 32,62 4,46 4,18" fill="none" stroke="white" strokeWidth="1"/>
       </svg>
+      <svg className="geo-spin" style={{ position:'absolute', top:'40%', left:'85%', opacity:0.08, pointerEvents:'none', animationDelay:'-8s' }} width="44" height="44" viewBox="0 0 48 48">
+        <polygon points="24,2 44,14 44,34 24,46 4,34 4,14" fill="none" stroke="#F59E0B" strokeWidth="1.2"/>
+      </svg>
 
-      {/* Horizontal drifting lines */}
-      <div className="drift-line" style={{ top:'35%', width:180, animationDelay:'-1s' }} />
-      <div className="drift-line" style={{ top:'58%', width:120, animationDelay:'-5s', animationDuration:'20s' }} />
-      <div className="drift-line" style={{ top:'80%', width:90,  animationDelay:'-9s', animationDuration:'16s' }} />
+      {/* Drifting lines — multiple heights across full page */}
+      <div className="drift-line" style={{ top:'20%', width:220, animationDelay:'-1s' }} />
+      <div className="drift-line" style={{ top:'42%', width:160, animationDelay:'-5s',  animationDuration:'20s' }} />
+      <div className="drift-line" style={{ top:'63%', width:140, animationDelay:'-9s',  animationDuration:'16s' }} />
+      <div className="drift-line" style={{ top:'78%', width:200, animationDelay:'-3s',  animationDuration:'18s' }} />
+      <div className="drift-line" style={{ top:'90%', width:120, animationDelay:'-12s', animationDuration:'22s' }} />
     </>
   );
 }

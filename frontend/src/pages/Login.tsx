@@ -437,7 +437,7 @@ function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
           filter: 'drop-shadow(0 24px 56px rgba(0,0,0,0.7)) drop-shadow(0 0 40px rgba(245,158,11,0.08))',
           animation: 'cowFloat 4s ease-in-out infinite',
           flexShrink: 0,
-          marginRight: -40,
+          marginRight: -120,
         }}
       />
 

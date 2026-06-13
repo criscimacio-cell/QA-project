@@ -418,7 +418,8 @@ function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
   return (
     <div style={{
       position: 'absolute', left: 0, top: 0, bottom: 0, width: '58%',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      paddingBottom: '8%',
       pointerEvents: 'none', zIndex: 6,
     }}>
       {/* Ambient glow */}
@@ -449,8 +450,6 @@ function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number;
           filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(245,158,11,0.07))',
           animation: 'cowFloat 3.2s ease-in-out 0.8s infinite',
           flexShrink: 0,
-          alignSelf: 'center',
-          marginTop: 80,
         }}
       />
     </div>

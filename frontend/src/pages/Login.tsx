@@ -67,6 +67,82 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
   );
 }
 
+/* ─── Floating animated background ─────────────────────────────────── */
+function FloatingBackground() {
+  return (
+    <>
+      {/* Large ambient glow orbs */}
+      <div className="orb orb-amber-xl" style={{ width: 520, height: 520, top: '-12%', left: '-8%' }} />
+      <div className="orb orb-white-xl" style={{ width: 400, height: 400, top: '30%', left: '28%', animationDelay: '-3s', animationDuration: '18s' }} />
+      <div className="orb orb-amber-xl" style={{ width: 300, height: 300, bottom: '-8%', right: '38%', animationDelay: '-8s', animationDuration: '22s' }} />
+
+      {/* Medium floating orbs */}
+      <div className="orb orb-amber-md" style={{ width: 120, height: 120, top: '18%', left: '42%', animationDelay: '-1s' }} />
+      <div className="orb orb-white-md" style={{ width: 90,  height: 90,  top: '62%', left: '8%',  animationDelay: '-4s', animationDuration: '9s' }} />
+      <div className="orb orb-amber-md" style={{ width: 70,  height: 70,  top: '78%', left: '52%', animationDelay: '-6s', animationDuration: '11s' }} />
+      <div className="orb orb-white-md" style={{ width: 55,  height: 55,  top: '10%', left: '62%', animationDelay: '-2s', animationDuration: '8s' }} />
+      <div className="orb orb-amber-md" style={{ width: 80,  height: 80,  top: '45%', left: '20%', animationDelay: '-9s', animationDuration: '14s' }} />
+
+      {/* Twinkling star particles */}
+      {[
+        { top: '6%',  left: '15%',  size: 3, delay: '0s' },
+        { top: '13%', left: '38%',  size: 2, delay: '-1s' },
+        { top: '22%', left: '7%',   size: 4, delay: '-2s' },
+        { top: '33%', left: '55%',  size: 2, delay: '-0.5s' },
+        { top: '41%', left: '3%',   size: 3, delay: '-3s' },
+        { top: '55%', left: '34%',  size: 2, delay: '-1.5s' },
+        { top: '67%', left: '16%',  size: 4, delay: '-4s' },
+        { top: '73%', left: '44%',  size: 2, delay: '-2.5s' },
+        { top: '82%', left: '5%',   size: 3, delay: '-0.8s' },
+        { top: '88%', left: '26%',  size: 2, delay: '-3.5s' },
+        { top: '15%', left: '50%',  size: 3, delay: '-5s' },
+        { top: '50%', left: '60%',  size: 2, delay: '-1.2s' },
+        { top: '30%', left: '25%',  size: 2, delay: '-6s' },
+        { top: '92%', left: '38%',  size: 3, delay: '-2.2s' },
+        { top: '5%',  left: '30%',  size: 2, delay: '-4.5s' },
+      ].map((s, i) => (
+        <div key={i} className="star" style={{
+          top: s.top, left: s.left,
+          width: s.size, height: s.size,
+          animationDelay: s.delay,
+        }} />
+      ))}
+
+      {/* Expanding amber rings */}
+      <div className="ring ring-1" style={{ width: 160, height: 160, top: '20%', left: '15%' }} />
+      <div className="ring ring-2" style={{ width: 100, height: 100, top: '60%', left: '40%', animationDelay: '-2.5s' }} />
+      <div className="ring ring-3" style={{ width: 200, height: 200, top: '70%', left: '5%',  animationDelay: '-5s' }} />
+
+      {/* Floating geometric diamonds */}
+      <svg className="geo-float" style={{ position:'absolute', top:'25%', left:'30%', animationDelay:'-1s', opacity:0.12, pointerEvents:'none' }} width="28" height="28" viewBox="0 0 28 28">
+        <polygon points="14,0 28,14 14,28 0,14" fill="none" stroke="#F59E0B" strokeWidth="1.5"/>
+      </svg>
+      <svg className="geo-float" style={{ position:'absolute', top:'55%', left:'12%', animationDelay:'-4s', opacity:0.1, pointerEvents:'none' }} width="20" height="20" viewBox="0 0 20 20">
+        <polygon points="10,0 20,10 10,20 0,10" fill="none" stroke="white" strokeWidth="1"/>
+      </svg>
+      <svg className="geo-float" style={{ position:'absolute', top:'38%', left:'48%', animationDelay:'-7s', opacity:0.13, pointerEvents:'none' }} width="36" height="36" viewBox="0 0 36 36">
+        <polygon points="18,0 36,18 18,36 0,18" fill="none" stroke="#F59E0B" strokeWidth="1.5"/>
+      </svg>
+      <svg className="geo-float" style={{ position:'absolute', top:'82%', left:'22%', animationDelay:'-2s', opacity:0.09, pointerEvents:'none' }} width="24" height="24" viewBox="0 0 24 24">
+        <polygon points="12,0 24,12 12,24 0,12" fill="none" stroke="white" strokeWidth="1"/>
+      </svg>
+
+      {/* Floating hexagons */}
+      <svg className="geo-spin" style={{ position:'absolute', top:'12%', left:'55%', opacity:0.08, pointerEvents:'none' }} width="48" height="48" viewBox="0 0 48 48">
+        <polygon points="24,2 44,14 44,34 24,46 4,34 4,14" fill="none" stroke="#F59E0B" strokeWidth="1.2"/>
+      </svg>
+      <svg className="geo-spin-rev" style={{ position:'absolute', top:'70%', left:'36%', opacity:0.07, pointerEvents:'none', animationDelay:'-3s' }} width="64" height="64" viewBox="0 0 64 64">
+        <polygon points="32,2 60,18 60,46 32,62 4,46 4,18" fill="none" stroke="white" strokeWidth="1"/>
+      </svg>
+
+      {/* Horizontal drifting lines */}
+      <div className="drift-line" style={{ top:'35%', width:180, animationDelay:'-1s' }} />
+      <div className="drift-line" style={{ top:'58%', width:120, animationDelay:'-5s', animationDuration:'20s' }} />
+      <div className="drift-line" style={{ top:'80%', width:90,  animationDelay:'-9s', animationDuration:'16s' }} />
+    </>
+  );
+}
+
 /* ─── Main component ───────────────────────────────────────────── */
 export default function Login() {
   const { login, user, refreshUser } = useAuth();
@@ -148,103 +224,29 @@ export default function Login() {
     setFilledRole(u.role);
   };
 
-  /* Brand color — amber adapting our obsidian theme */
-  const BG = '#09090B';
   const AMBER = '#F59E0B';
 
   return (
     <div style={{
       minHeight: '100vh', position: 'relative', overflow: 'hidden',
-      background: BG,
+      background: '#09090B',
       fontFamily: "'DM Sans', sans-serif",
       opacity: phase === 'slideOut' ? 0 : 1,
       transition: phase === 'slideOut' ? 'opacity 0.45s ease' : 'none',
     }}>
 
-      {/* ── Post-login morph overlay ── */}
+      {/* Post-login morph overlay */}
       {phase === 'morph' && (
         <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />
       )}
 
-      {/* ══════════════════════════════════════════════════════════
-          BACKGROUND — 2 large decorative circles, lower-left
-          (matches reference image placement)
-      ══════════════════════════════════════════════════════════ */}
-      <div style={{ position: 'absolute', width: 260, height: 260, borderRadius: '50%', top: '52%', left: '2%',  background: 'rgba(255,255,255,0.055)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%', top: '62%', left: '14%', background: 'rgba(255,255,255,0.045)', pointerEvents: 'none' }} />
-      {/* Small accent circles */}
-      <div style={{ position: 'absolute', width: 40, height: 40, borderRadius: '50%', top: '30%', left: '35%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 22, height: 22, borderRadius: '50%', top: '72%', left: '38%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
-      {/* Stars */}
-      <div style={{ position: 'absolute', width: 4, height: 4, borderRadius: '50%', top: '14%', left: '8%',  background: 'rgba(255,255,255,0.55)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 3, height: 3, borderRadius: '50%', top: '38%', left: '4%',  background: 'rgba(255,255,255,0.4)',  pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 3, height: 3, borderRadius: '50%', top: '22%', left: '22%', background: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', width: 5, height: 5, borderRadius: '50%', top: '8%',  left: '44%', background: AMBER, opacity: 0.35, pointerEvents: 'none' }} />
-
-      {/* ══════════════════════════════════════════════════════════
-          FULL-SCREEN SVG — white cloud blob + smoke trail
-      ══════════════════════════════════════════════════════════ */}
-      <svg
-        viewBox="0 0 1440 900"
-        preserveAspectRatio="xMidYMid slice"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }}
-      >
-        {/*
-          Cloud blob path.
-          Draw clockwise: top-left of cloud → top-right → bottom-right →
-          bottom of cloud → UP the bumpy left edge → back to start.
-          Baseline x≈810. Bumps protrude to x≈630.
-        */}
-        {/* Smoke trail — diagonal upper-right, white on dark bg */}
-        <circle cx="248" cy="506" r="9"  fill="white" opacity="0.18"/>
-        <circle cx="290" cy="492" r="14" fill="white" opacity="0.22"/>
-        <circle cx="338" cy="477" r="20" fill="white" opacity="0.26"/>
-        <circle cx="392" cy="463" r="27" fill="white" opacity="0.30"/>
-        <circle cx="452" cy="450" r="35" fill="white" opacity="0.34"/>
-        <circle cx="518" cy="439" r="44" fill="white" opacity="0.38"/>
-        <circle cx="592" cy="430" r="54" fill="white" opacity="0.42"/>
-      </svg>
-
-      {/* ══════════════════════════════════════════════════════════
-          ROCKET — center-left, ~45% height, angled upper-right
-      ══════════════════════════════════════════════════════════ */}
-      <div style={{
-        position: 'absolute',
-        left: '14%', top: '42%',
-        zIndex: 3, pointerEvents: 'none',
-        animation: 'rocketFloat 4s ease-in-out infinite',
-        transformOrigin: 'center center',
-      }}>
-        {/* Rotate whole rocket ~45° pointing upper-right, nose up-right, exhaust down-left */}
-        <svg viewBox="0 0 120 180" width="148" height="222" style={{ transform: 'rotate(-45deg)' }}>
-          {/* Body */}
-          <rect x="38" y="48" width="44" height="84" rx="22" fill="white"/>
-          <rect x="44" y="51" width="32" height="74" rx="18" fill="rgba(230,230,240,0.55)"/>
-          {/* Nose cone */}
-          <path d="M38,48 Q60,2 82,48" fill="white"/>
-          <path d="M44,48 Q60,8 76,48" fill="rgba(240,240,245,0.65)"/>
-          {/* Porthole */}
-          <circle cx="60" cy="82" r="13" fill="#e879f9" opacity="0.95"/>
-          <circle cx="60" cy="82" r="9"  fill="#c026d3"/>
-          <circle cx="56" cy="78" r="3"  fill="white" opacity="0.75"/>
-          {/* Left fin */}
-          <path d="M38,106 L16,132 L38,122 Z" fill="#e879f9"/>
-          {/* Right fin */}
-          <path d="M82,106 L104,132 L82,122 Z" fill="#e879f9"/>
-          {/* Exhaust flames */}
-          <ellipse cx="52" cy="138" rx="7"  ry="12" fill="#FCD34D" opacity="0.9"/>
-          <ellipse cx="68" cy="138" rx="7"  ry="12" fill="#FCD34D" opacity="0.9"/>
-          <ellipse cx="60" cy="142" rx="9"  ry="16" fill="#F59E0B" opacity="0.8"/>
-          <ellipse cx="55" cy="148" rx="4"  ry="8"  fill="white"   opacity="0.45"/>
-          <ellipse cx="65" cy="148" rx="4"  ry="8"  fill="white"   opacity="0.45"/>
-        </svg>
+      {/* Animated background layer */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}>
+        <FloatingBackground />
       </div>
 
-      {/* ══════════════════════════════════════════════════════════
-          LEFT — brand heading & demo pills
-      ══════════════════════════════════════════════════════════ */}
+      {/* ── Left: brand heading & demo pills ── */}
       <div style={{ position: 'absolute', left: '5%', top: '8%', zIndex: 3, maxWidth: 340 }}>
-        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: AMBER, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 14px ${AMBER}66` }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
@@ -253,7 +255,6 @@ export default function Login() {
           </div>
           <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 18, color: 'white', letterSpacing: '0.04em' }}>Qlarity</span>
         </div>
-
         <h1 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 32, fontWeight: 800, color: 'white', lineHeight: 1.2, marginBottom: 8 }}>
           QA Asset Platform
         </h1>
@@ -293,29 +294,34 @@ export default function Login() {
         </p>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════
-          LOGIN FORM — floats on the white cloud area, right side
-      ══════════════════════════════════════════════════════════ */}
-      {/* FIX 4: form vertically centered — alignItems:center already set,
-          removed top padding bias so it sits true center */}
+      {/* ── Login form card — glass morphism, right side ── */}
       <div style={{
         position: 'absolute', right: 0, top: 0, bottom: 0,
         width: '42%', zIndex: 5,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '0 48px',
       }}>
-        <div style={{ width: '100%', maxWidth: 340 }}>
+        <div style={{
+          width: '100%', maxWidth: 360,
+          background: 'rgba(255,255,255,0.04)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 24,
+          padding: '40px 36px',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,158,11,0.08)',
+        }}>
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <h2 style={{
               fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800,
-              fontSize: 20, color: '#09090B',
+              fontSize: 20, color: 'white',
               letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4,
             }}>
               USER LOGIN
             </h2>
-            <p style={{ fontSize: 13, color: '#78716c' }}>Welcome to Qlarity</p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>Welcome to Qlarity</p>
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -335,16 +341,16 @@ export default function Login() {
                 style={{
                   width: '100%', paddingLeft: 42, paddingRight: 16, height: 46,
                   borderRadius: 999,
-                  border: `1px solid ${errors.email ? '#f87171' : 'rgba(245,158,11,0.3)'}`,
-                  background: errors.email ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.1)',
-                  fontSize: 14, color: '#09090B', outline: 'none',
+                  border: `1px solid ${errors.email ? '#f87171' : 'rgba(245,158,11,0.25)'}`,
+                  background: errors.email ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.07)',
+                  fontSize: 14, color: 'white', outline: 'none',
                   transition: 'border-color 0.2s, box-shadow 0.2s',
                   boxSizing: 'border-box',
                 }}
-                onFocus={e => { e.target.style.borderColor = AMBER; e.target.style.boxShadow = `0 0 0 3px ${AMBER}26`; }}
-                onBlur={e => { e.target.style.borderColor = errors.email ? '#f87171' : 'rgba(245,158,11,0.3)'; e.target.style.boxShadow = 'none'; }}
+                onFocus={e => { e.target.style.borderColor = AMBER; e.target.style.boxShadow = `0 0 0 3px ${AMBER}22`; }}
+                onBlur={e => { e.target.style.borderColor = errors.email ? '#f87171' : 'rgba(245,158,11,0.25)'; e.target.style.boxShadow = 'none'; }}
               />
-              {errors.email && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 3, paddingLeft: 16 }}>{errors.email}</p>}
+              {errors.email && <p style={{ fontSize: 12, color: '#f87171', marginTop: 3, paddingLeft: 16 }}>{errors.email}</p>}
             </div>
 
             {/* Password */}
@@ -361,36 +367,36 @@ export default function Login() {
                 style={{
                   width: '100%', paddingLeft: 42, paddingRight: 46, height: 46,
                   borderRadius: 999,
-                  border: `1px solid ${errors.password ? '#f87171' : 'rgba(245,158,11,0.3)'}`,
-                  background: errors.password ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.1)',
-                  fontSize: 14, color: '#09090B', outline: 'none',
+                  border: `1px solid ${errors.password ? '#f87171' : 'rgba(245,158,11,0.25)'}`,
+                  background: errors.password ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.07)',
+                  fontSize: 14, color: 'white', outline: 'none',
                   transition: 'border-color 0.2s, box-shadow 0.2s',
                   boxSizing: 'border-box',
                 }}
-                onFocus={e => { e.target.style.borderColor = AMBER; e.target.style.boxShadow = `0 0 0 3px ${AMBER}26`; }}
-                onBlur={e => { e.target.style.borderColor = errors.password ? '#f87171' : 'rgba(245,158,11,0.3)'; e.target.style.boxShadow = 'none'; }}
+                onFocus={e => { e.target.style.borderColor = AMBER; e.target.style.boxShadow = `0 0 0 3px ${AMBER}22`; }}
+                onBlur={e => { e.target.style.borderColor = errors.password ? '#f87171' : 'rgba(245,158,11,0.25)'; e.target.style.boxShadow = 'none'; }}
               />
               <button type="button" tabIndex={-1} onClick={() => setShowPw(s => !s)}
-                style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#78716c', display: 'flex', padding: 4 }}>
+                style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.45)', display: 'flex', padding: 4 }}>
                 {showPw ? <EyeOff size={15}/> : <Eye size={15}/>}
               </button>
-              {errors.password && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 3, paddingLeft: 16 }}>{errors.password}</p>}
+              {errors.password && <p style={{ fontSize: 12, color: '#f87171', marginTop: 3, paddingLeft: 16 }}>{errors.password}</p>}
             </div>
 
             {/* Remember + Forgot */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 13, color: '#78716c' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
                 <input type="checkbox" style={{ accentColor: AMBER, width: 14, height: 14 }} />
                 Remember
               </label>
-              <Link to="/forgot-password" style={{ fontSize: 13, color: '#78716c', textDecoration: 'none' }}>
+              <Link to="/forgot-password" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>
                 Forgot password ?
               </Link>
             </div>
 
             {/* Error */}
             {error && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12, padding: '10px 16px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', fontSize: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12, padding: '10px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', fontSize: 13 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 {error}
               </div>
@@ -408,7 +414,7 @@ export default function Login() {
                 letterSpacing: '0.1em', textTransform: 'uppercase',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.75 : 1,
-                boxShadow: `0 4px 18px ${AMBER}55`,
+                boxShadow: `0 4px 20px ${AMBER}55`,
                 transition: 'background 0.2s, transform 0.15s, box-shadow 0.2s',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
@@ -422,8 +428,8 @@ export default function Login() {
             </button>
 
             {/* Create account link */}
-            <p style={{ textAlign: 'center', fontSize: 13, color: '#78716c', marginTop: 4 }}>
-              <Link to="/forgot-password" style={{ color: '#09090B', fontWeight: 500, textDecoration: 'none' }}>
+            <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+              <Link to="/forgot-password" style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500, textDecoration: 'none' }}>
                 Create Account
               </Link>
             </p>
@@ -434,13 +440,97 @@ export default function Login() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes rocketFloat {
-          0%, 100% { transform: translateY(0px); }
-          50%       { transform: translateY(-14px); }
-        }
+
         @keyframes ringExpand {
           from { transform: translate(-50%,-50%) scale(1); opacity: 0.7; }
           to   { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
+        }
+
+        /* Large ambient orbs */
+        .orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+          animation: orbDrift 14s ease-in-out infinite;
+        }
+        .orb-amber-xl { background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%); }
+        .orb-white-xl { background: radial-gradient(circle, rgba(255,255,255,0.09) 0%, transparent 70%); filter: blur(60px); }
+        .orb-amber-md { background: radial-gradient(circle, rgba(245,158,11,0.22) 0%, transparent 70%); filter: blur(40px); animation-name: orbFloat; animation-duration: 10s; }
+        .orb-white-md { background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%); filter: blur(30px); animation-name: orbFloat; animation-duration: 10s; }
+
+        @keyframes orbDrift {
+          0%,100% { transform: translate(0px, 0px) scale(1); }
+          33%     { transform: translate(18px,-22px) scale(1.04); }
+          66%     { transform: translate(-12px, 14px) scale(0.97); }
+        }
+        @keyframes orbFloat {
+          0%,100% { transform: translateY(0px); }
+          50%     { transform: translateY(-18px); }
+        }
+
+        /* Stars */
+        .star {
+          position: absolute;
+          border-radius: 50%;
+          background: white;
+          animation: twinkle 4s ease-in-out infinite;
+        }
+        @keyframes twinkle {
+          0%,100% { opacity: 0.15; transform: scale(1); }
+          50%     { opacity: 0.9;  transform: scale(1.4); }
+        }
+
+        /* Expanding rings */
+        .ring {
+          position: absolute;
+          border-radius: 50%;
+          border: 1px solid rgba(245,158,11,0.3);
+          animation: expandRing 6s ease-out infinite;
+        }
+        .ring-2 { animation-duration: 8s; border-color: rgba(255,255,255,0.15); }
+        .ring-3 { animation-duration: 10s; }
+        @keyframes expandRing {
+          0%   { transform: scale(0.3); opacity: 0.8; }
+          100% { transform: scale(2.2); opacity: 0; }
+        }
+
+        /* Floating geometry */
+        .geo-float {
+          position: absolute;
+          animation: geoFloat 12s ease-in-out infinite;
+        }
+        @keyframes geoFloat {
+          0%,100% { transform: translateY(0px) rotate(0deg); }
+          50%     { transform: translateY(-20px) rotate(8deg); }
+        }
+
+        /* Spinning hexagons */
+        .geo-spin {
+          position: absolute;
+          animation: geoSpin 30s linear infinite;
+        }
+        .geo-spin-rev {
+          position: absolute;
+          animation: geoSpin 40s linear infinite reverse;
+        }
+        @keyframes geoSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+
+        /* Drifting horizontal lines */
+        .drift-line {
+          position: absolute;
+          left: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(245,158,11,0.25), transparent);
+          animation: driftLine 12s linear infinite;
+        }
+        @keyframes driftLine {
+          from { transform: translateX(-100%); opacity: 0; }
+          10%  { opacity: 1; }
+          90%  { opacity: 1; }
+          to   { transform: translateX(120vw); opacity: 0; }
         }
       `}</style>
     </div>

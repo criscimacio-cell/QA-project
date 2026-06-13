@@ -327,89 +327,130 @@ function ParticleTrail() {
   return <canvas ref={canvasRef} style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:50 }} />;
 }
 
-/* ─── Cow mascot with cursor-tracking eyes ──────────────────────────── */
-function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number; y: number }> }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  /* Fetch SVG inline so JS can access its DOM elements */
+/* ─── Reusable hook: wire eye-tracking to an injected cow SVG ─────────── */
+function useCowEyes(
+  containerRef: React.RefObject<HTMLDivElement>,
+  mouseRef: React.MutableRefObject<{ x: number; y: number }>,
+  maxPx: number,
+) {
   useEffect(() => {
     const el = containerRef.current;
+    if (!el) return;
+
+    const wire = () => {
+      const svg = el.querySelector('svg');
+      if (!svg) return;
+      const leftPupil   = svg.querySelector('#cow-pupil-left')   as SVGElement | null;
+      const rightPupil  = svg.querySelector('#cow-pupil-right')  as SVGElement | null;
+      const leftSocket  = svg.querySelector('#eye-socket-left')  as SVGElement | null;
+      const rightSocket = svg.querySelector('#eye-socket-right') as SVGElement | null;
+      if (!leftPupil || !rightPupil || !leftSocket || !rightSocket) return;
+
+      leftPupil.style.transition  = 'transform 0.05s ease-out';
+      rightPupil.style.transition = 'transform 0.05s ease-out';
+
+      const onMove = () => {
+        const mx = mouseRef.current.x, my = mouseRef.current.y;
+        [{ pupil: leftPupil, socket: leftSocket }, { pupil: rightPupil, socket: rightSocket }]
+          .forEach(({ pupil, socket }) => {
+            const r = socket.getBoundingClientRect();
+            const scx = r.left + r.width / 2, scy = r.top + r.height / 2;
+            const dx = mx - scx, dy = my - scy;
+            const dist = Math.hypot(dx, dy);
+            const ox = dist > 0 ? (dx / dist) * Math.min(dist / 12, maxPx) : 0;
+            const oy = dist > 0 ? (dy / dist) * Math.min(dist / 12, maxPx) : 0;
+            pupil.style.transform = `translate(${ox}px, ${oy}px)`;
+          });
+      };
+      document.addEventListener('mousemove', onMove);
+      (el as any).__cowCleanup = () => document.removeEventListener('mousemove', onMove);
+    };
+
+    /* SVG might already be injected (baby cow), or needs fetching */
+    if (el.querySelector('svg')) { wire(); return; }
+    const id = setInterval(() => { if (el.querySelector('svg')) { clearInterval(id); wire(); } }, 50);
+    return () => {
+      clearInterval(id);
+      const cleanup = (el as any).__cowCleanup;
+      if (cleanup) cleanup();
+    };
+  }, [containerRef, mouseRef, maxPx]);
+}
+
+/* ─── Cow mascot: mama + baby ────────────────────────────────────────── */
+function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number; y: number }> }) {
+  const mamaRef = useRef<HTMLDivElement>(null);
+  const babyRef = useRef<HTMLDivElement>(null);
+
+  /* Fetch and inject SVG for mama cow */
+  useEffect(() => {
+    const el = mamaRef.current;
     if (!el) return;
     fetch('/the-cow-svgrepo-com.svg')
       .then(r => r.text())
       .then(svgText => {
         el.innerHTML = svgText;
         const svg = el.querySelector('svg');
-        if (!svg) return;
-        svg.style.width  = '100%';
-        svg.style.height = '100%';
-        svg.style.overflow = 'visible';
-
-        const leftPupil  = svg.querySelector('#cow-pupil-left')  as SVGElement | null;
-        const rightPupil = svg.querySelector('#cow-pupil-right') as SVGElement | null;
-        const leftSocket  = svg.querySelector('#eye-socket-left')  as SVGElement | null;
-        const rightSocket = svg.querySelector('#eye-socket-right') as SVGElement | null;
-        if (!leftPupil || !rightPupil || !leftSocket || !rightSocket) return;
-
-        leftPupil.style.transition  = 'transform 0.05s ease-out';
-        rightPupil.style.transition = 'transform 0.05s ease-out';
-
-        const MAX = 7;
-
-        const onMove = () => {
-          const mx = mouseRef.current.x;
-          const my = mouseRef.current.y;
-
-          [
-            { pupil: leftPupil,  socket: leftSocket },
-            { pupil: rightPupil, socket: rightSocket },
-          ].forEach(({ pupil, socket }) => {
-            const r = socket.getBoundingClientRect();
-            const scx = r.left + r.width  / 2;
-            const scy = r.top  + r.height / 2;
-            const dx = mx - scx, dy = my - scy;
-            const dist = Math.hypot(dx, dy);
-            const ox = dist > 0 ? (dx / dist) * Math.min(dist / 12, MAX) : 0;
-            const oy = dist > 0 ? (dy / dist) * Math.min(dist / 12, MAX) : 0;
-            pupil.style.transform = `translate(${ox}px, ${oy}px)`;
-          });
-        };
-
-        document.addEventListener('mousemove', onMove);
-        /* store cleanup on the element so the outer effect can reach it */
-        (el as any).__cowCleanup = () => document.removeEventListener('mousemove', onMove);
+        if (svg) { svg.style.width = '100%'; svg.style.height = '100%'; svg.style.overflow = 'visible'; }
       })
-      .catch(() => { /* SVG unavailable — cow simply won't show */ });
+      .catch(() => {});
+    return () => { const c = (el as any).__cowCleanup; if (c) c(); };
+  }, []);
 
-    return () => {
-      const cleanup = (el as any).__cowCleanup;
-      if (cleanup) cleanup();
-    };
-  }, [mouseRef]);
+  /* Fetch and inject SVG for baby cow */
+  useEffect(() => {
+    const el = babyRef.current;
+    if (!el) return;
+    fetch('/the-cow-svgrepo-com.svg')
+      .then(r => r.text())
+      .then(svgText => {
+        el.innerHTML = svgText;
+        const svg = el.querySelector('svg');
+        if (svg) { svg.style.width = '100%'; svg.style.height = '100%'; svg.style.overflow = 'visible'; }
+      })
+      .catch(() => {});
+    return () => { const c = (el as any).__cowCleanup; if (c) c(); };
+  }, []);
+
+  useCowEyes(mamaRef, mouseRef, 7);
+  useCowEyes(babyRef, mouseRef, 4);
 
   return (
-    /* Hero area: left 58% of the screen */
     <div style={{
       position: 'absolute', left: 0, top: 0, bottom: 0, width: '58%',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       pointerEvents: 'none', zIndex: 6,
     }}>
-      {/* Ambient glow behind the cow */}
+      {/* Ambient glow */}
       <div style={{
         position: 'absolute',
-        width: 540, height: 540,
-        borderRadius: '50%',
+        width: 600, height: 600, borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.04) 45%, transparent 70%)',
-        filter: 'blur(32px)',
-        pointerEvents: 'none',
+        filter: 'blur(36px)', pointerEvents: 'none',
       }} />
+
+      {/* Mama cow — bigger */}
       <div
-        ref={containerRef}
-        id="cow-hero"
+        ref={mamaRef}
         style={{
-          width: 460, height: 520,
+          width: 560, height: 560,
           filter: 'drop-shadow(0 24px 56px rgba(0,0,0,0.7)) drop-shadow(0 0 40px rgba(245,158,11,0.08))',
           animation: 'cowFloat 4s ease-in-out infinite',
+          flexShrink: 0,
+          marginRight: -40,
+        }}
+      />
+
+      {/* Baby cow — smaller, offset lower, slightly delayed float */}
+      <div
+        ref={babyRef}
+        style={{
+          width: 220, height: 220,
+          filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(245,158,11,0.07))',
+          animation: 'cowFloat 3.2s ease-in-out 0.8s infinite',
+          flexShrink: 0,
+          alignSelf: 'flex-end',
+          marginBottom: '12%',
         }}
       />
     </div>

@@ -578,14 +578,14 @@ export default function Login() {
 
       {/* ── Login form with rotating ring ── */}
       <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'42%', zIndex:7, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px' }}>
-        <div data-no-ripple style={{ position:'relative', width:'100%', maxWidth:360 }}>
+        <div data-no-ripple style={{ position:'relative', width:'100%', maxWidth:420 }}>
 
           {/* 11 — Rotating amber ring around card */}
           <div style={{ position:'absolute', inset:-3, borderRadius:27, border:'1px solid transparent', borderTop:`1.5px solid rgba(245,158,11,0.55)`, borderRight:`1px solid rgba(245,158,11,0.18)`, animation:'spin 4s linear infinite', pointerEvents:'none' }} />
           <div style={{ position:'absolute', inset:-3, borderRadius:27, border:'1px solid transparent', borderBottom:`1.5px solid rgba(245,158,11,0.45)`, borderLeft:`1px solid rgba(245,158,11,0.18)`, animation:'spin 6s linear infinite reverse', pointerEvents:'none' }} />
 
           {/* Glass card */}
-          <div style={{ background:'rgba(255,255,255,0.04)', backdropFilter:'blur(28px)', WebkitBackdropFilter:'blur(28px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:24, padding:'40px 36px', boxShadow:'0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,158,11,0.08)' }}>
+          <div style={{ background:'rgba(255,255,255,0.04)', backdropFilter:'blur(28px)', WebkitBackdropFilter:'blur(28px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:28, padding:'52px 48px', boxShadow:'0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,158,11,0.08)' }}>
 
             <div style={{ textAlign:'center', marginBottom:28 }}>
               <h2 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:20, color:'white', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:4 }}>USER LOGIN</h2>
@@ -601,7 +601,7 @@ export default function Login() {
                 <input ref={emailInputRef} type="email" value={email}
                   onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(p => ({...p, email:''})); }}
                   placeholder="Email address"
-                  style={{ width:'100%', paddingLeft:42, paddingRight:16, height:46, borderRadius:999, border:`1px solid ${errors.email?'#f87171':'rgba(245,158,11,0.25)'}`, background:errors.email?'rgba(239,68,68,0.08)':'rgba(255,255,255,0.07)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
+                  style={{ width:'100%', paddingLeft:42, paddingRight:16, height:52, borderRadius:999, border:`1px solid ${errors.email?'#f87171':'rgba(245,158,11,0.25)'}`, background:errors.email?'rgba(239,68,68,0.08)':'rgba(255,255,255,0.07)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
                   onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.boxShadow=`0 0 0 3px ${AMBER}22`; }}
                   onBlur={e => { e.target.style.borderColor=errors.email?'#f87171':'rgba(245,158,11,0.25)'; e.target.style.boxShadow='none'; }}
                 />
@@ -615,7 +615,7 @@ export default function Login() {
                 <input type={showPw?'text':'password'} value={password}
                   onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(p => ({...p, password:''})); }}
                   placeholder="Password"
-                  style={{ width:'100%', paddingLeft:42, paddingRight:46, height:46, borderRadius:999, border:`1px solid ${errors.password?'#f87171':'rgba(245,158,11,0.25)'}`, background:errors.password?'rgba(239,68,68,0.08)':'rgba(255,255,255,0.07)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
+                  style={{ width:'100%', paddingLeft:42, paddingRight:46, height:52, borderRadius:999, border:`1px solid ${errors.password?'#f87171':'rgba(245,158,11,0.25)'}`, background:errors.password?'rgba(239,68,68,0.08)':'rgba(255,255,255,0.07)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
                   onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.boxShadow=`0 0 0 3px ${AMBER}22`; }}
                   onBlur={e => { e.target.style.borderColor=errors.password?'#f87171':'rgba(245,158,11,0.25)'; e.target.style.boxShadow='none'; }}
                 />
@@ -644,7 +644,7 @@ export default function Login() {
               )}
 
               <button type="submit" disabled={loading}
-                style={{ width:'100%', height:46, borderRadius:8, border:'none', background:AMBER, color:'#09090B', fontWeight:700, fontSize:14, fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:'0.1em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.75:1, boxShadow:`0 4px 20px ${AMBER}55`, transition:'background 0.2s,transform 0.15s,box-shadow 0.2s', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}
+                style={{ width:'100%', height:52, borderRadius:10, border:'none', background:AMBER, color:'#09090B', fontWeight:700, fontSize:14, fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:'0.1em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.75:1, boxShadow:`0 4px 20px ${AMBER}55`, transition:'background 0.2s,transform 0.15s,box-shadow 0.2s', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}
                 onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.background='#D97706'; (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; } }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background=AMBER; (e.currentTarget as HTMLElement).style.transform='translateY(0)'; }}
               >

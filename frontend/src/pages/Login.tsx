@@ -327,156 +327,92 @@ function ParticleTrail() {
   return <canvas ref={canvasRef} style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:50 }} />;
 }
 
-/* ─── Owl mascot — holding the login form ───────────────────────────── */
-function OwlMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number; y: number }> }) {
-  const leftPupilRef  = useRef<SVGCircleElement>(null);
-  const rightPupilRef = useRef<SVGCircleElement>(null);
-  const svgRef        = useRef<SVGSVGElement>(null);
+/* ─── Cow mascot with cursor-tracking eyes ──────────────────────────── */
+function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number; y: number }> }) {
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  /* Fetch SVG inline so JS can access its DOM elements */
   useEffect(() => {
-    const EYES = [
-      { ref: leftPupilRef,  cx: 196, cy: 194 },
-      { ref: rightPupilRef, cx: 264, cy: 194 },
-    ];
-    const MAX = 8;
-    let raf: number;
-    const loop = () => {
-      const svg = svgRef.current;
-      if (svg) {
-        const rect = svg.getBoundingClientRect();
-        const mx = (mouseRef.current.x - rect.left) * (460 / rect.width);
-        const my = (mouseRef.current.y - rect.top)  * (700 / rect.height);
-        EYES.forEach(({ ref, cx, cy }) => {
-          const el = ref.current;
-          if (!el) return;
-          const dx = mx - cx, dy = my - cy;
-          const dist = Math.hypot(dx, dy);
-          const ox = dist > 0 ? (dx / dist) * Math.min(dist / 10, MAX) : 0;
-          const oy = dist > 0 ? (dy / dist) * Math.min(dist / 10, MAX) : 0;
-          el.setAttribute('cx', String(cx + ox));
-          el.setAttribute('cy', String(cy + oy));
-        });
-      }
-      raf = requestAnimationFrame(loop);
+    const el = containerRef.current;
+    if (!el) return;
+    fetch('/the-cow-svgrepo-com.svg')
+      .then(r => r.text())
+      .then(svgText => {
+        el.innerHTML = svgText;
+        const svg = el.querySelector('svg');
+        if (!svg) return;
+        svg.style.width  = '100%';
+        svg.style.height = '100%';
+        svg.style.overflow = 'visible';
+
+        const leftPupil  = svg.querySelector('#cow-pupil-left')  as SVGElement | null;
+        const rightPupil = svg.querySelector('#cow-pupil-right') as SVGElement | null;
+        const leftSocket  = svg.querySelector('#eye-socket-left')  as SVGElement | null;
+        const rightSocket = svg.querySelector('#eye-socket-right') as SVGElement | null;
+        if (!leftPupil || !rightPupil || !leftSocket || !rightSocket) return;
+
+        leftPupil.style.transition  = 'transform 0.05s ease-out';
+        rightPupil.style.transition = 'transform 0.05s ease-out';
+
+        const MAX = 7;
+
+        const onMove = () => {
+          const mx = mouseRef.current.x;
+          const my = mouseRef.current.y;
+
+          [
+            { pupil: leftPupil,  socket: leftSocket },
+            { pupil: rightPupil, socket: rightSocket },
+          ].forEach(({ pupil, socket }) => {
+            const r = socket.getBoundingClientRect();
+            const scx = r.left + r.width  / 2;
+            const scy = r.top  + r.height / 2;
+            const dx = mx - scx, dy = my - scy;
+            const dist = Math.hypot(dx, dy);
+            const ox = dist > 0 ? (dx / dist) * Math.min(dist / 12, MAX) : 0;
+            const oy = dist > 0 ? (dy / dist) * Math.min(dist / 12, MAX) : 0;
+            pupil.style.transform = `translate(${ox}px, ${oy}px)`;
+          });
+        };
+
+        document.addEventListener('mousemove', onMove);
+        /* store cleanup on the element so the outer effect can reach it */
+        (el as any).__cowCleanup = () => document.removeEventListener('mousemove', onMove);
+      })
+      .catch(() => { /* SVG unavailable — cow simply won't show */ });
+
+    return () => {
+      const cleanup = (el as any).__cowCleanup;
+      if (cleanup) cleanup();
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
   }, [mouseRef]);
 
-  const colStyle: React.CSSProperties = {
-    position: 'absolute', right: 0, width: '42%',
-    top: 0, bottom: 0, pointerEvents: 'none',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    overflow: 'visible',
-  };
-
-  /* Shared SVG dimensions — same viewBox on both layers so they align */
-  const VB = "0 0 460 700";
-
   return (
-    <>
-      {/* ── Layer 1: body + wings — BEHIND the form (z:4) ── */}
-      <div style={{ ...colStyle, zIndex: 4, filter: 'drop-shadow(0 32px 64px rgba(0,0,0,0.72))' }}>
-        <div style={{ animation: 'owlBob 3.5s ease-in-out infinite' }}>
-          <svg viewBox={VB} width={460} height={700} style={{ overflow: 'visible' }}>
-            <defs>
-              <radialGradient id="owlBodyGrad" cx="40%" cy="35%" r="65%">
-                <stop offset="0%" stopColor="#b45309"/>
-                <stop offset="100%" stopColor="#78350f"/>
-              </radialGradient>
-              <radialGradient id="owlBellyGrad" cx="50%" cy="25%" r="65%">
-                <stop offset="0%" stopColor="#fbbf24"/>
-                <stop offset="100%" stopColor="#d97706"/>
-              </radialGradient>
-            </defs>
-
-            {/* ── Left wing sweeping around left side of form ── */}
-            <path d="M 148 395 Q 30 410 16 520 Q 24 574 92 576 Q 122 568 134 540 L 155 425 Z" fill="#78350f"/>
-            <path d="M 148 395 Q 42 412 32 512 Q 40 560 92 556 Q 118 548 130 522 L 151 427 Z" fill="#92400e"/>
-
-            {/* ── Right wing sweeping around right side of form ── */}
-            <path d="M 312 395 Q 430 410 444 520 Q 436 574 368 576 Q 338 568 326 540 L 305 425 Z" fill="#78350f"/>
-            <path d="M 312 395 Q 418 412 428 512 Q 420 560 368 556 Q 342 548 330 522 L 309 427 Z" fill="#92400e"/>
-
-            {/* Wing feather details */}
-            <path d="M 36 488 Q 58 476 78 496" stroke="#6b2d0a" strokeWidth="2" fill="none" opacity="0.5"/>
-            <path d="M 28 512 Q 54 498 78 518" stroke="#6b2d0a" strokeWidth="2" fill="none" opacity="0.4"/>
-            <path d="M 424 488 Q 402 476 382 496" stroke="#6b2d0a" strokeWidth="2" fill="none" opacity="0.5"/>
-            <path d="M 432 512 Q 406 498 382 518" stroke="#6b2d0a" strokeWidth="2" fill="none" opacity="0.4"/>
-
-            {/* ── Body (center, behind form card) ── */}
-            <ellipse cx="230" cy="470" rx="95" ry="110" fill="url(#owlBodyGrad)"/>
-            {/* Belly */}
-            <ellipse cx="230" cy="490" rx="58" ry="78" fill="url(#owlBellyGrad)" opacity="0.84"/>
-            {/* Feather arcs on belly */}
-            <path d="M 203 454 Q 230 465 257 454" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.55"/>
-            <path d="M 198 471 Q 230 483 262 471" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.5"/>
-            <path d="M 198 488 Q 230 500 262 488" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.45"/>
-            <path d="M 200 505 Q 230 515 260 505" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.38"/>
-            <path d="M 204 521 Q 230 530 256 521" stroke="#b45309" strokeWidth="1.5" fill="none" opacity="0.3"/>
-
-            {/* Neck stub connecting body to head */}
-            <ellipse cx="230" cy="330" rx="54" ry="58" fill="url(#owlBodyGrad)"/>
-
-            {/* ── Talons ── */}
-            <g stroke="#b45309" strokeWidth="3.5" strokeLinecap="round" fill="none">
-              <path d="M 178 574 L 158 606 M 168 600 L 150 618 M 168 600 L 163 622 M 178 574 L 174 618 M 178 574 L 194 614"/>
-            </g>
-            <g stroke="#b45309" strokeWidth="3.5" strokeLinecap="round" fill="none">
-              <path d="M 282 574 L 302 606 M 292 600 L 310 618 M 292 600 L 297 622 M 282 574 L 286 618 M 282 574 L 266 614"/>
-            </g>
-          </svg>
-        </div>
-      </div>
-
-      {/* ── Layer 2: head only — ABOVE the form (z:8) ── */}
-      <div style={{ ...colStyle, zIndex: 8 }}>
-        <div style={{ animation: 'owlBob 3.5s ease-in-out infinite' }}>
-          <svg ref={svgRef} viewBox={VB} width={460} height={700} style={{ overflow: 'visible' }}>
-            <defs>
-              <radialGradient id="owlHeadGrad" cx="40%" cy="35%" r="65%">
-                <stop offset="0%" stopColor="#b45309"/>
-                <stop offset="100%" stopColor="#78350f"/>
-              </radialGradient>
-            </defs>
-
-            {/* ── Head ── */}
-            <circle cx="230" cy="198" r="90" fill="url(#owlHeadGrad)"/>
-
-            {/* Ear tufts */}
-            <path d="M 182 150 Q 166 106 184 86 Q 202 108 198 152 Z" fill="#78350f"/>
-            <path d="M 278 150 Q 294 106 276 86 Q 258 108 262 152 Z" fill="#78350f"/>
-            <path d="M 184 148 Q 172 112 185 98 Q 197 118 193 148 Z" fill="#92400e" opacity="0.5"/>
-            <path d="M 276 148 Q 288 112 275 98 Q 263 118 267 148 Z" fill="#92400e" opacity="0.5"/>
-
-            {/* Face disc */}
-            <ellipse cx="230" cy="204" rx="62" ry="58" fill="#b45309" opacity="0.3"/>
-
-            {/* ── Left eye ── */}
-            <circle cx="196" cy="194" r="31" fill="#111827"/>
-            <circle cx="196" cy="194" r="27" fill="#fefce8"/>
-            <circle cx="196" cy="194" r="19" fill="#F59E0B"/>
-            <circle ref={leftPupilRef} cx="196" cy="194" r="12" fill="#0a0f1e"/>
-            <circle cx="191" cy="188" r="4.5" fill="white" opacity="0.88"/>
-
-            {/* ── Right eye ── */}
-            <circle cx="264" cy="194" r="31" fill="#111827"/>
-            <circle cx="264" cy="194" r="27" fill="#fefce8"/>
-            <circle cx="264" cy="194" r="19" fill="#F59E0B"/>
-            <circle ref={rightPupilRef} cx="264" cy="194" r="12" fill="#0a0f1e"/>
-            <circle cx="259" cy="188" r="4.5" fill="white" opacity="0.88"/>
-
-            {/* Beak */}
-            <path d="M 220 222 L 230 248 L 240 222 Z" fill="#d97706"/>
-            <path d="M 220 222 L 230 235 L 240 222 Z" fill="#92400e" opacity="0.5"/>
-
-            {/* Forehead feathers */}
-            <path d="M 186 160 Q 230 150 274 160" stroke="#92400e" strokeWidth="1.5" fill="none" opacity="0.35"/>
-            <path d="M 182 176 Q 230 164 278 176" stroke="#92400e" strokeWidth="1.5" fill="none" opacity="0.3"/>
-          </svg>
-        </div>
-      </div>
-    </>
+    /* Hero area: left 58% of the screen */
+    <div style={{
+      position: 'absolute', left: 0, top: 0, bottom: 0, width: '58%',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      pointerEvents: 'none', zIndex: 6,
+    }}>
+      {/* Ambient glow behind the cow */}
+      <div style={{
+        position: 'absolute',
+        width: 540, height: 540,
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.04) 45%, transparent 70%)',
+        filter: 'blur(32px)',
+        pointerEvents: 'none',
+      }} />
+      <div
+        ref={containerRef}
+        id="cow-hero"
+        style={{
+          width: 460, height: 520,
+          filter: 'drop-shadow(0 24px 56px rgba(0,0,0,0.7)) drop-shadow(0 0 40px rgba(245,158,11,0.08))',
+          animation: 'cowFloat 4s ease-in-out infinite',
+        }}
+      />
+    </div>
   );
 }
 
@@ -697,8 +633,8 @@ export default function Login() {
         }} />
       ))}
 
-      {/* ── Owl mascot beside form ── */}
-      <OwlMascot mouseRef={mouseRef} />
+      {/* ── Cow mascot in hero area ── */}
+      <CowMascot mouseRef={mouseRef} />
 
       {/* ── Left: brand & demo pills ── */}
       <div style={{ position:'absolute', left:'5%', top:'8%', zIndex:6, maxWidth:340 }}>
@@ -886,14 +822,10 @@ export default function Login() {
           to   { transform: translateY(110vh) rotate(540deg); opacity: 0; }
         }
 
-        /* ── Owl ── */
-        @keyframes owlBob {
+        /* ── Cow mascot ── */
+        @keyframes cowFloat {
           0%,100% { transform: translateY(0); }
           50%     { transform: translateY(-14px); }
-        }
-        @keyframes cursorBlink {
-          0%,100% { opacity: 0.9; }
-          50%     { opacity: 0; }
         }
 
         /* ── 9. Click ripple ── */

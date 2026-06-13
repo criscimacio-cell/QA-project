@@ -195,28 +195,31 @@ export default function Login() {
           bottom of cloud → UP the bumpy left edge → back to start.
           Baseline x≈810. Bumps protrude to x≈630.
         */}
-        {/* Cloud blob — 3 bumps in upper left edge, smooth bottom */}
+        {/* Cloud blob — 3 bumps on left edge, sealed bottom-right corner.
+            FIX 1: path closes to (1440,900) before Z so no dark gap. */}
         <path d="
           M 820,0
           L 1440,0
           L 1440,900
-          L 820,900
-          Q 580,820 780,700
-          Q 560,560 780,440
-          Q 560,300 780,160
-          Q 790,60 820,0
+          L 1440,900
+          L 900,900
+          Q 650,870 780,760
+          Q 560,640 780,520
+          Q 560,390 780,260
+          Q 790,100 820,0
           Z
         " fill="white"/>
 
-        {/* Smoke trail — diagonal from rocket exhaust to cloud.
-            Near-solid opacity needed on black bg to read as white smoke. */}
-        <circle cx="328" cy="476" r="9"  fill="white" opacity="0.55"/>
-        <circle cx="364" cy="466" r="14" fill="white" opacity="0.65"/>
-        <circle cx="408" cy="457" r="20" fill="white" opacity="0.72"/>
-        <circle cx="458" cy="450" r="27" fill="white" opacity="0.80"/>
-        <circle cx="514" cy="445" r="35" fill="white" opacity="0.86"/>
-        <circle cx="577" cy="441" r="44" fill="white" opacity="0.91"/>
-        <circle cx="648" cy="439" r="54" fill="white" opacity="0.94"/>
+        {/* FIX 3: Smoke trail — diagonal upper-right toward cloud.
+            Rocket exhaust is lower-left of rocket (~220,510).
+            Trail grows as it approaches the cloud edge (~630,430). */}
+        <circle cx="248" cy="506" r="9"  fill="white" opacity="0.55"/>
+        <circle cx="290" cy="492" r="14" fill="white" opacity="0.63"/>
+        <circle cx="338" cy="477" r="20" fill="white" opacity="0.70"/>
+        <circle cx="392" cy="463" r="27" fill="white" opacity="0.78"/>
+        <circle cx="452" cy="450" r="35" fill="white" opacity="0.84"/>
+        <circle cx="518" cy="439" r="44" fill="white" opacity="0.90"/>
+        <circle cx="592" cy="430" r="54" fill="white" opacity="0.94"/>
       </svg>
 
       {/* ══════════════════════════════════════════════════════════
@@ -224,7 +227,7 @@ export default function Login() {
       ══════════════════════════════════════════════════════════ */}
       <div style={{
         position: 'absolute',
-        left: '14%', top: '34%',
+        left: '14%', top: '42%',
         zIndex: 3, pointerEvents: 'none',
         animation: 'rocketFloat 4s ease-in-out infinite',
         transformOrigin: 'center center',
@@ -310,11 +313,13 @@ export default function Login() {
       {/* ══════════════════════════════════════════════════════════
           LOGIN FORM — floats on the white cloud area, right side
       ══════════════════════════════════════════════════════════ */}
+      {/* FIX 4: form vertically centered — alignItems:center already set,
+          removed top padding bias so it sits true center */}
       <div style={{
         position: 'absolute', right: 0, top: 0, bottom: 0,
         width: '42%', zIndex: 5,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '40px 48px',
+        padding: '0 48px',
       }}>
         <div style={{ width: '100%', maxWidth: 340 }}>
 

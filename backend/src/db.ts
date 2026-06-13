@@ -139,7 +139,21 @@ export function initDb() {
       .forEach(name => insertCat.run(name, 'knowledge'));
   }
 
-  // Seed KB articles independently so they're inserted even on existing databases
+  const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@qa.com');
+  if (!existingUser) {
+    const hash = (pw: string) => bcrypt.hashSync(pw, 10);
+    const insertUser = db.prepare(`
+      INSERT INTO users (name, email, password_hash, role, department, avatar) VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    insertUser.run('QA Administrator', 'admin@qa.com',    hash('password123'), 'admin',    'QA Department', 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin');
+    insertUser.run('QA Lead',          'lead@qa.com',     hash('password123'), 'lead',     'QA Department', 'https://api.dicebear.com/7.x/avataaars/svg?seed=lead');
+    insertUser.run('QA Engineer 1',    'engineer1@qa.com',hash('password123'), 'engineer', 'QA Department', 'https://api.dicebear.com/7.x/avataaars/svg?seed=eng1');
+    insertUser.run('QA Engineer 2',    'engineer2@qa.com',hash('password123'), 'engineer', 'QA Department', 'https://api.dicebear.com/7.x/avataaars/svg?seed=eng2');
+    insertUser.run('Stakeholder',      'viewer@qa.com',   hash('password123'), 'viewer',   'Business',      'https://api.dicebear.com/7.x/avataaars/svg?seed=viewer');
+    console.log('Default accounts created.');
+  }
+
+  // Seed KB articles — runs independently so existing databases get articles too
   const existingKb = db.prepare('SELECT COUNT(*) as c FROM knowledge_articles WHERE category != "General"').get() as any;
   if (existingKb.c === 0) {
     const insertKb = db.prepare(`
@@ -228,21 +242,7 @@ export function initDb() {
     console.log('Knowledge base articles seeded.');
   }
 
-  const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@qa.com');
-  if (existingUser) return;
-
-  const hash = (pw: string) => bcrypt.hashSync(pw, 10);
-  const insertUser = db.prepare(`
-    INSERT INTO users (name, email, password_hash, role, department, avatar) VALUES (?, ?, ?, ?, ?, ?)
-  `);
-
-  insertUser.run('QA Administrator', 'admin@qa.com',    hash('password123'), 'admin',    'QA Department', 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin');
-  insertUser.run('QA Lead',          'lead@qa.com',     hash('password123'), 'lead',     'QA Department', 'https://api.dicebear.com/7.x/avataaars/svg?seed=lead');
-  insertUser.run('QA Engineer 1',    'engineer1@qa.com',hash('password123'), 'engineer', 'QA Department', 'https://api.dicebear.com/7.x/avataaars/svg?seed=eng1');
-  insertUser.run('QA Engineer 2',    'engineer2@qa.com',hash('password123'), 'engineer', 'QA Department', 'https://api.dicebear.com/7.x/avataaars/svg?seed=eng2');
-  insertUser.run('Stakeholder',      'viewer@qa.com',   hash('password123'), 'viewer',   'Business',      'https://api.dicebear.com/7.x/avataaars/svg?seed=viewer');
-
-  console.log('Database initialized with default accounts and knowledge base articles.');
+  console.log('Database initialization complete.');
 }
 
 export default db;

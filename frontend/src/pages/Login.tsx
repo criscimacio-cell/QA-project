@@ -11,166 +11,7 @@ const DEMO_USERS = [
   { email: 'viewer@qa.com',    role: 'Viewer',   color: '#64748b' },
 ];
 
-/* ─── Dashboard Mockup SVG ─────────────────────────────────────── */
-function DashboardMockup() {
-  return (
-    <svg viewBox="0 0 440 520" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', maxWidth: 440 }}>
-      {/* Card shadow */}
-      <rect x="18" y="22" width="404" height="476" rx="22" fill="rgba(245,158,11,0.10)" />
-      {/* Card body */}
-      <rect x="10" y="14" width="404" height="476" rx="20" fill="white" />
-      <rect x="10" y="14" width="404" height="476" rx="20" stroke="rgba(245,158,11,0.15)" strokeWidth="1.5" />
-
-      {/* Top bar */}
-      <rect x="10" y="14" width="404" height="50" rx="20" fill="#f8fffe" />
-      <rect x="10" y="44" width="404" height="20" fill="#f8fffe" />
-      <circle cx="42" cy="39" r="10" fill="rgba(245,158,11,0.12)" />
-      <circle cx="42" cy="39" r="5" fill="#F59E0B" opacity="0.7" />
-      <rect x="62" y="33" width="80" height="8" rx="4" fill="#0f172a" opacity="0.7" />
-      <rect x="62" y="45" width="50" height="5" rx="2.5" fill="#94a3b8" opacity="0.5" />
-      <rect x="330" y="29" width="64" height="22" rx="11" fill="rgba(245,158,11,0.1)" />
-      <rect x="340" y="35" width="44" height="9" rx="4.5" fill="#F59E0B" opacity="0.6" />
-
-      {/* Divider */}
-      <line x1="10" y1="64" x2="414" y2="64" stroke="#e2e8f0" strokeWidth="1" />
-
-      {/* ─ Pie chart section ─ */}
-      <text x="30" y="92" fontFamily="DM Sans,sans-serif" fontSize="11" fill="#64748b" fontWeight="600" letterSpacing="0.05em">TEST COVERAGE</text>
-      {/* Pie chart */}
-      <circle cx="100" cy="145" r="38" fill="#f0fdfc" />
-      {/* Segments */}
-      <path d="M100,145 L100,107 A38,38 0 0,1 133,164 Z" fill="#F59E0B" opacity="0.9"/>
-      <path d="M100,145 L133,164 A38,38 0 0,1 85,181 Z" fill="#FBBF24" opacity="0.8"/>
-      <path d="M100,145 L85,181 A38,38 0 0,1 68,120 Z" fill="#FCD34D" opacity="0.7"/>
-      <path d="M100,145 L68,120 A38,38 0 0,1 100,107 Z" fill="#e2e8f0" opacity="0.9"/>
-      {/* Donut draw animation overlay */}
-      <circle cx="100" cy="145" r="28" fill="none" stroke="#F59E0B" strokeWidth="6" strokeLinecap="round"
-        strokeDasharray="0 176" opacity="0.4"
-        style={{ transformOrigin: '100px 145px', transform: 'rotate(-90deg)', animation: 'donutDraw 1.8s ease-out 0.3s forwards' }}/>
-      <circle cx="100" cy="145" r="18" fill="white" />
-      <text x="100" y="149" textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="10" fontWeight="700" fill="#F59E0B">72%</text>
-      {/* Legend */}
-      <circle cx="155" cy="120" r="5" fill="#F59E0B" opacity="0.9"/>
-      <text x="165" y="124" fontFamily="DM Sans,sans-serif" fontSize="10" fill="#475569">Passed</text>
-      <circle cx="155" cy="137" r="5" fill="#FBBF24" opacity="0.8"/>
-      <text x="165" y="141" fontFamily="DM Sans,sans-serif" fontSize="10" fill="#475569">Failed</text>
-      <circle cx="155" cy="154" r="5" fill="#FCD34D" opacity="0.7"/>
-      <text x="165" y="158" fontFamily="DM Sans,sans-serif" fontSize="10" fill="#475569">Skipped</text>
-      <circle cx="155" cy="171" r="5" fill="#e2e8f0"/>
-      <text x="165" y="175" fontFamily="DM Sans,sans-serif" fontSize="10" fill="#475569">Pending</text>
-
-      {/* ─ Bar chart section ─ */}
-      <line x1="24" y1="200" x2="390" y2="200" stroke="#f1f5f9" strokeWidth="1.5"/>
-      <text x="30" y="222" fontFamily="DM Sans,sans-serif" fontSize="11" fill="#64748b" fontWeight="600" letterSpacing="0.05em">WEEKLY UPLOADS</text>
-
-      {/* Bars */}
-      {[
-        { x: 40,  h: 44, label: 'Mon', pct: '44', delay: '0s' },
-        { x: 95,  h: 62, label: 'Tue', pct: '62', delay: '0.1s' },
-        { x: 150, h: 38, label: 'Wed', pct: '38', delay: '0.2s' },
-        { x: 205, h: 78, label: 'Thu', pct: '78', delay: '0.3s' },
-        { x: 260, h: 55, label: 'Fri', pct: '55', delay: '0.4s' },
-        { x: 315, h: 30, label: 'Sat', pct: '30', delay: '0.5s' },
-      ].map(b => (
-        <g key={b.label}>
-          <rect x={b.x} y={310 - b.h} width="36" height={b.h} rx="6" fill="url(#barGrad)" opacity="0.85"
-            style={{ transformOrigin: `${b.x + 18}px 310px`, animation: `barGrow 1.2s ease-out ${b.delay} both` }}/>
-          <text x={b.x + 18} y="325" textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="9" fill="#94a3b8">{b.label}</text>
-        </g>
-      ))}
-      <defs>
-        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#F59E0B"/>
-          <stop offset="100%" stopColor="#FCD34D" stopOpacity="0.5"/>
-        </linearGradient>
-      </defs>
-
-      {/* ─ List rows ─ */}
-      <line x1="24" y1="340" x2="390" y2="340" stroke="#f1f5f9" strokeWidth="1.5"/>
-      <text x="30" y="362" fontFamily="DM Sans,sans-serif" fontSize="11" fill="#64748b" fontWeight="600" letterSpacing="0.05em">RECENT FILES</text>
-
-      {[
-        { label: 'test-plan-v3.pdf',      status: 'Approved', sc: '#F59E0B', sb: 'rgba(245,158,11,0.1)',  y: 386, delay: '0.8s' },
-        { label: 'regression-suite.xlsx', status: 'Review',   sc: '#f59e0b', sb: 'rgba(245,158,11,0.1)', y: 414, delay: '1.1s' },
-        { label: 'api-test-cases.json',   status: 'Draft',    sc: '#94a3b8', sb: 'rgba(148,163,184,0.1)',y: 442, delay: '1.4s' },
-        { label: 'load-test-results.csv', status: 'Approved', sc: '#F59E0B', sb: 'rgba(245,158,11,0.1)',  y: 470, delay: '1.7s' },
-      ].map(row => (
-        <g key={row.y} style={{ animation: `rowSlideIn 0.5s ease-out ${row.delay} both` }}>
-          <rect x="24" y={row.y - 14} width="366" height="24" rx="6" fill={row.sb} />
-          <circle cx="40" cy={row.y} r="7" fill="rgba(245,158,11,0.12)"/>
-          <rect x="50" y={row.y - 4} width="3" height="8" rx="1.5" fill="#F59E0B" opacity="0.6"/>
-          <rect x="56" y={row.y - 5} width="3" height="10" rx="1.5" fill="#FBBF24" opacity="0.5"/>
-          <text x="70" y={row.y + 4} fontFamily="DM Sans,sans-serif" fontSize="10" fill="#334155">{row.label}</text>
-          <rect x="320" y={row.y - 9} width="58" height="16" rx="8" fill={row.sb} />
-          <text x="349" y={row.y + 4} textAnchor="middle" fontFamily="DM Sans,sans-serif" fontSize="9" fontWeight="600" fill={row.sc}>{row.status}</text>
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-/* ─── Figure: person holding chart ────────────────────────────── */
-function FigureLeft() {
-  return (
-    <svg viewBox="0 0 120 200" fill="none" style={{ width: 90, flexShrink: 0 }}>
-      {/* head */}
-      <circle cx="60" cy="32" r="20" fill="#b2f0ec"/>
-      <circle cx="60" cy="32" r="20" stroke="#F59E0B" strokeWidth="1.5" strokeDasharray="4 3"/>
-      {/* eyes */}
-      <circle cx="53" cy="30" r="3" fill="#0f172a"/>
-      <circle cx="67" cy="30" r="3" fill="#0f172a"/>
-      <path d="M54,40 Q60,46 66,40" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-      {/* body */}
-      <rect x="38" y="55" width="44" height="58" rx="12" fill="#F59E0B" opacity="0.85"/>
-      {/* collar detail */}
-      <path d="M60,55 L52,70 L60,66 L68,70 Z" fill="white" opacity="0.3"/>
-      {/* left arm holding chart */}
-      <path d="M38,70 Q18,75 14,90" stroke="#F59E0B" strokeWidth="10" strokeLinecap="round" fill="none" opacity="0.8"/>
-      {/* right arm */}
-      <path d="M82,70 Q100,78 104,90" stroke="#F59E0B" strokeWidth="10" strokeLinecap="round" fill="none" opacity="0.8"/>
-      {/* chart in left hand */}
-      <rect x="2" y="84" width="34" height="26" rx="5" fill="white" stroke="rgba(245,158,11,0.3)" strokeWidth="1"/>
-      <rect x="7"  y="98" width="5" height="8"  rx="1.5" fill="#FCD34D"/>
-      <rect x="14" y="93" width="5" height="13" rx="1.5" fill="#F59E0B"/>
-      <rect x="21" y="96" width="5" height="10" rx="1.5" fill="#FBBF24"/>
-      <rect x="28" y="90" width="5" height="16" rx="1.5" fill="#D97706"/>
-      {/* legs */}
-      <rect x="44" y="110" width="16" height="52" rx="8" fill="#0f172a" opacity="0.7"/>
-      <rect x="64" y="110" width="16" height="52" rx="8" fill="#0f172a" opacity="0.7"/>
-      {/* shoes */}
-      <ellipse cx="52" cy="164" rx="12" ry="6" fill="#334155"/>
-      <ellipse cx="72" cy="164" rx="12" ry="6" fill="#334155"/>
-    </svg>
-  );
-}
-
-/* ─── Figure: person standing ──────────────────────────────────── */
-function FigureRight() {
-  return (
-    <svg viewBox="0 0 120 200" fill="none" style={{ width: 80, flexShrink: 0 }}>
-      {/* head */}
-      <circle cx="60" cy="30" r="18" fill="#a5f3eb"/>
-      <circle cx="53" cy="28" r="2.5" fill="#0f172a"/>
-      <circle cx="67" cy="28" r="2.5" fill="#0f172a"/>
-      <path d="M54,38 Q60,44 66,38" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-      {/* body */}
-      <rect x="40" y="52" width="40" height="56" rx="12" fill="#FBBF24" opacity="0.85"/>
-      <path d="M60,52 L53,66 L60,62 L67,66 Z" fill="white" opacity="0.25"/>
-      {/* arms */}
-      <path d="M40,68 Q22,80 20,96" stroke="#FBBF24" strokeWidth="9" strokeLinecap="round" fill="none" opacity="0.8"/>
-      <path d="M80,68 Q98,76 100,88" stroke="#FBBF24" strokeWidth="9" strokeLinecap="round" fill="none" opacity="0.8"/>
-      {/* pointing hand */}
-      <circle cx="100" cy="91" r="7" fill="#b2f0ec"/>
-      {/* legs */}
-      <rect x="46" y="105" width="14" height="50" rx="7" fill="#0f172a" opacity="0.65"/>
-      <rect x="64" y="105" width="14" height="50" rx="7" fill="#0f172a" opacity="0.65"/>
-      <ellipse cx="53" cy="157" rx="10" ry="5.5" fill="#334155"/>
-      <ellipse cx="71" cy="157" rx="10" ry="5.5" fill="#334155"/>
-    </svg>
-  );
-}
-
-/* ─── Post-login morph overlay ─────────────────────────────────── */
+/* ─── Post-login morph overlay ─────────────────────────────────────── */
 function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPulse: boolean; fadingOut: boolean }) {
   return (
     <div style={{
@@ -300,7 +141,7 @@ export default function Login() {
     return () => clearInterval(id);
   }, []);
 
-  // Floating particles
+  // Floating particles in left panel
   useEffect(() => {
     const container = particlesRef.current;
     if (!container) return;
@@ -355,328 +196,353 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif", background: '#FAFAFA' }}>
-
+    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'DM Sans',sans-serif", overflow: 'hidden', position: 'relative' }}>
 
       {/* ── Post-login morph overlay ── */}
       {(phase === 'morph') && (
         <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />
       )}
 
-      {/* ── Background blobs ── */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }} xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <style>{`
-            @keyframes morphBlob1 {
-              0%,100% { d: path("M420,80 C520,20 640,100 620,240 C600,380 480,440 360,400 C240,360 160,240 200,140 C240,40 320,140 420,80Z"); }
-              50%     { d: path("M460,60 C560,0 660,120 640,260 C620,400 500,460 380,420 C260,380 140,260 180,160 C220,60 360,120 460,60Z"); }
-            }
-            @keyframes morphBlob2 {
-              0%,100% { d: path("M0,300 C40,180 140,100 260,160 C380,220 420,360 360,460 C300,560 140,580 60,500 C-20,420 -40,420 0,300Z"); }
-              50%     { d: path("M20,320 C60,200 160,80 280,140 C400,200 440,380 380,480 C320,580 160,580 80,500 C0,420 -20,440 20,320Z"); }
-            }
-            @keyframes morphBlob3 {
-              0%,100% { d: path("M900,400 C980,300 1020,180 960,100 C900,20 780,60 720,160 C660,260 700,400 780,440 C860,480 820,500 900,400Z"); }
-              50%     { d: path("M920,380 C1000,280 1040,160 980,80 C920,0 800,40 740,140 C680,240 720,380 800,420 C880,460 840,480 920,380Z"); }
-            }
-            @keyframes floatCard {
-              0%,100% { transform: translateY(0px) rotate(-1deg); }
-              50%     { transform: translateY(-14px) rotate(1deg); }
-            }
-            @keyframes fadeInField {
-              from { opacity:0; transform: translateY(16px); }
-              to   { opacity:1; transform: translateY(0); }
-            }
-          `}</style>
-        </defs>
-        <path style={{ animation: 'morphBlob1 12s ease-in-out infinite' }} fill="rgba(245,158,11,0.10)" />
-        <path style={{ animation: 'morphBlob2 15s ease-in-out infinite' }} fill="rgba(252,211,77,0.08)" />
-        <path style={{ animation: 'morphBlob3 18s ease-in-out infinite' }} fill="rgba(245,158,11,0.05)" />
-      </svg>
-
-      {/* Decorative orbs */}
-      <div className="absolute pointer-events-none" style={{ width: 200, height: 200, borderRadius: '50%', top: -60, right: '38%', background: 'radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ width: 160, height: 160, borderRadius: '50%', bottom: 60, left: '36%', background: 'radial-gradient(circle, rgba(252,211,77,0.18) 0%, transparent 70%)', filter: 'blur(36px)', zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ width: 120, height: 120, borderRadius: '50%', top: '40%', right: 80, background: 'radial-gradient(circle, rgba(252,211,77,0.2) 0%, transparent 70%)', filter: 'blur(28px)', zIndex: 0 }} />
-
-      {/* Theme toggle */}
-      <button
-        onClick={toggle}
-        className="fixed top-5 right-5 z-50 w-9 h-9 flex items-center justify-center rounded-xl transition-all hover:scale-105"
-        style={{ background: 'white', border: '1px solid rgba(245,158,11,0.2)', color: '#F59E0B', boxShadow: '0 2px 8px rgba(245,158,11,0.12)' }}
-        title={dark ? 'Light mode' : 'Dark mode'}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          {dark
-            ? <><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></>
-            : <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          }
-        </svg>
-      </button>
-
-      {/* ── Morphing blob divs ── */}
-      <div className="absolute pointer-events-none" style={{ width: 280, height: 280, top: '10%', left: '-8%', borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', background: 'rgba(245,158,11,0.08)', animation: 'blobMorph1 7s ease-in-out infinite', zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ width: 220, height: 220, bottom: '12%', left: '18%', borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%', background: 'rgba(245,158,11,0.07)', animation: 'blobMorph2 8s ease-in-out infinite', zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ width: 200, height: 200, top: '55%', right: '5%', borderRadius: '50% 50% 30% 70% / 50% 70% 30% 50%', background: 'rgba(245,158,11,0.06)', animation: 'blobMorph3 10s ease-in-out infinite', zIndex: 0 }} />
-
       {/* ════════════════════════════════════
-          LEFT — Login form
+          LEFT PANEL — Dark obsidian with rocket
       ════════════════════════════════════ */}
-      <div className="relative z-10 flex flex-col items-center justify-center w-full md:w-[48%] px-8 py-12"
-        style={phase === 'slideOut' ? { opacity: 0, transform: 'translateX(-55px) scale(0.96)', transition: 'opacity 0.5s ease, transform 0.5s ease', pointerEvents: 'none' } : undefined}>
+      <div style={{
+        width: '55%', background: '#09090B', position: 'relative', overflow: 'hidden',
+        display: 'flex', flexDirection: 'column', padding: '40px 48px',
+        ...(phase === 'slideOut' ? { opacity: 0, transform: 'translateX(-55px) scale(0.96)', transition: 'opacity 0.5s ease, transform 0.5s ease', pointerEvents: 'none' } : {}),
+      }}>
 
-      <div style={{ width: '100%', maxWidth: 420 }}>
+        {/* Floating decorative circles */}
+        <div style={{ position: 'absolute', width: 80, height: 80, borderRadius: '50%', top: '8%', left: '10%', background: 'white', opacity: 0.08, animation: 'floatBubble 6s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', width: 48, height: 48, borderRadius: '50%', top: '20%', right: '18%', background: 'white', opacity: 0.10, animation: 'floatBubble 8s ease-in-out 1s infinite' }} />
+        <div style={{ position: 'absolute', width: 28, height: 28, borderRadius: '50%', top: '35%', left: '6%', background: 'white', opacity: 0.12, animation: 'floatBubble 5s ease-in-out 2s infinite' }} />
+        <div style={{ position: 'absolute', width: 60, height: 60, borderRadius: '50%', bottom: '28%', left: '14%', background: 'white', opacity: 0.07, animation: 'floatBubble 7s ease-in-out 0.5s infinite' }} />
+        <div style={{ position: 'absolute', width: 20, height: 20, borderRadius: '50%', top: '60%', right: '10%', background: 'white', opacity: 0.13, animation: 'floatBubble 4.5s ease-in-out 1.5s infinite' }} />
+        <div style={{ position: 'absolute', width: 36, height: 36, borderRadius: '50%', bottom: '15%', right: '22%', background: 'white', opacity: 0.09, animation: 'floatBubble 9s ease-in-out 3s infinite' }} />
+        <div style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', top: '75%', left: '35%', background: 'white', opacity: 0.11, animation: 'floatBubble 5.5s ease-in-out 2.5s infinite' }} />
+        <div style={{ position: 'absolute', width: 52, height: 52, borderRadius: '50%', top: '45%', right: '5%', background: 'white', opacity: 0.06, animation: 'floatBubble 10s ease-in-out 4s infinite' }} />
 
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 mb-10" style={{ animation: 'fadeInField 0.5s ease both' }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', boxShadow: '0 4px 14px rgba(245,158,11,0.35)' }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+        {/* Particles ref */}
+        <div ref={particlesRef} style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }} />
+
+        {/* Logo top-left */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, zIndex: 2, position: 'relative' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(245,158,11,0.4)' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
             </svg>
           </div>
-          <span className="font-extrabold text-lg tracking-wide" style={{ color: '#0f172a', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Qlarity</span>
+          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 18, color: 'white', letterSpacing: '0.04em' }}>Qlarity</span>
         </div>
 
-        {/* Heading */}
-        <div style={{ animation: 'fadeInField 0.55s ease 0.05s both' }}>
-          <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 36, fontWeight: 800, color: '#0f172a', lineHeight: 1.15, marginBottom: 8 }}>
-            Welcome back 👋
+        {/* Heading + subtitle */}
+        <div style={{ marginTop: 48, zIndex: 2, position: 'relative' }}>
+          <h1 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 36, fontWeight: 800, color: 'white', lineHeight: 1.2, marginBottom: 10 }}>
+            QA Asset Platform
           </h1>
-          <p style={{ color: '#64748b', fontSize: 15, marginBottom: 32 }}>
-            Sign in to your QA workspace
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', fontWeight: 400 }}>
+            Clarity in every QA decision.
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Rocket + smoke SVG illustration */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 2 }}>
+          <svg viewBox="0 0 380 280" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style={{ width: '100%', maxWidth: 380, filter: 'drop-shadow(0 8px 32px rgba(245,158,11,0.18))' }}>
 
-          {/* Email */}
-          <div style={{ animation: 'fadeInField 0.6s ease 0.1s both' }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-              Email address
-            </label>
-            <div style={{ position: 'relative' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-              </svg>
-              <input
-                ref={emailInputRef}
-                type="email"
-                value={email}
-                onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(p => ({ ...p, email: '' })); }}
-                placeholder="you@company.com"
-                style={{ width: '100%', paddingLeft: 42, paddingRight: 16, height: 46, borderRadius: 12, border: `1.5px solid ${errors.email ? '#f87171' : '#e2e8f0'}`, background: 'white', fontSize: 14, color: '#0f172a', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box' }}
-                onFocus={e => { e.target.style.borderColor = errors.email ? '#f87171' : '#F59E0B'; e.target.style.boxShadow = `0 0 0 3px ${errors.email ? 'rgba(248,113,113,0.18)' : 'rgba(245,158,11,0.12)'}`; }}
-                onBlur={e => { e.target.style.borderColor = errors.email ? '#f87171' : '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
-              />
-            </div>
-            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
-          </div>
+            {/* Smoke trail / cloud puffs — growing rightward */}
+            {/* Leftmost smallest puff */}
+            <circle cx="155" cy="168" r="18" fill="white" opacity="0.12"/>
+            <circle cx="178" cy="172" r="24" fill="white" opacity="0.14"/>
+            <circle cx="206" cy="174" r="30" fill="white" opacity="0.16"/>
+            <circle cx="240" cy="176" r="36" fill="white" opacity="0.18"/>
+            <circle cx="278" cy="178" r="42" fill="white" opacity="0.20"/>
+            <circle cx="320" cy="180" r="48" fill="white" opacity="0.22"/>
+            <circle cx="365" cy="182" r="54" fill="white" opacity="0.24"/>
 
-          {/* Password */}
-          <div style={{ animation: 'fadeInField 0.6s ease 0.18s both' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Password</label>
-              <Link to="/forgot-password" style={{ fontSize: 13, color: '#F59E0B', fontWeight: 500, textDecoration: 'none' }}>
-                Forgot password?
-              </Link>
-            </div>
-            <div style={{ position: 'relative' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              <input
-                type={showPw ? 'text' : 'password'}
-                value={password}
-                onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(p => ({ ...p, password: '' })); }}
-                placeholder="••••••••"
-                style={{ width: '100%', paddingLeft: 42, paddingRight: 44, height: 46, borderRadius: 12, border: `1.5px solid ${errors.password ? '#f87171' : '#e2e8f0'}`, background: 'white', fontSize: 14, color: '#0f172a', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box' }}
-                onFocus={e => { e.target.style.borderColor = errors.password ? '#f87171' : '#F59E0B'; e.target.style.boxShadow = `0 0 0 3px ${errors.password ? 'rgba(248,113,113,0.18)' : 'rgba(245,158,11,0.12)'}`; }}
-                onBlur={e => { e.target.style.borderColor = errors.password ? '#f87171' : '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
-              />
-              <button type="button" tabIndex={-1} onClick={() => setShowPw(s => !s)}
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 4 }}>
-                {showPw ? <EyeOff size={16}/> : <Eye size={16}/>}
-              </button>
-            </div>
-            {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
-            {error && (
-              <div className="flex items-center gap-2.5 rounded-xl mt-3 text-sm" style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                {error}
-              </div>
-            )}
-          </div>
+            {/* Secondary layer of smoke for volume */}
+            <circle cx="190" cy="185" r="20" fill="rgba(200,200,200,0.10)"/>
+            <circle cx="225" cy="190" r="28" fill="rgba(200,200,200,0.10)"/>
+            <circle cx="265" cy="192" r="34" fill="rgba(200,200,200,0.10)"/>
+            <circle cx="310" cy="194" r="40" fill="rgba(200,200,200,0.10)"/>
+            <circle cx="360" cy="196" r="46" fill="rgba(200,200,200,0.10)"/>
 
-          {/* Submit */}
-          <div style={{ animation: 'fadeInField 0.6s ease 0.26s both' }}>
-            <button
-              type="submit"
-              disabled={loading || Object.values(errors).some(Boolean)}
-              style={{
-                width: '100%', height: 48, borderRadius: 12, border: 'none',
-                background: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)',
-                color: 'white', fontWeight: 700, fontSize: 15,
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                letterSpacing: '0.03em', cursor: (loading || Object.values(errors).some(Boolean)) ? 'not-allowed' : 'pointer',
-                opacity: (loading || Object.values(errors).some(Boolean)) ? 0.7 : 1,
-                boxShadow: '0 4px 18px rgba(245,158,11,0.38)',
-                transition: 'box-shadow 0.2s, transform 0.15s',
-                animation: (loading || Object.values(errors).some(Boolean)) ? 'none' : 'btnPulse 3s ease-in-out infinite',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}
-              onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(245,158,11,0.55)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; } }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 18px rgba(245,158,11,0.38)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
-            >
-              {loading ? (
-                <><span style={{ width: 16, height: 16, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }}/> Signing in…</>
-              ) : 'LOGIN →'}
-            </button>
-          </div>
-        </form>
+            {/* Rocket group — rotated -42deg, pointing up-left */}
+            <g transform="translate(130, 140) rotate(-42)" style={{ animation: 'rocketFloat 4s ease-in-out infinite' }}>
+              {/* Rocket body */}
+              <rect x="-18" y="-50" width="36" height="70" rx="18" fill="#F59E0B"/>
+              <rect x="-14" y="-48" width="28" height="60" rx="15" fill="#FBBF24" opacity="0.6"/>
 
-        {/* Demo accounts */}
-        <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #e2e8f0', animation: 'fadeInField 0.6s ease 0.32s both' }}>
-          <p style={{ fontSize: 11, textAlign: 'center', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#94a3b8', marginBottom: 12 }}>
-            Quick demo access
+              {/* Rocket nose cone */}
+              <ellipse cx="0" cy="-50" rx="18" ry="12" fill="#D97706"/>
+              <path d="M-18,-50 Q0,-88 18,-50" fill="#F59E0B"/>
+              <path d="M-14,-50 Q0,-82 14,-50" fill="#FBBF24" opacity="0.7"/>
+
+              {/* Window */}
+              <circle cx="0" cy="-20" r="9" fill="white" opacity="0.9"/>
+              <circle cx="0" cy="-20" r="6" fill="#bfdbfe"/>
+              <circle cx="-2" cy="-22" r="2" fill="white" opacity="0.8"/>
+
+              {/* Left wing */}
+              <path d="M-18,10 L-34,32 L-18,24 Z" fill="#D97706"/>
+              <path d="M-18,10 L-30,28 L-18,22 Z" fill="#F59E0B" opacity="0.7"/>
+
+              {/* Right wing */}
+              <path d="M18,10 L34,32 L18,24 Z" fill="#D97706"/>
+              <path d="M18,10 L30,28 L18,22 Z" fill="#F59E0B" opacity="0.7"/>
+
+              {/* Bottom fin detail */}
+              <rect x="-4" y="18" width="8" height="6" rx="2" fill="#92400e" opacity="0.5"/>
+
+              {/* Exhaust flames */}
+              <ellipse cx="-6" cy="26" rx="5" ry="9" fill="#FCD34D" opacity="0.9"/>
+              <ellipse cx="6" cy="26" rx="5" ry="9" fill="#FCD34D" opacity="0.9"/>
+              <ellipse cx="0" cy="28" rx="6" ry="12" fill="#F59E0B" opacity="0.8"/>
+              <ellipse cx="-4" cy="30" rx="3" ry="7" fill="white" opacity="0.5"/>
+              <ellipse cx="4" cy="30" rx="3" ry="7" fill="white" opacity="0.5"/>
+            </g>
+
+            {/* Stars scattered around rocket */}
+            <circle cx="60" cy="60" r="2" fill="white" opacity="0.6"/>
+            <circle cx="320" cy="40" r="1.5" fill="white" opacity="0.5"/>
+            <circle cx="40" cy="180" r="1.5" fill="white" opacity="0.4"/>
+            <circle cx="100" cy="40" r="1" fill="white" opacity="0.7"/>
+            <circle cx="280" cy="80" r="2" fill="#F59E0B" opacity="0.5"/>
+            <circle cx="75" cy="220" r="1.5" fill="white" opacity="0.5"/>
+          </svg>
+        </div>
+
+        {/* Demo accounts pills at bottom */}
+        <div style={{ zIndex: 2, position: 'relative' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>
+            Demo accounts
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {DEMO_USERS.map(u => (
               <button
                 key={u.email}
                 type="button"
                 onClick={() => quickLogin(u)}
                 style={{
-                  position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  padding: '10px 4px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.18s',
-                  background: filledRole === u.role ? `${u.color}0f` : 'white',
-                  border: `1.5px solid ${filledRole === u.role ? u.color + '50' : '#e2e8f0'}`,
-                  boxShadow: filledRole === u.role ? `0 2px 12px ${u.color}22` : '0 1px 4px rgba(0,0,0,0.04)',
+                  padding: '6px 14px', borderRadius: 999, cursor: 'pointer',
+                  background: filledRole === u.role ? u.color : 'rgba(255,255,255,0.08)',
+                  border: `1px solid ${filledRole === u.role ? u.color : 'rgba(255,255,255,0.15)'}`,
+                  color: filledRole === u.role ? '#09090B' : 'rgba(255,255,255,0.75)',
+                  fontSize: 12, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  transition: 'all 0.18s',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 14px ${u.color}22`; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = filledRole === u.role ? `0 2px 12px ${u.color}22` : '0 1px 4px rgba(0,0,0,0.04)'; }}
+                onMouseEnter={e => { if (filledRole !== u.role) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
+                onMouseLeave={e => { if (filledRole !== u.role) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
               >
-                {filledRole === u.role && <CheckCircle2 size={10} style={{ position: 'absolute', top: 6, right: 6, color: u.color }} />}
-                <div style={{ width: 26, height: 26, borderRadius: 8, background: u.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-                  <span style={{ fontSize: 10, fontWeight: 900, color: u.color }}>{u.role[0]}</span>
-                </div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#374151' }}>{u.role}</span>
+                {filledRole === u.role && <CheckCircle2 size={11} />}
+                {u.role}
               </button>
             ))}
           </div>
-          <p style={{ fontSize: 11, textAlign: 'center', color: '#94a3b8', marginTop: 10 }}>
-            Password: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#F59E0B' }}>password123</span>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>
+            Password: <span style={{ fontFamily: 'monospace', color: '#F59E0B', fontWeight: 700 }}>password123</span>
           </p>
         </div>
-
-      </div>{/* end max-width wrapper */}
       </div>
 
       {/* ════════════════════════════════════
-          RIGHT — Illustration panel
+          CLOUD DIVIDER — organic boundary
       ════════════════════════════════════ */}
-      <div className="hidden md:flex flex-col items-center justify-center flex-1 relative z-10 px-8 py-12">
-        {/* Particles layer */}
-        <div ref={particlesRef} className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }} />
+      <div style={{ position: 'absolute', left: 'calc(55% - 60px)', top: 0, bottom: 0, width: 120, zIndex: 10, pointerEvents: 'none' }}>
+        <svg viewBox="0 0 120 900" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+          <path d="
+            M120,0 L120,900 L60,900
+            Q10,882 28,846
+            Q-8,828 22,792
+            Q-8,774 28,738
+            Q-8,720 22,684
+            Q-8,666 28,630
+            Q-8,612 22,576
+            Q-8,558 28,522
+            Q-8,504 22,468
+            Q-8,450 28,414
+            Q-8,396 22,360
+            Q-8,342 28,306
+            Q-8,288 22,252
+            Q-8,234 28,198
+            Q-8,180 22,144
+            Q-8,126 28,90
+            Q-8,72 22,36
+            Q36,4 60,0 Z
+          " fill="white"/>
+        </svg>
+      </div>
 
-        {/* Figures row */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', width: '100%', maxWidth: 480, marginBottom: -24, zIndex: 2, position: 'relative', paddingBottom: 0 }}>
-          <div style={{ animation: 'bobLeft 2.5s ease-in-out infinite' }}><FigureLeft /></div>
-          <div style={{ animation: 'bobRight 2.5s ease-in-out 1.2s infinite' }}><FigureRight /></div>
-        </div>
+      {/* ════════════════════════════════════
+          RIGHT PANEL — White login form
+      ════════════════════════════════════ */}
+      <div style={{
+        flex: 1, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '40px 48px 40px 80px',
+        ...(phase === 'slideOut' ? { opacity: 0, transform: 'translateX(40px) scale(0.97)', transition: 'opacity 0.5s ease, transform 0.5s ease', pointerEvents: 'none' } : {}),
+      }}>
+        <div style={{ width: '100%', maxWidth: 380 }}>
 
-        {/* Floating dashboard card */}
-        <div style={{
-          width: '100%', maxWidth: 460,
-          background: 'rgba(255,255,255,0.82)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: 24,
-          border: '1.5px solid rgba(245,158,11,0.15)',
-          boxShadow: '0 24px 60px rgba(245,158,11,0.12), 0 4px 16px rgba(0,0,0,0.06)',
-          padding: '28px 28px 24px',
-          animation: 'floatCard 5s ease-in-out infinite',
-          position: 'relative',
-          zIndex: 1,
-        }}>
-          {/* Card header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 16, color: '#0f172a' }}>QA Dashboard</div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Last updated: just now</div>
-            </div>
-            <div style={{ padding: '6px 14px', borderRadius: 20, background: 'rgba(245,158,11,0.1)', fontSize: 12, fontWeight: 700, color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 5 }}>
-              Live <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#F59E0B', animation: 'liveBlink 1.2s steps(1) infinite' }} />
-            </div>
+          {/* Form header */}
+          <div style={{ textAlign: 'center', marginBottom: 32, animation: 'fadeInField 0.5s ease both' }}>
+            <h2 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 22, color: '#09090B', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+              User <span style={{ color: '#F59E0B' }}>Login</span>
+            </h2>
+            <p style={{ fontSize: 14, color: '#78716c' }}>Welcome back to Qlarity</p>
           </div>
-          <DashboardMockup />
-        </div>
 
-        {/* Bottom label */}
-        <p style={{ marginTop: 20, fontSize: 12, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>
-          QA Knowledge &amp; Test Asset Platform
-        </p>
+          {/* Form */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Email */}
+            <div style={{ animation: 'fadeInField 0.6s ease 0.1s both' }}>
+              <div style={{ position: 'relative' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }}>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                <input
+                  ref={emailInputRef}
+                  type="email"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(p => ({ ...p, email: '' })); }}
+                  placeholder="Email address"
+                  style={{
+                    width: '100%', paddingLeft: 46, paddingRight: 18, height: 50,
+                    borderRadius: 999,
+                    border: `1px solid ${errors.email ? '#f87171' : 'rgba(245,158,11,0.25)'}`,
+                    background: errors.email ? 'rgba(239,68,68,0.05)' : 'rgba(245,158,11,0.08)',
+                    fontSize: 14, color: '#09090B', outline: 'none',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => { e.target.style.borderColor = errors.email ? '#f87171' : '#F59E0B'; e.target.style.boxShadow = `0 0 0 3px ${errors.email ? 'rgba(248,113,113,0.15)' : 'rgba(245,158,11,0.15)'}`; }}
+                  onBlur={e => { e.target.style.borderColor = errors.email ? '#f87171' : 'rgba(245,158,11,0.25)'; e.target.style.boxShadow = 'none'; }}
+                />
+              </div>
+              {errors.email && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 4, paddingLeft: 18 }}>{errors.email}</p>}
+            </div>
+
+            {/* Password */}
+            <div style={{ animation: 'fadeInField 0.6s ease 0.18s both' }}>
+              <div style={{ position: 'relative' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }}>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(p => ({ ...p, password: '' })); }}
+                  placeholder="Password"
+                  style={{
+                    width: '100%', paddingLeft: 46, paddingRight: 50, height: 50,
+                    borderRadius: 999,
+                    border: `1px solid ${errors.password ? '#f87171' : 'rgba(245,158,11,0.25)'}`,
+                    background: errors.password ? 'rgba(239,68,68,0.05)' : 'rgba(245,158,11,0.08)',
+                    fontSize: 14, color: '#09090B', outline: 'none',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => { e.target.style.borderColor = errors.password ? '#f87171' : '#F59E0B'; e.target.style.boxShadow = `0 0 0 3px ${errors.password ? 'rgba(248,113,113,0.15)' : 'rgba(245,158,11,0.15)'}`; }}
+                  onBlur={e => { e.target.style.borderColor = errors.password ? '#f87171' : 'rgba(245,158,11,0.25)'; e.target.style.boxShadow = 'none'; }}
+                />
+                <button type="button" tabIndex={-1} onClick={() => setShowPw(s => !s)}
+                  style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#78716c', display: 'flex', padding: 4 }}>
+                  {showPw ? <EyeOff size={16}/> : <Eye size={16}/>}
+                </button>
+              </div>
+              {errors.password && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 4, paddingLeft: 18 }}>{errors.password}</p>}
+            </div>
+
+            {/* Remember me + Forgot password row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 4, paddingRight: 4, animation: 'fadeInField 0.6s ease 0.22s both' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#78716c' }}>
+                <input type="checkbox" style={{ accentColor: '#F59E0B', width: 14, height: 14 }} />
+                Remember me
+              </label>
+              <Link to="/forgot-password" style={{ fontSize: 13, color: '#F59E0B', fontWeight: 500, textDecoration: 'none' }}>
+                Forgot password?
+              </Link>
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12, padding: '10px 16px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', fontSize: 13, animation: 'fadeInField 0.3s ease both' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {error}
+              </div>
+            )}
+
+            {/* LOGIN button */}
+            <div style={{ animation: 'fadeInField 0.6s ease 0.26s both' }}>
+              <button
+                type="submit"
+                disabled={loading || Object.values(errors).some(Boolean)}
+                style={{
+                  width: '100%', height: 50, borderRadius: 999, border: 'none',
+                  background: '#F59E0B',
+                  color: '#09090B', fontWeight: 700, fontSize: 15,
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  cursor: (loading || Object.values(errors).some(Boolean)) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || Object.values(errors).some(Boolean)) ? 0.7 : 1,
+                  boxShadow: '0 4px 18px rgba(245,158,11,0.38)',
+                  transition: 'background 0.2s, box-shadow 0.2s, transform 0.15s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+                onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.background = '#D97706'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(245,158,11,0.5)'; } }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F59E0B'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 18px rgba(245,158,11,0.38)'; }}
+              >
+                {loading ? (
+                  <><span style={{ width: 16, height: 16, border: '2px solid #09090B', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }}/> Signing in…</>
+                ) : 'Login'}
+              </button>
+            </div>
+
+            {/* Forgot password link below button */}
+            <p style={{ textAlign: 'center', fontSize: 13, color: '#78716c', animation: 'fadeInField 0.6s ease 0.30s both' }}>
+              <Link to="/forgot-password" style={{ color: '#F59E0B', fontWeight: 500, textDecoration: 'none' }}>
+                Forgot your password?
+              </Link>
+            </p>
+
+          </form>
+
+          {/* Bottom brand mark */}
+          <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, animation: 'fadeInField 0.6s ease 0.38s both' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(245,158,11,0.3)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+              </svg>
+            </div>
+            <span style={{ fontSize: 11, color: '#c4b5a0', letterSpacing: '0.08em', fontWeight: 600 }}>QLARITY</span>
+          </div>
+
+        </div>
       </div>
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes floatCard {
-          0%,100% { transform: translateY(0px) rotate(-0.5deg); }
-          50%      { transform: translateY(-14px) rotate(0.5deg); }
+        @keyframes floatBubble {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+        }
+        @keyframes rocketFloat {
+          0%, 100% { transform: rotate(-42deg) translateY(0px); }
+          50% { transform: rotate(-42deg) translateY(-10px); }
         }
         @keyframes fadeInField {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes floatParticle {
+          0%, 100% { transform: translate(0, 0); opacity: 0.5; }
+          50% { transform: translate(var(--dx), var(--dy)); opacity: 1; }
         }
         @media (prefers-reduced-motion: no-preference) {
           @keyframes ringExpand {
             from { transform: translate(-50%,-50%) scale(1); opacity: 0.7; }
             to   { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
-          }
-          @keyframes blobMorph1 {
-            0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-            33%  { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
-            66%  { border-radius: 50% 50% 20% 80% / 25% 80% 20% 75%; }
-          }
-          @keyframes blobMorph2 {
-            0%,100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
-            50%  { border-radius: 70% 30% 40% 60% / 60% 40% 70% 30%; }
-          }
-          @keyframes blobMorph3 {
-            0%,100% { border-radius: 50% 50% 30% 70% / 50% 70% 30% 50%; }
-            40%  { border-radius: 30% 70% 60% 40% / 70% 30% 50% 50%; }
-            80%  { border-radius: 70% 30% 50% 50% / 30% 60% 40% 70%; }
-          }
-          @keyframes bobLeft {
-            0%,100% { transform: translateY(0px); }
-            50%  { transform: translateY(-10px); }
-          }
-          @keyframes bobRight {
-            0%,100% { transform: translateY(0px); }
-            50%  { transform: translateY(-10px); }
-          }
-          @keyframes barGrow {
-            from { transform: scaleY(0); }
-            to   { transform: scaleY(1); }
-          }
-          @keyframes donutDraw {
-            from { stroke-dasharray: 0 176; }
-            to   { stroke-dasharray: 127 176; }
-          }
-          @keyframes rowSlideIn {
-            from { opacity: 0; transform: translateX(12px); }
-            to   { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes liveBlink {
-            0%,49% { opacity: 1; }
-            50%,100% { opacity: 0.2; }
-          }
-          @keyframes floatParticle {
-            0%,100% { transform: translate(0,0); opacity: 0.6; }
-            50%  { transform: translate(var(--dx),var(--dy)); opacity: 0.15; }
-          }
-          @keyframes btnPulse {
-            0%,100% { box-shadow: 0 4px 18px rgba(245,158,11,0.38); }
-            50%  { box-shadow: 0 4px 32px rgba(245,158,11,0.65), 0 0 0 8px rgba(245,158,11,0.08); }
           }
         }
       `}</style>

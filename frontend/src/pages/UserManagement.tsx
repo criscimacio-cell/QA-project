@@ -20,11 +20,15 @@ export default function UserManagement() {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = 'Name is required';
+    else if (form.name.trim().length < 2) e.name = 'Name must be at least 2 characters';
+    else if (form.name.trim().length > 100) e.name = 'Name must be 100 characters or fewer';
     if (!editing) {
       if (!form.email.trim()) e.email = 'Email is required';
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = 'Enter a valid email address';
+      else if (form.email.trim().length > 150) e.email = 'Email must be 150 characters or fewer';
     }
     if (!form.role) e.role = 'Role is required';
+    if (form.department.trim().length > 100) e.department = 'Department must be 100 characters or fewer';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -190,7 +194,11 @@ export default function UserManagement() {
             </select>
             {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role}</p>}
           </div>
-          <div><label className="label">Department</label><input value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="input" placeholder="QA Department" /></div>
+          <div>
+            <label className="label">Department</label>
+            <input value={form.department} onChange={e => { setForm(p => ({ ...p, department: e.target.value })); if (errors.department) setErrors(p => ({ ...p, department: '' })); }} className={`input ${errors.department ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="QA Department" />
+            {errors.department && <p className="text-xs text-red-500 mt-1">{errors.department}</p>}
+          </div>
           <div className="flex gap-2 justify-end pt-2">
             <button onClick={closeModal} className="btn-secondary">Cancel</button>
             <button onClick={save} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>{editing ? 'Save Changes' : 'Create User'}</button>

@@ -220,7 +220,10 @@ export default function Repositories() {
   };
 
   const doCreate = async () => {
-    if (!formData.name.trim()) { setRepoErrors({ name: 'Repository name is required' }); return; }
+    const nameTrimmed = formData.name.trim();
+    if (!nameTrimmed) { setRepoErrors({ name: 'Repository name is required' }); return; }
+    if (nameTrimmed.length < 2) { setRepoErrors({ name: 'Name must be at least 2 characters' }); return; }
+    if (nameTrimmed.length > 100) { setRepoErrors({ name: 'Name must be 100 characters or fewer' }); return; }
     setSaving(true);
     try {
       await api.post('/repositories', {
@@ -239,7 +242,10 @@ export default function Repositories() {
 
   const doEdit = async () => {
     if (!editModal.repo) return;
-    if (!formData.name.trim()) { setRepoErrors({ name: 'Repository name is required' }); return; }
+    const nameTrimmed = formData.name.trim();
+    if (!nameTrimmed) { setRepoErrors({ name: 'Repository name is required' }); return; }
+    if (nameTrimmed.length < 2) { setRepoErrors({ name: 'Name must be at least 2 characters' }); return; }
+    if (nameTrimmed.length > 100) { setRepoErrors({ name: 'Name must be 100 characters or fewer' }); return; }
     setSaving(true);
     try {
       await api.put(`/repositories/${editModal.repo.id}`, { name: formData.name.trim(), description: formData.description });
@@ -657,9 +663,18 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (mode === 'file' && !form.name.trim()) errs.name = 'Display name is required';
+    if (mode === 'file' && form.name.trim().length > 200) errs.name = 'Display name must be 200 characters or fewer';
     if (!selectedRepo) errs.repository_id = 'Please select a repository';
     if (mode === 'file' && !file) errs.file = 'Please choose a file to upload';
     if (mode === 'folder' && !folderFiles.length) errs.file = 'Please select a folder';
+    if (form.jira_ticket.trim() && !/^[A-Z]+-\d+$/i.test(form.jira_ticket.trim())) errs.jira_ticket = 'Format: PROJECT-123';
+    if (form.tags.trim() && /[^a-zA-Z0-9,\- ]/.test(form.tags)) errs.tags = 'Tags may only contain letters, numbers, commas, hyphens, and spaces';
+    if (mode === 'file') {
+      const vNum = parseInt(form.version, 10);
+      if (!form.version || isNaN(vNum) || vNum < 1 || String(vNum) !== form.version.trim()) errs.version = 'Version must be a positive integer (e.g. 1)';
+    }
+    if (form.project.trim().length > 100) errs.project = 'Project must be 100 characters or fewer';
+    if (form.module.trim().length > 100) errs.module = 'Module must be 100 characters or fewer';
     setUploadErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -789,16 +804,38 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
             </select>
             {uploadErrors.repository_id && <p className="text-xs text-red-500 mt-1">{uploadErrors.repository_id}</p>}
           </div>
-          <div><label className="label">Project</label><input value={form.project} onChange={e => setForm(p => ({ ...p, project: e.target.value }))} className="input" placeholder="e.g. PhilHealth" /></div>
-          <div><label className="label">Module</label><input value={form.module} onChange={e => setForm(p => ({ ...p, module: e.target.value }))} className="input" placeholder="e.g. CF4" /></div>
+          <div>
+            <label className="label">Project</label>
+            <input value={form.project} onChange={e => { setForm(p => ({ ...p, project: e.target.value })); if (uploadErrors.project) setUploadErrors(p => ({ ...p, project: '' })); }} className={`input ${uploadErrors.project ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="e.g. PhilHealth" />
+            {uploadErrors.project && <p className="text-xs text-red-500 mt-1">{uploadErrors.project}</p>}
+          </div>
+          <div>
+            <label className="label">Module</label>
+            <input value={form.module} onChange={e => { setForm(p => ({ ...p, module: e.target.value })); if (uploadErrors.module) setUploadErrors(p => ({ ...p, module: '' })); }} className={`input ${uploadErrors.module ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="e.g. CF4" />
+            {uploadErrors.module && <p className="text-xs text-red-500 mt-1">{uploadErrors.module}</p>}
+          </div>
           <div>
             <label className="label">Category</label>
             <input list="upload-category-options" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="input" placeholder="Select or type a category…" />
             <datalist id="upload-category-options">{categories.map(c => <option key={c} value={c} />)}</datalist>
           </div>
-          <div><label className="label">Jira Ticket</label><input value={form.jira_ticket} onChange={e => setForm(p => ({ ...p, jira_ticket: e.target.value }))} className="input" placeholder="e.g. QA-123" /></div>
-          {mode === 'file' && <div><label className="label">Version</label><input type="number" value={form.version} onChange={e => setForm(p => ({ ...p, version: e.target.value }))} className="input" min="1" /></div>}
-          <div><label className="label">Tags</label><input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))} className="input" placeholder="comma, separated, tags" /></div>
+          <div>
+            <label className="label">Jira Ticket</label>
+            <input value={form.jira_ticket} onChange={e => { setForm(p => ({ ...p, jira_ticket: e.target.value })); if (uploadErrors.jira_ticket) setUploadErrors(p => ({ ...p, jira_ticket: '' })); }} className={`input ${uploadErrors.jira_ticket ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="e.g. QA-123" />
+            {uploadErrors.jira_ticket && <p className="text-xs text-red-500 mt-1">{uploadErrors.jira_ticket}</p>}
+          </div>
+          {mode === 'file' && (
+            <div>
+              <label className="label">Version</label>
+              <input type="number" value={form.version} onChange={e => { setForm(p => ({ ...p, version: e.target.value })); if (uploadErrors.version) setUploadErrors(p => ({ ...p, version: '' })); }} className={`input ${uploadErrors.version ? 'border-red-400 focus:ring-red-300' : ''}`} min="1" />
+              {uploadErrors.version && <p className="text-xs text-red-500 mt-1">{uploadErrors.version}</p>}
+            </div>
+          )}
+          <div>
+            <label className="label">Tags</label>
+            <input value={form.tags} onChange={e => { setForm(p => ({ ...p, tags: e.target.value })); if (uploadErrors.tags) setUploadErrors(p => ({ ...p, tags: '' })); }} className={`input ${uploadErrors.tags ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="comma, separated, tags" />
+            {uploadErrors.tags && <p className="text-xs text-red-500 mt-1">{uploadErrors.tags}</p>}
+          </div>
         </div>
         {mode === 'file' && <div><label className="label">Description</label><textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} className="input" rows={2} placeholder="Brief description…" /></div>}
 

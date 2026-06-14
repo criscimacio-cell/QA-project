@@ -69,6 +69,7 @@ export default function FileManager() {
   const [detailTab, setDetailTab] = useState<'details' | 'comments' | 'approvals'>('details');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [commentError, setCommentError] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [approvalHistory, setApprovalHistory] = useState<any[]>([]);
 
@@ -91,6 +92,7 @@ export default function FileManager() {
     setComments([]);
     setApprovalHistory([]);
     setNewComment('');
+    setCommentError('');
   }, [selected?.id]);
 
   const load = (overrides?: { search?: string; project?: string; category?: string }) => {
@@ -194,7 +196,10 @@ export default function FileManager() {
   };
 
   const postComment = async () => {
-    if (!newComment.trim() || !selected) return;
+    if (!selected) return;
+    if (!newComment.trim()) { setCommentError('Comment cannot be empty'); return; }
+    if (newComment.trim().length > 500) { setCommentError('Comment must be 500 characters or fewer'); return; }
+    setCommentError('');
     setCommentLoading(true);
     try {
       const r = await api.post(`/files/${selected.id}/comments`, { comment: newComment });
@@ -553,15 +558,22 @@ export default function FileManager() {
                     ))}
                   </div>
                 )}
-                <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <input
-                    value={newComment}
-                    onChange={e => setNewComment(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && postComment()}
-                    placeholder="Add a comment…"
-                    className="input flex-1 text-sm"
-                  />
-                  <button onClick={postComment} disabled={!newComment.trim() || commentLoading} className="btn-primary px-4">Post</button>
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex gap-2">
+                    <input
+                      value={newComment}
+                      onChange={e => { setNewComment(e.target.value.slice(0, 500)); if (commentError) setCommentError(''); }}
+                      onKeyDown={e => e.key === 'Enter' && !e.shiftKey && postComment()}
+                      placeholder="Add a comment…"
+                      className={`input flex-1 text-sm ${commentError ? 'border-red-400 focus:ring-red-300' : ''}`}
+                      maxLength={500}
+                    />
+                    <button onClick={postComment} disabled={commentLoading} className="btn-primary px-4">Post</button>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5">
+                    {commentError ? <p className="text-xs text-red-500">{commentError}</p> : <span />}
+                    <p className="text-xs text-slate-400 text-right">{newComment.length}/500</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -623,7 +635,8 @@ export default function FileManager() {
           </div>
           <div>
             <label className="label">Comments{requiresComment && <span className="text-red-500 ml-0.5">*</span>}</label>
-            <textarea value={approveComment} onChange={e => { setApproveComment(e.target.value); if (approveError) setApproveError(''); }} className={`input ${approveError ? 'border-red-400 focus:ring-red-300' : ''}`} rows={3} placeholder={requiresComment ? 'Explain why you are returning/rejecting this file…' : 'Add review comments…'} />
+            <textarea value={approveComment} onChange={e => { setApproveComment(e.target.value.slice(0, 1000)); if (approveError) setApproveError(''); }} className={`input ${approveError ? 'border-red-400 focus:ring-red-300' : ''}`} rows={3} placeholder={requiresComment ? 'Explain why you are returning/rejecting this file…' : 'Add review comments…'} maxLength={1000} />
+            <p className="text-xs text-slate-400 text-right mt-0.5">{approveComment.length}/1000</p>
             {approveError && <p className="text-xs text-red-500 mt-1">{approveError}</p>}
           </div>
           <div className="flex gap-2 justify-end">

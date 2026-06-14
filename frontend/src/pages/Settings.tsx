@@ -55,11 +55,23 @@ export default function Settings() {
   const [pwErr, setPwErr] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  function passwordStrength(pw: string): { label: string; color: string } {
+    if (!pw) return { label: '', color: '' };
+    const checks = [pw.length >= 8, /[A-Z]/.test(pw), /[0-9]/.test(pw), /[^A-Za-z0-9]/.test(pw)];
+    const score = checks.filter(Boolean).length;
+    if (score <= 1) return { label: 'Weak', color: 'text-red-500' };
+    if (score <= 2) return { label: 'Fair', color: 'text-amber-500' };
+    if (score <= 3) return { label: 'Good', color: 'text-blue-500' };
+    return { label: 'Strong', color: 'text-emerald-500' };
+  }
+
   const validatePassword = () => {
     const e: Record<string, string> = {};
     if (!currentPw) e.currentPassword = 'Current password is required';
     if (!newPw) e.newPassword = 'New password is required';
     else if (newPw.length < 8) e.newPassword = 'Password must be at least 8 characters';
+    else if (!/[0-9]/.test(newPw) && !/[^A-Za-z0-9]/.test(newPw)) e.newPassword = 'Password must contain at least one number or special character';
+    else if (newPw === currentPw) e.newPassword = 'New password cannot be the same as your current password';
     if (!confirmPw) e.confirmPassword = 'Please confirm your new password';
     else if (newPw && confirmPw !== newPw) e.confirmPassword = "Passwords don't match";
     setErrors(e);

@@ -123,7 +123,12 @@ export default function KnowledgeBase() {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.title.trim()) e.title = 'Title is required';
+    else if (form.title.trim().length < 3) e.title = 'Title must be at least 3 characters';
+    else if (form.title.trim().length > 200) e.title = 'Title must be 200 characters or fewer';
+    if (!form.content.trim() || form.content.trim().length < 10) e.content = 'Content must be at least 10 characters';
     if (!form.category.trim()) e.category = 'Category is required';
+    else if (form.category.trim().length > 100) e.category = 'Category must be 100 characters or fewer';
+    if (form.tags.trim().length > 200) e.tags = 'Tags must be 200 characters or fewer';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -252,8 +257,11 @@ export default function KnowledgeBase() {
         <div className="space-y-4">
           <div>
             <label className="label">Title<span className="text-red-500 ml-0.5">*</span></label>
-            <input value={form.title} onChange={e => { setForm(p => ({ ...p, title: e.target.value })); if (errors.title) setErrors(p => ({ ...p, title: '' })); }} className={`input ${errors.title ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="Article title" />
-            {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+            <input value={form.title} onChange={e => { setForm(p => ({ ...p, title: e.target.value.slice(0, 200) })); if (errors.title) setErrors(p => ({ ...p, title: '' })); }} className={`input ${errors.title ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="Article title" maxLength={200} />
+            <div className="flex items-center justify-between mt-0.5">
+              {errors.title ? <p className="text-xs text-red-500">{errors.title}</p> : <span />}
+              <p className="text-xs text-slate-400 text-right">{form.title.length}/200</p>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -270,7 +278,14 @@ export default function KnowledgeBase() {
                 {kbCategories.map(c => <option key={c} value={c} />)}
               </datalist>
             </div>
-            <div><label className="label">Tags</label><input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))} className="input" placeholder="tag1, tag2, tag3" /></div>
+            <div>
+              <label className="label">Tags</label>
+              <input value={form.tags} onChange={e => { setForm(p => ({ ...p, tags: e.target.value.slice(0, 200) })); if (errors.tags) setErrors(p => ({ ...p, tags: '' })); }} className={`input ${errors.tags ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="tag1, tag2, tag3" maxLength={200} />
+              <div className="flex items-center justify-between mt-0.5">
+                {errors.tags ? <p className="text-xs text-red-500">{errors.tags}</p> : <span />}
+                <p className="text-xs text-slate-400 text-right">{form.tags.length}/200</p>
+              </div>
+            </div>
           </div>
           <div>
             <label className="label">Status</label>
@@ -282,7 +297,8 @@ export default function KnowledgeBase() {
           </div>
           <div>
             <label className="label">Content (HTML supported)</label>
-            <textarea ref={contentRef} value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} className="input font-mono text-xs" rows={12} placeholder="<h2>Section Title</h2><p>Content here...</p>" />
+            <textarea ref={contentRef} value={form.content} onChange={e => { setForm(p => ({ ...p, content: e.target.value })); if (errors.content) setErrors(p => ({ ...p, content: '' })); }} className={`input font-mono text-xs ${errors.content ? 'border-red-400 focus:ring-red-300' : ''}`} rows={12} placeholder="<h2>Section Title</h2><p>Content here...</p>" />
+            {errors.content && <p className="text-xs text-red-500 mt-1">{errors.content}</p>}
             <p className="text-xs text-slate-400 mt-1">Supports HTML: h2, h3, p, ul, li, strong, em, code, pre</p>
             {users.length > 0 && (
               <div className="flex items-center gap-2 mt-2">

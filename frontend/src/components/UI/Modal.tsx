@@ -69,7 +69,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
       {/* Panel */}
       <div
         ref={panelRef}
-        className={`relative w-full ${sizes[size]} flex flex-col overflow-hidden rounded-2xl z-10 anim-modal-in`}
+        className={`relative w-full ${sizes[size]} max-h-[calc(100vh-5rem)] flex flex-col rounded-2xl z-10 anim-modal-in`}
         style={{
           background: 'var(--card)',
           border: '1px solid var(--border)',

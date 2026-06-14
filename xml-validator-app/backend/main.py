@@ -1,5 +1,5 @@
 import io
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
@@ -7,7 +7,9 @@ from pydantic import BaseModel
 from typing import List, Literal
 import os
 
-from checkers import claim_checker, cf5_checker, esoa_checker
+from checkers.claim_checker import check_claim
+from checkers.cf5_checker import check_cf5
+from checkers.esoa_checker import check_esoa
 from report_generator import generate_report
 
 app = FastAPI(title="XML Validator")
@@ -38,29 +40,25 @@ class ValidateRequest(BaseModel):
     files: List[FileInput]
 
 
+CHECKER_MAP = {
+    "claim": check_claim,
+    "cf5": check_cf5,
+    "esoa": check_esoa,
+}
+
+
 @app.post("/validate")
 async def validate(request: ValidateRequest):
-    checker_map = {
-        "claim": claim_checker.check,
-        "cf5": cf5_checker.check,
-        "esoa": esoa_checker.check,
-    }
-    checker = checker_map[request.doc_type]
+    checker = CHECKER_MAP[request.doc_type]
     results = [checker(file.name, file.content) for file in request.files]
     return {"results": results}
 
 
 @app.post("/download-report")
 async def download_report(request: ValidateRequest):
-    checker_map = {
-        "claim": claim_checker.check,
-        "cf5": cf5_checker.check,
-        "esoa": esoa_checker.check,
-    }
-    checker = checker_map[request.doc_type]
+    checker = CHECKER_MAP[request.doc_type]
     results = [checker(file.name, file.content) for file in request.files]
     report_bytes = generate_report(results)
-
     return StreamingResponse(
         io.BytesIO(report_bytes),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -69,7 +67,6 @@ async def download_report(request: ValidateRequest):
 
 
 # Mount static files last so API routes take precedence
-frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
-frontend_path = os.path.abspath(frontend_path)
+frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
 if os.path.isdir(frontend_path):
     app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")

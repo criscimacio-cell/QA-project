@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
   <header>
     <div class="header-inner">
       <h1>XML Validator</h1>
@@ -15,30 +16,31 @@
   </header>
 
   <main class="container">
+
     <div class="card controls-card">
 
       <!-- Document Type Selector -->
       <div class="form-group">
-        <label for="doc-type">Document Type</label>
-        <select id="doc-type">
+        <label for="docType">Document Type</label>
+        <select id="docType">
           <option value="claim">Claim</option>
           <option value="cf5">CF5</option>
           <option value="esoa">ESOA</option>
         </select>
       </div>
 
-      <!-- Tabs -->
+      <!-- Tab buttons -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="paste">Paste XML</button>
         <button class="tab-btn" data-tab="upload">Upload Files</button>
         <button class="tab-btn" data-tab="folder">Upload Folder</button>
       </div>
 
-      <!-- Tab Panels -->
+      <!-- Tab panels -->
       <div class="tab-panels">
 
-        <!-- Paste Panel -->
-        <div class="tab-panel active" id="tab-paste">
+        <!-- Paste panel -->
+        <div class="tab-panel active" id="panel-paste">
           <textarea
             id="xmlInput"
             placeholder="Paste your XML content here..."
@@ -46,74 +48,83 @@
           ></textarea>
         </div>
 
-        <!-- Upload Files Panel -->
-        <div class="tab-panel" id="tab-upload">
-          <div class="drop-zone" id="drop-zone">
+        <!-- Upload Files panel -->
+        <div class="tab-panel" id="panel-upload">
+          <div class="drop-zone" id="dropZone">
             <div class="drop-zone-icon">&#128194;</div>
             <p class="drop-zone-text">Drag &amp; drop XML files here</p>
             <p class="drop-zone-sub">or click to browse</p>
             <input
               type="file"
-              id="file-input"
+              id="fileInput"
               multiple
               accept=".xml"
               style="display:none"
             />
           </div>
-          <div class="file-list" id="upload-file-list"></div>
+          <div class="file-list" id="fileList"></div>
         </div>
 
-        <!-- Upload Folder Panel -->
-        <div class="tab-panel" id="tab-folder">
-          <div class="drop-zone" id="folder-zone">
-            <div class="drop-zone-icon">&#128194;</div>
+        <!-- Upload Folder panel -->
+        <div class="tab-panel" id="panel-folder">
+          <div class="drop-zone folder-zone" id="folderZone">
+            <div class="drop-zone-icon">&#128193;</div>
             <p class="drop-zone-text">Select a folder containing XML files</p>
             <p class="drop-zone-sub">All .xml files in the folder will be validated</p>
-            <button class="btn-secondary" id="folder-btn">Choose Folder</button>
             <input
               type="file"
-              id="folder-input"
+              id="folderInput"
               webkitdirectory
               style="display:none"
             />
+            <button class="btn-secondary" id="chooseFolderBtn">Choose Folder</button>
           </div>
-          <div class="file-list" id="folder-file-list"></div>
-          <p id="folder-label" style="font-size:.85rem;color:var(--text-muted);margin-top:.5rem;"></p>
+          <div class="file-list" id="folderFileList"></div>
         </div>
 
-      </div>
+      </div><!-- /.tab-panels -->
 
       <!-- Error message -->
-      <p id="error-msg" style="color:var(--error);font-size:.875rem;min-height:1.2rem;margin-top:.25rem;"></p>
+      <p class="inline-error" id="errorMsg"></p>
 
-      <!-- Validate Button -->
-      <div class="actions">
-        <button class="btn-primary" id="validate-btn">Validate</button>
-        <div class="spinner" id="spinner"></div>
-      </div>
+      <!-- Validate button -->
+      <button class="btn-primary" id="validateBtn">Validate</button>
+
+    </div><!-- /.controls-card -->
+
+    <!-- Loading spinner -->
+    <div class="loading" id="loading" style="display:none">
+      <div class="spinner"></div>
+      <p>Validating&hellip;</p>
     </div>
 
-    <!-- Results Section -->
-    <div id="results-section">
+    <!-- Results section -->
+    <div class="results-section" id="resultsSection" style="display:none">
+
       <div class="summary-bar">
         <div class="summary-stat">
-          <div class="num" id="stat-total">0</div>
-          <div class="lbl">Total</div>
+          <div class="stat-value" id="totalCount">0</div>
+          <div class="stat-label">Total</div>
         </div>
-        <div class="summary-stat passed">
-          <div class="num" id="stat-passed">0</div>
-          <div class="lbl">Passed</div>
+        <div class="summary-stat success">
+          <div class="stat-value" id="passCount">0</div>
+          <div class="stat-label">Passed</div>
         </div>
-        <div class="summary-stat failed">
-          <div class="num" id="stat-failed">0</div>
-          <div class="lbl">Failed</div>
+        <div class="summary-stat danger">
+          <div class="stat-value" id="failCount">0</div>
+          <div class="stat-label">Failed</div>
         </div>
-        <div style="flex:1"></div>
-        <button class="btn-download" id="download-btn">Download Report (.xlsx)</button>
+        <div class="summary-actions">
+          <button class="btn-download" id="downloadBtn">
+            &#11123; Download Report (.xlsx)
+          </button>
+        </div>
       </div>
 
-      <div class="results-list" id="results-list"></div>
-    </div>
+      <div class="results-container" id="resultsContainer"></div>
+
+    </div><!-- /#resultsSection -->
+
   </main>
 
   <script src="app.js"></script>

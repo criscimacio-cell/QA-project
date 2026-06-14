@@ -2,195 +2,135 @@ import xml.etree.ElementTree as ET
 import re
 
 
-def _get_line(content: str, tag: str):
-    """Return approximate 1-based line number where <tag appears in raw XML."""
-    for i, line in enumerate(content.splitlines(), start=1):
-        if f"<{tag}" in line:
-            return i
-    return None
+def get_approx_line(xml_string, tag):
+    """Find approximate line number of a tag in raw XML string."""
+    pattern = f"<{tag}"
+    idx = xml_string.find(pattern)
+    if idx == -1:
+        return None
+    return xml_string[:idx].count('\n') + 1
 
 
-def check(filename: str, content: str) -> dict:
-    """Validate a Claim XML document.
-
-    Returns:
-        dict with keys: filename, status ('pass'|'fail'),
-        errors (list of {field, rule, message, line, severity})
-    """
+def check_claim(filename, content):
     errors = []
 
-    # --- Parse XML ---
+    # Parse XML
     try:
         root = ET.fromstring(content)
-    except ET.ParseError as exc:
-        line_no = exc.position[0] if hasattr(exc, "position") else None
+    except ET.ParseError as e:
         return {
             "filename": filename,
             "status": "fail",
-            "errors": [
-                {
-                    "field": "XML",
-                    "rule": "well_formed",
-                    "message": f"XML parse error: {exc}",
-                    "line": line_no,
-                    "severity": "error",
-                }
-            ],
+            "errors": [{
+                "field": "root",
+                "rule": "valid_xml",
+                "message": f"XML parse error: {e}",
+                "line": None,
+                "severity": "error"
+            }]
         }
 
-    # --- Validate root element ---
+    # Check root element
     if root.tag not in ("Claim", "ClaimSet"):
-        errors.append(
-            {
-                "field": "root",
-                "rule": "valid_root",
-                "message": (
-                    f"Invalid root element <{root.tag}>. "
-                    "Expected <Claim> or <ClaimSet>."
-                ),
-                "line": 1,
-                "severity": "error",
-            }
-        )
+        errors.append({
+            "field": "root",
+            "rule": "valid_root",
+            "message": f"Root element must be <Claim> or <ClaimSet>, got <{root.tag}>",
+            "line": 1,
+            "severity": "error"
+        })
 
-    # --- Collect claim nodes to validate ---
+    # If root is ClaimSet, validate child Claim elements; otherwise validate root directly
     if root.tag == "ClaimSet":
-        claim_nodes = root.findall("Claim")
-        if not claim_nodes:
-            errors.append(
-                {
-                    "field": "ClaimSet",
-                    "rule": "non_empty",
-                    "message": "ClaimSet must contain at least one <Claim> child element.",
-                    "line": 1,
-                    "severity": "error",
-                }
-            )
+        claims = root.findall("Claim")
+        if not claims:
+            errors.append({
+                "field": "ClaimSet",
+                "rule": "has_claims",
+                "message": "ClaimSet must contain at least one <Claim> element",
+                "line": 1,
+                "severity": "error"
+            })
+        for claim in claims:
+            errors.extend(_validate_claim_fields(claim, content))
     else:
-        claim_nodes = [root]
+        errors.extend(_validate_claim_fields(root, content))
 
-    for node in claim_nodes:
-        _validate_claim_node(node, content, errors)
-
-    return {
-        "filename": filename,
-        "status": "fail" if errors else "pass",
-        "errors": errors,
-    }
+    status = "fail" if any(e["severity"] == "error" for e in errors) else "pass"
+    return {"filename": filename, "status": status, "errors": errors}
 
 
-def _get_field_text(node, tag: str):
-    """Return stripped text of first matching child element, or None."""
-    elem = node.find(tag)
-    if elem is not None and elem.text:
-        return elem.text.strip()
-    return None
-
-
-def _validate_claim_node(node, content: str, errors: list):
+def _validate_claim_fields(node, xml_string):
+    errors = []
     required_fields = [
-        "ClaimID",
-        "PatientName",
-        "ServiceDate",
-        "DiagnosisCode",
-        "ProcedureCode",
-        "BilledAmount",
+        "ClaimID", "PatientName", "ServiceDate",
+        "DiagnosisCode", "ProcedureCode", "BilledAmount"
     ]
 
-    field_values = {}
     for field in required_fields:
-        value = _get_field_text(node, field)
-        line = _get_line(content, field)
-        if not value:
-            errors.append(
-                {
+        elem = node.find(field)
+        if elem is None or (elem.text is None or elem.text.strip() == ""):
+            line = get_approx_line(xml_string, field)
+            errors.append({
+                "field": field,
+                "rule": "required",
+                "message": f"Required field <{field}> is missing or empty",
+                "line": line,
+                "severity": "error"
+            })
+            continue
+
+        value = elem.text.strip()
+        line = get_approx_line(xml_string, field)
+
+        if field == "ServiceDate":
+            if not re.match(r'^\d{4}-\d{2}-\d{2}$', value):
+                errors.append({
                     "field": field,
-                    "rule": "required",
-                    "message": f"Required field <{field}> is missing or empty.",
-                    "line": line,
-                    "severity": "error",
-                }
-            )
-        else:
-            field_values[field] = value
-
-    # ServiceDate: YYYY-MM-DD
-    if "ServiceDate" in field_values:
-        val = field_values["ServiceDate"]
-        line = _get_line(content, "ServiceDate")
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", val):
-            errors.append(
-                {
-                    "field": "ServiceDate",
                     "rule": "date_format",
-                    "message": (
-                        f"ServiceDate '{val}' does not match YYYY-MM-DD format."
-                    ),
+                    "message": f"ServiceDate must match YYYY-MM-DD format, got '{value}'",
                     "line": line,
-                    "severity": "error",
-                }
-            )
+                    "severity": "error"
+                })
 
-    # BilledAmount: positive number
-    if "BilledAmount" in field_values:
-        val = field_values["BilledAmount"]
-        line = _get_line(content, "BilledAmount")
-        try:
-            amount = float(val)
-            if amount <= 0:
-                errors.append(
-                    {
-                        "field": "BilledAmount",
+        elif field == "BilledAmount":
+            try:
+                amount = float(value)
+                if amount <= 0:
+                    errors.append({
+                        "field": field,
                         "rule": "positive_number",
-                        "message": (
-                            f"BilledAmount '{val}' must be a positive number."
-                        ),
+                        "message": f"BilledAmount must be a positive number, got '{value}'",
                         "line": line,
-                        "severity": "error",
-                    }
-                )
-        except ValueError:
-            errors.append(
-                {
-                    "field": "BilledAmount",
-                    "rule": "numeric",
-                    "message": f"BilledAmount '{val}' is not a valid number.",
+                        "severity": "error"
+                    })
+            except ValueError:
+                errors.append({
+                    "field": field,
+                    "rule": "valid_number",
+                    "message": f"BilledAmount must be a valid number, got '{value}'",
                     "line": line,
-                    "severity": "error",
-                }
-            )
+                    "severity": "error"
+                })
 
-    # DiagnosisCode: [A-Z]\d{2,5}
-    if "DiagnosisCode" in field_values:
-        val = field_values["DiagnosisCode"]
-        line = _get_line(content, "DiagnosisCode")
-        if not re.fullmatch(r"[A-Z]\d{2,5}", val):
-            errors.append(
-                {
-                    "field": "DiagnosisCode",
-                    "rule": "format",
-                    "message": (
-                        f"DiagnosisCode '{val}' must match pattern "
-                        r"[A-Z]\d{2,5} (e.g. A123)."
-                    ),
+        elif field == "DiagnosisCode":
+            if not re.match(r'^[A-Z]\d{2,5}$', value):
+                errors.append({
+                    "field": field,
+                    "rule": "diagnosis_code_format",
+                    "message": f"DiagnosisCode must match [A-Z]\\d{{2,5}}, got '{value}'",
                     "line": line,
-                    "severity": "error",
-                }
-            )
+                    "severity": "error"
+                })
 
-    # ProcedureCode: exactly 5 digits
-    if "ProcedureCode" in field_values:
-        val = field_values["ProcedureCode"]
-        line = _get_line(content, "ProcedureCode")
-        if not re.fullmatch(r"\d{5}", val):
-            errors.append(
-                {
-                    "field": "ProcedureCode",
-                    "rule": "format",
-                    "message": (
-                        f"ProcedureCode '{val}' must be exactly 5 digits."
-                    ),
+        elif field == "ProcedureCode":
+            if not re.match(r'^\d{5}$', value):
+                errors.append({
+                    "field": field,
+                    "rule": "procedure_code_format",
+                    "message": f"ProcedureCode must be exactly 5 digits, got '{value}'",
                     "line": line,
-                    "severity": "error",
-                }
-            )
+                    "severity": "error"
+                })
+
+    return errors

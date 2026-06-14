@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import re
 
 
-def check(filename: str, content: str) -> dict:
+def check_claim(filename: str, content: str) -> dict:
     errors = []
 
     # Parse XML

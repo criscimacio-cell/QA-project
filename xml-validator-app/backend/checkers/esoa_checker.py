@@ -1,39 +1,12 @@
 import xml.etree.ElementTree as ET
 import re
-from datetime import date
+from datetime import datetime
 
 
-REQUIRED_FIELDS = [
-    "SOAID",
-    "EffectiveDate",
-    "ExpiryDate",
-    "CoverageType",
-    "PremiumAmount",
-    "InsuredName",
-]
-
-VALID_ROOTS = {"ESOA", "ESOADocument"}
-VALID_COVERAGE_TYPES = {"HEALTH", "LIFE", "PROPERTY", "AUTO"}
-
-
-def find_line(xml_string: str, tag: str) -> int:
-    lines = xml_string.splitlines()
-    for i, line in enumerate(lines, start=1):
-        if f"<{tag}" in line or f"<{tag}>" in line:
-            return i
-    return 0
-
-
-def parse_date(value: str):
-    try:
-        return date.fromisoformat(value)
-    except ValueError:
-        return None
-
-
-def check_esoa(filename: str, content: str) -> dict:
+def check(filename: str, content: str) -> dict:
     errors = []
 
+    # Parse XML
     try:
         root = ET.fromstring(content)
     except ET.ParseError as e:
@@ -45,125 +18,184 @@ def check_esoa(filename: str, content: str) -> dict:
                     "field": "XML",
                     "rule": "well_formed",
                     "message": f"XML parse error: {e}",
-                    "line": getattr(e, "position", (0, 0))[0] if hasattr(e, "position") else 0,
+                    "line": e.position[0] if hasattr(e, "position") else None,
                     "severity": "error",
                 }
             ],
         }
 
-    root_tag = root.tag.split("}")[-1] if "}" in root.tag else root.tag
-    if root_tag not in VALID_ROOTS:
+    # Validate root element
+    valid_roots = {"ESOA", "ESOADocument"}
+    if root.tag not in valid_roots:
         errors.append(
             {
                 "field": "root",
                 "rule": "valid_root",
-                "message": f"Root element must be <ESOA> or <ESOADocument>, got <{root_tag}>",
+                "message": f"Invalid root element <{root.tag}>. Expected <ESOA> or <ESOADocument>.",
                 "line": 1,
                 "severity": "error",
             }
         )
 
-    def get_field(tag):
-        return root.find(f".//{tag}")
+    # Helper to get approximate line number for a field tag
+    def get_line(tag: str):
+        lines = content.splitlines()
+        for i, line in enumerate(lines, start=1):
+            if f"<{tag}" in line:
+                return i
+        return None
+
+    # Helper to get text from direct child or nested children
+    def get_field(tag: str):
+        elem = root.find(tag)
+        if elem is None:
+            for child in root:
+                elem = child.find(tag)
+                if elem is not None:
+                    break
+        if elem is not None:
+            return (elem.text or "").strip()
+        return None
+
+    required_fields = [
+        "SOAID",
+        "EffectiveDate",
+        "ExpiryDate",
+        "CoverageType",
+        "PremiumAmount",
+        "InsuredName",
+    ]
 
     field_values = {}
-
-    for field in REQUIRED_FIELDS:
-        el = get_field(field)
-        if el is None or (el.text is None) or el.text.strip() == "":
-            line = find_line(content, field)
+    for field in required_fields:
+        value = get_field(field)
+        if value is None or value == "":
             errors.append(
                 {
                     "field": field,
                     "rule": "required",
-                    "message": f"Required field <{field}> is missing or empty",
-                    "line": line,
+                    "message": f"Required field <{field}> is missing or empty.",
+                    "line": get_line(field),
                     "severity": "error",
                 }
             )
         else:
-            value = el.text.strip()
             field_values[field] = value
-            line = find_line(content, field)
 
-            # EffectiveDate and ExpiryDate: YYYY-MM-DD
-            if field in ("EffectiveDate", "ExpiryDate"):
-                if not re.match(r"^\d{4}-\d{2}-\d{2}$", value):
-                    errors.append(
-                        {
-                            "field": field,
-                            "rule": "date_format",
-                            "message": f"{field} must be in YYYY-MM-DD format, got '{value}'",
-                            "line": line,
-                            "severity": "error",
-                        }
-                    )
-                else:
-                    d = parse_date(value)
-                    if d is None:
-                        errors.append(
-                            {
-                                "field": field,
-                                "rule": "date_valid",
-                                "message": f"{field} is not a valid calendar date: '{value}'",
-                                "line": line,
-                                "severity": "error",
-                            }
-                        )
+    date_pattern = re.compile(r"\d{4}-\d{2}-\d{2}")
 
-            # PremiumAmount: positive decimal
-            elif field == "PremiumAmount":
-                try:
-                    amount = float(value)
-                    if amount <= 0:
-                        errors.append(
-                            {
-                                "field": field,
-                                "rule": "positive_decimal",
-                                "message": f"PremiumAmount must be a positive decimal, got '{value}'",
-                                "line": line,
-                                "severity": "error",
-                            }
-                        )
-                except ValueError:
-                    errors.append(
-                        {
-                            "field": field,
-                            "rule": "decimal",
-                            "message": f"PremiumAmount must be a valid decimal number, got '{value}'",
-                            "line": line,
-                            "severity": "error",
-                        }
-                    )
-
-            # CoverageType: must be one of the valid values
-            elif field == "CoverageType":
-                if value not in VALID_COVERAGE_TYPES:
-                    errors.append(
-                        {
-                            "field": field,
-                            "rule": "coverage_type_enum",
-                            "message": f"CoverageType must be one of {sorted(VALID_COVERAGE_TYPES)}, got '{value}'",
-                            "line": line,
-                            "severity": "error",
-                        }
-                    )
-
-    # Cross-field: ExpiryDate must be after EffectiveDate
-    if "EffectiveDate" in field_values and "ExpiryDate" in field_values:
-        eff = parse_date(field_values["EffectiveDate"])
-        exp = parse_date(field_values["ExpiryDate"])
-        if eff is not None and exp is not None:
-            if exp <= eff:
+    # Validate EffectiveDate
+    effective_dt = None
+    if "EffectiveDate" in field_values:
+        val = field_values["EffectiveDate"]
+        if not date_pattern.fullmatch(val):
+            errors.append(
+                {
+                    "field": "EffectiveDate",
+                    "rule": "date_format",
+                    "message": f"EffectiveDate '{val}' does not match YYYY-MM-DD format.",
+                    "line": get_line("EffectiveDate"),
+                    "severity": "error",
+                }
+            )
+        else:
+            try:
+                effective_dt = datetime.strptime(val, "%Y-%m-%d")
+            except ValueError:
                 errors.append(
                     {
-                        "field": "ExpiryDate",
-                        "rule": "expiry_after_effective",
-                        "message": f"ExpiryDate ({field_values['ExpiryDate']}) must be after EffectiveDate ({field_values['EffectiveDate']})",
-                        "line": find_line(content, "ExpiryDate"),
+                        "field": "EffectiveDate",
+                        "rule": "date_valid",
+                        "message": f"EffectiveDate '{val}' is not a valid calendar date.",
+                        "line": get_line("EffectiveDate"),
                         "severity": "error",
                     }
                 )
 
-    status = "fail" if errors else "pass"
-    return {"filename": filename, "status": status, "errors": errors}
+    # Validate ExpiryDate
+    expiry_dt = None
+    if "ExpiryDate" in field_values:
+        val = field_values["ExpiryDate"]
+        if not date_pattern.fullmatch(val):
+            errors.append(
+                {
+                    "field": "ExpiryDate",
+                    "rule": "date_format",
+                    "message": f"ExpiryDate '{val}' does not match YYYY-MM-DD format.",
+                    "line": get_line("ExpiryDate"),
+                    "severity": "error",
+                }
+            )
+        else:
+            try:
+                expiry_dt = datetime.strptime(val, "%Y-%m-%d")
+            except ValueError:
+                errors.append(
+                    {
+                        "field": "ExpiryDate",
+                        "rule": "date_valid",
+                        "message": f"ExpiryDate '{val}' is not a valid calendar date.",
+                        "line": get_line("ExpiryDate"),
+                        "severity": "error",
+                    }
+                )
+
+    # ExpiryDate must be after EffectiveDate
+    if effective_dt is not None and expiry_dt is not None:
+        if expiry_dt <= effective_dt:
+            errors.append(
+                {
+                    "field": "ExpiryDate",
+                    "rule": "expiry_after_effective",
+                    "message": f"ExpiryDate '{field_values['ExpiryDate']}' must be after EffectiveDate '{field_values['EffectiveDate']}'.",
+                    "line": get_line("ExpiryDate"),
+                    "severity": "error",
+                }
+            )
+
+    # Validate PremiumAmount: positive decimal
+    if "PremiumAmount" in field_values:
+        val = field_values["PremiumAmount"]
+        try:
+            amount = float(val)
+            if amount <= 0:
+                errors.append(
+                    {
+                        "field": "PremiumAmount",
+                        "rule": "positive_number",
+                        "message": f"PremiumAmount '{val}' must be a positive decimal.",
+                        "line": get_line("PremiumAmount"),
+                        "severity": "error",
+                    }
+                )
+        except ValueError:
+            errors.append(
+                {
+                    "field": "PremiumAmount",
+                    "rule": "numeric",
+                    "message": f"PremiumAmount '{val}' is not a valid decimal number.",
+                    "line": get_line("PremiumAmount"),
+                    "severity": "error",
+                }
+            )
+
+    # Validate CoverageType
+    valid_coverage_types = {"HEALTH", "LIFE", "PROPERTY", "AUTO"}
+    if "CoverageType" in field_values:
+        val = field_values["CoverageType"]
+        if val not in valid_coverage_types:
+            errors.append(
+                {
+                    "field": "CoverageType",
+                    "rule": "allowed_value",
+                    "message": f"CoverageType '{val}' must be one of: HEALTH, LIFE, PROPERTY, AUTO.",
+                    "line": get_line("CoverageType"),
+                    "severity": "error",
+                }
+            )
+
+    return {
+        "filename": filename,
+        "status": "fail" if errors else "pass",
+        "errors": errors,
+    }

@@ -7,9 +7,7 @@ from pydantic import BaseModel
 from typing import List, Literal
 import os
 
-from checkers.claim_checker import check_claim
-from checkers.cf5_checker import check_cf5
-from checkers.esoa_checker import check_esoa
+from checkers import claim_checker, cf5_checker, esoa_checker
 from report_generator import generate_report
 
 app = FastAPI(title="XML Validator")
@@ -42,32 +40,25 @@ class ValidateRequest(BaseModel):
 
 @app.post("/validate")
 async def validate(request: ValidateRequest):
-    results = []
     checker_map = {
-        "claim": check_claim,
-        "cf5": check_cf5,
-        "esoa": check_esoa,
+        "claim": claim_checker.check,
+        "cf5": cf5_checker.check,
+        "esoa": esoa_checker.check,
     }
     checker = checker_map[request.doc_type]
-    for file in request.files:
-        result = checker(file.name, file.content)
-        results.append(result)
+    results = [checker(file.name, file.content) for file in request.files]
     return {"results": results}
 
 
 @app.post("/download-report")
 async def download_report(request: ValidateRequest):
     checker_map = {
-        "claim": check_claim,
-        "cf5": check_cf5,
-        "esoa": check_esoa,
+        "claim": claim_checker.check,
+        "cf5": cf5_checker.check,
+        "esoa": esoa_checker.check,
     }
     checker = checker_map[request.doc_type]
-    results = []
-    for file in request.files:
-        result = checker(file.name, file.content)
-        results.append(result)
-
+    results = [checker(file.name, file.content) for file in request.files]
     report_bytes = generate_report(results)
 
     return StreamingResponse(

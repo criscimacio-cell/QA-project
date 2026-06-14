@@ -7,110 +7,122 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <div class="header-inner">
-      <h1>XML Validator</h1>
-      <p class="subtitle">Validate Claim, CF5, and ESOA XML documents instantly</p>
+
+  <header class="site-header">
+    <div class="container">
+      <h1 class="site-title">XML Validator</h1>
+      <p class="site-subtitle">Validate Claim, CF5, and ESOA XML documents instantly</p>
     </div>
   </header>
 
   <main class="container">
-    <div class="card controls-card">
-      <!-- Document Type Selector -->
-      <div class="form-group">
-        <label for="docType">Document Type</label>
-        <select id="docType">
-          <option value="claim">Claim</option>
-          <option value="cf5">CF5</option>
-          <option value="esoa">ESOA</option>
-        </select>
-      </div>
 
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="paste">Paste XML</button>
-        <button class="tab-btn" data-tab="upload">Upload Files</button>
-        <button class="tab-btn" data-tab="folder">Upload Folder</button>
-      </div>
-
-      <!-- Tab Panels -->
-      <div class="tab-panels">
-
-        <!-- Paste Panel -->
-        <div class="tab-panel active" id="panel-paste">
-          <textarea
-            id="xmlInput"
-            placeholder="Paste your XML content here..."
-            spellcheck="false"
-          ></textarea>
-        </div>
-
-        <!-- Upload Files Panel -->
-        <div class="tab-panel" id="panel-upload">
-          <div class="drop-zone" id="dropZone">
-            <div class="drop-zone-icon">📂</div>
-            <p class="drop-zone-text">Drag &amp; drop XML files here</p>
-            <p class="drop-zone-sub">or click to browse</p>
-            <input
-              type="file"
-              id="fileInput"
-              multiple
-              accept=".xml"
-              style="display:none"
-            />
-          </div>
-          <div class="file-list" id="fileList"></div>
-        </div>
-
-        <!-- Upload Folder Panel -->
-        <div class="tab-panel" id="panel-folder">
-          <div class="drop-zone" id="folderZone">
-            <div class="drop-zone-icon">🗂️</div>
-            <p class="drop-zone-text">Select a folder containing XML files</p>
-            <p class="drop-zone-sub">All .xml files in the folder will be validated</p>
-            <input
-              type="file"
-              id="folderInput"
-              webkitdirectory
-              style="display:none"
-            />
-            <button class="btn-secondary" id="chooseFolderBtn">Choose Folder</button>
-          </div>
-          <div class="file-list" id="folderFileList"></div>
-        </div>
-
-      </div>
-
-      <!-- Validate Button -->
-      <button class="btn-primary" id="validateBtn">Validate</button>
+    <!-- Document Type -->
+    <div class="card">
+      <label class="field-label" for="docType">Document Type</label>
+      <select id="docType" class="select-input">
+        <option value="claim">Claim</option>
+        <option value="cf5">CF5</option>
+        <option value="esoa">ESOA</option>
+      </select>
     </div>
 
+    <!-- Input Tabs -->
+    <div class="card">
+      <div class="tab-bar" role="tablist">
+        <button class="tab-btn active" data-tab="paste" role="tab" aria-selected="true">Paste XML</button>
+        <button class="tab-btn" data-tab="upload" role="tab" aria-selected="false">Upload Files</button>
+        <button class="tab-btn" data-tab="folder" role="tab" aria-selected="false">Upload Folder</button>
+      </div>
+
+      <!-- Paste Panel -->
+      <div id="panel-paste" class="tab-panel active">
+        <textarea
+          id="xmlInput"
+          class="xml-textarea"
+          placeholder="Paste your XML content here…"
+          spellcheck="false"
+        ></textarea>
+      </div>
+
+      <!-- Upload Files Panel -->
+      <div id="panel-upload" class="tab-panel hidden">
+        <div
+          id="dropZone"
+          class="drop-zone"
+          role="region"
+          aria-label="File drop zone"
+        >
+          <div class="drop-zone__icon">📂</div>
+          <p class="drop-zone__text">Drag &amp; drop <strong>.xml</strong> files here</p>
+          <p class="drop-zone__hint">or</p>
+          <label class="btn btn--outline" for="fileInput">Browse Files</label>
+          <input
+            id="fileInput"
+            type="file"
+            accept=".xml"
+            multiple
+            class="visually-hidden"
+          />
+        </div>
+        <div id="fileList" class="file-list"></div>
+      </div>
+
+      <!-- Upload Folder Panel -->
+      <div id="panel-folder" class="tab-panel hidden">
+        <div class="drop-zone drop-zone--folder">
+          <div class="drop-zone__icon">🗂️</div>
+          <p class="drop-zone__text">Select a folder containing <strong>.xml</strong> files</p>
+          <label class="btn btn--outline" for="folderInput">Choose Folder</label>
+          <input
+            id="folderInput"
+            type="file"
+            webkitdirectory
+            class="visually-hidden"
+          />
+        </div>
+        <div id="folderFileList" class="file-list"></div>
+      </div>
+    </div>
+
+    <!-- Validate Button -->
+    <button id="validateBtn" class="btn btn--primary btn--full">
+      Validate
+    </button>
+
     <!-- Loading Spinner -->
-    <div class="loading" id="loading" style="display:none">
+    <div id="loadingSpinner" class="spinner-wrap hidden" aria-live="polite">
       <div class="spinner"></div>
-      <p>Validating...</p>
+      <span>Validating…</span>
     </div>
 
     <!-- Results Section -->
-    <div class="results-section" id="resultsSection" style="display:none">
+    <section id="resultsSection" class="hidden" aria-live="polite">
       <div class="summary-bar">
-        <div class="summary-stat">
-          <span class="stat-label">Total</span>
-          <span class="stat-value" id="totalCount">0</span>
+        <div class="summary-stat summary-stat--total">
+          <span class="summary-count" id="totalCount">0</span>
+          <span class="summary-label">Total</span>
         </div>
-        <div class="summary-stat success">
-          <span class="stat-label">Passed</span>
-          <span class="stat-value" id="passCount">0</span>
+        <div class="summary-stat summary-stat--pass">
+          <span class="summary-count" id="passCount">0</span>
+          <span class="summary-label">Passed</span>
         </div>
-        <div class="summary-stat error">
-          <span class="stat-label">Failed</span>
-          <span class="stat-value" id="failCount">0</span>
+        <div class="summary-stat summary-stat--fail">
+          <span class="summary-count" id="failCount">0</span>
+          <span class="summary-label">Failed</span>
         </div>
-        <button class="btn-download" id="downloadBtn">Download Report (.xlsx)</button>
       </div>
 
-      <div class="results-container" id="resultsContainer"></div>
-    </div>
+      <div id="resultsContainer"></div>
+
+      <button id="downloadBtn" class="btn btn--secondary btn--full">
+        ⬇ Download Excel Report
+      </button>
+    </section>
+
+    <!-- Error Banner -->
+    <div id="errorBanner" class="error-banner hidden" role="alert"></div>
+
   </main>
 
   <script src="app.js"></script>

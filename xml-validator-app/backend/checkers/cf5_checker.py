@@ -2,29 +2,10 @@ import xml.etree.ElementTree as ET
 import re
 
 
-REQUIRED_FIELDS = [
-    "FormID",
-    "SubmitterID",
-    "TaxYear",
-    "GrossAmount",
-    "NetAmount",
-    "TaxWithheld",
-]
-
-VALID_ROOTS = {"CF5", "CF5Form"}
-
-
-def find_line(xml_string: str, tag: str) -> int:
-    lines = xml_string.splitlines()
-    for i, line in enumerate(lines, start=1):
-        if f"<{tag}" in line or f"<{tag}>" in line:
-            return i
-    return 0
-
-
 def check_cf5(filename: str, content: str) -> dict:
     errors = []
 
+    # Parse XML
     try:
         root = ET.fromstring(content)
     except ET.ParseError as e:
@@ -36,109 +17,146 @@ def check_cf5(filename: str, content: str) -> dict:
                     "field": "XML",
                     "rule": "well_formed",
                     "message": f"XML parse error: {e}",
-                    "line": getattr(e, "position", (0, 0))[0] if hasattr(e, "position") else 0,
+                    "line": e.position[0] if hasattr(e, "position") else None,
                     "severity": "error",
                 }
             ],
         }
 
-    root_tag = root.tag.split("}")[-1] if "}" in root.tag else root.tag
-    if root_tag not in VALID_ROOTS:
+    # Validate root element
+    valid_roots = {"CF5", "CF5Form"}
+    if root.tag not in valid_roots:
         errors.append(
             {
                 "field": "root",
                 "rule": "valid_root",
-                "message": f"Root element must be <CF5> or <CF5Form>, got <{root_tag}>",
+                "message": f"Invalid root element <{root.tag}>. Expected <CF5> or <CF5Form>.",
                 "line": 1,
                 "severity": "error",
             }
         )
 
-    def get_field(tag):
-        return root.find(f".//{tag}")
+    # Helper to get approximate line number for a field tag
+    def get_line(tag: str):
+        lines = content.splitlines()
+        for i, line in enumerate(lines, start=1):
+            if f"<{tag}" in line:
+                return i
+        return None
+
+    # Helper to get text from direct child or nested children
+    def get_field(tag: str):
+        elem = root.find(tag)
+        if elem is None:
+            for child in root:
+                elem = child.find(tag)
+                if elem is not None:
+                    break
+        if elem is not None:
+            return (elem.text or "").strip()
+        return None
+
+    required_fields = [
+        "FormID",
+        "SubmitterID",
+        "TaxYear",
+        "GrossAmount",
+        "NetAmount",
+        "TaxWithheld",
+    ]
 
     field_values = {}
-
-    for field in REQUIRED_FIELDS:
-        el = get_field(field)
-        if el is None or (el.text is None) or el.text.strip() == "":
-            line = find_line(content, field)
+    for field in required_fields:
+        value = get_field(field)
+        if value is None or value == "":
             errors.append(
                 {
                     "field": field,
                     "rule": "required",
-                    "message": f"Required field <{field}> is missing or empty",
-                    "line": line,
+                    "message": f"Required field <{field}> is missing or empty.",
+                    "line": get_line(field),
                     "severity": "error",
                 }
             )
         else:
-            value = el.text.strip()
             field_values[field] = value
-            line = find_line(content, field)
 
-            # TaxYear: 4-digit year 2000-2099
-            if field == "TaxYear":
-                if not re.match(r"^\d{4}$", value) or not (2000 <= int(value) <= 2099):
-                    errors.append(
-                        {
-                            "field": field,
-                            "rule": "tax_year_range",
-                            "message": f"TaxYear must be a 4-digit year between 2000 and 2099, got '{value}'",
-                            "line": line,
-                            "severity": "error",
-                        }
-                    )
-
-            # GrossAmount, NetAmount, TaxWithheld: valid decimals
-            elif field in ("GrossAmount", "NetAmount", "TaxWithheld"):
-                try:
-                    float(value)
-                except ValueError:
-                    errors.append(
-                        {
-                            "field": field,
-                            "rule": "decimal",
-                            "message": f"{field} must be a valid decimal number, got '{value}'",
-                            "line": line,
-                            "severity": "error",
-                        }
-                    )
-
-    # Cross-field: TaxWithheld >= 0
-    if "TaxWithheld" in field_values:
-        try:
-            tw = float(field_values["TaxWithheld"])
-            if tw < 0:
+    # Validate TaxYear: 4-digit year between 2000-2099
+    if "TaxYear" in field_values:
+        val = field_values["TaxYear"]
+        if not re.fullmatch(r"\d{4}", val):
+            errors.append(
+                {
+                    "field": "TaxYear",
+                    "rule": "year_format",
+                    "message": f"TaxYear '{val}' must be a 4-digit year.",
+                    "line": get_line("TaxYear"),
+                    "severity": "error",
+                }
+            )
+        else:
+            year = int(val)
+            if not (2000 <= year <= 2099):
                 errors.append(
                     {
-                        "field": "TaxWithheld",
-                        "rule": "non_negative",
-                        "message": f"TaxWithheld must be >= 0, got '{field_values['TaxWithheld']}'",
-                        "line": find_line(content, "TaxWithheld"),
+                        "field": "TaxYear",
+                        "rule": "year_range",
+                        "message": f"TaxYear '{val}' must be between 2000 and 2099.",
+                        "line": get_line("TaxYear"),
                         "severity": "error",
                     }
                 )
-        except ValueError:
-            pass
 
-    # Cross-field: NetAmount <= GrossAmount
-    if "NetAmount" in field_values and "GrossAmount" in field_values:
+    # Parse numeric fields
+    def parse_decimal(field_name: str):
+        val = field_values.get(field_name)
+        if val is None:
+            return None
         try:
-            net = float(field_values["NetAmount"])
-            gross = float(field_values["GrossAmount"])
-            if net > gross:
-                errors.append(
-                    {
-                        "field": "NetAmount",
-                        "rule": "net_lte_gross",
-                        "message": f"NetAmount ({field_values['NetAmount']}) must be <= GrossAmount ({field_values['GrossAmount']})",
-                        "line": find_line(content, "NetAmount"),
-                        "severity": "error",
-                    }
-                )
+            return float(val)
         except ValueError:
-            pass
+            errors.append(
+                {
+                    "field": field_name,
+                    "rule": "numeric",
+                    "message": f"{field_name} '{val}' is not a valid decimal number.",
+                    "line": get_line(field_name),
+                    "severity": "error",
+                }
+            )
+            return None
 
-    status = "fail" if errors else "pass"
-    return {"filename": filename, "status": status, "errors": errors}
+    gross = parse_decimal("GrossAmount")
+    net = parse_decimal("NetAmount")
+    tax = parse_decimal("TaxWithheld")
+
+    # TaxWithheld >= 0
+    if tax is not None and tax < 0:
+        errors.append(
+            {
+                "field": "TaxWithheld",
+                "rule": "non_negative",
+                "message": f"TaxWithheld '{field_values['TaxWithheld']}' must be >= 0.",
+                "line": get_line("TaxWithheld"),
+                "severity": "error",
+            }
+        )
+
+    # NetAmount <= GrossAmount
+    if gross is not None and net is not None:
+        if net > gross:
+            errors.append(
+                {
+                    "field": "NetAmount",
+                    "rule": "net_lte_gross",
+                    "message": f"NetAmount '{field_values['NetAmount']}' must be <= GrossAmount '{field_values['GrossAmount']}'.",
+                    "line": get_line("NetAmount"),
+                    "severity": "error",
+                }
+            )
+
+    return {
+        "filename": filename,
+        "status": "fail" if errors else "pass",
+        "errors": errors,
+    }

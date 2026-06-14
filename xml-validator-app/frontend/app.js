@@ -1,303 +1,282 @@
-// --- State ---
-let uploadedFiles = [];  // [{name, content}] from file upload tab
-let folderFiles = [];    // [{name, content}] from folder tab
-let lastPayload = null;  // last {doc_type, files} payload for download reuse
+/* ── State ──────────────────────────────────────────────────────────────────── */
+let uploadedFiles = [];   // Array of {name, content} from "Upload Files" tab
+let folderFiles   = [];   // Array of {name, content} from "Upload Folder" tab
+let lastPayload   = null; // Most recent request payload — reused for download
 
-// --- Tab switching ---
+/* ── Tab switching ──────────────────────────────────────────────────────────── */
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
     document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
     btn.classList.add("active");
-    const panel = document.getElementById("tab-" + btn.dataset.tab);
-    if (panel) panel.classList.add("active");
+    const panelId = "panel-" + btn.dataset.tab;
+    document.getElementById(panelId).classList.add("active");
   });
 });
 
-// --- File Upload tab ---
-const dropZone = document.getElementById("drop-zone");
-const fileInput = document.getElementById("file-input");
-const uploadFileList = document.getElementById("upload-file-list");
+/* ── Upload Files tab ──────────────────────────────────────────────────────── */
+const dropZone  = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+const fileList  = document.getElementById("fileList");
 
+// Click anywhere on the drop zone to open file picker
 dropZone.addEventListener("click", () => fileInput.click());
 
 dropZone.addEventListener("dragover", e => {
   e.preventDefault();
   dropZone.classList.add("drag-over");
 });
-dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("dragleave", () => {
+  dropZone.classList.remove("drag-over");
+});
 dropZone.addEventListener("drop", e => {
   e.preventDefault();
   dropZone.classList.remove("drag-over");
   const xmlFiles = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith(".xml"));
-  loadFileObjects(xmlFiles, "upload");
+  readFiles(xmlFiles).then(results => {
+    uploadedFiles = results;
+    renderFileChips(fileList, uploadedFiles);
+  });
 });
 
 fileInput.addEventListener("change", () => {
-  loadFileObjects(Array.from(fileInput.files), "upload");
-  fileInput.value = "";
-});
-
-// --- Folder tab ---
-document.getElementById("folder-btn").addEventListener("click", () => {
-  document.getElementById("folder-input").click();
-});
-
-document.getElementById("folder-input").addEventListener("change", function () {
-  const xmlFiles = Array.from(this.files).filter(f => f.name.endsWith(".xml"));
-  loadFileObjects(xmlFiles, "folder");
-  const folderLabel = document.getElementById("folder-label");
-  if (xmlFiles.length) {
-    folderLabel.textContent = xmlFiles.length + " XML file(s) found";
-  } else {
-    folderLabel.textContent = "No XML files found in folder";
-  }
-});
-
-// --- Read File objects into [{name, content}] ---
-function loadFileObjects(files, target) {
-  if (!files.length) return;
-
-  const results = new Array(files.length);
-  let pending = files.length;
-
-  files.forEach((file, idx) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      results[idx] = { name: file.name, content: e.target.result };
-      pending--;
-      if (pending === 0) {
-        if (target === "upload") {
-          uploadedFiles = results;
-          renderChips(uploadFileList, uploadedFiles);
-        } else {
-          folderFiles = results;
-          renderChips(document.getElementById("folder-file-list"), folderFiles);
-        }
-      }
-    };
-    reader.onerror = () => {
-      pending--;
-      if (pending === 0) {
-        if (target === "upload") {
-          uploadedFiles = results.filter(Boolean);
-          renderChips(uploadFileList, uploadedFiles);
-        } else {
-          folderFiles = results.filter(Boolean);
-          renderChips(document.getElementById("folder-file-list"), folderFiles);
-        }
-      }
-    };
-    reader.readAsText(file);
+  readFiles(Array.from(fileInput.files)).then(results => {
+    uploadedFiles = results;
+    renderFileChips(fileList, uploadedFiles);
   });
-}
+  fileInput.value = ""; // allow re-selecting same files
+});
 
-function renderChips(container, files) {
-  container.innerHTML = files
-    .map(f => `<span class="file-chip">&#128196; ${escHtml(f.name)}</span>`)
-    .join("");
-}
+/* ── Upload Folder tab ─────────────────────────────────────────────────────── */
+const folderInput    = document.getElementById("folderInput");
+const chooseFolderBtn = document.getElementById("chooseFolderBtn");
+const folderFileList = document.getElementById("folderFileList");
 
-// --- Collect input based on active tab ---
-function collectInput() {
-  const activeTab = document.querySelector(".tab-btn.active").dataset.tab;
-  if (activeTab === "paste") {
-    const content = document.getElementById("xmlInput").value.trim();
-    if (!content) return null;
-    return [{ name: "input.xml", content }];
-  }
-  if (activeTab === "upload") {
-    return uploadedFiles.length ? uploadedFiles : null;
-  }
-  if (activeTab === "folder") {
-    return folderFiles.length ? folderFiles : null;
-  }
-  return null;
-}
+chooseFolderBtn.addEventListener("click", () => folderInput.click());
 
-// --- Validate button ---
-document.getElementById("validate-btn").addEventListener("click", async () => {
-  const errorMsg = document.getElementById("error-msg");
-  errorMsg.textContent = "";
+folderInput.addEventListener("change", function () {
+  const xmlFiles = Array.from(this.files).filter(f => f.name.endsWith(".xml"));
+  readFiles(xmlFiles).then(results => {
+    folderFiles = results;
+    renderFileChips(folderFileList, folderFiles);
+  });
+});
 
-  const files = collectInput();
+/* ── Validate button ────────────────────────────────────────────────────────── */
+document.getElementById("validateBtn").addEventListener("click", async () => {
+  clearError();
+
+  const files = collectFiles();
   if (!files) {
-    errorMsg.textContent = "Please provide at least one XML input.";
+    showError("Please provide at least one XML input.");
     return;
   }
 
-  const docType = document.getElementById("doc-type").value;
+  const docType = document.getElementById("docType").value;
   const payload = { doc_type: docType, files };
 
   setLoading(true);
-  hideResults();
-
   try {
     const res = await fetch("/validate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
     if (!res.ok) {
-      let detail = res.statusText;
-      try {
-        const err = await res.json();
-        detail = err.detail || detail;
-      } catch (_) {}
-      throw new Error(detail);
+      const body = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(body.detail || res.statusText);
     }
-
     const data = await res.json();
     lastPayload = payload;
-    renderResults(data.results || []);
-  } catch (e) {
-    errorMsg.textContent = "Validation error: " + e.message;
+    renderResults(data);
+  } catch (err) {
+    showError("Validation failed: " + err.message);
   } finally {
     setLoading(false);
   }
 });
 
-// --- Download report button ---
-document.getElementById("download-btn").addEventListener("click", async () => {
+/* ── Download Report button ─────────────────────────────────────────────────── */
+document.getElementById("downloadBtn").addEventListener("click", async () => {
   if (!lastPayload) return;
-  const errorMsg = document.getElementById("error-msg");
-  errorMsg.textContent = "";
+  clearError();
   setLoading(true);
-
   try {
     const res = await fetch("/download-report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(lastPayload),
     });
-
     if (!res.ok) throw new Error(res.statusText);
-
     const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
     a.download = "validation_report.xlsx";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  } catch (e) {
-    errorMsg.textContent = "Download error: " + e.message;
+  } catch (err) {
+    showError("Download failed: " + err.message);
   } finally {
     setLoading(false);
   }
 });
 
-// --- Render results ---
-function renderResults(results) {
-  const total = results.length;
-  const passed = results.filter(r => r.status === "pass").length;
-  const failed = total - passed;
+/* ── renderResults ──────────────────────────────────────────────────────────── */
+function renderResults(data) {
+  const results = data.results || [];
 
-  document.getElementById("stat-total").textContent = total;
-  document.getElementById("stat-passed").textContent = passed;
-  document.getElementById("stat-failed").textContent = failed;
+  // Update summary counts
+  const total   = results.length;
+  const passed  = results.filter(r => r.status === "pass").length;
+  const failed  = results.filter(r => r.status === "fail").length;
 
-  const list = document.getElementById("results-list");
-  list.innerHTML = results.map((r, i) => buildResultCard(r, i)).join("");
+  document.getElementById("totalCount").textContent = total;
+  document.getElementById("passCount").textContent  = passed;
+  document.getElementById("failCount").textContent  = failed;
+
+  // Build result cards
+  const container = document.getElementById("resultsContainer");
+  container.innerHTML = results.map(buildCard).join("");
 
   // Wire up accordion toggles
-  list.querySelectorAll(".result-card-header").forEach(header => {
+  container.querySelectorAll(".result-card-header").forEach(header => {
     header.addEventListener("click", () => {
-      const body = header.nextElementSibling;
+      const body    = header.nextElementSibling;
       const chevron = header.querySelector(".chevron");
-      if (body) body.classList.toggle("open");
-      if (chevron) chevron.classList.toggle("open");
+      const isOpen  = body.classList.toggle("open");
+      chevron.classList.toggle("open", isOpen);
     });
   });
 
-  // Auto-open failed cards
-  list.querySelectorAll(".result-card.status-fail .result-card-body").forEach(body => {
-    body.classList.add("open");
-    const chevron = body.previousElementSibling.querySelector(".chevron");
-    if (chevron) chevron.classList.add("open");
-  });
-
-  showResults();
+  // Show results section
+  document.getElementById("resultsSection").style.display = "flex";
 }
 
-function buildResultCard(result, idx) {
-  const isPassed = result.status === "pass";
-  const statusClass = isPassed ? "status-pass" : "status-fail";
-  const badgeClass = isPassed ? "badge-pass" : "badge-fail";
-  const badgeText = isPassed ? "PASS" : "FAIL";
-  const errors = result.errors || [];
-  const errorCount = errors.length;
+/* ── buildCard ──────────────────────────────────────────────────────────────── */
+function buildCard(result) {
+  const isPass     = result.status === "pass";
+  const statusCls  = isPass ? "pass" : "fail";
+  const badgeCls   = isPass ? "badge-pass" : "badge-fail";
+  const badgeText  = isPass ? "PASS" : "FAIL";
+  const errors     = result.errors || [];
+  const issueCount = errors.length;
 
-  let bodyContent;
-  if (isPassed) {
-    bodyContent = `<p class="no-errors">&#10003; No issues found</p>`;
+  // Body content
+  let bodyHtml;
+  if (isPass) {
+    bodyHtml = `<p class="no-errors">&#10003; No issues found</p>`;
   } else {
-    const rows = errors.map(e => `
-      <tr class="sev-${escHtml(e.severity || 'error')}">
-        <td>${escHtml(e.field || "")}</td>
-        <td>${escHtml(e.rule || "")}</td>
-        <td>${escHtml(e.message || "")}</td>
-        <td>${e.line != null ? escHtml(String(e.line)) : "—"}</td>
-        <td>${escHtml(e.severity || "")}</td>
-      </tr>`).join("");
-
-    bodyContent = `
-      <table class="error-table">
-        <thead>
-          <tr>
-            <th>Field</th>
-            <th>Rule</th>
-            <th>Message</th>
-            <th>Line</th>
-            <th>Severity</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>`;
+    const items = errors.map(e => {
+      const sevCls  = "sev-" + (e.severity || "error");
+      const lineStr = e.line != null ? `Line ${e.line}` : "";
+      return `
+        <div class="error-item ${sevCls}">
+          <div class="error-item-header">
+            <span class="error-field">${esc(e.field || "")}</span>
+            <span class="error-rule">${esc(e.rule || "")}</span>
+            ${lineStr ? `<span class="error-line">${esc(lineStr)}</span>` : ""}
+            <span class="sev-badge ${sevCls}">${esc(e.severity || "error")}</span>
+          </div>
+          <div class="error-message">${esc(e.message || "")}</div>
+        </div>`;
+    }).join("");
+    bodyHtml = `<div class="error-list">${items}</div>`;
   }
 
-  const countLabel = !isPassed
-    ? `<span class="error-count-label">(${errorCount} issue${errorCount !== 1 ? "s" : ""})</span>`
+  const issueSuffix = issueCount === 1 ? "issue" : "issues";
+  const issueLabel  = !isPass && issueCount > 0
+    ? `<span class="issue-count">(${issueCount} ${issueSuffix})</span>`
     : "";
 
   return `
-    <div class="result-card ${statusClass}">
+    <div class="result-card ${statusCls}">
       <div class="result-card-header">
         <div class="file-info">
-          <span class="badge ${badgeClass}">${badgeText}</span>
-          <span class="filename">${escHtml(result.filename || "")}</span>
-          ${countLabel}
+          <span class="badge ${badgeCls}">${badgeText}</span>
+          <span class="filename">${esc(result.filename || "")}</span>
+          ${issueLabel}
         </div>
         <i class="chevron">&#9660;</i>
       </div>
-      <div class="result-card-body">${bodyContent}</div>
+      <div class="result-card-body">${bodyHtml}</div>
     </div>`;
 }
 
-// --- Helpers ---
+/* ── Helpers ────────────────────────────────────────────────────────────────── */
+
+/**
+ * Read an array of File objects as text.
+ * Returns Promise<Array<{name, content}>>
+ */
+function readFiles(files) {
+  if (!files.length) return Promise.resolve([]);
+  return Promise.all(
+    files.map(
+      file =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload  = e => resolve({ name: file.name, content: e.target.result });
+          reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+          reader.readAsText(file);
+        })
+    )
+  );
+}
+
+/** Render file chips in a container element. */
+function renderFileChips(container, files) {
+  container.innerHTML = files
+    .map(f => `<span class="file-chip">&#128196; ${esc(f.name)}</span>`)
+    .join("");
+}
+
+/** Return the list of {name, content} objects for the currently active tab,
+ *  or null if there is nothing to validate. */
+function collectFiles() {
+  const activeTab = document.querySelector(".tab-btn.active").dataset.tab;
+
+  if (activeTab === "paste") {
+    const content = document.getElementById("xmlInput").value.trim();
+    if (!content) return null;
+    return [{ name: "input.xml", content }];
+  }
+
+  if (activeTab === "upload") {
+    return uploadedFiles.length ? uploadedFiles : null;
+  }
+
+  if (activeTab === "folder") {
+    return folderFiles.length ? folderFiles : null;
+  }
+
+  return null;
+}
+
+/** Show/hide the loading overlay and disable the validate button. */
 function setLoading(on) {
-  const spinner = document.getElementById("spinner");
-  const btn = document.getElementById("validate-btn");
-  spinner.classList.toggle("visible", on);
-  btn.disabled = on;
+  document.getElementById("loading").style.display     = on ? "flex" : "none";
+  document.getElementById("validateBtn").disabled      = on;
 }
 
-function showResults() {
-  document.getElementById("results-section").classList.add("visible");
+/** Show a user-facing error message. */
+function showError(msg) {
+  document.getElementById("errorMsg").textContent = msg;
 }
 
-function hideResults() {
-  document.getElementById("results-section").classList.remove("visible");
+/** Clear the error message. */
+function clearError() {
+  document.getElementById("errorMsg").textContent = "";
 }
 
-function escHtml(str) {
+/** HTML-escape a string to prevent XSS when inserting into innerHTML. */
+function esc(str) {
   return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replace(/&/g,  "&amp;")
+    .replace(/</g,  "&lt;")
+    .replace(/>/g,  "&gt;")
+    .replace(/"/g,  "&quot;")
+    .replace(/'/g,  "&#39;");
 }

@@ -525,11 +525,13 @@ function FloatingBackground() {
 
 /* ─── Main component ───────────────────────────────────────────── */
 export default function Login() {
-  const { login, user, refreshUser } = useAuth();
+  const { login, user, loading: authLoading, refreshUser } = useAuth();
   const { dark } = useTheme();
   const navigate = useNavigate();
 
-  useEffect(() => { if (user) navigate('/', { replace: true }); }, []);
+  useEffect(() => {
+    if (!authLoading && user) navigate('/', { replace: true });
+  }, [user, authLoading]);
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -565,7 +567,7 @@ export default function Login() {
     ts.push(setTimeout(() => setMorphGrown(true),     520));
     ts.push(setTimeout(() => setRingPulse(true),     1060));
     ts.push(setTimeout(() => setMorphFading(true),   1800));
-    ts.push(setTimeout(() => refreshUser().finally(() => navigate('/')), 2100));
+    ts.push(setTimeout(() => navigate('/'), 2100));
     return () => ts.forEach(clearTimeout);
   }, [loginSuccess, navigate, refreshUser]);
 
@@ -628,6 +630,8 @@ export default function Login() {
 
   const AMBER = '#F59E0B';
 
+  if (authLoading) return null;
+
   return (
     <div
       onClick={handleBgClick}
@@ -636,7 +640,8 @@ export default function Login() {
         background: '#09090B',
         fontFamily: "'DM Sans', sans-serif",
         opacity: phase === 'slideOut' ? 0 : 1,
-        transition: phase === 'slideOut' ? 'opacity 0.45s ease' : 'none',
+        transition: phase === 'slideOut' ? 'opacity 0.45s ease' : 'opacity 0.35s ease',
+        animation: 'fadeIn 0.35s ease both',
       }}
     >
       {/* Particle trail canvas — fixed overlay */}

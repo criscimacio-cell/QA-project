@@ -1,50 +1,63 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import api from '../api/client';
+
+type ThemeMode = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
   dark: boolean;
+  mode: ThemeMode;
+  setMode: (m: ThemeMode) => void;
   toggle: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType>({ dark: false, toggle: () => {} });
+const ThemeContext = createContext<ThemeContextType>({ dark: false, mode: 'system', setMode: () => {}, toggle: () => {} });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [dark, setDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
+  const [mode, setModeState] = useState<ThemeMode>(() => (localStorage.getItem('themeMode') as ThemeMode) || 'system');
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  // Listen to OS preference changes
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const dark = mode === 'dark' || (mode === 'system' && systemDark);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('theme', dark ? 'dark' : 'light');
   }, [dark]);
 
-  // On mount, fetch user preferences and apply saved theme
+  // On mount, fetch user preferences and apply saved theme mode
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
     api.get('/users/me').then(r => {
-      const savedTheme = r.data?.preferences?.theme;
-      if (savedTheme === 'dark' || savedTheme === 'light') {
-        setDark(savedTheme === 'dark');
+      const savedMode = r.data?.preferences?.themeMode as ThemeMode;
+      if (savedMode === 'dark' || savedMode === 'light' || savedMode === 'system') {
+        setModeState(savedMode);
+        localStorage.setItem('themeMode', savedMode);
       }
     }).catch(() => {});
   }, []);
 
-  const toggle = () => {
-    setDark(d => {
-      const next = !d;
-      // Persist to user profile
-      const token = localStorage.getItem('token');
-      if (token) {
-        api.patch('/users/me/preferences', { preferences: { theme: next ? 'dark' : 'light' } }).catch(() => {});
-      }
-      return next;
-    });
-  };
+  const setMode = useCallback((m: ThemeMode) => {
+    setModeState(m);
+    localStorage.setItem('themeMode', m);
+    const token = localStorage.getItem('token');
+    if (token) {
+      api.patch('/users/me/preferences', { preferences: { themeMode: m } }).catch(() => {});
+    }
+  }, []);
+
+  const toggle = useCallback(() => {
+    setMode(dark ? 'light' : 'dark');
+  }, [dark, setMode]);
 
   return (
-    <ThemeContext.Provider value={{ dark, toggle }}>
+    <ThemeContext.Provider value={{ dark, mode, setMode, toggle }}>
       {children}
     </ThemeContext.Provider>
   );

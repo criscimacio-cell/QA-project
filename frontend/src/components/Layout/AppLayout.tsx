@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 
 export default function AppLayout() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCompact') === 'true');
   const [loading, setLoading] = useState(false);
   const [progressWidth, setProgressWidth] = useState(0);
   const location = useLocation();
@@ -121,7 +121,7 @@ export default function AppLayout() {
         </div>
       )}
 
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(c => !c)} />
+      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(c => { localStorage.setItem('sidebarCompact', String(!c)); return !c; })} />
       <TopBar sidebarWidth={sidebarWidth} />
 
       <main

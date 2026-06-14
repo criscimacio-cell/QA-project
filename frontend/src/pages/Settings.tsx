@@ -6,8 +6,35 @@ import api from '../api/client';
 
 export default function Settings() {
   const { user, isAdmin, refreshUser } = useAuth();
-  const { dark, toggle } = useTheme();
+  const { dark, mode: themeMode, setMode: setThemeMode } = useTheme();
   const [activeSection, setActiveSection] = useState('Appearance');
+
+  // Notification preferences
+  const [notifPrefs, setNotifPrefs] = useState({
+    email_on_submit: true,
+    email_on_approve: true,
+    email_on_reject: true,
+    inapp_on_submit: true,
+    inapp_on_approve: true,
+    inapp_on_mention: true,
+  });
+  const [notifSaved, setNotifSaved] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeSection !== 'Notifications') return;
+    setNotifLoading(true);
+    api.get('/users/me').then(r => {
+      const prefs = r.data?.preferences?.notifications;
+      if (prefs) setNotifPrefs(p => ({ ...p, ...prefs }));
+    }).catch(() => {}).finally(() => setNotifLoading(false));
+  }, [activeSection]);
+
+  const saveNotifPrefs = async () => {
+    await api.patch('/users/me/preferences', { preferences: { notifications: notifPrefs } });
+    setNotifSaved(true);
+    setTimeout(() => setNotifSaved(false), 2000);
+  };
 
   // Appearance state
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'normal');
@@ -398,12 +425,11 @@ export default function Settings() {
                     { id: 'dark',  label: 'Dark',  icon: Moon, preview: 'bg-slate-900 border-slate-700', text: 'text-slate-100', bar: 'bg-slate-800', accent: 'bg-amber-400' },
                     { id: 'system', label: 'System', icon: Monitor, preview: 'bg-gradient-to-br from-white to-slate-900 border-slate-300', text: 'text-slate-500', bar: 'bg-gradient-to-r from-slate-100 to-slate-800', accent: 'bg-amber-400' },
                   ].map(t => {
-                    const currentTheme = dark ? 'dark' : 'light';
-                    const isActive = t.id === 'system' ? false : t.id === currentTheme;
+                    const isActive = t.id === themeMode;
                     return (
                       <button
                         key={t.id}
-                        onClick={() => { if (t.id !== 'system' && (t.id === 'dark') !== dark) toggle(); }}
+                        onClick={() => setThemeMode(t.id as 'light' | 'dark' | 'system')}
                         className={`relative rounded-xl border-2 p-3 transition-all text-left ${isActive ? 'border-[#F59E0B] shadow-md shadow-amber-100 dark:shadow-amber-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-[#F59E0B]/50'}`}
                       >
                         {isActive && (
@@ -481,15 +507,64 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Notifications, API Access — placeholder panels */}
-          {(activeSection === 'Notifications' || activeSection === 'API Access') && (
+          {/* Notifications */}
+          {activeSection === 'Notifications' && (
+            <div className="card p-6 space-y-5">
+              <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                <Bell size={18} className="text-[#F59E0B]" /> Notification Preferences
+              </h2>
+              {notifLoading ? (
+                <div className="flex justify-center py-6"><RefreshCw size={18} className="animate-spin text-[#F59E0B]" /></div>
+              ) : (
+                <div className="space-y-4">
+                  {[
+                    { section: 'Email Notifications', items: [
+                      { key: 'email_on_submit', label: 'File submitted for review', desc: 'Get emailed when a file is submitted for your review' },
+                      { key: 'email_on_approve', label: 'File approved or published', desc: 'Get emailed when your file is approved or published' },
+                      { key: 'email_on_reject', label: 'File returned or rejected', desc: 'Get emailed when your file is returned to draft' },
+                    ]},
+                    { section: 'In-App Notifications', items: [
+                      { key: 'inapp_on_submit', label: 'File submitted for review', desc: 'See a notification when a file needs your review' },
+                      { key: 'inapp_on_approve', label: 'File status updated', desc: 'See a notification when your file status changes' },
+                      { key: 'inapp_on_mention', label: '@Mentions in comments', desc: 'See a notification when someone mentions you' },
+                    ]},
+                  ].map(group => (
+                    <div key={group.section}>
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{group.section}</h3>
+                      <div className="space-y-2">
+                        {group.items.map(item => (
+                          <div key={item.key} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                            <div>
+                              <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{item.label}</div>
+                              <div className="text-xs text-slate-400 mt-0.5">{item.desc}</div>
+                            </div>
+                            <button
+                              onClick={() => setNotifPrefs(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))}
+                              className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors ${notifPrefs[item.key as keyof typeof notifPrefs] ? 'bg-[#F59E0B]' : 'bg-slate-300 dark:bg-slate-600'}`}
+                            >
+                              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${notifPrefs[item.key as keyof typeof notifPrefs] ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-3 pt-2">
+                    <button onClick={saveNotifPrefs} className="btn-primary"><Check size={15} /> Save Preferences</button>
+                    {notifSaved && <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">✓ Saved!</span>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* API Access — placeholder */}
+          {activeSection === 'API Access' && (
             <div className="card p-6">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
-                {activeSection}
+                <Key size={18} className="text-[#F59E0B]" /> API Access
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {activeSection} settings coming soon.
-              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">API key management coming soon.</p>
             </div>
           )}
         </div>

@@ -45,7 +45,22 @@ router.put('/:id', authenticate, requireRole('admin', 'lead'), (req: Request, re
 router.delete('/:id', authenticate, requireRole('admin'), (req: Request, res: Response) => {
   const existing = db.prepare('SELECT id FROM repositories WHERE id=?').get(req.params.id);
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
-  db.prepare('DELETE FROM repositories WHERE id=?').run(req.params.id);
+
+  // Recursively collect all repo IDs (this folder + all descendants)
+  const collectIds = (id: number): number[] => {
+    const children = db.prepare('SELECT id FROM repositories WHERE parent_id = ?').all(id) as { id: number }[];
+    return [id, ...children.flatMap(c => collectIds(c.id))];
+  };
+  const ids = collectIds(Number(req.params.id));
+  const placeholders = ids.map(() => '?').join(',');
+
+  db.transaction(() => {
+    // Unlink files from these repos (keep the files, just disassociate)
+    db.prepare(`UPDATE files SET repository_id = NULL WHERE repository_id IN (${placeholders})`).run(...ids);
+    // Delete all descendant repos first, then the target
+    db.prepare(`DELETE FROM repositories WHERE id IN (${placeholders})`).run(...ids);
+  })();
+
   res.json({ message: 'Deleted' });
 });
 

@@ -529,10 +529,6 @@ export default function Login() {
   const { dark } = useTheme();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!authLoading && user) navigate('/', { replace: true });
-  }, [user, authLoading]);
-
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]     = useState(false);
@@ -546,6 +542,10 @@ export default function Login() {
   const [ringPulse, setRingPulse]     = useState(false);
   const [morphFading, setMorphFading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user && !loginSuccess) navigate('/', { replace: true });
+  }, [user, authLoading, loginSuccess]);
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const mouseRef = useRef({ x: -9999, y: -9999 });
@@ -639,9 +639,9 @@ export default function Login() {
         minHeight: '100vh', position: 'relative', overflow: 'hidden',
         background: '#09090B',
         fontFamily: "'DM Sans', sans-serif",
-        opacity: phase === 'slideOut' ? 0 : 1,
-        transition: phase === 'slideOut' ? 'opacity 0.45s ease' : 'opacity 0.35s ease',
-        animation: 'fadeIn 0.35s ease both',
+        ...(phase === 'slideOut'
+          ? { opacity: 0, transition: 'opacity 0.45s ease' }
+          : { animation: 'fadeIn 0.35s ease both' }),
       }}
     >
       {/* Particle trail canvas — fixed overlay */}

@@ -50,7 +50,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-start justify-center p-4 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-[200] flex items-start justify-center pt-16 px-4 pb-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
     >
@@ -69,7 +69,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
       {/* Panel */}
       <div
         ref={panelRef}
-        className={`relative w-full ${sizes[size]} my-auto flex flex-col overflow-hidden rounded-2xl z-10 anim-modal-in`}
+        className={`relative w-full ${sizes[size]} flex flex-col overflow-hidden rounded-2xl z-10 anim-modal-in`}
         style={{
           background: 'var(--card)',
           border: '1px solid var(--border)',

@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const archiver = require('archiver') as (format: string, opts?: object) => import('archiver').Archiver;
 import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { sendApprovalNotification, sendUploadNotification } from '../mailer';
@@ -68,6 +70,39 @@ router.post('/bulk-action', authenticate, requireRole('admin', 'lead'), async (r
     await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft'`;
   }
   res.json({ message: `Bulk ${action} complete`, count: ids.length });
+});
+
+router.post('/bulk-download', authenticate, async (req: Request, res: Response) => {
+  const { ids } = req.body as { ids: number[] };
+  if (!ids?.length) { res.status(400).json({ error: 'No file ids provided' }); return; }
+  const isLead = ['admin', 'lead'].includes(req.user!.role);
+  const files = await sql`
+    SELECT id, name, original_name, path, mime_type, owner_id, status
+    FROM files WHERE id = ANY(${ids}::int[])
+  `;
+  const allowed = files.filter((f: any) =>
+    isLead || f.owner_id === req.user!.userId || ['published', 'approved'].includes(f.status)
+  );
+  if (!allowed.length) { res.status(403).json({ error: 'No accessible files in selection' }); return; }
+
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="files-${new Date().toISOString().slice(0,10)}.zip"`);
+
+  const archive = archiver('zip', { zlib: { level: 6 } });
+  archive.pipe(res);
+
+  const seen = new Map<string, number>();
+  for (const f of allowed) {
+    const filePath = path.join(UPLOAD_DIR, f.path);
+    if (!fs.existsSync(filePath)) continue;
+    const ext = path.extname(f.original_name);
+    const base = path.basename(f.original_name, ext);
+    const count = seen.get(f.original_name) || 0;
+    seen.set(f.original_name, count + 1);
+    const zipName = count === 0 ? f.original_name : `${base}_(${count})${ext}`;
+    archive.file(filePath, { name: zipName });
+  }
+  await archive.finalize();
 });
 
 router.get('/:id', authenticate, async (req: Request, res: Response) => {

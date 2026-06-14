@@ -248,6 +248,22 @@ export default function FileManager() {
     load();
   };
 
+  const doBulkDownload = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/files/bulk-download', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: Array.from(selectedIds) }),
+    });
+    if (!res.ok) { alert('Download failed'); return; }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `files-${new Date().toISOString().slice(0,10)}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+  };
+
   // Export CSV
   const exportFiles = async () => {
     const token = localStorage.getItem('token');
@@ -314,6 +330,7 @@ export default function FileManager() {
         <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30">
           <span className="text-sm font-semibold text-[#F59E0B]">{selectedIds.size} file{selectedIds.size !== 1 ? 's' : ''} selected</span>
           <div className="flex items-center gap-2 ml-2">
+            <button onClick={doBulkDownload} className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"><Download size={13} /> Download as ZIP</button>
             {isEngineer && (
               <button onClick={() => doBulkAction('submit')} className="btn-secondary text-xs py-1.5 px-3">Submit for Review</button>
             )}

@@ -33,4 +33,20 @@ router.get('/', authenticate, requireRole('admin', 'lead'), async (req: Request,
   res.json({ logs, total });
 });
 
+router.get('/export', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+  const logs = await sql`
+    SELECT al.id, u.name as user, al.action, al.entity_type, al.entity_id, al.details, al.ip_address, al.created_at
+    FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id
+    ORDER BY al.created_at DESC
+    LIMIT 5000
+  `;
+  const header = 'ID,User,Action,Entity Type,Entity ID,Details,IP,Timestamp';
+  const rows = logs.map((r: any) =>
+    [r.id, `"${r.user||''}"`, r.action, r.entity_type, r.entity_id, `"${(r.details||'').replace(/"/g,'""')}"`, r.ip_address, new Date(r.created_at).toISOString()].join(',')
+  );
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="audit-log-${new Date().toISOString().slice(0,10)}.csv"`);
+  res.send([header, ...rows].join('\n'));
+});
+
 export default router;

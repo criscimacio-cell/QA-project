@@ -32,6 +32,18 @@ router.get('/', authenticate, requireRole('admin', 'lead', 'engineer'), async (r
   res.json(users);
 });
 
+router.patch('/me/preferences', authenticate, async (req: Request, res: Response) => {
+  const { preferences } = req.body;
+  await sql`UPDATE users SET preferences = ${JSON.stringify(preferences)} WHERE id = ${req.user!.userId}`;
+  res.json({ message: 'Preferences saved' });
+});
+
+router.get('/me', authenticate, async (req: Request, res: Response) => {
+  const [user] = await sql`SELECT id, name, email, role, department, avatar, preferences FROM users WHERE id = ${req.user!.userId}`;
+  if (!user) { res.status(404).json({ error: 'Not found' }); return; }
+  res.json({ ...user, preferences: JSON.parse(user.preferences || '{}') });
+});
+
 router.get('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   if (req.params.id === 'me') return;
   const [user] = await sql`SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users WHERE id = ${req.params.id}`;

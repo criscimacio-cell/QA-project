@@ -254,16 +254,14 @@ export default function KnowledgeBase() {
             </div>
             <div><label className="label">Tags</label><input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))} className="input" placeholder="tag1, tag2, tag3" /></div>
           </div>
-          {editing && (
-            <div>
-              <label className="label">Status</label>
-              <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className="input">
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
-          )}
+          <div>
+            <label className="label">Status</label>
+            <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className="input">
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              {editing && <option value="archived">Archived</option>}
+            </select>
+          </div>
           <div>
             <label className="label">Content (HTML supported)</label>
             <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} className="input font-mono text-xs" rows={12} placeholder="<h2>Section Title</h2><p>Content here...</p>" />

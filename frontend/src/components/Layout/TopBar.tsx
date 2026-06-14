@@ -57,7 +57,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
 
   return (
     <header
-      className="fixed top-0 right-0 h-16 flex items-center gap-3 px-5 z-30 transition-all duration-300 topbar-premium"
+      className="fixed top-0 right-0 h-16 flex items-center gap-3 px-5 z-[150] transition-all duration-300 topbar-premium"
       style={{ left: sidebarWidth }}
     >
       {/* ── Search ── */}

@@ -56,7 +56,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 anim-backdrop-in transition-all duration-300"
+        className="fixed inset-0 anim-backdrop-in transition-all duration-300"
         style={{
           background: 'rgba(0,0,0,0.45)',
           backdropFilter: 'blur(6px)',

@@ -3,13 +3,32 @@ import re
 from datetime import datetime
 
 
+def _get_line(content: str, tag: str):
+    """Return approximate 1-based line number where <tag appears in raw XML."""
+    for i, line in enumerate(content.splitlines(), start=1):
+        if f"<{tag}" in line:
+            return i
+    return None
+
+
+VALID_COVERAGE_TYPES = {"HEALTH", "LIFE", "PROPERTY", "AUTO"}
+DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
 def check(filename: str, content: str) -> dict:
+    """Validate an ESOA XML document.
+
+    Returns:
+        dict with keys: filename, status ('pass'|'fail'),
+        errors (list of {field, rule, message, line, severity})
+    """
     errors = []
 
-    # Parse XML
+    # --- Parse XML ---
     try:
         root = ET.fromstring(content)
-    except ET.ParseError as e:
+    except ET.ParseError as exc:
+        line_no = exc.position[0] if hasattr(exc, "position") else None
         return {
             "filename": filename,
             "status": "fail",
@@ -17,45 +36,27 @@ def check(filename: str, content: str) -> dict:
                 {
                     "field": "XML",
                     "rule": "well_formed",
-                    "message": f"XML parse error: {e}",
-                    "line": e.position[0] if hasattr(e, "position") else None,
+                    "message": f"XML parse error: {exc}",
+                    "line": line_no,
                     "severity": "error",
                 }
             ],
         }
 
-    # Validate root element
-    valid_roots = {"ESOA", "ESOADocument"}
-    if root.tag not in valid_roots:
+    # --- Validate root element ---
+    if root.tag not in ("ESOA", "ESOADocument"):
         errors.append(
             {
                 "field": "root",
                 "rule": "valid_root",
-                "message": f"Invalid root element <{root.tag}>. Expected <ESOA> or <ESOADocument>.",
+                "message": (
+                    f"Invalid root element <{root.tag}>. "
+                    "Expected <ESOA> or <ESOADocument>."
+                ),
                 "line": 1,
                 "severity": "error",
             }
         )
-
-    # Helper to get approximate line number for a field tag
-    def get_line(tag: str):
-        lines = content.splitlines()
-        for i, line in enumerate(lines, start=1):
-            if f"<{tag}" in line:
-                return i
-        return None
-
-    # Helper to get text from direct child or nested children
-    def get_field(tag: str):
-        elem = root.find(tag)
-        if elem is None:
-            for child in root:
-                elem = child.find(tag)
-                if elem is not None:
-                    break
-        if elem is not None:
-            return (elem.text or "").strip()
-        return None
 
     required_fields = [
         "SOAID",
@@ -68,33 +69,36 @@ def check(filename: str, content: str) -> dict:
 
     field_values = {}
     for field in required_fields:
-        value = get_field(field)
-        if value is None or value == "":
+        elem = root.find(field)
+        line = _get_line(content, field)
+        value = (elem.text or "").strip() if elem is not None else ""
+        if not value:
             errors.append(
                 {
                     "field": field,
                     "rule": "required",
                     "message": f"Required field <{field}> is missing or empty.",
-                    "line": get_line(field),
+                    "line": line,
                     "severity": "error",
                 }
             )
         else:
             field_values[field] = value
 
-    date_pattern = re.compile(r"\d{4}-\d{2}-\d{2}")
-
-    # Validate EffectiveDate
+    # EffectiveDate: YYYY-MM-DD and valid calendar date
     effective_dt = None
     if "EffectiveDate" in field_values:
         val = field_values["EffectiveDate"]
-        if not date_pattern.fullmatch(val):
+        line = _get_line(content, "EffectiveDate")
+        if not DATE_PATTERN.fullmatch(val):
             errors.append(
                 {
                     "field": "EffectiveDate",
                     "rule": "date_format",
-                    "message": f"EffectiveDate '{val}' does not match YYYY-MM-DD format.",
-                    "line": get_line("EffectiveDate"),
+                    "message": (
+                        f"EffectiveDate '{val}' does not match YYYY-MM-DD format."
+                    ),
+                    "line": line,
                     "severity": "error",
                 }
             )
@@ -106,23 +110,28 @@ def check(filename: str, content: str) -> dict:
                     {
                         "field": "EffectiveDate",
                         "rule": "date_valid",
-                        "message": f"EffectiveDate '{val}' is not a valid calendar date.",
-                        "line": get_line("EffectiveDate"),
+                        "message": (
+                            f"EffectiveDate '{val}' is not a valid calendar date."
+                        ),
+                        "line": line,
                         "severity": "error",
                     }
                 )
 
-    # Validate ExpiryDate
+    # ExpiryDate: YYYY-MM-DD and valid calendar date
     expiry_dt = None
     if "ExpiryDate" in field_values:
         val = field_values["ExpiryDate"]
-        if not date_pattern.fullmatch(val):
+        line = _get_line(content, "ExpiryDate")
+        if not DATE_PATTERN.fullmatch(val):
             errors.append(
                 {
                     "field": "ExpiryDate",
                     "rule": "date_format",
-                    "message": f"ExpiryDate '{val}' does not match YYYY-MM-DD format.",
-                    "line": get_line("ExpiryDate"),
+                    "message": (
+                        f"ExpiryDate '{val}' does not match YYYY-MM-DD format."
+                    ),
+                    "line": line,
                     "severity": "error",
                 }
             )
@@ -134,8 +143,10 @@ def check(filename: str, content: str) -> dict:
                     {
                         "field": "ExpiryDate",
                         "rule": "date_valid",
-                        "message": f"ExpiryDate '{val}' is not a valid calendar date.",
-                        "line": get_line("ExpiryDate"),
+                        "message": (
+                            f"ExpiryDate '{val}' is not a valid calendar date."
+                        ),
+                        "line": line,
                         "severity": "error",
                     }
                 )
@@ -147,15 +158,19 @@ def check(filename: str, content: str) -> dict:
                 {
                     "field": "ExpiryDate",
                     "rule": "expiry_after_effective",
-                    "message": f"ExpiryDate '{field_values['ExpiryDate']}' must be after EffectiveDate '{field_values['EffectiveDate']}'.",
-                    "line": get_line("ExpiryDate"),
+                    "message": (
+                        f"ExpiryDate '{field_values['ExpiryDate']}' must be "
+                        f"after EffectiveDate '{field_values['EffectiveDate']}'."
+                    ),
+                    "line": _get_line(content, "ExpiryDate"),
                     "severity": "error",
                 }
             )
 
-    # Validate PremiumAmount: positive decimal
+    # PremiumAmount: positive decimal
     if "PremiumAmount" in field_values:
         val = field_values["PremiumAmount"]
+        line = _get_line(content, "PremiumAmount")
         try:
             amount = float(val)
             if amount <= 0:
@@ -163,8 +178,10 @@ def check(filename: str, content: str) -> dict:
                     {
                         "field": "PremiumAmount",
                         "rule": "positive_number",
-                        "message": f"PremiumAmount '{val}' must be a positive decimal.",
-                        "line": get_line("PremiumAmount"),
+                        "message": (
+                            f"PremiumAmount '{val}' must be a positive decimal."
+                        ),
+                        "line": line,
                         "severity": "error",
                     }
                 )
@@ -172,24 +189,29 @@ def check(filename: str, content: str) -> dict:
             errors.append(
                 {
                     "field": "PremiumAmount",
-                    "rule": "numeric",
-                    "message": f"PremiumAmount '{val}' is not a valid decimal number.",
-                    "line": get_line("PremiumAmount"),
+                    "rule": "valid_decimal",
+                    "message": (
+                        f"PremiumAmount '{val}' is not a valid decimal number."
+                    ),
+                    "line": line,
                     "severity": "error",
                 }
             )
 
-    # Validate CoverageType
-    valid_coverage_types = {"HEALTH", "LIFE", "PROPERTY", "AUTO"}
+    # CoverageType: one of HEALTH, LIFE, PROPERTY, AUTO
     if "CoverageType" in field_values:
         val = field_values["CoverageType"]
-        if val not in valid_coverage_types:
+        line = _get_line(content, "CoverageType")
+        if val not in VALID_COVERAGE_TYPES:
             errors.append(
                 {
                     "field": "CoverageType",
                     "rule": "allowed_value",
-                    "message": f"CoverageType '{val}' must be one of: HEALTH, LIFE, PROPERTY, AUTO.",
-                    "line": get_line("CoverageType"),
+                    "message": (
+                        f"CoverageType '{val}' must be one of: "
+                        "HEALTH, LIFE, PROPERTY, AUTO."
+                    ),
+                    "line": line,
                     "severity": "error",
                 }
             )

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BookOpen, Plus, Search, Tag, Clock, User, ChevronRight, Edit2, Trash2 } from 'lucide-react';
 import api from '../api/client';
 import StatusBadge from '../components/UI/Badge';
@@ -79,6 +79,8 @@ export default function KnowledgeBase() {
   const [form, setForm] = useState({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [kbCategories, setKbCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [users, setUsers] = useState<any[]>([]);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   const load = () => {
     const params: any = {};
@@ -94,7 +96,23 @@ export default function KnowledgeBase() {
         setKbCategories(names.length > 0 ? names : DEFAULT_CATEGORIES);
       })
       .catch(() => {});
+    api.get('/users').then(r => setUsers(r.data)).catch(() => {});
   }, []);
+
+  const insertMention = (username: string) => {
+    const ta = contentRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart ?? ta.value.length;
+    const end = ta.selectionEnd ?? ta.value.length;
+    const mention = `@${username} `;
+    const newValue = ta.value.slice(0, start) + mention + ta.value.slice(end);
+    setForm(p => ({ ...p, content: newValue }));
+    // Restore focus and cursor
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = start + mention.length;
+    });
+  };
 
   useEffect(() => { load(); }, [category]);
 
@@ -264,8 +282,23 @@ export default function KnowledgeBase() {
           </div>
           <div>
             <label className="label">Content (HTML supported)</label>
-            <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} className="input font-mono text-xs" rows={12} placeholder="<h2>Section Title</h2><p>Content here...</p>" />
+            <textarea ref={contentRef} value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} className="input font-mono text-xs" rows={12} placeholder="<h2>Section Title</h2><p>Content here...</p>" />
             <p className="text-xs text-slate-400 mt-1">Supports HTML: h2, h3, p, ul, li, strong, em, code, pre</p>
+            {users.length > 0 && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs text-slate-400 flex-shrink-0">Mention a team member:</span>
+                <select
+                  className="input h-7 text-xs flex-1"
+                  defaultValue=""
+                  onChange={e => { if (e.target.value) { insertMention(e.target.value); e.target.value = ''; } }}
+                >
+                  <option value="" disabled>Select user…</option>
+                  {users.map((u: any) => (
+                    <option key={u.id} value={u.name || u.email}>{u.name || u.email}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowCreate(false); setEditing(null); setErrors({}); }} className="btn-secondary">Cancel</button>

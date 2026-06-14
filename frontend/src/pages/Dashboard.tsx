@@ -7,8 +7,29 @@ import {
 } from 'recharts';
 import {
   Files, Users, Upload, Clock, BookOpen, HardDrive,
-  Activity, TrendingUp, ArrowUpRight, ArrowDownRight, Sparkles, CheckCircle2, AlertCircle
+  Activity, TrendingUp, ArrowUpRight, ArrowDownRight, Sparkles, CheckCircle2, AlertCircle,
+  UploadCloud, CheckCircle, Trash2, Eye, Download, Archive
 } from 'lucide-react';
+
+function timeAgo(date: string): string {
+  const now = Date.now();
+  const then = new Date(date).getTime();
+  const diff = Math.floor((now - then) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(date).toLocaleDateString();
+}
+
+const ACTIVITY_ICON: Record<string, { icon: any; color: string; bg: string }> = {
+  UPLOAD:   { icon: UploadCloud, color: '#2563eb', bg: 'rgba(59,130,246,0.1)' },
+  APPROVE:  { icon: CheckCircle,  color: '#059669', bg: 'rgba(16,185,129,0.1)' },
+  DELETE:   { icon: Trash2,       color: '#dc2626', bg: 'rgba(239,68,68,0.1)' },
+  VIEW:     { icon: Eye,          color: '#475569', bg: 'rgba(100,116,139,0.08)' },
+  DOWNLOAD: { icon: Download,     color: '#d97706', bg: 'rgba(245,158,11,0.1)' },
+  ARCHIVE:  { icon: Archive,      color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+};
 
 /* ── Live clock ── */
 function useClock() {
@@ -258,6 +279,7 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<any>(null);
+  const [activityFeed, setActivityFeed] = useState<any[]>([]);
   const clock = useClock();
   const hour = clock.getHours();
   const greetingWord = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -268,6 +290,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => {});
+    api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => {});
   }, []);
 
   if (!stats) return <DashboardSkeleton />;
@@ -472,6 +495,54 @@ export default function Dashboard() {
               <Bar dataKey="file_count" fill="url(#barGrad)" radius={[6, 6, 0, 0]} name="Files" maxBarSize={44} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ── Activity Feed ── */}
+      {activityFeed.length > 0 && (
+        <div className="card p-5" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.5s' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-bold text-slate-800 dark:text-white text-sm">Recent Activity</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Latest platform events</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {activityFeed.slice(0, 15).map((item: any, idx: number) => {
+              const config = ACTIVITY_ICON[item.action] || { icon: Activity, color: '#475569', bg: 'rgba(100,116,139,0.08)' };
+              const IconComp = config.icon;
+              const initial = (item.user_name || '?')[0].toUpperCase();
+              return (
+                <div key={item.id} className="flex items-start gap-3"
+                  style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${idx * 0.04}s` }}>
+                  {/* User avatar */}
+                  {item.user_avatar ? (
+                    <img src={item.user_avatar} alt="" className="w-7 h-7 rounded-full flex-shrink-0 ring-2 ring-white dark:ring-slate-900 object-cover" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-slate-900"
+                      style={{ background: config.bg, color: config.color }}>
+                      {initial}
+                    </div>
+                  )}
+                  {/* Action icon */}
+                  <div className="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center mt-0.5"
+                    style={{ background: config.bg }}>
+                    <IconComp size={12} style={{ color: config.color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{item.user_name || 'System'}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded font-medium"
+                        style={{ background: config.bg, color: config.color }}>{item.action}</span>
+                      {item.entity_type && <span className="text-xs text-slate-400">{item.entity_type}</span>}
+                    </div>
+                    {item.details && <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">{item.details}</p>}
+                    <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-0.5">{timeAgo(item.created_at)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

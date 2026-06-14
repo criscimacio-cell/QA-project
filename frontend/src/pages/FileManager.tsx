@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image } from 'lucide-react';
+import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock } from 'lucide-react';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
@@ -30,8 +30,16 @@ function formatBytes(b: number) {
 const TABS = ['All Files', 'Pending Approval', 'Published', 'Archived'];
 const TAB_STATUS: Record<string, string> = { 'Pending Approval': 'submitted', 'Published': 'published', 'Archived': 'archived' };
 
+const APPROVAL_DOT: Record<string, string> = {
+  approved: 'bg-emerald-500',
+  published: 'bg-emerald-500',
+  under_review: 'bg-amber-400',
+  draft: 'bg-red-400',
+  pending: 'bg-slate-400',
+};
+
 export default function FileManager() {
-  const { isLead } = useAuth();
+  const { user, isLead, isAdmin, isEngineer } = useAuth();
   const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('All Files');
@@ -57,6 +65,16 @@ export default function FileManager() {
   const [previewFile, setPreviewFile] = useState<any>(null);
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
 
+  // Detail modal tabs
+  const [detailTab, setDetailTab] = useState<'details' | 'comments' | 'approvals'>('details');
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [approvalHistory, setApprovalHistory] = useState<any[]>([]);
+
+  // Bulk select
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
   useEffect(() => {
     if (!previewFile) { setPreviewBlobUrl(null); return; }
     const token = localStorage.getItem('token');
@@ -66,6 +84,14 @@ export default function FileManager() {
       .catch(() => setPreviewBlobUrl(null));
     return () => { setPreviewBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; }); };
   }, [previewFile?.id]);
+
+  // Reset detail tab state when selected file changes
+  useEffect(() => {
+    setDetailTab('details');
+    setComments([]);
+    setApprovalHistory([]);
+    setNewComment('');
+  }, [selected?.id]);
 
   const load = (overrides?: { search?: string; project?: string; category?: string }) => {
     setLoading(true);
@@ -155,10 +181,86 @@ export default function FileManager() {
     }
   };
 
+  // Comments handlers
+  const loadComments = async () => {
+    if (!selected) return;
+    setCommentLoading(true);
+    try {
+      const r = await api.get(`/files/${selected.id}/comments`);
+      setComments(r.data);
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  const postComment = async () => {
+    if (!newComment.trim() || !selected) return;
+    setCommentLoading(true);
+    try {
+      const r = await api.post(`/files/${selected.id}/comments`, { comment: newComment });
+      setComments(prev => [...prev, r.data]);
+      setNewComment('');
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  const deleteComment = async (cid: number) => {
+    if (!selected) return;
+    await api.delete(`/files/${selected.id}/comments/${cid}`);
+    setComments(prev => prev.filter(c => c.id !== cid));
+  };
+
+  // Approval history handler
+  const loadApprovals = async () => {
+    if (!selected) return;
+    const r = await api.get(`/files/${selected.id}/approvals`);
+    setApprovalHistory(r.data);
+  };
+
+  const handleDetailTabChange = (t: 'details' | 'comments' | 'approvals') => {
+    setDetailTab(t);
+    if (t === 'comments') loadComments();
+    if (t === 'approvals') loadApprovals();
+  };
+
+  // Bulk select handlers
+  const allVisibleSelected = files.length > 0 && files.every(f => selectedIds.has(f.id));
+  const toggleAll = () => {
+    if (allVisibleSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(files.map(f => f.id)));
+    }
+  };
+  const toggleOne = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const doBulkAction = async (action: 'archive' | 'delete' | 'submit') => {
+    if (action === 'delete' && !confirm(`Delete ${selectedIds.size} files permanently?`)) return;
+    await api.post('/files/bulk-action', { ids: Array.from(selectedIds), action });
+    setSelectedIds(new Set());
+    load();
+  };
+
+  // Export CSV
+  const exportFiles = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/files/export', { headers: { Authorization: `Bearer ${token}` } });
+    const blob = await res.blob();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `files-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+
   const projects = [...new Set(files.map(f => f.project).filter(Boolean))];
   const categories = [...new Set(files.map(f => f.category).filter(Boolean))];
 
-  const token = localStorage.getItem('token');
   const previewUrl = previewFile
     ? `${(api.defaults.baseURL || '/api')}${previewFile.id ? `/files/${previewFile.id}/preview` : ''}`
     : '';
@@ -170,9 +272,14 @@ export default function FileManager() {
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">File Manager</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage all QA files and assets</p>
         </div>
-        <button onClick={() => setShowBulkUpload(true)} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>
-          <Upload size={15} /> Bulk Upload
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={exportFiles} className="btn-secondary">
+            <Download size={15} /> Export CSV
+          </button>
+          <button onClick={() => setShowBulkUpload(true)} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>
+            <Upload size={15} /> Bulk Upload
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -202,6 +309,27 @@ export default function FileManager() {
         <button onClick={() => { setSearch(''); setProject(''); setCategory(''); load({ search: '', project: '', category: '' }); }} className="btn-ghost text-sm py-1.5">Clear</button>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+          <span className="text-sm font-semibold text-[#F59E0B]">{selectedIds.size} file{selectedIds.size !== 1 ? 's' : ''} selected</span>
+          <div className="flex items-center gap-2 ml-2">
+            {isEngineer && (
+              <button onClick={() => doBulkAction('submit')} className="btn-secondary text-xs py-1.5 px-3">Submit for Review</button>
+            )}
+            {isLead && (
+              <button onClick={() => doBulkAction('archive')} className="btn-secondary text-xs py-1.5 px-3">Archive Selected</button>
+            )}
+            {isAdmin && (
+              <button onClick={() => doBulkAction('delete')} className="text-xs py-1.5 px-3 rounded-lg font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-colors">Delete Selected</button>
+            )}
+          </div>
+          <button onClick={() => setSelectedIds(new Set())} className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-colors" title="Clear selection">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
@@ -217,6 +345,14 @@ export default function FileManager() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800/50">
                 <tr>
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={toggleAll}
+                      className="rounded border-slate-300 dark:border-slate-600 text-[#F59E0B] focus:ring-[#F59E0B]"
+                    />
+                  </th>
                   {['File', 'Project / Module', 'Version', 'Status', 'Owner', 'Jira', 'Size', 'Updated', 'Actions'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
@@ -224,7 +360,16 @@ export default function FileManager() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {files.map((f, index) => (
-                  <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50" style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
+                  <tr key={f.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${selectedIds.has(f.id) ? 'bg-[#F59E0B]/5' : ''}`} style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
+                    <td className="px-4 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(f.id)}
+                        onChange={() => toggleOne(f.id)}
+                        onClick={e => e.stopPropagation()}
+                        className="rounded border-slate-300 dark:border-slate-600 text-[#F59E0B] focus:ring-[#F59E0B]"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 max-w-[220px]">
                         <FileIcon mimeType={f.mime_type} name={f.original_name} size={18} />
@@ -279,6 +424,7 @@ export default function FileManager() {
       {selected && !showApprove && (
         <Modal open={!!selected} onClose={() => setSelected(null)} title="File Details" size="lg">
           <div className="space-y-4">
+            {/* File header */}
             <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
               <FileIcon mimeType={selected.mime_type} name={selected.original_name} size={36} />
               <div>
@@ -287,50 +433,161 @@ export default function FileManager() {
                 <StatusBadge status={selected.status} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {([
-                ['Project', selected.project], ['Module', selected.module], ['Category', selected.category],
-                ['Version', `v${selected.version}`], ['Owner', selected.owner_name], ['Repository', selected.repository_name],
-                ['Jira Ticket', selected.jira_ticket], ['Tags', selected.tags],
-              ] as [string, string][]).map(([l, v]) => v ? (
-                <div key={l}>
-                  <span className="text-slate-500 dark:text-slate-400">{l}: </span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">{v}</span>
-                </div>
-              ) : null)}
-            </div>
-            {selected.description && <div className="text-sm text-slate-600 dark:text-slate-300 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">{selected.description}</div>}
 
-            {selected.versions?.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 mb-2">Version History</h4>
-                <div className="space-y-2">
-                  {selected.versions.map((v: any) => (
-                    <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
-                      <span className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] px-2 py-0.5 rounded font-mono">v{v.version}</span>
-                      <span className="text-slate-500">{v.change_log}</span>
-                      <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString()}</span>
-                      <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version"><Download size={12} /></button>
+            {/* Tabs */}
+            <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg w-fit">
+              {(['details', 'comments', 'approvals'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => handleDetailTabChange(t)}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize ${detailTab === t ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                >
+                  {t === 'approvals' ? 'Approval History' : t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* Details tab */}
+            {detailTab === 'details' && (
+              <>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {([
+                    ['Project', selected.project], ['Module', selected.module], ['Category', selected.category],
+                    ['Version', `v${selected.version}`], ['Owner', selected.owner_name], ['Repository', selected.repository_name],
+                    ['Jira Ticket', selected.jira_ticket], ['Tags', selected.tags],
+                  ] as [string, string][]).map(([l, v]) => v ? (
+                    <div key={l}>
+                      <span className="text-slate-500 dark:text-slate-400">{l}: </span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{v}</span>
                     </div>
-                  ))}
+                  ) : null)}
+                </div>
+                {selected.description && <div className="text-sm text-slate-600 dark:text-slate-300 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">{selected.description}</div>}
+
+                {selected.versions?.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 mb-2">Version History</h4>
+                    <div className="space-y-2">
+                      {selected.versions.map((v: any) => (
+                        <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
+                          <span className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] px-2 py-0.5 rounded font-mono">v{v.version}</span>
+                          <span className="text-slate-500">{v.change_log}</span>
+                          <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString()}</span>
+                          <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version"><Download size={12} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 justify-end pt-2">
+                  {isPreviewable(selected) && (
+                    <button onClick={() => { setSelected(null); openPreview(selected); }} className="btn-secondary"><Eye size={15} /> Preview</button>
+                  )}
+                  <button onClick={() => downloadFile(selected.id, selected.original_name)} className="btn-secondary"><Download size={15} /> Download</button>
+                  {isLead && selected.status !== 'published' && selected.status !== 'archived' && (
+                    <button onClick={() => setShowApprove(true)} className="btn-primary">Review / Approve</button>
+                  )}
+                  {selected.status === 'archived' && (
+                    <button onClick={() => { doRestore(selected.id); setSelected(null); }} className="btn-primary">
+                      <RotateCcw size={15} /> Restore
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Comments tab */}
+            {detailTab === 'comments' && (
+              <div className="space-y-3">
+                {commentLoading && comments.length === 0 ? (
+                  <div className="text-center py-6 text-slate-400 text-sm">Loading comments…</div>
+                ) : comments.length === 0 ? (
+                  <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
+                    <MessageSquare size={28} className="opacity-30" />
+                    No comments yet. Be the first to comment.
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                    {comments.map(c => (
+                      <div key={c.id} className="flex gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        {c.user_avatar ? (
+                          <img src={c.user_avatar} alt="" className="w-8 h-8 rounded-full flex-shrink-0 object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-[#F59E0B]/20 text-[#F59E0B] flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {(c.user_name || '?')[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{c.user_name}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-slate-400">{new Date(c.created_at).toLocaleDateString()}</span>
+                              {(c.user_id === user?.id || isAdmin) && (
+                                <button onClick={() => deleteComment(c.id)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors" title="Delete comment">
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{c.comment}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <input
+                    value={newComment}
+                    onChange={e => setNewComment(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && postComment()}
+                    placeholder="Add a comment…"
+                    className="input flex-1 text-sm"
+                  />
+                  <button onClick={postComment} disabled={!newComment.trim() || commentLoading} className="btn-primary px-4">Post</button>
                 </div>
               </div>
             )}
 
-            <div className="flex gap-2 justify-end pt-2">
-              {isPreviewable(selected) && (
-                <button onClick={() => { setSelected(null); openPreview(selected); }} className="btn-secondary"><Eye size={15} /> Preview</button>
-              )}
-              <button onClick={() => downloadFile(selected.id, selected.original_name)} className="btn-secondary"><Download size={15} /> Download</button>
-              {isLead && selected.status !== 'published' && selected.status !== 'archived' && (
-                <button onClick={() => setShowApprove(true)} className="btn-primary">Review / Approve</button>
-              )}
-              {selected.status === 'archived' && (
-                <button onClick={() => { doRestore(selected.id); setSelected(null); }} className="btn-primary">
-                  <RotateCcw size={15} /> Restore
-                </button>
-              )}
-            </div>
+            {/* Approval History tab */}
+            {detailTab === 'approvals' && (
+              <div className="space-y-2">
+                {approvalHistory.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-sm flex flex-col items-center gap-2">
+                    <CheckCircle size={28} className="opacity-30" />
+                    No approval history yet.
+                  </div>
+                ) : (
+                  <div className="relative pl-4">
+                    <div className="absolute left-[7px] top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                    <div className="space-y-4">
+                      {approvalHistory.map((a: any) => (
+                        <div key={a.id} className="relative flex gap-3">
+                          <div className={`w-3.5 h-3.5 rounded-full flex-shrink-0 mt-0.5 border-2 border-white dark:border-slate-900 ${APPROVAL_DOT[a.status] || 'bg-slate-400'}`} />
+                          <div className="flex-1 min-w-0 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {a.reviewer_avatar ? (
+                                <img src={a.reviewer_avatar} alt="" className="w-6 h-6 rounded-full" />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500">
+                                  {(a.reviewer_name || '?')[0].toUpperCase()}
+                                </div>
+                              )}
+                              <span className="font-semibold text-slate-700 dark:text-slate-200">{a.reviewer_name}</span>
+                              <StatusBadge status={a.status} />
+                              <span className="ml-auto text-xs text-slate-400 flex items-center gap-1">
+                                <Clock size={10} /> {new Date(a.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {a.comments && <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{a.comments}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </Modal>
       )}

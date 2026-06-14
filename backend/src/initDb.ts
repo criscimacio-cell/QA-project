@@ -167,6 +167,18 @@ export async function initDb() {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS file_comments (
+      id         SERIAL PRIMARY KEY,
+      file_id    INTEGER REFERENCES files(id) ON DELETE CASCADE,
+      user_id    INTEGER REFERENCES users(id),
+      comment    TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences TEXT DEFAULT '{}'`;
+
   // ── Seed categories ──────────────────────────────────────────────────────
   const [{ c: catCount }] = await sql`SELECT COUNT(*)::int as c FROM categories`;
   if (catCount === 0) {

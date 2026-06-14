@@ -42,6 +42,40 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
   res.json(rows);
 });
 
+router.get('/export', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+  const files = await sql`
+    SELECT f.id, f.name, f.original_name, f.version, f.status, f.project, f.module, f.category, f.jira_ticket, f.tags, f.size, u.name as owner, r.name as repository, f.created_at, f.updated_at
+    FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id
+    ORDER BY f.updated_at DESC
+  `;
+  const header = 'ID,Name,Original Name,Version,Status,Project,Module,Category,Jira Ticket,Tags,Size (bytes),Owner,Repository,Created,Updated';
+  const rows = files.map((f: any) =>
+    [f.id, `"${f.name}"`, `"${f.original_name}"`, f.version, f.status, `"${f.project||''}"`, `"${f.module||''}"`, `"${f.category||''}"`, `"${f.jira_ticket||''}"`, `"${f.tags||''}"`, f.size, `"${f.owner||''}"`, `"${f.repository||''}"`, new Date(f.created_at).toISOString(), new Date(f.updated_at).toISOString()].join(',')
+  );
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="files-export-${new Date().toISOString().slice(0,10)}.csv"`);
+  res.send([header, ...rows].join('\n'));
+});
+
+router.post('/bulk-action', authenticate, requireRole('admin', 'lead'), async (req, res) => {
+  const { ids, action } = req.body as { ids: number[]; action: 'archive' | 'delete' | 'submit' };
+  if (!ids?.length || !action) { res.status(400).json({ error: 'ids and action required' }); return; }
+  if (action === 'archive') {
+    await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status != 'archived'`;
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) SELECT ${req.user!.userId}, 'ARCHIVE', 'file', id, 'Bulk archived', ${req.ip || ''} FROM unnest(${ids}::int[]) AS id`;
+  } else if (action === 'delete') {
+    await sql.begin(async tx => {
+      await tx`DELETE FROM file_comments WHERE file_id = ANY(${ids}::int[])`;
+      await tx`DELETE FROM file_versions WHERE file_id = ANY(${ids}::int[])`;
+      await tx`DELETE FROM approvals WHERE file_id = ANY(${ids}::int[])`;
+      await tx`DELETE FROM files WHERE id = ANY(${ids}::int[])`;
+    });
+  } else if (action === 'submit') {
+    await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft'`;
+  }
+  res.json({ message: `Bulk ${action} complete`, count: ids.length });
+});
+
 router.get('/:id', authenticate, async (req: Request, res: Response) => {
   const [file] = await sql`
     SELECT f.*, u.name as owner_name, r.name as repository_name
@@ -239,6 +273,46 @@ router.get('/:id/versions/:version/download', authenticate, async (req: Request,
   } else {
     res.status(404).json({ error: 'Version file not found on disk.' });
   }
+});
+
+router.get('/:id/comments', authenticate, async (req, res) => {
+  const comments = await sql`
+    SELECT fc.*, u.name as user_name, u.avatar as user_avatar
+    FROM file_comments fc JOIN users u ON fc.user_id = u.id
+    WHERE fc.file_id = ${req.params.id}
+    ORDER BY fc.created_at ASC
+  `;
+  res.json(comments);
+});
+
+router.post('/:id/comments', authenticate, async (req, res) => {
+  const { comment } = req.body;
+  if (!comment?.trim()) { res.status(400).json({ error: 'Comment cannot be empty' }); return; }
+  const [row] = await sql`
+    INSERT INTO file_comments (file_id, user_id, comment)
+    VALUES (${req.params.id}, ${req.user!.userId}, ${comment.trim()})
+    RETURNING id, created_at
+  `;
+  const [user] = await sql`SELECT name, avatar FROM users WHERE id = ${req.user!.userId}`;
+  res.json({ ...row, user_name: user.name, user_avatar: user.avatar, comment: comment.trim(), user_id: req.user!.userId, file_id: parseInt(req.params.id) });
+});
+
+router.delete('/:id/comments/:cid', authenticate, async (req, res) => {
+  const [c] = await sql`SELECT user_id FROM file_comments WHERE id = ${req.params.cid} AND file_id = ${req.params.id}`;
+  if (!c) { res.status(404).json({ error: 'Not found' }); return; }
+  if (c.user_id !== req.user!.userId && req.user!.role !== 'admin') { res.status(403).json({ error: 'Forbidden' }); return; }
+  await sql`DELETE FROM file_comments WHERE id = ${req.params.cid}`;
+  res.json({ message: 'Deleted' });
+});
+
+router.get('/:id/approvals', authenticate, async (req, res) => {
+  const history = await sql`
+    SELECT a.*, u.name as reviewer_name, u.avatar as reviewer_avatar
+    FROM approvals a JOIN users u ON a.reviewer_id = u.id
+    WHERE a.file_id = ${req.params.id}
+    ORDER BY a.created_at DESC
+  `;
+  res.json(history);
 });
 
 router.use((err: any, _req: Request, res: Response, next: Function) => {

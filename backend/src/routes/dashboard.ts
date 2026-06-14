@@ -61,6 +61,17 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
   res.json(stats);
 });
 
+router.get('/activity', authenticate, async (req: Request, res: Response) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+  const activity = await sql`
+    SELECT al.*, u.name as user_name, u.avatar as user_avatar
+    FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id
+    ORDER BY al.created_at DESC
+    LIMIT ${limit}
+  `;
+  res.json(activity);
+});
+
 // Call this after file uploads/approvals to bust the cache
 export async function bustDashboardCache() { await invalidate('dashboard:stats'); }
 

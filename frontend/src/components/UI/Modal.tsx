@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -48,7 +49,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
 
   if (!open && !closing) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[200] flex items-start justify-center pt-16 px-4 pb-4 overflow-y-auto"
       role="dialog"
@@ -113,6 +114,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

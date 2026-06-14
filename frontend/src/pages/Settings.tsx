@@ -250,6 +250,8 @@ export default function Settings() {
                       return n;
                     });
                   }} className={`input ${errors.newPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                  {newPw && (() => { const s = passwordStrength(newPw); return <p className={`text-xs mt-1 font-medium ${s.color}`}>Strength: {s.label}</p>; })()}
+                  <p className="text-xs text-slate-400 mt-0.5">Min 8 characters, at least one number or special character</p>
                   {errors.newPassword && <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>}
                 </div>
                 <div>

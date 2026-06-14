@@ -1,11 +1,33 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, RefreshCw, Camera, X, Check } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, RefreshCw, Camera, X, Check, Sun, Moon, Monitor } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../api/client';
 
 export default function Settings() {
   const { user, isAdmin, refreshUser } = useAuth();
-  const [activeSection, setActiveSection] = useState('Security');
+  const { dark, toggle } = useTheme();
+  const [activeSection, setActiveSection] = useState('Appearance');
+
+  // Appearance state
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'normal');
+  const [sidebarCompact, setSidebarCompact] = useState(() => localStorage.getItem('sidebarCompact') === 'true');
+  const [appearanceSaved, setAppearanceSaved] = useState(false);
+
+  const saveAppearance = () => {
+    localStorage.setItem('fontSize', fontSize);
+    localStorage.setItem('sidebarCompact', String(sidebarCompact));
+    // Apply font size
+    const sizes: Record<string, string> = { small: '13px', normal: '14px', large: '15px', xlarge: '16px' };
+    document.documentElement.style.setProperty('--base-font-size', sizes[fontSize] || '14px');
+    setAppearanceSaved(true);
+    setTimeout(() => setAppearanceSaved(false), 2000);
+  };
+
+  useEffect(() => {
+    const sizes: Record<string, string> = { small: '13px', normal: '14px', large: '15px', xlarge: '16px' };
+    document.documentElement.style.setProperty('--base-font-size', sizes[fontSize] || '14px');
+  }, []);
 
   // Avatar state
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -362,14 +384,111 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Appearance, Notifications, API Access — placeholder panels */}
-          {(activeSection === 'Appearance' || activeSection === 'Notifications' || activeSection === 'API Access') && (
+          {/* Appearance */}
+          {activeSection === 'Appearance' && (
+            <div className="space-y-5">
+              {/* Theme */}
+              <div className="card p-6 space-y-4">
+                <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                  <Palette size={18} className="text-[#F59E0B]" /> Theme
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { id: 'light', label: 'Light', icon: Sun, preview: 'bg-white border-slate-200', text: 'text-slate-800', bar: 'bg-slate-100', accent: 'bg-amber-400' },
+                    { id: 'dark',  label: 'Dark',  icon: Moon, preview: 'bg-slate-900 border-slate-700', text: 'text-slate-100', bar: 'bg-slate-800', accent: 'bg-amber-400' },
+                    { id: 'system', label: 'System', icon: Monitor, preview: 'bg-gradient-to-br from-white to-slate-900 border-slate-300', text: 'text-slate-500', bar: 'bg-gradient-to-r from-slate-100 to-slate-800', accent: 'bg-amber-400' },
+                  ].map(t => {
+                    const currentTheme = dark ? 'dark' : 'light';
+                    const isActive = t.id === 'system' ? false : t.id === currentTheme;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => { if (t.id !== 'system' && (t.id === 'dark') !== dark) toggle(); }}
+                        className={`relative rounded-xl border-2 p-3 transition-all text-left ${isActive ? 'border-[#F59E0B] shadow-md shadow-amber-100 dark:shadow-amber-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-[#F59E0B]/50'}`}
+                      >
+                        {isActive && (
+                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#F59E0B] flex items-center justify-center">
+                            <Check size={11} color="white" />
+                          </div>
+                        )}
+                        {/* Mini preview */}
+                        <div className={`w-full h-16 rounded-lg border mb-2.5 overflow-hidden ${t.preview}`}>
+                          <div className={`h-3 w-full ${t.bar} flex items-center px-1.5 gap-1`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${t.accent}`} />
+                            <div className={`h-0.5 w-8 rounded ${t.bar === 'bg-slate-100' ? 'bg-slate-300' : 'bg-slate-600'}`} />
+                          </div>
+                          <div className="p-1.5 space-y-1">
+                            <div className={`h-1.5 w-3/4 rounded ${t.bar === 'bg-slate-100' ? 'bg-slate-200' : 'bg-slate-700'}`} />
+                            <div className={`h-1.5 w-1/2 rounded ${t.bar === 'bg-slate-100' ? 'bg-slate-200' : 'bg-slate-700'}`} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <t.icon size={13} className="text-slate-500 dark:text-slate-400" />
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t.label}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Font Size */}
+              <div className="card p-6 space-y-4">
+                <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200">Font Size</h2>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { id: 'small', label: 'Small', sample: 'text-[11px]' },
+                    { id: 'normal', label: 'Normal', sample: 'text-[13px]' },
+                    { id: 'large', label: 'Large', sample: 'text-[15px]' },
+                    { id: 'xlarge', label: 'X-Large', sample: 'text-[17px]' },
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => setFontSize(f.id)}
+                      className={`rounded-xl border-2 p-3 transition-all text-center ${fontSize === f.id ? 'border-[#F59E0B] bg-[#F59E0B]/5' : 'border-slate-200 dark:border-slate-700 hover:border-[#F59E0B]/40'}`}
+                    >
+                      <span className={`${f.sample} font-medium text-slate-700 dark:text-slate-300 block mb-1`}>Aa</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{f.label}</span>
+                      {fontSize === f.id && <div className="mt-1.5 mx-auto w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Layout Options */}
+              <div className="card p-6 space-y-4">
+                <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200">Layout</h2>
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <div>
+                    <div className="text-sm font-medium text-slate-700 dark:text-slate-300">Compact Sidebar</div>
+                    <div className="text-xs text-slate-400 mt-0.5">Show icons only, hide labels</div>
+                  </div>
+                  <button
+                    onClick={() => setSidebarCompact(v => !v)}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${sidebarCompact ? 'bg-[#F59E0B]' : 'bg-slate-300 dark:bg-slate-600'}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${sidebarCompact ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button onClick={saveAppearance} className="btn-primary">
+                  <Check size={15} /> Save Appearance
+                </button>
+                {appearanceSaved && <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">✓ Saved!</span>}
+              </div>
+            </div>
+          )}
+
+          {/* Notifications, API Access — placeholder panels */}
+          {(activeSection === 'Notifications' || activeSection === 'API Access') && (
             <div className="card p-6">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
                 {activeSection}
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                {activeSection} settings are not yet configurable in this version.
+                {activeSection} settings coming soon.
               </p>
             </div>
           )}

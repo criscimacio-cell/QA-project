@@ -16,13 +16,7 @@ const storage = multer.diskStorage({
   destination: UPLOAD_DIR,
   filename: (_req, file, cb) => { cb(null, `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`); },
 });
-const upload = multer({
-  storage, limits: { fileSize: MAX_FILE_SIZE },
-  fileFilter: (_req, file, cb) => {
-    const BLOCKED = ['text/html','application/x-httpd-php','application/x-sh','text/javascript','application/javascript','image/svg+xml','image/svg'];
-    BLOCKED.includes(file.mimetype) ? cb(new Error('File type not allowed')) : cb(null, true);
-  },
-});
+const upload = multer({ storage, limits: { fileSize: MAX_FILE_SIZE } });
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
   const { repository_id, status, project, category, search } = req.query;

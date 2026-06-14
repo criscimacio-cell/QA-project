@@ -98,15 +98,16 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-/* ── Modern KPI Card ── */
+/* ── Fintech-style KPI Card ── */
 function KpiCard({
-  icon: Icon, label, value, sub, accent, sparkData,
+  icon: Icon, label, value, sub, accent, gradient, sparkData,
   trend, trendLabel, delay = 0,
 }: {
   icon: any; label: string; value: number | string; sub?: string;
-  accent: string; sparkData?: number[]; trend?: number; trendLabel?: string; delay?: number;
+  accent: string; gradient: string; sparkData?: number[]; trend?: number; trendLabel?: string; delay?: number;
 }) {
   const [visible, setVisible] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const isNumeric = typeof value === 'number';
   const count = useCountUp(isNumeric ? (value as number) : 0, 950, visible && isNumeric);
   const displayValue = isNumeric ? count.toLocaleString() : value;
@@ -120,83 +121,104 @@ function KpiCard({
 
   return (
     <div
-      className="card relative overflow-hidden group cursor-default"
+      className="relative overflow-hidden cursor-default rounded-2xl"
       style={{
+        background: gradient,
         opacity: 0,
         animation: `fadeSlideUp 0.42s cubic-bezier(0.22,1,0.36,1) ${delay}ms both`,
-        transition: 'box-shadow 0.2s, transform 0.2s',
+        boxShadow: hovered
+          ? `0 20px 60px ${accent}55, 0 8px 24px ${accent}33`
+          : `0 4px 20px ${accent}33, 0 2px 8px rgba(0,0,0,0.12)`,
+        transform: hovered ? 'translateY(-6px) scale(1.02)' : 'translateY(0) scale(1)',
+        transition: 'box-shadow 0.3s cubic-bezier(0.22,1,0.36,1), transform 0.3s cubic-bezier(0.22,1,0.36,1)',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-lg)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ''; (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      {/* Top accent bar */}
+      {/* Shine sweep on hover */}
       <div
-        className="absolute top-0 left-0 right-0 h-[3px]"
-        style={{ background: `linear-gradient(90deg, ${accent}, ${accent}44, transparent)` }}
+        className="pointer-events-none absolute inset-0 rounded-2xl"
+        style={{
+          background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%)',
+          transform: hovered ? 'translateX(100%)' : 'translateX(-100%)',
+          transition: hovered ? 'transform 0.55s ease' : 'none',
+        }}
       />
 
-      <div className="p-5 pt-6">
-        {/* Header row: icon + label + trend */}
-        <div className="flex items-start justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: `${accent}18` }}
-            >
-              <Icon size={17} style={{ color: accent }} />
-            </div>
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-tight">
+      {/* Glowing blob top-right */}
+      <div
+        className="pointer-events-none absolute -top-6 -right-6 w-28 h-28 rounded-full"
+        style={{ background: 'rgba(255,255,255,0.12)', filter: 'blur(18px)' }}
+      />
+
+      <div className="relative p-5">
+        {/* Top row: label + large icon */}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/70 leading-tight mb-0.5">
               {label}
-            </span>
+            </p>
+            {trend !== undefined && (
+              <span
+                className="inline-flex items-center gap-0.5 text-xs font-bold px-2 py-0.5 rounded-full mt-1"
+                style={{
+                  background: trendUp ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)',
+                  color: 'white',
+                }}
+              >
+                {trendUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                {Math.abs(trend)}%
+              </span>
+            )}
           </div>
-          {trend !== undefined && (
-            <span
-              className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 flex-shrink-0 ${
-                trendUp
-                  ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                  : 'bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400'
-              }`}
-            >
-              {trendUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-              {Math.abs(trend)}%
-            </span>
-          )}
+          {/* Large icon bubble */}
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+            style={{
+              background: 'rgba(255,255,255,0.18)',
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+              transform: hovered ? 'scale(1.12) rotate(-6deg)' : 'scale(1) rotate(0deg)',
+              transition: 'transform 0.3s cubic-bezier(0.22,1,0.36,1)',
+            }}
+          >
+            <Icon size={22} color="white" />
+          </div>
         </div>
 
-        {/* Value + sparkline row */}
-        <div className="flex items-end justify-between gap-2">
+        {/* Big number */}
+        <p
+          className="text-4xl font-black text-white leading-none tracking-tight mb-1"
+          style={{ fontVariantNumeric: 'tabular-nums', textShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+        >
+          {displayValue}
+        </p>
+
+        {/* Sub + sparkline */}
+        <div className="flex items-end justify-between gap-2 mt-2">
           <div>
-            <p
-              className="text-3xl font-extrabold text-slate-800 dark:text-white leading-none tracking-tight"
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              {displayValue}
-            </p>
-            {sub && (
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-1">
-                {sub}
-              </p>
-            )}
+            {sub && <p className="text-xs text-white/65 leading-tight">{sub}</p>}
             {trendLabel && trend !== undefined && (
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{trendLabel}</p>
+              <p className="text-xs text-white/50 mt-0.5">{trendLabel}</p>
             )}
           </div>
           {sparkData && sparkData.length > 1 && (
-            <div className="opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0 pb-0.5">
-              <Sparkline data={sparkData} color={accent} />
+            <div className="flex-shrink-0 opacity-60 group-hover:opacity-90 transition-opacity">
+              <Sparkline data={sparkData} color="rgba(255,255,255,0.9)" />
             </div>
           )}
         </div>
       </div>
 
-      {/* Bottom fill bar */}
-      <div className="h-[3px] w-full" style={{ background: `${accent}10` }}>
+      {/* Bottom progress bar */}
+      <div className="h-[3px] w-full" style={{ background: 'rgba(0,0,0,0.12)' }}>
         <div
           className="h-full"
           style={{
-            width: visible ? '100%' : '0%',
-            background: `linear-gradient(90deg, ${accent}66, ${accent}22)`,
+            width: visible ? '70%' : '0%',
+            background: 'rgba(255,255,255,0.45)',
             transition: `width 1.4s cubic-bezier(0.4,0,0.2,1) ${delay + 200}ms`,
+            borderRadius: '0 2px 2px 0',
           }}
         />
       </div>
@@ -369,37 +391,50 @@ export default function Dashboard() {
         <KpiCard
           icon={Files} label="Total Files" value={stats.totalFiles}
           sub="Active assets" accent="#f59e0b"
+          gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 60%, #b45309 100%)"
           sparkData={trendNums} delay={0}
         />
         <KpiCard
           icon={Users} label="Active Users" value={stats.activeUsers}
-          sub="Team members" accent="#6366f1" delay={60}
+          sub="Team members" accent="#6366f1"
+          gradient="linear-gradient(135deg, #6366f1 0%, #4f46e5 60%, #4338ca 100%)"
+          delay={60}
         />
         <KpiCard
           icon={Upload} label="Uploaded Today" value={stats.uploadedToday}
           sub="New uploads" accent="#10b981"
+          gradient="linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%)"
           trend={uploadTrend} trendLabel="vs yesterday"
           sparkData={trendNums} delay={120}
         />
         <KpiCard
           icon={Clock} label="Pending Review" value={stats.pendingApprovals}
-          sub="Awaiting approval" accent="#ef4444" delay={180}
+          sub="Awaiting approval" accent="#ef4444"
+          gradient="linear-gradient(135deg, #ef4444 0%, #dc2626 60%, #b91c1c 100%)"
+          delay={180}
         />
         <KpiCard
           icon={BookOpen} label="KB Articles" value={stats.totalKB}
-          sub="Published guides" accent="#8b5cf6" delay={240}
+          sub="Published guides" accent="#8b5cf6"
+          gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 60%, #6d28d9 100%)"
+          delay={240}
         />
         <KpiCard
           icon={HardDrive} label="Storage Used" value={formatBytes(stats.totalSize)}
-          sub="Total capacity" accent="#0ea5e9" delay={300}
+          sub="Total capacity" accent="#0ea5e9"
+          gradient="linear-gradient(135deg, #0ea5e9 0%, #0284c7 60%, #0369a1 100%)"
+          delay={300}
         />
         <KpiCard
           icon={Activity} label="Audit Events" value={stats.auditEventsToday}
-          sub="Last 24 hours" accent="#f97316" delay={360}
+          sub="Last 24 hours" accent="#f97316"
+          gradient="linear-gradient(135deg, #f97316 0%, #ea580c 60%, #c2410c 100%)"
+          delay={360}
         />
         <KpiCard
           icon={TrendingUp} label="Upload Growth" value={`${stats.uploadGrowth ?? 0}`}
           sub="This week vs last" accent="#14b8a6"
+          gradient="linear-gradient(135deg, #14b8a6 0%, #0d9488 60%, #0f766e 100%)"
           sparkData={trendNums} delay={420}
         />
       </div>

@@ -628,15 +628,19 @@ export default function Repositories() {
 
 /* ── Upload Modal ── */
 function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
+  const [mode, setMode] = useState<'file' | 'folder'>('file');
   const [form, setForm] = useState({ name: '', project: '', module: '', category: '', jira_ticket: '', tags: '', description: '', version: '1' });
   const [file, setFile] = useState<File | null>(null);
+  const [folderFiles, setFolderFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState('');
   const [selectedRepo, setSelectedRepo] = useState(repositoryId?.toString() || '');
   const [categories, setCategories] = useState<string[]>([]);
   const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
   const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => { setSelectedRepo(repositoryId?.toString() || ''); }, [repositoryId]);
+  useEffect(() => { setFile(null); setFolderFiles([]); setUploadErrors({}); setProgress(''); }, [mode]);
 
   useEffect(() => {
     api.get('/categories', { params: { type: 'file' } })
@@ -644,11 +648,18 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
       .catch(() => {});
   }, []);
 
+  const reset = () => {
+    setFile(null); setFolderFiles([]); setUploadErrors({}); setProgress('');
+    setForm({ name: '', project: '', module: '', category: '', jira_ticket: '', tags: '', description: '', version: '1' });
+    setMode('file');
+  };
+
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!form.name.trim()) errs.name = 'Display name is required';
+    if (mode === 'file' && !form.name.trim()) errs.name = 'Display name is required';
     if (!selectedRepo) errs.repository_id = 'Please select a repository';
-    if (!file) errs.file = 'Please choose a file to upload';
+    if (mode === 'file' && !file) errs.file = 'Please choose a file to upload';
+    if (mode === 'folder' && !folderFiles.length) errs.file = 'Please select a folder';
     setUploadErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -661,61 +672,115 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
       await api.post('/categories', { name: form.category, type: 'file' });
       setCategories(prev => [...prev, form.category]);
     }
-    const fd = new FormData();
-    fd.append('file', file as File);
-    Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-    fd.append('repository_id', selectedRepo);
     try {
-      await api.post('/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      onClose(); onSuccess();
-      setFile(null);
-      setUploadErrors({});
-      setForm({ name: '', project: '', module: '', category: '', jira_ticket: '', tags: '', description: '', version: '1' });
+      if (mode === 'file') {
+        const fd = new FormData();
+        fd.append('file', file as File);
+        Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+        fd.append('repository_id', selectedRepo);
+        await api.post('/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      } else {
+        // Folder mode — bulk upload all files
+        setProgress(`Uploading ${folderFiles.length} file(s)…`);
+        const fd = new FormData();
+        folderFiles.forEach(f => fd.append('files', f));
+        fd.append('repository_id', selectedRepo);
+        if (form.project) fd.append('project', form.project);
+        if (form.module) fd.append('module', form.module);
+        if (form.category) fd.append('category', form.category);
+        await api.post('/files/bulk-upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        setProgress(`✓ ${folderFiles.length} files uploaded`);
+        await new Promise(r => setTimeout(r, 800));
+      }
+      onClose(); onSuccess(); reset();
+    } catch (err: any) {
+      setProgress(err?.response?.data?.error || 'Upload failed');
     } finally { setLoading(false); }
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Upload File" size="lg">
+    <Modal open={open} onClose={() => { onClose(); reset(); }} title="Upload to Repository" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Mode toggle */}
+        <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
+          {(['file', 'folder'] as const).map(m => (
+            <button key={m} type="button" onClick={() => setMode(m)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all capitalize ${mode === m ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}>
+              {m === 'file' ? '📄 Single File' : '📁 Folder'}
+            </button>
+          ))}
+        </div>
+
+        {/* Drop zone */}
         <div
           className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${dragOver ? 'border-[#F59E0B] bg-[#F59E0B]/5' : uploadErrors.file ? 'border-red-400' : 'border-slate-200 dark:border-slate-700 hover:border-[#F59E0B]/50'}`}
           onDragOver={e => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={e => {
             e.preventDefault(); setDragOver(false);
-            const f = e.dataTransfer.files?.[0];
-            if (f) { setFile(f); setUploadErrors(p => ({ ...p, file: '' })); if (!form.name) setForm(p => ({ ...p, name: f.name.replace(/\.[^/.]+$/, '') })); }
+            if (mode === 'file') {
+              const f = e.dataTransfer.files?.[0];
+              if (f) { setFile(f); setUploadErrors(p => ({ ...p, file: '' })); if (!form.name) setForm(p => ({ ...p, name: f.name.replace(/\.[^/.]+$/, '') })); }
+            } else {
+              const dropped = Array.from(e.dataTransfer.files);
+              if (dropped.length) { setFolderFiles(dropped); setUploadErrors(p => ({ ...p, file: '' })); }
+            }
           }}
         >
-          {file ? (
-            <div className="flex items-center justify-center gap-3">
-              <FileIcon name={file.name} size={28} />
-              <div className="text-left">
-                <div className="font-medium text-slate-900 dark:text-slate-100 text-sm">{file.name}</div>
-                <div className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB</div>
+          {mode === 'file' ? (
+            file ? (
+              <div className="flex items-center justify-center gap-3">
+                <FileIcon name={file.name} size={28} />
+                <div className="text-left">
+                  <div className="font-medium text-slate-900 dark:text-slate-100 text-sm">{file.name}</div>
+                  <div className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB</div>
+                </div>
+                <button type="button" onClick={() => setFile(null)} className="ml-2 text-xs text-red-500 hover:text-red-700">Remove</button>
               </div>
-              <button type="button" onClick={() => setFile(null)} className="ml-2 text-xs text-red-500 hover:text-red-700">Remove</button>
-            </div>
+            ) : (
+              <label className="cursor-pointer">
+                <Upload size={28} className="mx-auto mb-2 text-slate-300" />
+                <p className="text-sm text-slate-500 mb-1">Drop a file here or <span className="text-[#F59E0B] font-medium">browse</span></p>
+                <p className="text-xs text-slate-400">Any file type · Max 50 MB</p>
+                <input type="file" className="hidden" onChange={e => {
+                  const f = e.target.files?.[0];
+                  if (f) { setFile(f); setUploadErrors(p => ({ ...p, file: '' })); if (!form.name) setForm(p => ({ ...p, name: f.name.replace(/\.[^/.]+$/, '') })); }
+                }} />
+              </label>
+            )
           ) : (
-            <label className="cursor-pointer">
-              <Upload size={28} className="mx-auto mb-2 text-slate-300" />
-              <p className="text-sm text-slate-500 mb-1">Drop a file here or <span className="text-[#F59E0B] font-medium">browse</span></p>
-              <p className="text-xs text-slate-400">Any file type accepted · Max 50 MB</p>
-              <input type="file" className="hidden" onChange={e => {
-                const f = e.target.files?.[0];
-                if (f) { setFile(f); setUploadErrors(p => ({ ...p, file: '' })); if (!form.name) setForm(p => ({ ...p, name: f.name.replace(/\.[^/.]+$/, '') })); }
-              }} />
-            </label>
+            folderFiles.length > 0 ? (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">📁 {folderFiles.length} files selected</p>
+                <div className="max-h-28 overflow-y-auto text-xs text-slate-400 text-left space-y-0.5 mt-2">
+                  {folderFiles.slice(0, 20).map((f, i) => <div key={i} className="truncate">{f.webkitRelativePath || f.name}</div>)}
+                  {folderFiles.length > 20 && <div className="text-slate-400">…and {folderFiles.length - 20} more</div>}
+                </div>
+                <button type="button" onClick={() => setFolderFiles([])} className="mt-2 text-xs text-red-500 hover:text-red-700">Clear</button>
+              </div>
+            ) : (
+              <label className="cursor-pointer">
+                <Upload size={28} className="mx-auto mb-2 text-slate-300" />
+                <p className="text-sm text-slate-500 mb-1">Click to select a folder</p>
+                <p className="text-xs text-slate-400">All files inside will be uploaded · Max 50 MB each</p>
+                <input type="file" className="hidden" {...{ webkitdirectory: 'true' } as any} multiple onChange={e => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length) { setFolderFiles(files); setUploadErrors(p => ({ ...p, file: '' })); }
+                }} />
+              </label>
+            )
           )}
         </div>
         {uploadErrors.file && <p className="text-xs text-red-500 -mt-2">{uploadErrors.file}</p>}
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="label">Display Name<span className="text-red-500 ml-0.5">*</span></label>
-            <input value={form.name} onChange={e => { setForm(p => ({ ...p, name: e.target.value })); if (uploadErrors.name) setUploadErrors(p => ({ ...p, name: '' })); }} className={`input ${uploadErrors.name ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="File display name" />
-            {uploadErrors.name && <p className="text-xs text-red-500 mt-1">{uploadErrors.name}</p>}
-          </div>
+          {mode === 'file' && (
+            <div>
+              <label className="label">Display Name<span className="text-red-500 ml-0.5">*</span></label>
+              <input value={form.name} onChange={e => { setForm(p => ({ ...p, name: e.target.value })); if (uploadErrors.name) setUploadErrors(p => ({ ...p, name: '' })); }} className={`input ${uploadErrors.name ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="File display name" />
+              {uploadErrors.name && <p className="text-xs text-red-500 mt-1">{uploadErrors.name}</p>}
+            </div>
+          )}
           <div>
             <label className="label">Repository<span className="text-red-500 ml-0.5">*</span></label>
             <select value={selectedRepo} onChange={e => { setSelectedRepo(e.target.value); if (uploadErrors.repository_id) setUploadErrors(p => ({ ...p, repository_id: '' })); }} className={`input ${uploadErrors.repository_id ? 'border-red-400 focus:ring-red-300' : ''}`}>
@@ -728,27 +793,22 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
           <div><label className="label">Module</label><input value={form.module} onChange={e => setForm(p => ({ ...p, module: e.target.value }))} className="input" placeholder="e.g. CF4" /></div>
           <div>
             <label className="label">Category</label>
-            <input
-              list="upload-category-options"
-              value={form.category}
-              onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
-              className="input"
-              placeholder="Select or type a category…"
-            />
-            <datalist id="upload-category-options">
-              {categories.map(c => <option key={c} value={c} />)}
-            </datalist>
+            <input list="upload-category-options" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="input" placeholder="Select or type a category…" />
+            <datalist id="upload-category-options">{categories.map(c => <option key={c} value={c} />)}</datalist>
           </div>
           <div><label className="label">Jira Ticket</label><input value={form.jira_ticket} onChange={e => setForm(p => ({ ...p, jira_ticket: e.target.value }))} className="input" placeholder="e.g. QA-123" /></div>
-          <div><label className="label">Version</label><input type="number" value={form.version} onChange={e => setForm(p => ({ ...p, version: e.target.value }))} className="input" min="1" /></div>
+          {mode === 'file' && <div><label className="label">Version</label><input type="number" value={form.version} onChange={e => setForm(p => ({ ...p, version: e.target.value }))} className="input" min="1" /></div>}
           <div><label className="label">Tags</label><input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))} className="input" placeholder="comma, separated, tags" /></div>
         </div>
-        <div><label className="label">Description</label><textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} className="input" rows={2} placeholder="Brief description…" /></div>
+        {mode === 'file' && <div><label className="label">Description</label><textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} className="input" rows={2} placeholder="Brief description…" /></div>}
+
+        {progress && <p className={`text-sm text-center font-medium ${progress.startsWith('✓') ? 'text-emerald-500' : progress.includes('failed') ? 'text-red-500' : 'text-slate-500'}`}>{progress}</p>}
+
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-          <button type="submit" disabled={!file || loading} className="btn-primary">
+          <button type="button" onClick={() => { onClose(); reset(); }} className="btn-secondary">Cancel</button>
+          <button type="submit" disabled={(mode === 'file' ? !file : !folderFiles.length) || loading} className="btn-primary">
             {loading ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} />}
-            Upload File
+            {mode === 'folder' ? `Upload ${folderFiles.length || ''} Files` : 'Upload File'}
           </button>
         </div>
       </form>

@@ -634,6 +634,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
   const [selectedRepo, setSelectedRepo] = useState(repositoryId?.toString() || '');
   const [categories, setCategories] = useState<string[]>([]);
   const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
+  const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => { setSelectedRepo(repositoryId?.toString() || ''); }, [repositoryId]);
 
@@ -677,7 +678,14 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
     <Modal open={open} onClose={onClose} title="Upload File" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div
-          className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${uploadErrors.file ? 'border-red-400' : 'border-slate-200 dark:border-slate-700 hover:border-[#F59E0B]/50'}`}
+          className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${dragOver ? 'border-[#F59E0B] bg-[#F59E0B]/5' : uploadErrors.file ? 'border-red-400' : 'border-slate-200 dark:border-slate-700 hover:border-[#F59E0B]/50'}`}
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={e => {
+            e.preventDefault(); setDragOver(false);
+            const f = e.dataTransfer.files?.[0];
+            if (f) { setFile(f); setUploadErrors(p => ({ ...p, file: '' })); if (!form.name) setForm(p => ({ ...p, name: f.name.replace(/\.[^/.]+$/, '') })); }
+          }}
         >
           {file ? (
             <div className="flex items-center justify-center gap-3">
@@ -692,7 +700,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
             <label className="cursor-pointer">
               <Upload size={28} className="mx-auto mb-2 text-slate-300" />
               <p className="text-sm text-slate-500 mb-1">Drop a file here or <span className="text-[#F59E0B] font-medium">browse</span></p>
-              <p className="text-xs text-slate-400">Excel, PDF, Word, ZIP, JSON, XML, CSV, Images</p>
+              <p className="text-xs text-slate-400">Any file type accepted · Max 50 MB</p>
               <input type="file" className="hidden" onChange={e => {
                 const f = e.target.files?.[0];
                 if (f) { setFile(f); setUploadErrors(p => ({ ...p, file: '' })); if (!form.name) setForm(p => ({ ...p, name: f.name.replace(/\.[^/.]+$/, '') })); }

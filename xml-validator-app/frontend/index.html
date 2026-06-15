@@ -72,11 +72,14 @@
           </div>
           <p class="drop-zone__text">Select a folder containing XML files</p>
           <p class="drop-zone__hint">All .xml files in the folder will be validated</p>
-          <label class="btn-secondary" for="folderInput">Browse Folder</label>
+          <button class="btn-secondary" id="chooseFolderBtn">Browse Folder</button>
           <input type="file" id="folderInput" webkitdirectory style="display:none" />
         </div>
         <div class="file-list" id="folderFileList"></div>
       </div>
+
+      <!-- Error message -->
+      <p id="errorMsg" class="inline-error"></p>
 
       <!-- Validate Button -->
       <button id="validateBtn" class="btn-primary">

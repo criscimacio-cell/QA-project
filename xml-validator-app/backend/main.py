@@ -61,7 +61,7 @@ async def validate(payload: ValidateRequest):
     if checker is None:
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown doc_type '{payload.doc_type}'. Must be one of: claim, cf5, esoa"
+            detail=f"Unknown doc_type '{payload.doc_type}'. Must be one of: claim, cf4, cf5, esoa"
         )
 
     results = []
@@ -79,7 +79,7 @@ async def download_report(payload: ValidateRequest):
     if checker is None:
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown doc_type '{payload.doc_type}'. Must be one of: claim, cf5, esoa"
+            detail=f"Unknown doc_type '{payload.doc_type}'. Must be one of: claim, cf4, cf5, esoa"
         )
 
     results = []

@@ -96,6 +96,25 @@ document.getElementById("validateBtn").addEventListener("click", async () => {
   }
 });
 
+/* ── Clear button ───────────────────────────────────────────────────────────── */
+document.getElementById("clearBtn").addEventListener("click", () => {
+  // Clear paste tab
+  document.getElementById("xmlInput").value = "";
+  // Clear upload tab
+  uploadedFiles = [];
+  fileList.innerHTML = "";
+  fileInput.value = "";
+  // Clear folder tab
+  folderFiles = [];
+  folderFileList.innerHTML = "";
+  folderInput.value = "";
+  // Clear results
+  lastPayload = null;
+  document.getElementById("resultsSection").style.display = "none";
+  document.getElementById("resultsContainer").innerHTML = "";
+  clearError();
+});
+
 /* ── Download Report button ─────────────────────────────────────────────────── */
 document.getElementById("downloadBtn").addEventListener("click", async () => {
   if (!lastPayload) return;

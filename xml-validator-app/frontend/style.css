@@ -197,10 +197,14 @@ textarea:focus { border-color: var(--primary); }
 }
 .btn-secondary:hover { background: var(--border); }
 
-.btn-primary {
-  display: block;
-  width: 100%;
+.action-row {
+  display: flex;
+  gap: .75rem;
   margin-top: 1.25rem;
+}
+
+.btn-primary {
+  flex: 1;
   padding: .7rem 1.75rem;
   background: var(--primary);
   color: #fff;
@@ -210,9 +214,30 @@ textarea:focus { border-color: var(--primary); }
   font-weight: 700;
   cursor: pointer;
   transition: background .15s, opacity .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
 }
 .btn-primary:hover    { background: var(--primary-dk); }
 .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-clear {
+  padding: .7rem 1.25rem;
+  background: #fff;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  white-space: nowrap;
+}
+.btn-clear:hover { background: #fee2e2; color: var(--error); border-color: #fca5a5; }
 
 .btn-download {
   display: inline-block;

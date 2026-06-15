@@ -8,6 +8,7 @@ from typing import List
 import os
 
 from checkers.claim_checker import check_claim
+from checkers.cf4_checker import check_cf4
 from checkers.cf5_checker import check_cf5
 from checkers.esoa_checker import check_esoa
 from report_generator import generate_report
@@ -45,6 +46,7 @@ class ValidateRequest(BaseModel):
 
 CHECKER_MAP = {
     "claim": check_claim,
+    "cf4": check_cf4,
     "cf5": check_cf5,
     "esoa": check_esoa,
 }

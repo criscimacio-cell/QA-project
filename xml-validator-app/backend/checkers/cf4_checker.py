@@ -379,7 +379,7 @@ def _validate_field(key, data, xml_tree, cf4, list_index=None, med_lib_data=None
         add(_rule_format_values(data, {'NA'}))
     if key == '@pCivilStatus' and not data:
         add(_rule_format_values(data, {'U'}))
-    if key == '@pModule':
+    if key == '@pModule' and xml_tree in DD_REQUIRED_KEYS:  # original: POST CHECKING removes violation if not in DD_REQUIRED_KEYS
         add(_rule_format_values(data, {'CF4','HAS','SOAP'}))
     if key == '@pDataCollection':
         add(_rule_format_values(data, {'X','1','2','3','4'}))

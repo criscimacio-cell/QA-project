@@ -332,7 +332,7 @@ def _validate_field(key, data, xml_tree, cf4, list_index=None, med_lib_data=None
         add(_rule_required(data))
     if key in DD_BYTE_SIZE_0:
         add(_rule_byte_size(data, 0))
-    if xml_tree in DD_BYTE_SIZE_0_SPECIFICS:
+    if key in DD_BYTE_SIZE_0_SPECIFICS:  # matches original script: key (short name) never matches full paths → effectively disabled
         add(_rule_byte_size(data, 0))
     if key in DD_BYTE_SIZE_1:  add(_rule_byte_size(data, 1))
     if key in DD_BYTE_SIZE_2:  add(_rule_byte_size(data, 2))

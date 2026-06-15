@@ -352,9 +352,9 @@ def _validate_field(key, data, xml_tree, cf4, list_index=None, med_lib_data=None
     if key in DD_BYTE_SIZE_2000: add(_rule_byte_size(data, 2000))
     if key in DD_YES_NO_KEYS:    add(_rule_yn(data))
     if key in DD_YES_NO_NA_KEYS: add(_rule_format_values(data, {'Y','N','X'}))
-    if key in DD_DATE_FORMAT:    add(_rule_date(data, fmt="YYYY-MM-DD"))
-    if key in DD_INTEGER_FORMAT: add(_rule_integer(data))
-    if key in DD_FLOAT_FORMAT:   add(_rule_float(data))
+    if key in DD_DATE_FORMAT and data: add(_rule_date(data, fmt="YYYY-MM-DD"))
+    if key in DD_INTEGER_FORMAT and data: add(_rule_integer(data))
+    if key in DD_FLOAT_FORMAT and data:   add(_rule_float(data))
 
     # ── Specific field rules ──────────────────────────────────────────────────
 

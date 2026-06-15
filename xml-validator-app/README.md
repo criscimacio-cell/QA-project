@@ -7,7 +7,7 @@ A local web application for validating XML documents (Claim, CF5, ESOA formats).
 Install Python dependencies:
 
 ```
-pip install fastapi uvicorn openpyxl python-multipart lxml pandas
+pip install fastapi uvicorn openpyxl python-multipart lxml pandas xmltodict
 ```
 
 ## Run

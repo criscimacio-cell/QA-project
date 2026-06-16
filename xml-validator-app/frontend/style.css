@@ -138,7 +138,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: .5rem;
-  margin-top: auto;
+}
+
+/* Action row in main content */
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
 }
 
 /* Doc type buttons */
@@ -213,12 +219,11 @@ body {
 
 /* Action buttons */
 .btn-validate {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: .45rem;
-  width: 100%;
-  padding: .65rem 1rem;
+  padding: .65rem 1.5rem;
   background: var(--c-accent);
   color: #fff;
   border: none;
@@ -239,11 +244,10 @@ body {
 .btn-validate:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .btn-ghost {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: .4rem;
-  width: 100%;
   padding: .55rem 1rem;
   background: transparent;
   color: var(--c-text-2);
@@ -263,10 +267,9 @@ body {
 .inline-error {
   font-size: .78rem;
   color: var(--c-error);
-  margin-top: .5rem;
   min-height: 1rem;
-  padding: 0 .35rem;
   line-height: 1.4;
+  flex: 1;
 }
 
 /* ── Main content ──────────────────────────────────────────────────────── */

@@ -69,7 +69,39 @@ async def validate(payload: ValidateRequest):
         result = checker(f.name, f.content)
         results.append(result)
 
+    if doc_type == "cf5":
+        _apply_cf5_batch_checks(results)
+
     return {"results": results}
+
+
+def _apply_cf5_batch_checks(results: list):
+    """FIX 7: ClaimNumber uniqueness across batch (cross-file UNIQUE constraint)."""
+    from lxml import etree
+    seen = {}  # {claim_number: [filename, ...]}
+    for r in results:
+        try:
+            # Re-extract ClaimNumber from filename/content isn't available here;
+            # scan existing errors to find it, or parse on the fly isn't possible.
+            # Instead we store it during per-file check via a side-channel in result.
+            cn = r.get("_claim_number", "")
+            if cn:
+                seen.setdefault(cn, []).append(r["filename"])
+        except Exception:
+            pass
+
+    for cn, files in seen.items():
+        if len(files) > 1:
+            for r in results:
+                if r["filename"] in files:
+                    r["errors"].append({
+                        "field": "BATCH > ClaimNumber",
+                        "rule": "UNIQUE CONSTRAINT (ClaimNumber across batch)",
+                        "message": f"[UNIQUE] ClaimNumber '{cn}' appears in multiple files: {', '.join(files)}.",
+                        "line": None,
+                        "severity": "error",
+                    })
+                    r["status"] = "fail"
 
 
 @app.post("/download-report")
@@ -86,6 +118,9 @@ async def download_report(payload: ValidateRequest):
     for f in payload.files:
         result = checker(f.name, f.content)
         results.append(result)
+
+    if doc_type == "cf5":
+        _apply_cf5_batch_checks(results)
 
     xlsx_bytes = generate_report(results)
 

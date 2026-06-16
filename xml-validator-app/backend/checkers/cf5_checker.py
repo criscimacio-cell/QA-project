@@ -275,5 +275,10 @@ def check_cf5(filename: str, content: str) -> dict:
                        "message": f"Business rule check failed: {ex}",
                        "line": None, "severity": "warning"})
 
+    # Extract ClaimNumber for cross-file batch uniqueness check (FIX 7)
+    drgclaim = xml_doc.find("DRGCLAIM")
+    claim_number = (drgclaim.get("ClaimNumber", "") if drgclaim is not None else "").strip()
+
     status = "fail" if any(e["severity"] == "error" for e in errors) else "pass"
-    return {"filename": filename, "status": status, "errors": errors}
+    return {"filename": filename, "status": status, "errors": errors,
+            "_claim_number": claim_number}

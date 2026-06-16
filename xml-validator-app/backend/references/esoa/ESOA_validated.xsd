@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  XSD Schema: eSOA (Electronic Statement of Account)
+  Source DTD : ESOA.dtd v0.5 (PhilHealth)
+  Enhanced   : Annex F Data Dictionary (Esoa_data_dictionary.xlsx)
+               + Annex F eSOA Item Library (1,898 items)
+               + Annex F Medicine Library (2,427 drug codes)
+  Notes      : Structurally equivalent to the DTD, enriched with
+               data types, length constraints, regex patterns,
+               enumerations, and Oracle-style CHECK equivalents
+               via xs:restriction. Master-list (pItemCode / drug code,
+               pCategory) validation against the Item and Medicine
+               Libraries cannot be expressed in XSD and must be done
+               as a post-XSD lookup (e.g. in a Python validator),
+               same pattern used for CF5's ICD-10/RVS code checks.
+
+  Oracle Validation Mapping:
+    DTD #REQUIRED          = use="required"
+    Oracle VARCHAR2(n)     = xs:maxLength n
+    Oracle CHECK pattern   = xs:pattern
+    Oracle CHECK IN list   = xs:enumeration
+    Oracle NUMBER(p,s)     = xs:pattern for format/scale control
+    Oracle NOT NULL        = use="required"
+    FK / MASTER             = pItemCode -> eSOA Item Library / Medicine
+                              Library (post-XSD lookup, not enforceable
+                              in XSD alone)
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           version="0.5">
+
+  <!-- =================================================================
+       ROOT ELEMENT: eSOA
+       Annex F: pHciPan = Varchar2(9)  - PhilHealth accreditation number
+                pHciTransmittalId (DTD: pHciTransmittalId)
+                  = Varchar2(50), Annex F calls it pTransmittalId
+                  - UNIQUE reference number per claim submission
+       Oracle:
+         pHciPan VARCHAR2(9) NOT NULL
+         pHciTransmittalId VARCHAR2(50) NOT NULL UNIQUE
+  ================================================================== -->
+  <xs:element name="eSOA">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="SummaryOfFees"      minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="ProfessionalFees"   minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="ItemizedBillingItems" minOccurs="1" maxOccurs="1"/>
+      </xs:sequence>
+
+      <xs:attribute name="pHciPan" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="9"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pHciTransmittalId" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="50"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: SummaryOfFees
+       DTD sequence: RoomAndBoard, DrugsAndMedicine, LaboratoryAndDiagnostic,
+                     OperatingRoomFees, MedicalSupplies, Others,
+                     PhilHealth, Balance
+       No attributes of its own (container only).
+  ================================================================== -->
+  <xs:element name="SummaryOfFees">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="RoomAndBoard"            minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="DrugsAndMedicine"        minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="LaboratoryAndDiagnostic" minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="OperatingRoomFees"       minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="MedicalSupplies"         minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="Others"                  minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="PhilHealth"               minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="Balance"                  minOccurs="1" maxOccurs="1"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: ProfessionalFees
+       DTD: (ProfessionalFee*, PhilHealth, Balance)
+       ProfessionalFee is optional/repeatable (0..N) - a claim may have
+       no professional fee charged at all.
+  ================================================================== -->
+  <xs:element name="ProfessionalFees">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ProfessionalFee" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element ref="PhilHealth"        minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="Balance"           minOccurs="1" maxOccurs="1"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: ItemizedBillingItems
+       DTD: (ItemizedBillingItem+)  - at least 1 billing item required
+  ================================================================== -->
+  <xs:element name="ItemizedBillingItems">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ItemizedBillingItem" minOccurs="1" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: PhilHealth (EMPTY)
+       Annex F: pTotalCaseRateAmount = Number(8,2), 0.00 to 999999.99
+       Oracle: pTotalCaseRateAmount NUMBER(8,2) NOT NULL
+               CHECK (pTotalCaseRateAmount BETWEEN 0.00 AND 999999.99)
+  ================================================================== -->
+  <xs:element name="PhilHealth">
+    <xs:complexType>
+      <xs:attribute name="pTotalCaseRateAmount" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,6}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: Balance (EMPTY)
+       Annex F: pAmount = Number(10,2), 0.00 to 99999999.99
+       NOTE: unlike other Number(p,s) fields in this schema, Balance
+       pAmount is explicitly allowed to be NEGATIVE (e.g. when total
+       charges net of discounts/case rate come out lower than zero,
+       representing an overpayment/credit situation). This is a
+       deliberate business-rule exception to the Annex F documented
+       range; no other amount field in this schema permits negatives.
+       Oracle: pAmount NUMBER(10,2) NOT NULL
+               CHECK (ABS(pAmount) BETWEEN 0.00 AND 99999999.99)
+  ================================================================== -->
+  <xs:element name="Balance">
+    <xs:complexType>
+      <xs:attribute name="pAmount" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="-?[0-9]{1,8}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: OtherFundSource (EMPTY, repeatable 0..N)
+       BUSINESS RULE: this element must only appear in the XML when the
+       claim actually has another funding source to declare. If there
+       are none, the OtherFundSource element(s) must be omitted entirely
+       under the relevant category - not present with blank/zero values.
+       minOccurs="0" below already enforces this structurally.
+       BUSINESS RULE: pDescription values must not repeat within the
+       same category block (no two OtherFundSource entries under the
+       same RoomAndBoard/DrugsAndMedicine/etc. category can share the
+       same funding source name) - enforced post-XSD in Python, since
+       XSD cannot express uniqueness scoped to a parent element.
+       Annex F: pDescription = Varchar(10,2)  [SOURCE DOCUMENT NOTE: the
+                official Annex F data dictionary lists this as
+                "Varchar(10,2)", which is very likely a copy/paste error
+                from a Number(p,s) field above it; Varchar does not
+                take a precision/scale pair. No verified max length is
+                available from Annex F; 4000 below is a generic
+                VARCHAR2 placeholder, NOT a confirmed spec value.
+                Recommend confirming the real max length with PhilHealth
+                or your internal team before treating it as final.]
+                pAmount      = Number(10,2), 0.00 to 99999999.99
+       Oracle: pDescription VARCHAR2(4000) NOT NULL  [UNVERIFIED LENGTH]
+               pAmount NUMBER(10,2) NOT NULL
+                 CHECK (pAmount BETWEEN 0.00 AND 99999999.99)
+  ================================================================== -->
+  <xs:element name="OtherFundSource">
+    <xs:complexType>
+      <xs:attribute name="pDescription" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="4000"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pAmount" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,8}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: SummaryOfFee (EMPTY)
+       Annex F: all 7 attributes = Number(10,2), 0.00 to 99999999.99
+       Each is REQUIRED per the DTD/Annex F, but per CF5-style "required
+       field, blank value when not applicable" semantics, a discount
+       that does not apply to a given claim is typically submitted as
+       0.00 rather than omitted - the attribute itself stays required.
+       Oracle:
+         pChargesNetOfApplicableVat NUMBER(10,2) NOT NULL
+         pSeniorCitizenDiscount     NUMBER(10,2) NOT NULL
+         pPWDDiscount               NUMBER(10,2) NOT NULL
+         pPCSO                      NUMBER(10,2) NOT NULL
+         pDSWD                      NUMBER(10,2) NOT NULL
+         pDOHMAP                    NUMBER(10,2) NOT NULL
+         pHMO                       NUMBER(10,2) NOT NULL
+         ALL CHECK (val BETWEEN 0.00 AND 99999999.99)
+  ================================================================== -->
+  <xs:element name="SummaryOfFee">
+    <xs:complexType>
+      <xs:attribute name="pChargesNetOfApplicableVat" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,8}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pSeniorCitizenDiscount" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,8}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pPWDDiscount" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,8}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pPCSO" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,8}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pDSWD" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,8}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pDOHMAP" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,8}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pHMO" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,8}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       CATEGORY ELEMENTS
+       Each: (SummaryOfFee, OtherFundSource*)
+       RoomAndBoard, DrugsAndMedicine, LaboratoryAndDiagnostic,
+       OperatingRoomFees, MedicalSupplies, Others
+       These six element names double as the valid pCategory
+       enumeration values used in ItemizedBillingItem.
+  ================================================================== -->
+  <xs:element name="RoomAndBoard">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="SummaryOfFee"     minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="OtherFundSource"  minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="DrugsAndMedicine">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="SummaryOfFee"     minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="OtherFundSource"  minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="LaboratoryAndDiagnostic">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="SummaryOfFee"     minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="OtherFundSource"  minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="OperatingRoomFees">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="SummaryOfFee"     minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="OtherFundSource"  minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="MedicalSupplies">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="SummaryOfFee"     minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="OtherFundSource"  minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="Others">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="SummaryOfFee"     minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="OtherFundSource"  minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: ProfessionalFee
+       DTD: (ProfessionalInfo, SummaryOfFee)
+  ================================================================== -->
+  <xs:element name="ProfessionalFee">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ProfessionalInfo" minOccurs="1" maxOccurs="1"/>
+        <xs:element ref="SummaryOfFee"     minOccurs="1" maxOccurs="1"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: ProfessionalInfo (EMPTY)
+       Annex F: pPAN         = Varchar(14) - physician's PhilHealth PAN
+                pFirstName   = Varchar(60)
+                pMiddleName  = Varchar (no fixed length given)
+                pLastName    = Varchar(60)
+                pSuffixName  = Varchar(60) - required field, value left
+                               blank when the physician has no suffix
+                               (e.g. no "Jr."/"Sr."), same blank-but-
+                               required pattern as CF5 NewBornAdmWeight.
+       Oracle:
+         pPAN VARCHAR2(14) NOT NULL
+         pFirstName VARCHAR2(60) NOT NULL
+         pMiddleName VARCHAR2(4000) NOT NULL  (may be blank)
+         pLastName VARCHAR2(60) NOT NULL
+         pSuffixName VARCHAR2(60) NOT NULL  (may be blank)
+  ================================================================== -->
+  <xs:element name="ProfessionalInfo">
+    <xs:complexType>
+      <xs:attribute name="pPAN" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="14"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pFirstName" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="60"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pMiddleName" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="4000"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pLastName" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="60"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pSuffixName" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="60"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+
+  <!-- =================================================================
+       ELEMENT: ItemizedBillingItem (EMPTY, repeatable 1..N)
+       Annex F:
+         pServiceDate        = Date, format mm-dd-yyyy
+         pItemCode           = Varchar(30); required field, value left
+                                blank when item is not listed in the
+                                applicable library. IMPORTANT (per Annex
+                                F note): for pCategory="DrugsAndMedicine",
+                                pItemCode must be the Drug Code (30 chars)
+                                from the MEDICINE Library specifically,
+                                not the general eSOA Item Library. For
+                                all other categories, use the eSOA Item
+                                Library code. Blank if not in the
+                                applicable library - same blank-but-
+                                required pattern as CF5 NewBornAdmWeight.
+         pItemName            = Varchar(300)
+         pUnitOfMeasurement   = Varchar(50); required field, value left
+                                blank specifically for the
+                                DrugsAndMedicine category (per Annex F
+                                note "Keep blank for Drug and Medicine
+                                Category").
+         pUnitPrice           = Number(8,2), 0.00 to 999999.99
+         pQuantity            = Number(4,0), 0 to 9999
+         pTotalAmount         = Number(11,2), 0.00 to 999999999.99
+         pCategory            = enumeration matching the 6
+                                SummaryOfFees categories (DTD-restricted
+                                already; Annex F lists same 6 values)
+       Oracle:
+         pServiceDate DATE NOT NULL
+         pItemCode VARCHAR2(30) NOT NULL  (may be blank)
+         pItemName VARCHAR2(300) NOT NULL
+         pUnitOfMeasurement VARCHAR2(50) NOT NULL  (blank for DrugsAndMedicine)
+         pUnitPrice NUMBER(8,2) NOT NULL
+           CHECK (pUnitPrice BETWEEN 0.00 AND 999999.99)
+         pQuantity NUMBER(4,0) NOT NULL
+           CHECK (pQuantity BETWEEN 0 AND 9999)
+         pTotalAmount NUMBER(11,2) NOT NULL
+           CHECK (pTotalAmount BETWEEN 0.00 AND 999999999.99)
+         pCategory VARCHAR2(50) NOT NULL
+           CHECK (pCategory IN ('RoomAndBoard','DrugsAndMedicine',
+                  'LaboratoryAndDiagnostic','OperatingRoomFees',
+                  'MedicalSupplies','Others'))
+         FK: pItemCode (when non-blank) must exist in the eSOA Item
+             Library (Annex_F_-_eSOA_Item_Library.xlsx, ~1,898 codes) for
+             non-drug categories, OR the Medicine Library
+             (Annex_F_-_Medicine_Library.xlsx, ~2,427 drug codes)
+             specifically when pCategory="DrugsAndMedicine" - post-XSD
+             lookup only, same pattern as CF5's ICD-10/RVS master-list
+             checks.
+  ================================================================== -->
+  <xs:element name="ItemizedBillingItem">
+    <xs:complexType>
+      <xs:attribute name="pServiceDate" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-[0-9]{4}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pItemCode" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="30"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pItemName" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="300"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pUnitOfMeasurement" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="50"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pUnitPrice" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,6}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pQuantity" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,4}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pTotalAmount" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]{1,9}\.[0-9]{2}"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+
+      <xs:attribute name="pCategory" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="RoomAndBoard"/>
+            <xs:enumeration value="DrugsAndMedicine"/>
+            <xs:enumeration value="LaboratoryAndDiagnostic"/>
+            <xs:enumeration value="OperatingRoomFees"/>
+            <xs:enumeration value="MedicalSupplies"/>
+            <xs:enumeration value="Others"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

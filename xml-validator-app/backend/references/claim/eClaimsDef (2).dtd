@@ -1,0 +1,492 @@
+<!--
+	Philippine Health Insurance Corporation
+	eClaims Document Type Definition Version 1.9
+	Version History
+        1.9.0 06-23-2017 08:16PM (MSM)
+            : removed the ennumerated list values for the pDocumentType attribute for flexibility of adding new elements
+			: added pServiceProvider attribute to the eCLAIMS element to indicate the provider of the system used to encode and submit the e-claims XML file 
+        1.8.0 09-19-2016 05:13PM (MSM)
+            : added "IMRT" element as additional to the list of supported repetitive procedures
+            : added "APR" element to CF2 for saving the data of the Consent to Access Patient Record section of RF2
+            : added "pHasAttachedSOA" attribute to CF2 element
+            : added new "CATARACTINFO" element to hold info about data like IOL sticker number for cataract operation. The "CATARACT" element will be deprecated later
+            : changed the comments for the pThumbMarkedBy attribute
+        1.7.6 07-31-2015 10:38PM 
+            : remove "()" in this part (BENEFITS)
+	1.7.5 revised : 06-23-2015 1:19PM
+            : added "P" (Lifetime Member) in the pMemberShipType attribute acceptable values 
+            : added "ANR" (Anesthesia Record) & "HDR" (Hemodialysis Record) in the pDocumentType attribute acceptable values
+	1.7.4 revised : 11-03-2014 9:52am
+            : added "MRF" (PhilHealth Member Registration Form) in the pDocumentType 
+	1.7.3 revised : 01-28-2014 9:58am
+            : added pPreAuthDate in ZBENEFIT element
+            : added pCaseRateAmount in CASERATE element
+            : added pDoctorSignDate in PROFESSIONALS element
+            : added pPatientType & pIsEmergency in CLAIM element
+            : transfer pCataractPreAuth to CATARACT element
+	1.7.2 revised : 12-16-2013 5:03pm
+            : abstracted the Particulars from CF3 outside
+            : added the CF3_OLD and CF3_NEW elements
+	1.7.1 revised : 11-04-2013 3:31pm
+            : updated the elements based on the claim forms version 11_04_2013
+        1.7 revised : 09-24-2013 08:56am
+            : major revision to cater all case rate policy
+        1.6.1 revised : 01-29-2013 01:29pm
+            : added CSF in list of document types
+        1.6 revised : 01-25-2013 01:11pm
+            : updated the new coding of documents
+        1.5 revised : 10-18-2012 10:01am
+            : abstracted the Observation Codes from ZBenefit outside
+            : added Official Receipt details
+	1.4 revised : 07-16-2012 01:40pm
+            : added support for observation for z-benefits
+	1.3 revised : 06-01-2012 09:04am
+            : added elements for document urls
+            : added elements for Z Benefit
+	1.2 revised : 02-24-2012 06:16pm
+            : added code for packages
+            : added codes for case-rates
+	1.1 revised : 08-19-2011 11:02am
+            : added requirements for case rate
+	1.0 revised : 11-12-2010 04:42pm
+-->
+
+<!ENTITY Ntilde "&#209;">
+<!ENTITY ntilde "&#241;">
+<!ENTITY nbsp "&#160;">
+
+<!ELEMENT eCLAIMS (eTRANSMITTAL)>
+<!ATTLIST eCLAIMS
+	pUserName CDATA #REQUIRED
+	pUserPassword CDATA #REQUIRED
+	pHospitalCode CDATA #REQUIRED
+	pHospitalEmail CDATA #REQUIRED
+	pServiceProvider CDATA #IMPLIED>
+
+<!ELEMENT eTRANSMITTAL (CLAIM+)>
+<!ATTLIST eTRANSMITTAL
+	pHospitalTransmittalNo CDATA #REQUIRED
+	pTotalClaims CDATA #REQUIRED>
+
+<!ELEMENT CLAIM (CF1, CF2, (ALLCASERATE | ZBENEFIT), CF3?, PARTICULARS?, RECEIPTS?, DOCUMENTS)>
+<!ATTLIST CLAIM
+	pClaimNumber CDATA #REQUIRED
+	pTrackingNumber CDATA #REQUIRED
+	pPhilhealthClaimType (ALL-CASE-RATE|Z-BENEFIT) #REQUIRED
+	pPatientType (I|O) #REQUIRED
+	pIsEmergency (Y|N) #REQUIRED>
+
+<!ELEMENT CF1 EMPTY>
+<!ATTLIST CF1
+	pMemberPIN CDATA #REQUIRED
+	pMemberLastName CDATA #REQUIRED
+	pMemberFirstName CDATA #REQUIRED
+	pMemberSuffix CDATA #REQUIRED
+	pMemberMiddleName CDATA #REQUIRED
+	pMemberBirthDate CDATA #REQUIRED
+	pMemberShipType (S|G|I|NS|NO|PS|PG|P) #REQUIRED
+	pMailingAddress CDATA #REQUIRED
+	pZipCode CDATA #REQUIRED
+	pMemberSex (M|F) #REQUIRED
+	pLandlineNo CDATA #REQUIRED
+	pMobileNo CDATA #REQUIRED
+	pEmailAddress CDATA #REQUIRED
+	pPatientIs (M|S|C|P) #REQUIRED
+	pPatientPIN CDATA #REQUIRED
+	pPatientLastName CDATA #REQUIRED
+	pPatientFirstName CDATA #REQUIRED
+	pPatientSuffix CDATA #REQUIRED
+	pPatientMiddleName CDATA #REQUIRED
+	pPatientBirthDate CDATA #REQUIRED
+	pPatientSex (M|F) #REQUIRED
+	pPEN CDATA #REQUIRED
+	pEmployerName CDATA #REQUIRED>
+
+<!ELEMENT CF2 (DIAGNOSIS, SPECIAL, PROFESSIONALS+, CONSUMPTION, APR?)>
+<!ATTLIST CF2
+	pPatientReferred (Y|N) #REQUIRED
+	pReferredIHCPAccreCode CDATA #REQUIRED
+	pAdmissionDate CDATA #REQUIRED
+	pAdmissionTime CDATA #REQUIRED
+	pDischargeDate CDATA #REQUIRED
+	pDischargeTime CDATA #REQUIRED
+	pDisposition (I|R|H|A|E|T) #REQUIRED
+	pExpiredDate CDATA #REQUIRED
+	pExpiredTime CDATA #REQUIRED
+	pReferralIHCPAccreCode CDATA #REQUIRED
+	pReferralReasons CDATA #REQUIRED
+	pAccommodationType (P|N) #REQUIRED
+        pHasAttachedSOA (Y|N) #IMPLIED>
+
+<!ELEMENT DIAGNOSIS (DISCHARGE+)>
+<!ATTLIST DIAGNOSIS
+	pAdmissionDiagnosis CDATA #REQUIRED>
+
+<!ELEMENT DISCHARGE ((ICDCODE+, RVSCODES*)|(ICDCODE*, RVSCODES+))>
+<!ATTLIST DISCHARGE
+	pDischargeDiagnosis CDATA #REQUIRED>
+
+<!ELEMENT ICDCODE EMPTY>
+<!ATTLIST ICDCODE
+	pICDCode CDATA #REQUIRED>
+
+<!ELEMENT RVSCODES EMPTY>
+<!ATTLIST RVSCODES
+	pRelatedProcedure CDATA #REQUIRED
+	pRVSCode CDATA #REQUIRED
+	pProcedureDate CDATA #REQUIRED
+	pLaterality (L|R|B|N) #REQUIRED>
+
+<!ELEMENT SPECIAL (PROCEDURES?, MCP?, TBDOTS?, ABP?, NCP?, HIVAIDS?, CATARACTINFO?)>
+
+<!ELEMENT PROCEDURES ((HEMODIALYSIS?, PERITONEAL?, LINAC?, COBALT?, TRANSFUSION?, BRACHYTHERAPHY?, CHEMOTHERAPY?, DEBRIDEMENT?, IMRT?), (HEMODIALYSIS|PERITONEAL|LINAC|COBALT|TRANSFUSION|BRACHYTHERAPHY|CHEMOTHERAPY|DEBRIDEMENT|IMRT))>
+<!ELEMENT HEMODIALYSIS (SESSIONS*)>
+<!ELEMENT PERITONEAL (SESSIONS*)>
+<!ELEMENT LINAC (SESSIONS*)>
+<!ELEMENT COBALT (SESSIONS*)>
+<!ELEMENT TRANSFUSION (SESSIONS*)>
+<!ELEMENT BRACHYTHERAPHY (SESSIONS*)>
+<!ELEMENT CHEMOTHERAPY (SESSIONS*)>
+<!ELEMENT DEBRIDEMENT (SESSIONS*)>
+<!ELEMENT IMRT (SESSIONS*)>
+
+<!ELEMENT SESSIONS EMPTY>
+<!ATTLIST SESSIONS
+	pSessionDate CDATA #REQUIRED>
+
+<!ELEMENT MCP EMPTY>
+<!ATTLIST MCP
+	pCheckUpDate1 CDATA #REQUIRED
+	pCheckUpDate2 CDATA #REQUIRED
+	pCheckUpDate3 CDATA #REQUIRED
+	pCheckUpDate4 CDATA #REQUIRED>
+
+<!ELEMENT TBDOTS EMPTY>
+<!ATTLIST TBDOTS
+	pTBType (I|M) #REQUIRED
+	pNTPCardNo CDATA #REQUIRED>
+
+<!ELEMENT ABP EMPTY>
+<!ATTLIST ABP
+	pDay0ARV CDATA #REQUIRED
+	pDay3ARV CDATA #REQUIRED
+	pDay7ARV CDATA #REQUIRED
+	pRIG CDATA #REQUIRED
+	pABPOthers CDATA #REQUIRED
+	pABPSpecify CDATA #REQUIRED>
+
+<!ELEMENT NCP (ESSENTIAL?)>
+<!ATTLIST NCP
+	pEssentialNewbornCare (Y|N) #REQUIRED
+	pNewbornHearingScreeningTest (Y|N) #REQUIRED
+	pNewbornScreeningTest (Y|N) #REQUIRED
+	pFilterCardNo CDATA #REQUIRED>
+
+<!ELEMENT ESSENTIAL EMPTY>
+<!ATTLIST ESSENTIAL
+	pDrying (Y|N) #REQUIRED
+	pSkinToSkin (Y|N) #REQUIRED
+	pCordClamping (Y|N) #REQUIRED
+	pProphylaxis (Y|N) #REQUIRED
+	pWeighing (Y|N) #REQUIRED
+	pVitaminK (Y|N) #REQUIRED
+	pBCG (Y|N) #REQUIRED
+	pNonSeparation (Y|N) #REQUIRED
+	pHepatitisB (Y|N) #REQUIRED>
+
+<!ELEMENT HIVAIDS EMPTY>
+<!ATTLIST HIVAIDS
+	pLaboratoryNumber CDATA #REQUIRED>
+
+<!ELEMENT CATARACTINFO EMPTY>
+<!ATTLIST CATARACTINFO
+	pCataractPreAuth CDATA #REQUIRED
+        pLeftEyeIOLStickerNumber CDATA #REQUIRED
+        pLeftEyeIOLExpiryDate CDATA #REQUIRED
+        pRightEyeIOLStickerNumber CDATA #REQUIRED
+        pRightEyeIOLExpiryDate CDATA #REQUIRED>
+
+<!ELEMENT PROFESSIONALS EMPTY>
+<!ATTLIST PROFESSIONALS
+	pDoctorAccreCode CDATA #REQUIRED
+	pDoctorLastName CDATA #REQUIRED
+	pDoctorFirstName CDATA #REQUIRED
+	pDoctorMiddleName CDATA #REQUIRED
+	pDoctorSuffix CDATA #REQUIRED
+	pWithCoPay (Y|N) #REQUIRED
+	pDoctorCoPay CDATA #REQUIRED
+	pDoctorSignDate CDATA #REQUIRED>
+
+<!ELEMENT CONSUMPTION (BENEFITS|(HCIFEES, PROFFEES, PURCHASES))>
+<!ATTLIST CONSUMPTION
+	pEnoughBenefits (Y|N) #REQUIRED>
+
+<!ELEMENT APR (APRBYPATSIG|APRBYPATREPSIG|APRBYTHUMBMARK)>
+
+<!ELEMENT APRBYPATSIG EMPTY>
+<!ATTLIST APRBYPATSIG
+	pDateSigned CDATA #REQUIRED>
+
+<!ELEMENT APRBYPATREPSIG ((DEFINEDPATREPREL|OTHERPATREPREL), (DEFINEDREASONFORSIGNING|OTHERREASONFORSIGNING))>
+<!ATTLIST APRBYPATREPSIG 
+	pDateSigned CDATA #REQUIRED>
+
+<!ELEMENT DEFINEDPATREPREL EMPTY>
+<!--    pRelCode:                  One of
+                                    S: Spouse
+                                    C: Child
+                                    P: Parent
+                                    I: Siblings
+                                    O: Others
+                                -->
+<!ATTLIST DEFINEDPATREPREL
+	pRelCode (S|C|P|I) #REQUIRED> 
+<!ELEMENT OTHERPATREPREL EMPTY>
+<!ATTLIST OTHERPATREPREL
+        pRelCode CDATA #FIXED "O"
+	pRelDesc CDATA #REQUIRED> 
+
+<!ELEMENT DEFINEDREASONFORSIGNING EMPTY>
+<!--    pReasonCode:    One of
+                                I: Patient is incapacitated
+                                O: Other reasons. Should be specified in pReasonDesc
+                                -->
+<!ATTLIST DEFINEDREASONFORSIGNING
+        pReasonCode (I) #REQUIRED> 
+<!ELEMENT OTHERREASONFORSIGNING EMPTY>
+<!ATTLIST OTHERREASONFORSIGNING
+        pReasonCode CDATA #FIXED "O"
+	pReasonDesc CDATA #REQUIRED> 
+
+
+<!ELEMENT APRBYTHUMBMARK EMPTY>
+<!--    pThumbmarkedBy:    One of
+                                P: by patient/member
+                                R: by representative
+                              -->
+<!ATTLIST APRBYTHUMBMARK
+	pThumbmarkedBy (P|R) #REQUIRED>
+	
+<!ELEMENT BENEFITS EMPTY>
+<!ATTLIST BENEFITS
+	pTotalHCIFees CDATA #REQUIRED
+	pTotalProfFees CDATA #REQUIRED
+	pGrandTotal CDATA #REQUIRED>
+	
+<!ELEMENT HCIFEES EMPTY>
+<!ATTLIST HCIFEES
+	pTotalActualCharges CDATA #REQUIRED
+	pDiscount CDATA #REQUIRED
+	pPhilhealthBenefit CDATA #REQUIRED
+	pTotalAmount CDATA #REQUIRED
+	pMemberPatient (Y|N) #REQUIRED
+	pHMO (Y|N) #REQUIRED
+	pOthers (Y|N) #REQUIRED>	
+	
+<!ELEMENT PROFFEES EMPTY>
+<!ATTLIST PROFFEES
+	pTotalActualCharges CDATA #REQUIRED
+	pDiscount CDATA #REQUIRED
+	pPhilhealthBenefit CDATA #REQUIRED
+	pTotalAmount CDATA #REQUIRED
+	pMemberPatient (Y|N) #REQUIRED
+	pHMO (Y|N) #REQUIRED
+	pOthers (Y|N) #REQUIRED>
+	
+<!ELEMENT PURCHASES EMPTY>
+<!ATTLIST PURCHASES
+	pDrugsMedicinesSupplies (Y|N) #REQUIRED
+	pDMSTotalAmount CDATA #REQUIRED
+	pExaminations (Y|N) #REQUIRED
+	pExamTotalAmount CDATA #REQUIRED>	
+
+<!ELEMENT ALLCASERATE (CASERATE+)>
+<!ELEMENT CASERATE (CATARACT?)>
+<!ATTLIST CASERATE
+	pCaseRateCode CDATA #REQUIRED
+	pICDCode CDATA #REQUIRED
+	pRVSCode CDATA #REQUIRED
+	pCaseRateAmount CDATA #REQUIRED>
+	
+<!ELEMENT CATARACT EMPTY>
+<!ATTLIST CATARACT
+	pCataractPreAuth CDATA #REQUIRED>
+
+<!ELEMENT ZBENEFIT EMPTY>
+<!ATTLIST ZBENEFIT
+	pZBenefitCode (Z0011|Z0012|Z0013|Z0021|Z0022|Z003|Z0041|Z0042|Z0051|Z0052|Z0061|Z0062|Z0071|Z0072|Z0081|Z0082|Z0091|Z0092) #REQUIRED
+	pPreAuthDate CDATA #REQUIRED>
+
+<!ELEMENT CF3 (CF3_OLD?, CF3_NEW?)>
+<!ELEMENT CF3_OLD (PHEX, MATERNITY?)>
+<!ATTLIST CF3_OLD
+	pChiefComplaint CDATA #REQUIRED
+	pBriefHistory CDATA #REQUIRED
+	pCourseWard CDATA #REQUIRED
+	pPertinentFindings CDATA #REQUIRED>
+	
+<!ELEMENT MATERNITY (PRENATAL, DELIVERY, POSTPARTUM)>	
+<!ELEMENT PRENATAL (CLINICALHIST, OBSTETRIC, MEDISURG, CONSULTATION+)>
+<!ATTLIST PRENATAL
+	pPrenatalConsultation CDATA #REQUIRED
+	pMCPOrientation (Y|N) #REQUIRED
+	pExpectedDeliveryDate CDATA #REQUIRED>
+	
+<!ELEMENT CLINICALHIST EMPTY>
+<!ATTLIST CLINICALHIST
+	pVitalSigns (Y|N) #REQUIRED
+	pPregnancyLowRisk (Y|N) #REQUIRED
+	pLMP CDATA #REQUIRED
+	pMenarcheAge CDATA #REQUIRED
+	pObstetricG CDATA #REQUIRED
+	pObstetricP CDATA #REQUIRED
+	pObstetric_T CDATA #REQUIRED
+	pObstetric_P CDATA #REQUIRED
+	pObstetric_A CDATA #REQUIRED
+	pObstetric_L CDATA #REQUIRED>
+	
+<!ELEMENT OBSTETRIC EMPTY>
+<!ATTLIST OBSTETRIC
+	pMultiplePregnancy (Y|N) #REQUIRED
+	pOvarianCyst (Y|N) #REQUIRED
+	pMyomaUteri (Y|N) #REQUIRED
+	pPlacentaPrevia (Y|N) #REQUIRED
+	pMiscarriages (Y|N) #REQUIRED
+	pStillBirth (Y|N) #REQUIRED
+	pPreEclampsia (Y|N) #REQUIRED
+	pEclampsia (Y|N) #REQUIRED
+	pPrematureContraction (Y|N) #REQUIRED>
+	
+<!ELEMENT MEDISURG EMPTY>
+<!ATTLIST MEDISURG
+	pHypertension (Y|N) #REQUIRED
+	pHeartDisease (Y|N) #REQUIRED
+	pDiabetes (Y|N) #REQUIRED
+	pThyroidDisaster (Y|N) #REQUIRED
+	pObesity (Y|N) #REQUIRED
+	pAsthma (Y|N) #REQUIRED
+	pEpilepsy (Y|N) #REQUIRED
+	pRenalDisease (Y|N) #REQUIRED
+	pBleedingDisorders (Y|N) #REQUIRED
+	pPreviousCS (Y|N) #REQUIRED
+	pUterineMyomectomy (Y|N) #REQUIRED>
+	
+<!ELEMENT CONSULTATION EMPTY>
+<!ATTLIST CONSULTATION
+	pVisitDate CDATA #REQUIRED
+	pAOGWeeks CDATA #REQUIRED
+	pWeight CDATA #REQUIRED
+	pCardiacRate CDATA #REQUIRED
+	pRespiratoryRate CDATA #REQUIRED
+	pBloodPressure CDATA #REQUIRED
+	pTemperature CDATA #REQUIRED>	
+	
+<!ELEMENT DELIVERY EMPTY>
+<!ATTLIST DELIVERY
+	pDeliveryDate CDATA #REQUIRED
+	pDeliveryTime CDATA #REQUIRED
+	pObstetricIndex CDATA #REQUIRED
+	pAOGLMP CDATA #REQUIRED
+	pDeliveryManner CDATA #REQUIRED
+	pPresentation CDATA #REQUIRED
+	pFetalOutcome CDATA #REQUIRED
+	pSex CDATA #REQUIRED
+	pBirthWeight CDATA #REQUIRED
+	pAPGARScore CDATA #REQUIRED
+	pPostpartum CDATA #REQUIRED>	
+	
+<!ELEMENT POSTPARTUM EMPTY>
+<!ATTLIST POSTPARTUM
+	pPerinealWoundCare (Y|N) #REQUIRED
+	pPerinealRemarks CDATA #REQUIRED
+	pMaternalComplications (Y|N) #REQUIRED
+	pMaternalRemarks CDATA #REQUIRED
+	pBreastFeeding (Y|N) #REQUIRED
+	pBreastFeedingRemarks CDATA #REQUIRED
+	pFamilyPlanning (Y|N) #REQUIRED
+	pFamilyPlanningRemarks CDATA #REQUIRED
+	pPlanningService (Y|N) #REQUIRED
+	pPlanningServiceRemarks CDATA #REQUIRED
+	pSurgicalSterilization (Y|N) #REQUIRED
+	pSterilizationRemarks CDATA #REQUIRED
+	pFollowupSchedule (Y|N) #REQUIRED
+	pFollowupScheduleRemarks CDATA #REQUIRED>			
+
+<!ELEMENT CF3_NEW (ADMITREASON?, COURSE?)>
+
+<!ELEMENT ADMITREASON (CLINICAL+, LABDIAG+, PHEX)>
+<!ATTLIST ADMITREASON
+	pBriefHistory CDATA #REQUIRED
+	pReferredReason CDATA #REQUIRED
+	pIntensive (Y|N) #REQUIRED
+	pMaintenance (Y|N) #REQUIRED>
+
+<!ELEMENT CLINICAL EMPTY>
+<!ATTLIST CLINICAL
+	pCriteria CDATA #REQUIRED>
+
+<!ELEMENT LABDIAG EMPTY>
+<!ATTLIST LABDIAG
+	pCriteria CDATA #REQUIRED>
+
+<!ELEMENT PHEX EMPTY>
+<!ATTLIST PHEX
+	pBP CDATA #REQUIRED
+	pCR CDATA #REQUIRED
+	pRR CDATA #REQUIRED
+	pTemp CDATA #REQUIRED
+	pHEENT CDATA #REQUIRED
+	pChestLungs CDATA #REQUIRED
+	pCVS CDATA #REQUIRED
+	pAbdomen CDATA #REQUIRED
+	pGUIE CDATA #REQUIRED
+	pSkinExtremities CDATA #REQUIRED
+	pNeuroExam CDATA #REQUIRED>
+
+<!ELEMENT COURSE (WARD+)>
+<!ELEMENT WARD EMPTY>
+<!ATTLIST WARD
+	pCourseDate CDATA #REQUIRED
+	pFindings CDATA #REQUIRED
+	pAction CDATA #REQUIRED>	
+
+<!ELEMENT PARTICULARS ((DRGMED+|XLSO+), (DRGMED*|XLSO*))>
+<!ELEMENT DRGMED EMPTY>
+<!ATTLIST DRGMED
+	pPurchaseDate CDATA #REQUIRED
+	pDrugCode CDATA #REQUIRED
+	pPNDFCode CDATA #REQUIRED
+	pGenericName CDATA #REQUIRED
+	pBrandName CDATA #REQUIRED
+	pPreparation CDATA #REQUIRED
+	pQuantity CDATA #REQUIRED>
+<!ELEMENT XLSO EMPTY>
+<!ATTLIST XLSO
+	pDiagnosticDate CDATA #REQUIRED
+	pDiagnosticType (IMAGING|LABORATORY|SUPPLIES|OTHERS) #REQUIRED
+	pDiagnosticName CDATA #REQUIRED
+	pQuantity CDATA #REQUIRED>
+
+<!ELEMENT RECEIPTS (RECEIPT+)>
+<!ELEMENT RECEIPT (ITEM+)>
+<!ATTLIST RECEIPT
+	pCompanyName CDATA #REQUIRED
+	pCompanyTIN CDATA #REQUIRED
+	pBIRPermitNumber CDATA #REQUIRED
+	pReceiptNumber CDATA #REQUIRED
+	pReceiptDate CDATA #REQUIRED
+	pVATExemptSale CDATA #REQUIRED
+	pVAT CDATA #REQUIRED
+	pTotal CDATA #REQUIRED>
+<!ELEMENT ITEM EMPTY>
+<!ATTLIST ITEM
+	pQuantity CDATA #REQUIRED
+	pUnitPrice CDATA #REQUIRED
+	pDescription CDATA #REQUIRED
+	pAmount CDATA #REQUIRED>
+
+<!ELEMENT DOCUMENTS (DOCUMENT+)>
+<!ELEMENT DOCUMENT EMPTY>
+<!ATTLIST DOCUMENT
+	pDocumentType CDATA #REQUIRED
+	pDocumentURL CDATA #REQUIRED>

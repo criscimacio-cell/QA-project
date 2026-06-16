@@ -264,6 +264,9 @@ def check_cf5(filename: str, content: str) -> dict:
             # ClaimNumber format violations are warnings — old system used non-standard formats
             if field == "ClaimNumber":
                 severity = "warning"
+            # pHospitalCode: only length matters (6 chars), pattern is too strict — skip pattern errors
+            if field == "pHospitalCode" and constraint == "CHECK (REGEXP_LIKE)":
+                continue
             errors.append(_make_error(err.line, element, field, bad_value,
                                       constraint, description, severity, err.message))
 

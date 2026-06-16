@@ -261,8 +261,8 @@ def check_cf5(filename: str, content: str) -> dict:
             field, bad_value = _extract_context(err.message)
             path_parts = err.path.split("/") if err.path else []
             element = path_parts[-1].split("[")[0] if path_parts else "N/A"
-            # ClaimNumber format violations are warnings — old system used non-standard formats
-            if field == "ClaimNumber":
+            # ClaimNumber: missing = error; wrong format/length = warning (old system used non-standard formats)
+            if field == "ClaimNumber" and constraint != "NOT NULL":
                 severity = "warning"
             # pHospitalCode: only length matters (6 chars), pattern is too strict — skip pattern errors
             if field == "pHospitalCode" and constraint == "CHECK (REGEXP_LIKE)":

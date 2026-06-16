@@ -1,0 +1,86 @@
+<!--
+    Philippine Health Insurance Corporation
+    Electronic Statement of Account Data Type Definition Version 0.1
+    0.1 : 2022-08-19 12:24pm : Initial
+    0.2 : 2023-02-13 03:51pm : Revised
+	0.3	: 2023-05-30 09:14am : Added pCategory in ItemizedBillingItem
+	0.4	: 2023-08-14 05:17pm : Changed pActualCharges to pChargesNetOfApplicableVat
+	0.5	: 2025-02-17 01:08pm : Added the specs for the "Others" element and "Others" category
+-->
+
+<!ELEMENT eSOA (SummaryOfFees, ProfessionalFees, ItemizedBillingItems)>
+
+<!ATTLIST eSOA
+    pHciPan CDATA #REQUIRED
+    pHciTransmittalId CDATA #REQUIRED>
+
+<!ELEMENT SummaryOfFees (RoomAndBoard, DrugsAndMedicine, LaboratoryAndDiagnostic, OperatingRoomFees, MedicalSupplies, Others, PhilHealth, Balance)>
+
+<!ELEMENT ProfessionalFees (ProfessionalFee*, PhilHealth, Balance)>
+
+<!ELEMENT ItemizedBillingItems (ItemizedBillingItem+)>
+
+<!ELEMENT PhilHealth EMPTY>
+<!ATTLIST PhilHealth
+	pTotalCaseRateAmount CDATA #REQUIRED
+>
+
+<!ELEMENT Balance EMPTY>
+<!ATTLIST Balance
+	pAmount CDATA #REQUIRED
+>
+
+
+<!ELEMENT OtherFundSource EMPTY>
+<!ATTLIST OtherFundSource
+	pDescription CDATA #REQUIRED
+	pAmount CDATA #REQUIRED>
+
+<!ELEMENT SummaryOfFee EMPTY>
+<!ATTLIST SummaryOfFee 
+    pChargesNetOfApplicableVat CDATA #REQUIRED
+    pSeniorCitizenDiscount CDATA #REQUIRED
+    pPWDDiscount CDATA #REQUIRED
+    pPCSO CDATA #REQUIRED
+    pDSWD CDATA #REQUIRED
+    pDOHMAP CDATA #REQUIRED
+    pHMO CDATA #REQUIRED
+  >
+
+<!ELEMENT RoomAndBoard (SummaryOfFee, OtherFundSource*)>
+
+<!ELEMENT DrugsAndMedicine (SummaryOfFee, OtherFundSource*)>
+
+<!ELEMENT LaboratoryAndDiagnostic (SummaryOfFee, OtherFundSource*)>
+
+<!ELEMENT OperatingRoomFees (SummaryOfFee, OtherFundSource*)>
+
+<!ELEMENT MedicalSupplies (SummaryOfFee, OtherFundSource*)>
+
+<!ELEMENT Others (SummaryOfFee, OtherFundSource*)>
+
+<!ELEMENT ProfessionalFee (ProfessionalInfo, SummaryOfFee)>
+
+
+<!ELEMENT ProfessionalInfo EMPTY>
+<!ATTLIST ProfessionalInfo
+    pPAN  CDATA #REQUIRED
+    pFirstName CDATA #REQUIRED
+    pMiddleName CDATA #REQUIRED
+    pLastName CDATA #REQUIRED
+    pSuffixName CDATA #REQUIRED
+>
+
+<!ELEMENT ItemizedBillingItem EMPTY>
+<!ATTLIST ItemizedBillingItem
+    pServiceDate CDATA #REQUIRED
+    pItemCode CDATA #REQUIRED
+    pItemName CDATA #REQUIRED
+    pUnitOfMeasurement CDATA #REQUIRED
+    pUnitPrice CDATA #REQUIRED
+    pQuantity CDATA #REQUIRED
+    pTotalAmount CDATA #REQUIRED
+	pCategory (RoomAndBoard|DrugsAndMedicine|LaboratoryAndDiagnostic|OperatingRoomFees|MedicalSupplies|Others) #REQUIRED
+>
+
+

@@ -262,7 +262,7 @@ def check_cf5(filename: str, content: str) -> dict:
             path_parts = err.path.split("/") if err.path else []
             element = path_parts[-1].split("[")[0] if path_parts else "N/A"
             # ClaimNumber: missing = error; wrong format/length = warning (old system used non-standard formats)
-            if field == "ClaimNumber" and constraint != "NOT NULL":
+            if field == "ClaimNumber" and constraint in ("CHECK (REGEXP_LIKE)", "CHECK (LENGTH <= n)", "CHECK (LENGTH >= n)"):
                 severity = "warning"
             # pHospitalCode: only length matters (6 chars), pattern is too strict — skip pattern errors
             if field == "pHospitalCode" and constraint == "CHECK (REGEXP_LIKE)":

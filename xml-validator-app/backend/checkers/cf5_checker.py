@@ -261,6 +261,9 @@ def check_cf5(filename: str, content: str) -> dict:
             field, bad_value = _extract_context(err.message)
             path_parts = err.path.split("/") if err.path else []
             element = path_parts[-1].split("[")[0] if path_parts else "N/A"
+            # ClaimNumber format violations are warnings — old system used non-standard formats
+            if field == "ClaimNumber":
+                severity = "warning"
             errors.append(_make_error(err.line, element, field, bad_value,
                                       constraint, description, severity, err.message))
 

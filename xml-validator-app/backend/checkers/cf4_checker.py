@@ -444,7 +444,7 @@ def _validate_field(key, data, xml_tree, cf4, list_index=None, med_lib_data=None
             if key == '@pTotalAmtPrice':
                 add(_rule_required_format(data, r'^\d+(\.\d{1,2})?$'))
 
-            if med_lib_data:
+            if med_lib_data is not None:
                 code_checks = {
                     '@pGenericCode': 'Gen Code', '@pSaltCode': 'Salt Code',
                     '@pFormCode': 'Form Code', '@pStrengthCode': 'Strength Code',

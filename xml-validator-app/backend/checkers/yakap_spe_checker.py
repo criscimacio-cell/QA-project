@@ -43,12 +43,6 @@ def _check_second_tranche(root, result):
         line = getattr(elem, "sourceline", None)
         tag  = elem.tag
 
-        if val not in ("V", "F"):
-            result.add("ERROR", "TRANCHE",
-                f"<{tag}> @pReportStatus='{val}' — second tranche submissions "
-                "must use 'V' (Validated) or 'F' (Failed)",
-                line=line)
-
         remarks = (elem.get("pDeficiencyRemarks") or "").strip()
 
         if val == "F" and not remarks:

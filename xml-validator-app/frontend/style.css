@@ -51,8 +51,7 @@ body {
   border-bottom: 1px solid var(--c-border);
 }
 .topnav-inner {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   padding: 0 1.5rem;
   height: 52px;
   display: flex;
@@ -99,8 +98,7 @@ body {
 /* ── Page layout ───────────────────────────────────────────────────────── */
 .page {
   display: flex;
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   min-height: calc(100vh - 52px);
 }
 

@@ -1,0 +1,56 @@
+--- /mnt/user-data/uploads/spe_xml_checker.py	2026-06-17 00:48:08.995632000 +0000
++++ spe_xml_checker.py	2026-06-17 01:25:36.809816288 +0000
+@@ -92,6 +92,16 @@
+ 
+     result = Result(xml_file=args.xml_file, dtd_file=dtd_path, libs_dir=libs_dir)
+ 
++    if not dtd_path:
++        result.add("WARNING", "DTD",
++            f"DTD not found at '{args.dtd}' -- structural validation "
++            "(required attributes, element order/cardinality) was SKIPPED "
++            "for this run")
++    if not libs_dir:
++        result.add("WARNING", "LIBRARY",
++            f"LIBRARIES folder not found at '{args.libs}' -- all "
++            "code-lookup checks were SKIPPED for this run")
++
+     # 1 – Well-formedness
+     root = check_syntax(args.xml_file, result)
+ 
+@@ -101,7 +111,12 @@
+ 
+     # 3 – Data dictionary + library lookups
+     if root is not None:
+-        libs = load_libraries(libs_dir) if libs_dir else {}
++        libs, missing_libs = load_libraries(libs_dir) if libs_dir else ({}, [])
++        for fname in missing_libs:
++            result.add("WARNING", "LIBRARY",
++                f"Library file '{fname}' not found or unreadable in "
++                f"'{libs_dir}' -- any attribute that references it was "
++                "accepted without a code-list check")
+         check_data_dict(root, libs, result)
+ 
+     # 4 – Cross-field rules
+@@ -116,6 +131,22 @@
+     if root is not None:
+         check_referential_integrity(root, result)
+ 
++    # 6a – Primary-key uniqueness (pHciTransNo per element type)
++    if root is not None:
++        check_unique_keys(root, result)
++
++    # 6b – Structured-ID format (prefix letter + digit composition)
++    if root is not None:
++        check_id_formats(root, result)
++
++    # 6c – Demographic-conditional plausibility (sex/age vs section applicability)
++    if root is not None:
++        check_demographic_rules(root, result)
++
++    # 6d – Cross-record identity consistency (PIN/type vs linked ENLISTMENT)
++    if root is not None:
++        check_identity_consistency(root, result)
++
+     # 7 – Second tranche rules
+     if root is not None:
+         check_second_tranche(root, result)

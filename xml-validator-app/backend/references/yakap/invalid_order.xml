@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This file intentionally contains errors for testing the checker -->
+<Order id="12345" status="shipped">
+    <Customer id="CUST-42">
+        <Name>Bob Jones</Name>
+        <Email>not-an-email</Email>
+    </Customer>
+    <LineItem sku="bad_sku" quantity="zero" price="abc"/>
+    <UnknownTag>surprise</UnknownTag>
+</Order>

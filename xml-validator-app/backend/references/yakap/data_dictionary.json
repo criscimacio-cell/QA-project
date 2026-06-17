@@ -1,0 +1,80 @@
+{
+  "_comment": "Data dictionary for Order XML documents",
+  "elements": {
+    "Order": {
+      "required": true,
+      "description": "Root order element",
+      "attributes": {
+        "id": {
+          "required": true,
+          "type": "string",
+          "pattern": "^ORD-\\d{4,}$",
+          "description": "Order ID must be ORD- followed by at least 4 digits"
+        },
+        "status": {
+          "required": true,
+          "type": "enum",
+          "values": ["open", "closed", "pending"],
+          "description": "Current order status"
+        }
+      },
+      "children": {
+        "required": ["Customer", "LineItem"],
+        "optional": ["Notes"]
+      }
+    },
+    "Customer": {
+      "required": true,
+      "description": "Customer information block",
+      "attributes": {
+        "id": {
+          "required": true,
+          "type": "string",
+          "pattern": "^CUST-\\d+$",
+          "description": "Customer ID must be CUST- followed by digits"
+        }
+      },
+      "children": {
+        "required": ["Name", "Email"],
+        "optional": []
+      }
+    },
+    "Name": {
+      "required": true,
+      "description": "Customer full name",
+      "text_type": "string"
+    },
+    "Email": {
+      "required": true,
+      "description": "Customer email address",
+      "text_type": "email"
+    },
+    "LineItem": {
+      "required": true,
+      "description": "A single order line",
+      "attributes": {
+        "sku": {
+          "required": true,
+          "type": "string",
+          "pattern": "^[A-Z]{2,5}-\\d{3,6}$",
+          "description": "Stock Keeping Unit — 2-5 uppercase letters, dash, 3-6 digits"
+        },
+        "quantity": {
+          "required": true,
+          "type": "integer",
+          "description": "Must be a whole number"
+        },
+        "price": {
+          "required": true,
+          "type": "float",
+          "description": "Unit price as a decimal number"
+        }
+      }
+    },
+    "Notes": {
+      "required": false,
+      "description": "Optional free-text notes",
+      "text_type": "string"
+    }
+  }
+}

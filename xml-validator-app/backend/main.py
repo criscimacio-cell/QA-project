@@ -11,6 +11,8 @@ from checkers.claim_checker import check_claim
 from checkers.cf4_checker import check_cf4
 from checkers.cf5_checker import check_cf5
 from checkers.esoa_checker import check_esoa
+from checkers.yakap_fpe_checker import check_yakap_fpe
+from checkers.yakap_spe_checker import check_yakap_spe
 from report_generator import generate_report
 
 app = FastAPI(title="XML Validator API")
@@ -49,6 +51,8 @@ CHECKER_MAP = {
     "cf4": check_cf4,
     "cf5": check_cf5,
     "esoa": check_esoa,
+    "yakap_fpe": check_yakap_fpe,
+    "yakap_spe": check_yakap_spe,
 }
 
 

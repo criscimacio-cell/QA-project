@@ -16,6 +16,12 @@ if REF_DIR not in sys.path:
 
 import core_checker as cc
 
+# pPatientAge has no byte-length restriction per PhilHealth
+cc.RULES["PROFILE"] = [
+    cc._r(attr, None if attr == "pPatientAge" else max_b, *rest)
+    for (attr, max_b, *rest) in cc.RULES["PROFILE"]
+]
+
 _ALLOWED_DOC_TYPES = {"EKAS", "EPRESS", "OTH", ""}
 
 

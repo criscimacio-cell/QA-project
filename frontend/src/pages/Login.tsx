@@ -329,142 +329,6 @@ function ParticleTrail() {
   return <canvas ref={canvasRef} style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:50 }} />;
 }
 
-/* ─── Reusable hook: wire eye-tracking to an injected cow SVG ─────────── */
-function useCowEyes(
-  containerRef: React.RefObject<HTMLDivElement>,
-  mouseRef: React.MutableRefObject<{ x: number; y: number }>,
-  maxPx: number,
-) {
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const wire = () => {
-      const svg = el.querySelector('svg');
-      if (!svg) return;
-      const leftPupil   = svg.querySelector('#cow-pupil-left')   as SVGElement | null;
-      const rightPupil  = svg.querySelector('#cow-pupil-right')  as SVGElement | null;
-      const leftSocket  = svg.querySelector('#eye-socket-left')  as SVGElement | null;
-      const rightSocket = svg.querySelector('#eye-socket-right') as SVGElement | null;
-      if (!leftPupil || !rightPupil || !leftSocket || !rightSocket) return;
-
-      leftPupil.style.transition  = 'transform 0.05s ease-out';
-      rightPupil.style.transition = 'transform 0.05s ease-out';
-
-      const onMove = () => {
-        const mx = mouseRef.current.x, my = mouseRef.current.y;
-        [{ pupil: leftPupil, socket: leftSocket }, { pupil: rightPupil, socket: rightSocket }]
-          .forEach(({ pupil, socket }) => {
-            const r = socket.getBoundingClientRect();
-            const scx = r.left + r.width / 2, scy = r.top + r.height / 2;
-            const dx = mx - scx, dy = my - scy;
-            const dist = Math.hypot(dx, dy);
-            const ox = dist > 0 ? (dx / dist) * Math.min(dist / 12, maxPx) : 0;
-            const oy = dist > 0 ? (dy / dist) * Math.min(dist / 12, maxPx) : 0;
-            pupil.style.transform = `translate(${ox}px, ${oy}px)`;
-          });
-      };
-      document.addEventListener('mousemove', onMove);
-      (el as any).__cowCleanup = () => document.removeEventListener('mousemove', onMove);
-    };
-
-    /* SVG might already be injected (baby cow), or needs fetching */
-    if (el.querySelector('svg')) { wire(); return; }
-    const id = setInterval(() => { if (el.querySelector('svg')) { clearInterval(id); wire(); } }, 50);
-    return () => {
-      clearInterval(id);
-      const cleanup = (el as any).__cowCleanup;
-      if (cleanup) cleanup();
-    };
-  }, [containerRef, mouseRef, maxPx]);
-}
-
-/* ─── Cow mascot: mama + baby ────────────────────────────────────────── */
-function CowMascot({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number; y: number }> }) {
-  const mamaRef   = useRef<HTMLDivElement>(null);
-  const babyRef   = useRef<HTMLDivElement>(null);
-  const mediumRef = useRef<HTMLDivElement>(null);
-
-  /* Inject SVG into all three cows */
-  const injectCow = (ref: React.RefObject<HTMLDivElement>) => {
-    const el = ref.current;
-    if (!el) return;
-    fetch('/the-cow-svgrepo-com.svg')
-      .then(r => r.text())
-      .then(svgText => {
-        el.innerHTML = svgText;
-        const svg = el.querySelector('svg');
-        if (svg) { svg.style.width = '100%'; svg.style.height = '100%'; svg.style.overflow = 'visible'; }
-      })
-      .catch(() => {});
-  };
-
-  useEffect(() => { injectCow(mamaRef);   return () => { const c = (mamaRef.current   as any)?.__cowCleanup; if (c) c(); }; }, []);
-  useEffect(() => { injectCow(babyRef);   return () => { const c = (babyRef.current   as any)?.__cowCleanup; if (c) c(); }; }, []);
-  useEffect(() => { injectCow(mediumRef); return () => { const c = (mediumRef.current as any)?.__cowCleanup; if (c) c(); }; }, []);
-
-  useCowEyes(mamaRef,   mouseRef, 7);
-  useCowEyes(babyRef,   mouseRef, 4);
-  useCowEyes(mediumRef, mouseRef, 5);
-
-  /* Feet-alignment offsets (SVG has ~22% empty space below hooves)
-     mama=560 → 123px gap  |  medium=300 → 66px gap  |  baby=220 → 48px gap
-     All relative to mama's gap: medium needs +57px, baby needs +75px        */
-
-  return (
-    <div style={{
-      position: 'absolute', left: 0, top: 0, bottom: 0, width: '58%',
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-      paddingBottom: '8%',
-      pointerEvents: 'none', zIndex: 6,
-    }}>
-      {/* Ambient glow */}
-      <div style={{
-        position: 'absolute',
-        width: 600, height: 600, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.04) 45%, transparent 70%)',
-        filter: 'blur(36px)', pointerEvents: 'none',
-      }} />
-
-      {/* Medium cow — left side, bigger than baby */}
-      <div
-        ref={mediumRef}
-        style={{
-          width: 300, height: 300,
-          filter: 'drop-shadow(0 16px 36px rgba(0,0,0,0.65)) drop-shadow(0 0 24px rgba(245,158,11,0.07))',
-          animation: 'cowFloat 3.6s ease-in-out 0.4s infinite',
-          flexShrink: 0,
-          marginRight: -220,
-          marginBottom: 57,
-        }}
-      />
-
-      {/* Mama cow */}
-      <div
-        ref={mamaRef}
-        style={{
-          width: 560, height: 560,
-          filter: 'drop-shadow(0 24px 56px rgba(0,0,0,0.7)) drop-shadow(0 0 40px rgba(245,158,11,0.08))',
-          animation: 'cowFloat 4s ease-in-out infinite',
-          flexShrink: 0,
-          marginRight: -220,
-        }}
-      />
-
-      {/* Baby cow — right side, smallest */}
-      <div
-        ref={babyRef}
-        style={{
-          width: 220, height: 220,
-          filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(245,158,11,0.07))',
-          animation: 'cowFloat 3.2s ease-in-out 0.8s infinite',
-          flexShrink: 0,
-          marginBottom: 75,
-        }}
-      />
-    </div>
-  );
-}
 
 /* ─── Floating background shapes ────────────────────────────────────── */
 function FloatingBackground() {
@@ -691,11 +555,8 @@ export default function Login() {
         }} />
       ))}
 
-      {/* ── Cow mascot in hero area (hidden when Spline loads) ── */}
-      <CowMascot mouseRef={mouseRef} />
-
-      {/* ── Spline 3D scene overlay on left side ── */}
-      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'56%', zIndex:5, pointerEvents:'none' }}>
+      {/* ── Spline 3D scene — left panel ── */}
+      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'56%', zIndex:5 }}>
         <SplineScene
           scene="https://prod.spline.design/QQ1zXNE5ma-qe0g0/scene.splinecode"
           className="w-full h-full"

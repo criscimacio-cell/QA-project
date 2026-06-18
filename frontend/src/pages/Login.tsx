@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { Spotlight } from '../components/ui/spotlight';
 
 const DEMO_USERS = [
   { email: 'admin@qa.com',     role: 'Admin',    color: '#ef4444' },
@@ -649,6 +650,9 @@ export default function Login() {
 
       {/* Post-login morph overlay */}
       {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />}
+
+      {/* ── Spotlight glow ── */}
+      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="rgba(245,158,11,0.35)" />
 
       {/* ── Background stack ── */}
       <BreathingGrid />

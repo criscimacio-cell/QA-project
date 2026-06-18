@@ -4,18 +4,18 @@ const LINKS = [
   {
     heading: 'Platform',
     items: [
-      { label: 'Dashboard',    href: '/' },
-      { label: 'File Manager', href: '/files' },
-      { label: 'Repositories', href: '/repositories' },
-      { label: 'Knowledge Base', href: '/knowledge-base' },
+      { label: 'Dashboard',    href: '/',               external: false },
+      { label: 'File Manager', href: '/files',          external: false },
+      { label: 'Repositories', href: '/repositories',   external: false },
+      { label: 'Knowledge Base', href: '/knowledge-base', external: false },
     ],
   },
   {
     heading: 'Management',
     items: [
-      { label: 'Audit Log',  href: '/audit' },
-      { label: 'Users',      href: '/users' },
-      { label: 'Settings',   href: '/settings' },
+      { label: 'Audit Log',  href: '/audit',    external: false },
+      { label: 'Users',      href: '/users',    external: false },
+      { label: 'Settings',   href: '/settings', external: false },
     ],
   },
   {

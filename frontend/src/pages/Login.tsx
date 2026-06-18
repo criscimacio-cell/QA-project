@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, CheckCircle2, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { Spotlight } from '../components/ui/spotlight';
 import { SplineScene } from '../components/ui/splite';
 
 const DEMO_USERS = [
@@ -47,352 +45,8 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════
-   ANIMATION LAYER COMPONENTS
-══════════════════════════════════════════════════════════════════════ */
-
-/* 1 ── Breathing dot grid */
-function BreathingGrid() {
-  return (
-    <div style={{
-      position: 'absolute', inset: 0, pointerEvents: 'none',
-      backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.065) 1px, transparent 1px)',
-      backgroundSize: '44px 44px',
-      animation: 'gridPulse 5s ease-in-out infinite',
-    }} />
-  );
-}
-
-/* 2 ── Aurora bands */
-function AuroraLayer() {
-  return (
-    <>
-      {[
-        { top: '10%', h: 160, dur: '14s', del: '0s',   grad: 'rgba(245,158,11,0.07) 25%, rgba(139,92,246,0.07) 55%, rgba(20,184,166,0.05) 80%' },
-        { top: '42%', h: 130, dur: '19s', del: '-6s',  grad: 'rgba(20,184,166,0.05) 20%, rgba(245,158,11,0.08) 60%, rgba(139,92,246,0.05) 85%' },
-        { top: '70%', h: 150, dur: '24s', del: '-12s', grad: 'rgba(139,92,246,0.06) 15%, rgba(20,184,166,0.05) 55%, rgba(245,158,11,0.07) 90%' },
-      ].map((b, i) => (
-        <div key={i} style={{
-          position: 'absolute', left: 0, right: 0,
-          height: b.h, top: b.top,
-          background: `linear-gradient(90deg, transparent 0%, ${b.grad}, transparent 100%)`,
-          filter: 'blur(22px)',
-          animation: `auroraDrift ${b.dur} ease-in-out ${b.del} infinite`,
-          pointerEvents: 'none',
-        }} />
-      ))}
-    </>
-  );
-}
-
-/* 3 ── Morphing blobs */
-function MorphingBlob() {
-  return (
-    <>
-      <div style={{ position:'absolute', width:420, height:420, top:'18%', left:'20%', background:'radial-gradient(circle, rgba(245,158,11,0.09) 0%, transparent 70%)', animation:'blobMorph 11s ease-in-out infinite', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', width:360, height:360, top:'48%', left:'58%', background:'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)', animation:'blobMorph 15s ease-in-out -5s infinite reverse', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', width:300, height:300, top:'68%', left:'8%',  background:'radial-gradient(circle, rgba(20,184,166,0.06) 0%, transparent 70%)', animation:'blobMorph 9s ease-in-out -3s infinite', pointerEvents:'none' }} />
-    </>
-  );
-}
-
-/* 4 ── Meteor streaks */
-function MeteorLayer() {
-  const [meteors, setMeteors] = useState<Array<{ id: number; top: number; left: number }>>([]);
-  useEffect(() => {
-    let n = 0;
-    const spawn = () => setMeteors(prev => [...prev.slice(-10), { id: n++, top: Math.random() * 75, left: Math.random() * 80 }]);
-    const id = setInterval(spawn, 1400);
-    spawn();
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <div style={{ position:'absolute', inset:0, pointerEvents:'none', overflow:'hidden', zIndex:2 }}>
-      {meteors.map(m => (
-        <div key={m.id} className="meteor" style={{ top:`${m.top}%`, left:`${m.left}%` }} />
-      ))}
-    </div>
-  );
-}
-
-/* 5 ── Dust motes */
-function DustMotes() {
-  const motes = Array.from({ length: 38 }, (_, i) => ({
-    id: i,
-    left: (i * 2.7 + Math.sin(i * 1.4) * 6) % 97,
-    delay: -(i * 0.38) % 14,
-    dur: 9 + (i * 0.55) % 9,
-    size: 1 + (i % 2),
-    opacity: 0.18 + (i % 6) * 0.05,
-  }));
-  return (
-    <div style={{ position:'absolute', inset:0, pointerEvents:'none', overflow:'hidden', zIndex:2 }}>
-      {motes.map(m => (
-        <div key={m.id} className="dust-mote" style={{
-          left: `${m.left}%`, bottom: '-4px',
-          width: m.size, height: m.size,
-          opacity: m.opacity,
-          animationDuration: `${m.dur}s`,
-          animationDelay: `${m.delay}s`,
-        }} />
-      ))}
-    </div>
-  );
-}
-
-/* 6 ── Constellation lines */
-const STARS = [
-  [115,45],[461,108],[835,162],[1123,72],[58,225],[720,288],[1267,342],
-  [288,405],[936,468],[547,540],[1325,612],[202,666],[1037,720],[403,792],
-  [691,837],[749,27],[1382,432],[605,198],[1181,585],[864,810],
-];
-const CONST_LINES = (() => {
-  const lines: { x1:number;y1:number;x2:number;y2:number;del:string }[] = [];
-  let idx = 0;
-  for (let i = 0; i < STARS.length; i++) {
-    for (let j = i + 1; j < STARS.length; j++) {
-      const d = Math.hypot(STARS[i][0]-STARS[j][0], STARS[i][1]-STARS[j][1]);
-      if (d < 380) lines.push({ x1:STARS[i][0], y1:STARS[i][1], x2:STARS[j][0], y2:STARS[j][1], del:`${-(idx++*0.35)%7}s` });
-    }
-  }
-  return lines;
-})();
-function ConstellationLayer() {
-  return (
-    <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none', zIndex:1 }}
-      viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
-      {CONST_LINES.map((l, i) => (
-        <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-          stroke="rgba(255,255,255,0.07)" strokeWidth="0.5"
-          style={{ animation: `constellate 5s ease-in-out ${l.del} infinite` }} />
-      ))}
-    </svg>
-  );
-}
-
-/* 7 ── Cascading triangles */
-function CascadingTriangles() {
-  const tris = Array.from({ length: 24 }, (_, i) => ({
-    id: i,
-    left: (i * 4.3 + Math.sin(i * 1.2) * 5) % 94,
-    delay: -(i * 0.55) % 10,
-    dur: 7 + (i * 0.32) % 6,
-    size: 7 + (i % 4) * 4,
-    amber: i % 3 === 0,
-  }));
-  return (
-    <div style={{ position:'absolute', inset:0, pointerEvents:'none', overflow:'hidden', zIndex:2 }}>
-      {tris.map(t => (
-        <div key={t.id} style={{
-          position: 'absolute', left: `${t.left}%`, top: '-24px',
-          width: 0, height: 0,
-          borderLeft: `${t.size/2}px solid transparent`,
-          borderRight: `${t.size/2}px solid transparent`,
-          borderBottom: `${t.size}px solid ${t.amber ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.07)'}`,
-          animation: `fall ${t.dur}s linear ${t.delay}s infinite`,
-        }} />
-      ))}
-    </div>
-  );
-}
-
-/* 8+9 ── Cursor-reactive shapes: repel + magnetic */
-function CursorReactiveShapes({ mouseRef }: { mouseRef: React.MutableRefObject<{ x: number; y: number }> }) {
-  const repelRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const magnetRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  useEffect(() => {
-    let raf: number;
-    const loop = () => {
-      const { x: mx, y: my } = mouseRef.current;
-
-      repelRefs.current.forEach(el => {
-        if (!el) return;
-        const r = el.getBoundingClientRect();
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        const dx = cx - mx, dy = cy - my;
-        const dist = Math.hypot(dx, dy);
-        const R = 190;
-        if (dist < R && dist > 1) {
-          const f = Math.pow((R - dist) / R, 1.6) * 60;
-          el.style.transform = `translate(${dx/dist*f}px,${dy/dist*f}px)`;
-          el.style.transition = 'transform 0.08s ease-out';
-        } else {
-          el.style.transform = 'translate(0,0)';
-          el.style.transition = 'transform 0.7s ease-out';
-        }
-      });
-
-      magnetRefs.current.forEach(el => {
-        if (!el) return;
-        const r = el.getBoundingClientRect();
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        const dx = mx - cx, dy = my - cy;
-        const dist = Math.hypot(dx, dy);
-        const R = 260;
-        if (dist < R && dist > 1) {
-          const f = Math.pow((R - dist) / R, 2) * 38;
-          el.style.transform = `translate(${dx/dist*f}px,${dy/dist*f}px)`;
-          el.style.transition = 'transform 0.15s ease-out';
-        } else {
-          el.style.transform = 'translate(0,0)';
-          el.style.transition = 'transform 0.8s ease-out';
-        }
-      });
-
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, [mouseRef]);
-
-  const repel = [
-    { top:'22%', left:'30%', s:52, color:'rgba(245,158,11,0.13)', br:'50%' },
-    { top:'54%', left:'16%', s:38, color:'rgba(255,255,255,0.10)', br:'50%' },
-    { top:'36%', left:'62%', s:46, color:'rgba(245,158,11,0.11)', br:'10px' },
-    { top:'70%', left:'46%', s:34, color:'rgba(255,255,255,0.08)', br:'50%' },
-    { top:'14%', left:'72%', s:44, color:'rgba(245,158,11,0.12)', br:'50%' },
-    { top:'82%', left:'64%', s:30, color:'rgba(255,255,255,0.08)', br:'10px' },
-    { top:'48%', left:'3%',  s:40, color:'rgba(139,92,246,0.1)',   br:'50%' },
-  ];
-  const magnet = [
-    { top:'28%', left:'6%',  s:72, color:'rgba(245,158,11,0.10)', br:'50%' },
-    { top:'58%', left:'70%', s:88, color:'rgba(139,92,246,0.08)', br:'50%' },
-    { top:'8%',  left:'42%', s:62, color:'rgba(255,255,255,0.07)', br:'50%' },
-    { top:'76%', left:'28%', s:58, color:'rgba(245,158,11,0.09)', br:'50%' },
-    { top:'40%', left:'90%', s:50, color:'rgba(20,184,166,0.08)', br:'50%' },
-  ];
-
-  return (
-    <>
-      {repel.map((s, i) => (
-        <div key={`rp${i}`} ref={el => { repelRefs.current[i] = el; }} style={{ position:'absolute', top:s.top, left:s.left, width:s.s, height:s.s, borderRadius:s.br, background:s.color, filter:'blur(5px)', pointerEvents:'none', willChange:'transform' }} />
-      ))}
-      {magnet.map((s, i) => (
-        <div key={`mg${i}`} ref={el => { magnetRefs.current[i] = el; }} style={{ position:'absolute', top:s.top, left:s.left, width:s.s, height:s.s, borderRadius:s.br, background:s.color, filter:'blur(7px)', pointerEvents:'none', willChange:'transform' }} />
-      ))}
-    </>
-  );
-}
-
-/* 10 ── Particle trail canvas */
-function ParticleTrail() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    type P = { x: number; y: number; a: number; size: number; vx: number; vy: number };
-    const pts: P[] = [];
-    let raf: number;
-    let lx = -1, ly = -1;
-
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-    resize();
-    window.addEventListener('resize', resize);
-
-    const onMove = (e: MouseEvent) => {
-      if (lx !== -1) {
-        const steps = Math.ceil(Math.hypot(e.clientX - lx, e.clientY - ly) / 10);
-        for (let s = 0; s < steps && pts.length < 100; s++) {
-          const t = s / steps;
-          pts.push({ x: lx+(e.clientX-lx)*t, y: ly+(e.clientY-ly)*t, a: 0.55, size: 2.5+Math.random()*1.5, vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4-.25 });
-        }
-      }
-      lx = e.clientX; ly = e.clientY;
-    };
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = pts.length - 1; i >= 0; i--) {
-        const p = pts[i];
-        p.x += p.vx; p.y += p.vy;
-        p.a -= 0.016; p.size *= 0.985;
-        if (p.a <= 0) { pts.splice(i, 1); continue; }
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, Math.max(p.size * p.a, 0.3), 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(245,158,11,${p.a})`;
-        ctx.fill();
-      }
-      raf = requestAnimationFrame(draw);
-    };
-
-    window.addEventListener('mousemove', onMove);
-    raf = requestAnimationFrame(draw);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('resize', resize);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-  return <canvas ref={canvasRef} style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:50 }} />;
-}
-
-
-/* ─── Floating background shapes ────────────────────────────────────── */
-function FloatingBackground() {
-  return (
-    <>
-      {/* Large ambient glow orbs */}
-      <div className="orb orb-amber-xl" style={{ width:700, height:700, top:'-20%', left:'-10%' }} />
-      <div className="orb orb-white-xl" style={{ width:600, height:600, top:'20%', left:'25%', animationDelay:'-3s', animationDuration:'18s' }} />
-      <div className="orb orb-amber-xl" style={{ width:600, height:600, top:'-15%', right:'-10%', animationDelay:'-6s', animationDuration:'20s' }} />
-      <div className="orb orb-white-xl" style={{ width:500, height:500, bottom:'-15%', left:'30%', animationDelay:'-10s', animationDuration:'24s' }} />
-      <div className="orb orb-amber-xl" style={{ width:450, height:450, bottom:'-10%', right:'-5%', animationDelay:'-4s', animationDuration:'16s' }} />
-
-      {/* Medium floating orbs */}
-      {[
-        { id:'o1', cls:'orb-amber-md', w:130, t:'15%', l:'10%',  d:'-1s',  dur:'10s' },
-        { id:'o2', cls:'orb-white-md', w:100, t:'60%', l:'5%',   d:'-4s',  dur:'9s'  },
-        { id:'o3', cls:'orb-amber-md', w:90,  t:'40%', l:'45%',  d:'-7s',  dur:'12s' },
-        { id:'o4', cls:'orb-white-md', w:70,  t:'8%',  l:'70%',  d:'-2s',  dur:'8s'  },
-        { id:'o5', cls:'orb-amber-md', w:110, t:'72%', l:'55%',  d:'-5s',  dur:'11s' },
-        { id:'o6', cls:'orb-white-md', w:80,  t:'30%', l:'80%',  d:'-9s',  dur:'14s' },
-        { id:'o7', cls:'orb-amber-md', w:60,  t:'85%', l:'88%',  d:'-3s',  dur:'10s' },
-      ].map(o => (
-        <div key={o.id} className={`orb ${o.cls}`}
-          style={{ width:o.w, height:o.w, top:o.t, left:o.l, animationDelay:o.d, animationDuration:o.dur }} />
-      ))}
-
-      {/* Twinkling stars */}
-      {[
-        { top:'5%',  left:'8%',   s:3, d:'0s'    }, { top:'12%', left:'32%', s:2, d:'-1s'   },
-        { top:'18%', left:'58%',  s:4, d:'-2s'   }, { top:'8%',  left:'78%', s:2, d:'-0.5s' },
-        { top:'25%', left:'4%',   s:3, d:'-3s'   }, { top:'32%', left:'50%', s:2, d:'-1.5s' },
-        { top:'38%', left:'88%',  s:3, d:'-4s'   }, { top:'45%', left:'20%', s:2, d:'-2.5s' },
-        { top:'52%', left:'65%',  s:4, d:'-0.8s' }, { top:'60%', left:'38%', s:2, d:'-3.5s' },
-        { top:'68%', left:'92%',  s:3, d:'-5s'   }, { top:'74%', left:'14%', s:2, d:'-1.2s' },
-        { top:'80%', left:'72%',  s:3, d:'-6s'   }, { top:'88%', left:'28%', s:2, d:'-2.2s' },
-        { top:'93%', left:'48%',  s:4, d:'-4.5s' }, { top:'3%',  left:'52%', s:2, d:'-3.8s' },
-        { top:'48%', left:'96%',  s:3, d:'-1.8s' }, { top:'22%', left:'42%', s:2, d:'-7s'   },
-        { top:'65%', left:'82%',  s:3, d:'-2.8s' }, { top:'90%', left:'60%', s:2, d:'-5.5s' },
-      ].map((s, i) => (
-        <div key={i} className="star" style={{ top:s.top, left:s.left, width:s.s, height:s.s, animationDelay:s.d }} />
-      ))}
-
-      {/* Expanding rings */}
-      <div className="ring ring-1" style={{ width:180, height:180, top:'18%', left:'12%' }} />
-      <div className="ring ring-2" style={{ width:120, height:120, top:'55%', left:'60%', animationDelay:'-2.5s' }} />
-      <div className="ring ring-3" style={{ width:220, height:220, top:'65%', left:'4%',  animationDelay:'-5s' }} />
-      <div className="ring ring-1" style={{ width:140, height:140, top:'10%', left:'78%', animationDelay:'-3.5s', animationDuration:'7s' }} />
-      <div className="ring ring-2" style={{ width:100, height:100, top:'80%', left:'42%', animationDelay:'-7s',   animationDuration:'9s' }} />
-
-
-      {/* Drifting lines */}
-      <div className="drift-line" style={{ top:'20%', width:220, animationDelay:'-1s' }} />
-      <div className="drift-line" style={{ top:'42%', width:160, animationDelay:'-5s',  animationDuration:'20s' }} />
-      <div className="drift-line" style={{ top:'63%', width:140, animationDelay:'-9s',  animationDuration:'16s' }} />
-      <div className="drift-line" style={{ top:'78%', width:200, animationDelay:'-3s',  animationDuration:'18s' }} />
-      <div className="drift-line" style={{ top:'90%', width:120, animationDelay:'-12s', animationDuration:'22s' }} />
-    </>
-  );
-}
-
-/* ─── Main component ───────────────────────────────────────────── */
 export default function Login() {
-  const { login, user, loading: authLoading, refreshUser } = useAuth();
-  const { dark } = useTheme();
+  const { login, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail]       = useState('');
@@ -414,15 +68,6 @@ export default function Login() {
   }, [user, authLoading, loginSuccess]);
 
   const emailInputRef = useRef<HTMLInputElement>(null);
-  const mouseRef = useRef({ x: -9999, y: -9999 });
-  const [ripples, setRipples] = useState<Array<{ id: string; x: number; y: number; ring: number }>>([]);
-
-  /* Track mouse position globally for cursor effects */
-  useEffect(() => {
-    const h = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
-    window.addEventListener('mousemove', h);
-    return () => window.removeEventListener('mousemove', h);
-  }, []);
 
   /* Post-login transition chain */
   useEffect(() => {
@@ -435,7 +80,7 @@ export default function Login() {
     ts.push(setTimeout(() => setMorphFading(true),   1800));
     ts.push(setTimeout(() => navigate('/'), 2100));
     return () => ts.forEach(clearTimeout);
-  }, [loginSuccess, navigate, refreshUser]);
+  }, [loginSuccess, navigate]);
 
   /* Animated email placeholder */
   useEffect(() => {
@@ -481,18 +126,6 @@ export default function Login() {
     setEmail(u.email); setPassword('password123'); setFilledRole(u.role);
   };
 
-  /* Click-to-ripple on background */
-  const handleBgClick = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('[data-no-ripple]')) return;
-    const base = `${Date.now()}-${Math.random()}`;
-    const { clientX: x, clientY: y } = e;
-    const newRipples = [
-      { id: `${base}-0`, x, y, ring: 260 },
-      { id: `${base}-1`, x, y, ring: 380 },
-    ];
-    setRipples(prev => [...prev, ...newRipples]);
-    setTimeout(() => setRipples(prev => prev.filter(r => !r.id.startsWith(base))), 1600);
-  };
 
   const AMBER = '#F59E0B';
 
@@ -500,111 +133,71 @@ export default function Login() {
 
   return (
     <div
-      onClick={handleBgClick}
       style={{
         minHeight: '100vh', position: 'relative', overflow: 'hidden',
-        background: '#09090B',
+        background: '#f0f0f0',
         fontFamily: "'DM Sans', sans-serif",
         ...(phase === 'slideOut'
           ? { opacity: 0, transition: 'opacity 0.45s ease' }
           : { animation: 'fadeIn 0.35s ease both' }),
       }}
     >
-      {/* Particle trail canvas — fixed overlay */}
-      <ParticleTrail />
-
       {/* Post-login morph overlay */}
       {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />}
 
-      {/* ── Spotlight glow ── */}
-      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="rgba(245,158,11,0.35)" />
-
-      {/* ── Background stack ── */}
-      <BreathingGrid />
-      <AuroraLayer />
-      <MorphingBlob />
-      <ConstellationLayer />
-
-      {/* Flingable shapes layer */}
-      <div style={{ position:'absolute', inset:0, zIndex:1 }}>
-        <FloatingBackground />
-      </div>
-
-      {/* Cursor reactive shapes */}
-      <div style={{ position:'absolute', inset:0, zIndex:2, pointerEvents:'none' }}>
-        <CursorReactiveShapes mouseRef={mouseRef} />
-      </div>
-
-      {/* Dust motes + cascading triangles */}
-      <DustMotes />
-      <CascadingTriangles />
-
-      {/* Meteor streaks */}
-      <MeteorLayer />
-
-      {/* Click ripples */}
-      {ripples.map(r => (
-        <div key={r.id} style={{
-          position: 'fixed', left: r.x, top: r.y,
-          width: r.ring, height: r.ring,
-          borderRadius: '50%',
-          border: `${r.ring === 260 ? 1.5 : 1}px solid rgba(245,158,11,${r.ring === 260 ? 0.65 : 0.3})`,
-          transform: 'translate(-50%,-50%) scale(0)',
-          animation: `clickRipple ${r.ring === 260 ? 1.2 : 1.5}s cubic-bezier(0,0,0.2,1) ${r.ring === 260 ? '0s' : '0.1s'} forwards`,
-          pointerEvents: 'none', zIndex: 20,
-        }} />
-      ))}
-
-      {/* ── Spline 3D scene — left panel ── */}
-      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'56%', zIndex:5 }}>
+      {/* ── Spline scene — full-bleed background ── */}
+      <div style={{ position:'fixed', inset:0, zIndex:0 }}>
         <SplineScene
           scene="https://prod.spline.design/QQ1zXNE5ma-qe0g0/scene.splinecode"
           className="w-full h-full"
         />
       </div>
 
+      {/* ── Content layer ── */}
+      <div style={{ position:'relative', zIndex:1, minHeight:'100vh' }}>
+
       {/* ── Left: brand & demo pills ── */}
-      <div style={{ position:'absolute', left:'5%', top:'8%', zIndex:6, maxWidth:340 }}>
+      <div style={{ position:'absolute', left:'5%', top:'8%', maxWidth:340 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
           <div style={{ width:36, height:36, borderRadius:10, background:AMBER, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 14px ${AMBER}66` }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
             </svg>
           </div>
-          <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:18, color:'white', letterSpacing:'0.04em' }}>Qlarity</span>
+          <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:18, color:'#1a1a1a', letterSpacing:'0.04em' }}>Qlarity</span>
         </div>
-        <h1 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:32, fontWeight:800, color:'white', lineHeight:1.2, marginBottom:8 }}>
+        <h1 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:32, fontWeight:800, color:'#1a1a1a', lineHeight:1.2, marginBottom:8 }}>
           QA Asset Platform
         </h1>
-        <p style={{ fontSize:15, color:'rgba(255,255,255,0.6)' }}>Clarity in every QA decision.</p>
+        <p style={{ fontSize:15, color:'rgba(0,0,0,0.5)' }}>Clarity in every QA decision.</p>
       </div>
 
-      <div style={{ position:'absolute', left:'5%', bottom:'6%', zIndex:6, maxWidth:340 }}>
-        <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(255,255,255,0.4)', marginBottom:8 }}>Demo accounts</p>
+      <div style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340 }}>
+        <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(0,0,0,0.4)', marginBottom:8 }}>Demo accounts</p>
         <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
           {DEMO_USERS.map(u => (
             <button key={u.email} type="button" onClick={() => quickLogin(u)}
-              style={{ padding:'5px 13px', borderRadius:999, cursor:'pointer', background:filledRole===u.role?u.color:'rgba(255,255,255,0.08)', border:`1px solid ${filledRole===u.role?u.color:'rgba(255,255,255,0.15)'}`, color:filledRole===u.role?'#09090B':'rgba(255,255,255,0.75)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, transition:'all 0.18s' }}>
+              style={{ padding:'5px 13px', borderRadius:999, cursor:'pointer', background:filledRole===u.role?u.color:'rgba(0,0,0,0.07)', border:`1px solid ${filledRole===u.role?u.color:'rgba(0,0,0,0.15)'}`, color:filledRole===u.role?'white':'rgba(0,0,0,0.6)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, transition:'all 0.18s' }}>
               {filledRole === u.role && <CheckCircle2 size={11} />}
               {u.role}
             </button>
           ))}
         </div>
-        <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', marginTop:6 }}>
-          Password: <span style={{ fontFamily:'monospace', color:AMBER, fontWeight:700 }}>password123</span>
+        <p style={{ fontSize:11, color:'rgba(0,0,0,0.4)', marginTop:6 }}>
+          Password: <span style={{ fontFamily:'monospace', color:'#b45309', fontWeight:700 }}>password123</span>
         </p>
       </div>
 
-      {/* ── Login card (right side) ── */}
-      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'44%', zIndex:7, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px' }}>
+      {/* ── Login card — right side, floating over scene ── */}
+      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'44%', minWidth:360, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px' }}>
         <div data-no-ripple style={{ position:'relative', width:'100%', maxWidth:440 }}>
 
           {/* Rotating amber rings */}
-          <div style={{ position:'absolute', inset:-3, borderRadius:20, border:'1px solid transparent', borderTop:`1.5px solid rgba(245,158,11,0.55)`, borderRight:`1px solid rgba(245,158,11,0.18)`, animation:'spin 4s linear infinite', pointerEvents:'none' }} />
-          <div style={{ position:'absolute', inset:-3, borderRadius:20, border:'1px solid transparent', borderBottom:`1.5px solid rgba(245,158,11,0.45)`, borderLeft:`1px solid rgba(245,158,11,0.18)`, animation:'spin 6s linear infinite reverse', pointerEvents:'none' }} />
+          <div style={{ position:'absolute', inset:-3, borderRadius:20, border:'1px solid transparent', borderTop:`1.5px solid rgba(245,158,11,0.7)`, borderRight:`1px solid rgba(245,158,11,0.25)`, animation:'spin 4s linear infinite', pointerEvents:'none' }} />
+          <div style={{ position:'absolute', inset:-3, borderRadius:20, border:'1px solid transparent', borderBottom:`1.5px solid rgba(245,158,11,0.55)`, borderLeft:`1px solid rgba(245,158,11,0.25)`, animation:'spin 6s linear infinite reverse', pointerEvents:'none' }} />
 
-          {/* Card — matches demo.tsx styling */}
-          <div style={{ background:'rgba(23,23,23,0.85)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', border:'1px solid rgba(38,38,38,0.9)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.06)' }}>
+          {/* Card — dark, strong contrast against light Spline background */}
+          <div style={{ background:'rgba(15,15,15,0.92)', backdropFilter:'blur(40px)', WebkitBackdropFilter:'blur(40px)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 40px 100px rgba(0,0,0,0.55), 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(245,158,11,0.1)' }}>
 
             {/* Header */}
             <div style={{ textAlign:'center', marginBottom:32 }}>
@@ -694,127 +287,15 @@ export default function Login() {
             </form>
           </div>
         </div>
+        </div>
       </div>
 
       <style>{`
-        /* ── Core ── */
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
+        @keyframes spin    { to { transform: rotate(360deg); } }
         @keyframes ringExpand {
           from { transform: translate(-50%,-50%) scale(1); opacity: 0.7; }
           to   { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
-        }
-
-        /* ── 1. Breathing grid ── */
-        @keyframes gridPulse {
-          0%,100% { opacity: 0.45; }
-          50%     { opacity: 1; }
-        }
-
-        /* ── 2. Aurora ── */
-        @keyframes auroraDrift {
-          0%,100% { transform: translateY(0) scaleX(1); opacity: 0.65; }
-          50%     { transform: translateY(-28px) scaleX(1.04); opacity: 1; }
-        }
-
-        /* ── 3. Morphing blob ── */
-        @keyframes blobMorph {
-          0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-          25%     { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
-          50%     { border-radius: 50% 60% 30% 60% / 30% 60% 50% 40%; }
-          75%     { border-radius: 70% 30% 50% 50% / 40% 50% 60% 50%; }
-        }
-
-        /* ── 4. Meteors ── */
-        .meteor {
-          position: absolute;
-          width: 110px; height: 1.5px;
-          background: linear-gradient(90deg, transparent, rgba(245,158,11,0.85), white, transparent);
-          transform-origin: left center;
-          transform: rotate(-35deg);
-          animation: meteorShoot 0.85s ease-out forwards;
-        }
-        @keyframes meteorShoot {
-          from { opacity: 1; transform: rotate(-35deg) translateX(0) scaleX(0.05); }
-          to   { opacity: 0; transform: rotate(-35deg) translateX(300px) scaleX(1); }
-        }
-
-        /* ── 5. Dust motes ── */
-        .dust-mote {
-          position: absolute;
-          border-radius: 50%;
-          background: white;
-          animation: dustFloat linear infinite;
-        }
-        @keyframes dustFloat {
-          from { transform: translateY(0) translateX(0); }
-          33%  { transform: translateY(-33vh) translateX(10px); }
-          66%  { transform: translateY(-66vh) translateX(-8px); }
-          to   { transform: translateY(-105vh) translateX(5px); opacity: 0; }
-        }
-
-        /* ── 6. Constellation ── */
-        @keyframes constellate {
-          0%,100% { opacity: 0.03; }
-          50%     { opacity: 0.22; }
-        }
-
-        /* ── 7. Cascading triangles ── */
-        @keyframes fall {
-          from { transform: translateY(0) rotate(0deg);   opacity: 0.8; }
-          to   { transform: translateY(110vh) rotate(540deg); opacity: 0; }
-        }
-
-        /* ── Cow mascot ── */
-        @keyframes cowFloat {
-          0%,100% { transform: translateY(0); }
-          50%     { transform: translateY(-14px); }
-        }
-
-        /* ── 9. Click ripple ── */
-        @keyframes clickRipple {
-          from { transform: translate(-50%,-50%) scale(0); opacity: 0.85; }
-          to   { transform: translate(-50%,-50%) scale(1); opacity: 0; }
-        }
-
-        /* ── Orbs ── */
-        .orb { position:absolute; border-radius:50%; filter:blur(80px); animation:orbDrift 14s ease-in-out infinite; }
-        .orb-amber-xl { background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%); }
-        .orb-white-xl { background: radial-gradient(circle, rgba(255,255,255,0.09) 0%, transparent 70%); filter:blur(60px); }
-        .orb-amber-md { background: radial-gradient(circle, rgba(245,158,11,0.22) 0%, transparent 70%); filter:blur(40px); animation-name:orbFloat; animation-duration:10s; }
-        .orb-white-md { background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%); filter:blur(30px); animation-name:orbFloat; animation-duration:10s; }
-        @keyframes orbDrift {
-          0%,100% { transform: translate(0,0) scale(1); }
-          33%     { transform: translate(18px,-22px) scale(1.04); }
-          66%     { transform: translate(-12px,14px) scale(0.97); }
-        }
-        @keyframes orbFloat {
-          0%,100% { transform: translateY(0); }
-          50%     { transform: translateY(-18px); }
-        }
-
-        /* ── Stars ── */
-        .star { position:absolute; border-radius:50%; background:white; animation:twinkle 4s ease-in-out infinite; }
-        @keyframes twinkle {
-          0%,100% { opacity:0.15; transform:scale(1); }
-          50%     { opacity:0.9;  transform:scale(1.4); }
-        }
-
-        /* ── Expanding rings ── */
-        .ring { position:absolute; border-radius:50%; border:1px solid rgba(245,158,11,0.3); animation:expandRing 6s ease-out infinite; }
-        .ring-2 { animation-duration:8s;  border-color:rgba(255,255,255,0.15); }
-        .ring-3 { animation-duration:10s; }
-        @keyframes expandRing {
-          0%   { transform:scale(0.3); opacity:0.8; }
-          100% { transform:scale(2.2); opacity:0; }
-        }
-
-        /* ── Drifting lines ── */
-        .drift-line { position:absolute; left:0; height:1px; background:linear-gradient(90deg,transparent,rgba(245,158,11,0.25),transparent); animation:driftLine 12s linear infinite; }
-        @keyframes driftLine {
-          from { transform:translateX(-100%); opacity:0; }
-          10%  { opacity:1; }
-          90%  { opacity:1; }
-          to   { transform:translateX(120vw); opacity:0; }
         }
       `}</style>
     </div>

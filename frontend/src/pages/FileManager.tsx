@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock } from 'lucide-react';
+import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
 import Modal from '../components/UI/Modal';
+import ConfirmModal from '../components/UI/ConfirmModal';
+import EmptyState from '../components/UI/EmptyState';
 import { useAuth } from '../context/AuthContext';
 
 async function downloadFile(fileId: number, filename: string, versionPath?: string) {
@@ -76,6 +79,10 @@ export default function FileManager() {
   // Bulk select
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
+  // Confirm delete modal
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number | null; name: string }>({ open: false, id: null, name: '' });
+  const [actionLoading, setActionLoading] = useState(false);
+
   useEffect(() => {
     if (!previewFile) { setPreviewBlobUrl(null); return; }
     const token = localStorage.getItem('token');
@@ -122,20 +129,32 @@ export default function FileManager() {
     }
     try {
       await api.post(`/files/${selected.id}/approve`, { status: approveStatus, comments: approveComment });
+      toast.success('File status updated successfully');
       setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); load();
     } catch (err: any) {
       setApproveError(err?.response?.data?.error || 'Failed to update status');
+      toast.error('Failed to update file status');
     }
   };
 
   const doArchive = async (id: number) => {
-    await api.post(`/files/${id}/archive`);
-    load();
+    try {
+      await api.post(`/files/${id}/archive`);
+      toast.success('File archived');
+      load();
+    } catch {
+      toast.error('Failed to archive file');
+    }
   };
 
   const doRestore = async (id: number) => {
-    await api.post(`/files/${id}/restore`);
-    load();
+    try {
+      await api.post(`/files/${id}/restore`);
+      toast.success('File restored');
+      load();
+    } catch {
+      toast.error('Failed to restore file');
+    }
   };
 
   const openFile = async (f: any) => {
@@ -170,6 +189,7 @@ export default function FileManager() {
       bulkFiles.forEach(f => fd.append('files', f));
       await api.post('/files/bulk-upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setBulkProgress('Upload complete!');
+      toast.success('Files uploaded successfully');
       setTimeout(() => {
         setShowBulkUpload(false);
         setBulkFiles([]);
@@ -178,6 +198,7 @@ export default function FileManager() {
       }, 1200);
     } catch (e: any) {
       setBulkProgress(e.response?.data?.error || 'Upload failed');
+      toast.error('Upload failed. Please try again.');
     } finally {
       setBulkUploading(false);
     }
@@ -247,10 +268,14 @@ export default function FileManager() {
   };
 
   const doBulkAction = async (action: 'archive' | 'delete' | 'submit') => {
-    if (action === 'delete' && !confirm(`Delete ${selectedIds.size} files permanently?`)) return;
-    await api.post('/files/bulk-action', { ids: Array.from(selectedIds), action });
-    setSelectedIds(new Set());
-    load();
+    try {
+      await api.post('/files/bulk-action', { ids: Array.from(selectedIds), action });
+      toast.success(`${selectedIds.size} file${selectedIds.size !== 1 ? 's' : ''} updated`);
+      setSelectedIds(new Set());
+      load();
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+    }
   };
 
   const doBulkDownload = async () => {
@@ -260,13 +285,36 @@ export default function FileManager() {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: Array.from(selectedIds) }),
     });
-    if (!res.ok) { alert('Download failed'); return; }
+    if (!res.ok) { toast.error('Download failed'); return; }
     const blob = await res.blob();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `files-${new Date().toISOString().slice(0,10)}.zip`;
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(a.href);
+    toast.success('Download started');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete.id) return;
+    setActionLoading(true);
+    try {
+      if (confirmDelete.id === -1) {
+        // Bulk delete
+        await api.post('/files/bulk-action', { ids: Array.from(selectedIds), action: 'delete' });
+        toast.success(`${selectedIds.size} file${selectedIds.size !== 1 ? 's' : ''} deleted`);
+        setSelectedIds(new Set());
+      } else {
+        await api.delete(`/files/${confirmDelete.id}`);
+        toast.success('File deleted successfully');
+      }
+      setConfirmDelete({ open: false, id: null, name: '' });
+      load();
+    } catch {
+      toast.error('Failed to delete file');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Export CSV
@@ -343,7 +391,7 @@ export default function FileManager() {
               <button onClick={() => doBulkAction('archive')} className="btn-secondary text-xs py-1.5 px-3">Archive Selected</button>
             )}
             {isAdmin && (
-              <button onClick={() => doBulkAction('delete')} className="text-xs py-1.5 px-3 rounded-lg font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-colors">Delete Selected</button>
+              <button onClick={() => setConfirmDelete({ open: true, id: -1, name: `${selectedIds.size} selected files` })} className="text-xs py-1.5 px-3 rounded-lg font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-colors">Delete Selected</button>
             )}
           </div>
           <button onClick={() => setSelectedIds(new Set())} className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-colors" title="Clear selection">
@@ -361,10 +409,17 @@ export default function FileManager() {
             ))}
           </div>
         ) : files.length === 0 ? (
-          <div className="text-center py-16 text-slate-400 text-sm">No files found</div>
+          <div className="p-8">
+            <EmptyState
+              icon={<Files size={28} className="text-amber-400" />}
+              title={search ? 'No files match your search' : 'No files yet'}
+              description={search ? 'Try a different search term or clear your filters.' : 'Upload your first file to start managing QA assets.'}
+              action={!search ? <button className="btn-primary" onClick={() => setShowBulkUpload(true)}>Upload File</button> : undefined}
+            />
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" data-table>
               <thead className="bg-slate-50 dark:bg-slate-800/50">
                 <tr>
                   <th className="px-4 py-3 w-10">
@@ -415,21 +470,21 @@ export default function FileManager() {
                     <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => openFile(f)} title="Details" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Eye size={14} /></button>
+                        <button onClick={() => openFile(f)} title="Details" aria-label="View file details" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Eye size={14} /></button>
                         {isPreviewable(f) && (
-                          <button onClick={() => openPreview(f)} title="Preview" className="p-1.5 rounded hover:bg-[#F59E0B]/10 text-[#F59E0B]">
+                          <button onClick={() => openPreview(f)} title="Preview" aria-label="Preview file" className="p-1.5 rounded hover:bg-[#F59E0B]/10 text-[#F59E0B]">
                             {f.mime_type?.startsWith('image/') ? <Image size={14} /> : <FileText size={14} />}
                           </button>
                         )}
-                        <button onClick={() => downloadFile(f.id, f.original_name)} title="Download" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
+                        <button onClick={() => downloadFile(f.id, f.original_name)} title="Download" aria-label="Download file" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
                         {f.status === 'archived' ? (
-                          <button onClick={() => doRestore(f.id)} title="Restore" className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500"><RotateCcw size={14} /></button>
+                          <button onClick={() => doRestore(f.id)} title="Restore" aria-label="Restore file" className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500"><RotateCcw size={14} /></button>
                         ) : isLead ? (
                           <>
-                            <button onClick={() => { setSelected(f); setShowApprove(true); }} title="Review" className="p-1.5 rounded hover:bg-[#F59E0B]/10 text-[#F59E0B]">
+                            <button onClick={() => { setSelected(f); setShowApprove(true); }} title="Review" aria-label="Review file" className="p-1.5 rounded hover:bg-[#F59E0B]/10 text-[#F59E0B]">
                               <GitBranch size={14} />
                             </button>
-                            <button onClick={() => doArchive(f.id)} title="Archive" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
+                            <button onClick={() => doArchive(f.id)} title="Archive" aria-label="Archive file" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
                           </>
                         ) : null}
                       </div>
@@ -690,6 +745,17 @@ export default function FileManager() {
           </div>
         </div>
       </Modal>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        open={confirmDelete.open}
+        onClose={() => setConfirmDelete({ open: false, id: null, name: '' })}
+        onConfirm={handleConfirmDelete}
+        title="Delete File"
+        message={`"${confirmDelete.name}" will be permanently deleted. This action cannot be undone.`}
+        confirmLabel="Delete permanently"
+        loading={actionLoading}
+      />
 
       {/* Preview Modal */}
       {previewFile && (

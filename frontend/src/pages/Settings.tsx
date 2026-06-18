@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, RefreshCw, Camera, X, Check, Sun, Moon, Monitor } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, RefreshCw, Camera, X, Check, Sun, Moon, Monitor, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api/client';
@@ -31,9 +32,14 @@ export default function Settings() {
   }, [activeSection]);
 
   const saveNotifPrefs = async () => {
-    await api.patch('/users/me/preferences', { preferences: { notifications: notifPrefs } });
-    setNotifSaved(true);
-    setTimeout(() => setNotifSaved(false), 2000);
+    try {
+      await api.patch('/users/me/preferences', { preferences: { notifications: notifPrefs } });
+      setNotifSaved(true);
+      toast.success('Notification preferences saved');
+      setTimeout(() => setNotifSaved(false), 2000);
+    } catch {
+      toast.error('Failed to save preferences');
+    }
   };
 
   // Appearance state
@@ -48,6 +54,7 @@ export default function Settings() {
     const sizes: Record<string, string> = { small: '13px', normal: '14px', large: '15px', xlarge: '16px' };
     document.documentElement.style.setProperty('--base-font-size', sizes[fontSize] || '14px');
     setAppearanceSaved(true);
+    toast.success('Appearance settings saved');
     setTimeout(() => setAppearanceSaved(false), 2000);
   };
 
@@ -134,7 +141,12 @@ export default function Settings() {
       await api.post('/auth/change-password', { currentPassword: currentPw, newPassword: newPw });
       setPwMsg('Password changed successfully'); setPwErr(''); setErrors({});
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
-    } catch (e: any) { setPwErr(e.response?.data?.error || 'Failed to change password'); }
+      toast.success('Password changed successfully');
+    } catch (e: any) {
+      const msg = e.response?.data?.error || 'Failed to change password';
+      setPwErr(msg);
+      toast.error(msg);
+    }
   };
 
   // Categories state
@@ -156,17 +168,20 @@ export default function Settings() {
     setCatSaving(true);
     try {
       await api.post('/categories', { name: newCatName.trim(), type: newCatType });
+      toast.success('Category added');
       setNewCatName('');
       loadCategories();
+    } catch {
+      toast.error('Failed to add category');
     } finally { setCatSaving(false); }
   };
 
   const deleteCategory = async (id: number) => {
-    if (!confirm('Delete this category?')) return;
     try {
       await api.delete(`/categories/${id}`);
+      toast.success('Category deleted');
     } catch {
-      alert('Failed to delete category.');
+      toast.error('Failed to delete category');
     }
     loadCategories();
   };

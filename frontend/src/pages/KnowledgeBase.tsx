@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Plus, Search, Tag, Clock, User, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { BookOpen, Plus, Search, Tag, Clock, User, ChevronRight, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../api/client';
 import StatusBadge from '../components/UI/Badge';
 import Modal from '../components/UI/Modal';
+import ConfirmModal from '../components/UI/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_CATEGORIES = ['Troubleshooting', 'RCA', 'Testing Standards', 'Best Practices', 'Onboarding', 'Process Documentation'];
@@ -81,6 +83,9 @@ export default function KnowledgeBase() {
   const [kbCategories, setKbCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [users, setUsers] = useState<any[]>([]);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number | null; title: string }>({ open: false, id: null, title: '' });
+  const [actionLoading, setActionLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => {
     const params: any = {};
@@ -135,24 +140,47 @@ export default function KnowledgeBase() {
 
   const save = async () => {
     if (!validate()) return;
-    if (form.category && !kbCategories.includes(form.category)) {
-      await api.post('/categories', { name: form.category, type: 'knowledge' });
-      setKbCategories(prev => [...prev, form.category]);
+    setSaving(true);
+    try {
+      if (form.category && !kbCategories.includes(form.category)) {
+        await api.post('/categories', { name: form.category, type: 'knowledge' });
+        setKbCategories(prev => [...prev, form.category]);
+      }
+      if (editing) {
+        await api.put(`/knowledge/${editing.id}`, form);
+        toast.success('Article updated');
+      } else {
+        await api.post('/knowledge', form);
+        toast.success('Article created');
+      }
+      setShowCreate(false); setEditing(null); setErrors({});
+      setForm({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' });
+      load();
+    } catch {
+      toast.error('Failed to save article. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    if (editing) {
-      await api.put(`/knowledge/${editing.id}`, form);
-    } else {
-      await api.post('/knowledge', form);
-    }
-    setShowCreate(false); setEditing(null); setErrors({});
-    setForm({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' });
-    load();
   };
 
-  const doDelete = async (id: number) => {
-    if (!confirm('Delete this article?')) return;
-    await api.delete(`/knowledge/${id}`);
-    setSelected(null); load();
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete.id) return;
+    setActionLoading(true);
+    try {
+      await api.delete(`/knowledge/${confirmDelete.id}`);
+      toast.success('Article deleted');
+      setConfirmDelete({ open: false, id: null, title: '' });
+      setSelected(null);
+      load();
+    } catch {
+      toast.error('Failed to delete article');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const doDelete = (id: number, title: string) => {
+    setConfirmDelete({ open: true, id, title });
   };
 
   const startEdit = (a: any) => {
@@ -237,7 +265,7 @@ export default function KnowledgeBase() {
               <span className="text-xs text-slate-400 flex items-center gap-1"><Clock size={11} />{new Date(selected.updated_at).toLocaleString()}</span>
               <div className="ml-auto flex gap-2">
                 {isEngineer && <button onClick={() => { const a = selected; setSelected(null); startEdit(a); }} className="btn-secondary text-sm py-1.5 px-3"><Edit2 size={13} />Edit</button>}
-                {isLead && <button onClick={() => doDelete(selected.id)} className="btn-ghost text-sm py-1.5 px-3 text-red-500 hover:bg-red-50"><Trash2 size={13} /></button>}
+                {isLead && <button onClick={() => doDelete(selected.id, selected.title)} aria-label="Delete article" className="btn-ghost text-sm py-1.5 px-3 text-red-500 hover:bg-red-50"><Trash2 size={13} /></button>}
               </div>
             </div>
             {selected.tags && (
@@ -251,6 +279,17 @@ export default function KnowledgeBase() {
           </div>
         </Modal>
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        open={confirmDelete.open}
+        onClose={() => setConfirmDelete({ open: false, id: null, title: '' })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Article"
+        message={`"${confirmDelete.title}" will be permanently deleted. This action cannot be undone.`}
+        confirmLabel="Delete permanently"
+        loading={actionLoading}
+      />
 
       {/* Create/Edit Modal */}
       <Modal open={showCreate} onClose={() => { setShowCreate(false); setEditing(null); setErrors({}); }} title={editing ? 'Edit Article' : 'New Knowledge Article'} size="xl">
@@ -318,7 +357,9 @@ export default function KnowledgeBase() {
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setShowCreate(false); setEditing(null); setErrors({}); }} className="btn-secondary">Cancel</button>
-            <button onClick={save} className="btn-primary">{editing ? 'Save Changes' : 'Create Article'}</button>
+            <button onClick={save} disabled={saving} className="btn-primary">
+              {saving ? <><Loader2 size={14} className="animate-spin mr-1" />{editing ? 'Saving...' : 'Creating...'}</> : (editing ? 'Save Changes' : 'Create Article')}
+            </button>
           </div>
         </div>
       </Modal>

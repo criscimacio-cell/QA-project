@@ -4,6 +4,7 @@ import {
   LayoutGrid, List, Upload, Search, RefreshCw, MoreVertical,
   Pencil, Trash2, FolderPlus, Database, ChevronsDownUp, ChevronsUpDown,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
@@ -103,7 +104,7 @@ function TreeNode({
 
         {/* file count badge */}
         {node.file_count > 0 && (
-          <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-full px-1.5 py-0.5 flex-shrink-0">
+          <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-full px-1.5 py-0.5 flex-shrink-0">
             {node.file_count}
           </span>
         )}
@@ -232,9 +233,12 @@ export default function Repositories() {
         parent_id: createModal.parentId,
         type: createModal.parentId ? 'folder' : 'repository',
       });
+      toast.success(createModal.parentId ? 'Folder created' : 'Repository created');
       setCreateModal({ open: false, parentId: null, parentName: '' });
       await loadRepos();
       if (selected) loadDetail(selected);
+    } catch {
+      toast.error('Failed to create. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -249,9 +253,12 @@ export default function Repositories() {
     setSaving(true);
     try {
       await api.put(`/repositories/${editModal.repo.id}`, { name: formData.name.trim(), description: formData.description });
+      toast.success('Renamed successfully');
       setEditModal({ open: false, repo: null });
       await loadRepos();
       if (selected) loadDetail(selected);
+    } catch {
+      toast.error('Failed to rename. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -263,9 +270,12 @@ export default function Repositories() {
     const deletedId = deleteModal.repo.id;
     try {
       await api.delete(`/repositories/${deletedId}`);
+      toast.success('Repository deleted');
       setDeleteModal({ open: false, repo: null });
       if (selected === deletedId) setSelected(null);
       await loadRepos();
+    } catch {
+      toast.error('Failed to delete. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -444,7 +454,7 @@ export default function Repositories() {
               {/* Sub-folders grid */}
               {repoDetail?.children?.length > 0 && (
                 <div className="mb-5">
-                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Folders</h3>
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Folders</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                     {repoDetail.children.map((c: any) => (
                       <div
@@ -454,7 +464,7 @@ export default function Repositories() {
                       >
                         <Folder size={26} className="text-amber-400 mb-2 group-hover:text-amber-500 transition-colors" />
                         <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{c.name}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">{c.file_count || 0} files</div>
+                        <div className="text-xs text-slate-400 mt-0.5">{c.file_count || 0} files</div>
                       </div>
                     ))}
                     {isLead && (
@@ -463,7 +473,7 @@ export default function Repositories() {
                         className="card p-3 flex flex-col items-center justify-center gap-1.5 border-dashed cursor-pointer hover:border-[#F59E0B]/50 hover:bg-[#F59E0B]/5 transition-all text-slate-400 hover:text-[#F59E0B]"
                       >
                         <Plus size={20} />
-                        <span className="text-[10px] font-medium">New folder</span>
+                        <span className="text-xs font-medium">New folder</span>
                       </button>
                     )}
                   </div>
@@ -487,7 +497,7 @@ export default function Repositories() {
                     <thead className="bg-slate-50 dark:bg-slate-800/50">
                       <tr>
                         {['Name', 'Category', 'Version', 'Status', 'Owner', 'Jira', 'Size', 'Updated'].map(h => (
-                          <th key={h} className="px-4 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">{h}</th>
+                          <th key={h} className="px-4 py-2.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -501,14 +511,14 @@ export default function Repositories() {
                             </div>
                           </td>
                           <td className="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400">{f.category}</td>
-                          <td className="px-4 py-2.5"><span className="text-[10px] bg-slate-100 dark:bg-slate-800 rounded px-1.5 py-0.5 font-mono">v{f.version}</span></td>
+                          <td className="px-4 py-2.5"><span className="text-xs bg-slate-100 dark:bg-slate-800 rounded px-1.5 py-0.5 font-mono">v{f.version}</span></td>
                           <td className="px-4 py-2.5"><StatusBadge status={f.status} /></td>
                           <td className="px-4 py-2.5 text-xs text-slate-500">{f.owner_name}</td>
                           <td className="px-4 py-2.5">
-                            {f.jira_ticket && <span className="text-[10px] text-blue-600 font-mono bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded">{f.jira_ticket}</span>}
+                            {f.jira_ticket && <span className="text-xs text-blue-600 font-mono bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded">{f.jira_ticket}</span>}
                           </td>
-                          <td className="px-4 py-2.5 text-[10px] text-slate-400">{formatBytes(f.size)}</td>
-                          <td className="px-4 py-2.5 text-[10px] text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString()}</td>
+                          <td className="px-4 py-2.5 text-xs text-slate-400">{formatBytes(f.size)}</td>
+                          <td className="px-4 py-2.5 text-xs text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -520,7 +530,7 @@ export default function Repositories() {
                     <div key={f.id} className="card p-3 hover:shadow-md transition-all cursor-pointer group">
                       <FileIcon mimeType={f.mime_type} name={f.original_name} size={24} />
                       <div className="text-xs font-medium text-slate-800 dark:text-slate-100 truncate mt-2">{f.name}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{formatBytes(f.size)}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{formatBytes(f.size)}</div>
                       <div className="mt-1.5"><StatusBadge status={f.status} /></div>
                     </div>
                   ))}
@@ -707,9 +717,12 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
         setProgress(`✓ ${folderFiles.length} files uploaded`);
         await new Promise(r => setTimeout(r, 800));
       }
+      toast.success('File uploaded successfully');
       onClose(); onSuccess(); reset();
     } catch (err: any) {
-      setProgress(err?.response?.data?.error || 'Upload failed');
+      const msg = err?.response?.data?.error || 'Upload failed';
+      setProgress(msg);
+      toast.error(msg);
     } finally { setLoading(false); }
   };
 

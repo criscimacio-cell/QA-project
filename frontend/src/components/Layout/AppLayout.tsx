@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import Footer from './Footer';
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCompact') === 'true');
@@ -134,6 +135,7 @@ export default function AppLayout() {
             <Outlet />
           </div>
         </div>
+        <Footer sidebarWidth={0} />
       </main>
     </div>
   );

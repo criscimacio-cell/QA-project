@@ -189,8 +189,8 @@ export default function Login() {
       </div>
 
       {/* ── Login card — right side, floating over scene ── */}
-      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'44%', minWidth:360, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px', pointerEvents:'auto' }}>
-        <div data-no-ripple style={{ position:'relative', width:'100%', maxWidth:440 }}>
+      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'44%', minWidth:360, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px', pointerEvents:'none' }}>
+        <div data-no-ripple style={{ position:'relative', width:'100%', maxWidth:440, pointerEvents:'auto' }}>
 
           {/* Rotating amber rings */}
           <div style={{ position:'absolute', inset:-3, borderRadius:20, border:'1px solid transparent', borderTop:`1.5px solid rgba(245,158,11,0.7)`, borderRight:`1px solid rgba(245,158,11,0.25)`, animation:'spin 4s linear infinite', pointerEvents:'none' }} />

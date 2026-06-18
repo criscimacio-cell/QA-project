@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, CheckCircle2, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { SplineScene } from '../components/ui/splite';
+import { SplineScene, type SplineApp } from '../components/ui/splite';
 
 const DEMO_USERS = [
   { email: 'admin@qa.com',     role: 'Admin',    color: '#ef4444' },
@@ -68,6 +68,14 @@ export default function Login() {
   }, [user, authLoading, loginSuccess]);
 
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const splineRef = useRef<SplineApp | null>(null);
+
+  const triggerScratchHead = () => {
+    if (!splineRef.current) return;
+    try {
+      splineRef.current.emitEvent('mouseDown', 'Robot');
+    } catch {}
+  };
 
   /* Post-login transition chain */
   useEffect(() => {
@@ -105,6 +113,7 @@ export default function Login() {
     if (!password) e.password = 'Password is required';
     else if (password.length < 8) e.password = 'Password must be at least 8 characters';
     setErrors(e);
+    if (Object.keys(e).length > 0) triggerScratchHead();
     return Object.keys(e).length === 0;
   };
 
@@ -117,6 +126,7 @@ export default function Login() {
       setLoginSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
+      triggerScratchHead();
     } finally {
       setLoading(false);
     }
@@ -150,6 +160,7 @@ export default function Login() {
         <SplineScene
           scene="https://prod.spline.design/QQ1zXNE5ma-qe0g0/scene.splinecode"
           className="w-full h-full"
+          onLoad={(app) => { splineRef.current = app; }}
         />
       </div>
 

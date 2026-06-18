@@ -145,16 +145,16 @@ export default function Login() {
       {/* Post-login morph overlay */}
       {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />}
 
-      {/* ── Spline scene — full-bleed background ── */}
-      <div style={{ position:'fixed', inset:0, zIndex:0 }}>
+      {/* ── Spline scene — full-bleed background, shifted left ── */}
+      <div style={{ position:'fixed', top:0, bottom:0, left:'-8%', right:0, zIndex:0 }}>
         <SplineScene
           scene="https://prod.spline.design/QQ1zXNE5ma-qe0g0/scene.splinecode"
           className="w-full h-full"
         />
       </div>
 
-      {/* ── Content layer ── */}
-      <div style={{ position:'relative', zIndex:1, minHeight:'100vh' }}>
+      {/* ── Content layer — pointer-events passthrough so Spline stays interactive ── */}
+      <div style={{ position:'relative', zIndex:1, minHeight:'100vh', pointerEvents:'none' }}>
 
       {/* ── Left: brand & demo pills ── */}
       <div style={{ position:'absolute', left:'5%', top:'8%', maxWidth:340 }}>
@@ -172,7 +172,7 @@ export default function Login() {
         <p style={{ fontSize:15, color:'rgba(0,0,0,0.5)' }}>Clarity in every QA decision.</p>
       </div>
 
-      <div style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340 }}>
+      <div style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340, pointerEvents:'auto' }}>
         <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(0,0,0,0.4)', marginBottom:8 }}>Demo accounts</p>
         <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
           {DEMO_USERS.map(u => (
@@ -189,7 +189,7 @@ export default function Login() {
       </div>
 
       {/* ── Login card — right side, floating over scene ── */}
-      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'44%', minWidth:360, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px' }}>
+      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'44%', minWidth:360, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px', pointerEvents:'auto' }}>
         <div data-no-ripple style={{ position:'relative', width:'100%', maxWidth:440 }}>
 
           {/* Rotating amber rings */}

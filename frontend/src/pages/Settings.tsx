@@ -89,9 +89,12 @@ export default function Settings() {
       setAvatarPreview(null);
       setAvatarFile(null);
       setAvatarMsg('Profile photo updated!');
+      toast.success('Profile photo updated');
       setTimeout(() => setAvatarMsg(''), 3000);
     } catch (e: any) {
-      setAvatarMsg(e.response?.data?.error || 'Upload failed');
+      const msg = e.response?.data?.error || 'Upload failed';
+      setAvatarMsg(msg);
+      toast.error(msg);
     } finally {
       setAvatarSaving(false);
       if (avatarInputRef.current) avatarInputRef.current.value = '';
@@ -234,6 +237,7 @@ export default function Settings() {
                     className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110"
                     style={{ background: 'linear-gradient(135deg,#F59E0B,#FBBF24)', border: '2px solid white' }}
                     title="Change profile photo"
+                    aria-label="Change profile photo"
                   >
                     <Camera size={12} color="white" />
                   </button>

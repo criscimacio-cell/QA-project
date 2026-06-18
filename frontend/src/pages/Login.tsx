@@ -146,7 +146,7 @@ export default function Login() {
       {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />}
 
       {/* ── Spline scene — full-bleed background, shifted left ── */}
-      <div style={{ position:'fixed', top:0, bottom:0, left:'-8%', right:0, zIndex:0 }}>
+      <div style={{ position:'fixed', top:0, bottom:0, left:'8%', right:0, zIndex:0 }}>
         <SplineScene
           scene="https://prod.spline.design/QQ1zXNE5ma-qe0g0/scene.splinecode"
           className="w-full h-full"

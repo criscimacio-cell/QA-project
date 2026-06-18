@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Spotlight } from '../components/ui/spotlight';
@@ -725,86 +725,101 @@ export default function Login() {
         </p>
       </div>
 
-      {/* ── Login form with rotating ring ── */}
-      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'42%', zIndex:7, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px' }}>
-        <div data-no-ripple style={{ position:'relative', width:'100%', maxWidth:420 }}>
+      {/* ── Login card (right side) ── */}
+      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'44%', zIndex:7, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px' }}>
+        <div data-no-ripple style={{ position:'relative', width:'100%', maxWidth:440 }}>
 
-          {/* 11 — Rotating amber ring around card */}
-          <div style={{ position:'absolute', inset:-3, borderRadius:27, border:'1px solid transparent', borderTop:`1.5px solid rgba(245,158,11,0.55)`, borderRight:`1px solid rgba(245,158,11,0.18)`, animation:'spin 4s linear infinite', pointerEvents:'none' }} />
-          <div style={{ position:'absolute', inset:-3, borderRadius:27, border:'1px solid transparent', borderBottom:`1.5px solid rgba(245,158,11,0.45)`, borderLeft:`1px solid rgba(245,158,11,0.18)`, animation:'spin 6s linear infinite reverse', pointerEvents:'none' }} />
+          {/* Rotating amber rings */}
+          <div style={{ position:'absolute', inset:-3, borderRadius:20, border:'1px solid transparent', borderTop:`1.5px solid rgba(245,158,11,0.55)`, borderRight:`1px solid rgba(245,158,11,0.18)`, animation:'spin 4s linear infinite', pointerEvents:'none' }} />
+          <div style={{ position:'absolute', inset:-3, borderRadius:20, border:'1px solid transparent', borderBottom:`1.5px solid rgba(245,158,11,0.45)`, borderLeft:`1px solid rgba(245,158,11,0.18)`, animation:'spin 6s linear infinite reverse', pointerEvents:'none' }} />
 
-          {/* Glass card */}
-          <div style={{ background:'rgba(255,255,255,0.04)', backdropFilter:'blur(28px)', WebkitBackdropFilter:'blur(28px)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:28, padding:'52px 48px', boxShadow:'0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,158,11,0.08)' }}>
+          {/* Card — matches demo.tsx styling */}
+          <div style={{ background:'rgba(23,23,23,0.85)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', border:'1px solid rgba(38,38,38,0.9)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.06)' }}>
 
-            <div style={{ textAlign:'center', marginBottom:28 }}>
-              <h2 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:20, color:'white', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:4 }}>USER LOGIN</h2>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)' }}>Welcome to Qlarity</p>
+            {/* Header */}
+            <div style={{ textAlign:'center', marginBottom:32 }}>
+              <h2 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:22, color:'white', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>User Login</h2>
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.4)', letterSpacing:'0.01em' }}>Welcome to Qlarity</p>
+              {/* Amber underline accent */}
+              <div style={{ width:36, height:2, borderRadius:2, background:'linear-gradient(90deg,#F59E0B,#FCD34D)', margin:'10px auto 0' }} />
             </div>
 
             <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
+              {/* Email */}
               <div style={{ position:'relative' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={AMBER} strokeWidth="2" style={{ position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1 }}>
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                </svg>
+                <Mail size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1, flexShrink:0 }} />
                 <input ref={emailInputRef} type="email" value={email}
                   onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(p => ({...p, email:''})); }}
                   placeholder="Email address"
-                  style={{ width:'100%', paddingLeft:42, paddingRight:16, height:52, borderRadius:999, border:`1px solid ${errors.email?'#f87171':'rgba(245,158,11,0.25)'}`, background:errors.email?'rgba(239,68,68,0.08)':'rgba(255,255,255,0.07)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
-                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.boxShadow=`0 0 0 3px ${AMBER}22`; }}
-                  onBlur={e => { e.target.style.borderColor=errors.email?'#f87171':'rgba(245,158,11,0.25)'; e.target.style.boxShadow='none'; }}
+                  style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:`1px solid ${errors.email?'rgba(248,113,113,0.6)':'rgba(63,63,70,0.9)'}`, background:errors.email?'rgba(239,68,68,0.07)':'rgba(39,39,42,0.7)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
+                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.15)`; }}
+                  onBlur={e => { e.target.style.borderColor=errors.email?'rgba(248,113,113,0.6)':'rgba(63,63,70,0.9)'; e.target.style.boxShadow='none'; }}
                 />
-                {errors.email && <p style={{ fontSize:12, color:'#f87171', marginTop:3, paddingLeft:16 }}>{errors.email}</p>}
+                {errors.email && <p style={{ fontSize:12, color:'#f87171', marginTop:4, paddingLeft:4 }}>{errors.email}</p>}
               </div>
 
+              {/* Password */}
               <div style={{ position:'relative' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={AMBER} strokeWidth="2" style={{ position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1 }}>
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
+                <Lock size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1, flexShrink:0 }} />
                 <input type={showPw?'text':'password'} value={password}
                   onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(p => ({...p, password:''})); }}
                   placeholder="Password"
-                  style={{ width:'100%', paddingLeft:42, paddingRight:46, height:52, borderRadius:999, border:`1px solid ${errors.password?'#f87171':'rgba(245,158,11,0.25)'}`, background:errors.password?'rgba(239,68,68,0.08)':'rgba(255,255,255,0.07)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
-                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.boxShadow=`0 0 0 3px ${AMBER}22`; }}
-                  onBlur={e => { e.target.style.borderColor=errors.password?'#f87171':'rgba(245,158,11,0.25)'; e.target.style.boxShadow='none'; }}
+                  style={{ width:'100%', paddingLeft:40, paddingRight:44, height:50, borderRadius:10, border:`1px solid ${errors.password?'rgba(248,113,113,0.6)':'rgba(63,63,70,0.9)'}`, background:errors.password?'rgba(239,68,68,0.07)':'rgba(39,39,42,0.7)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
+                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.15)`; }}
+                  onBlur={e => { e.target.style.borderColor=errors.password?'rgba(248,113,113,0.6)':'rgba(63,63,70,0.9)'; e.target.style.boxShadow='none'; }}
                 />
-                <button type="button" tabIndex={-1} onClick={() => setShowPw(s=>!s)}
-                  style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.45)', display:'flex', padding:4 }}>
+                <button type="button" tabIndex={-1} onClick={() => setShowPw(s=>!s)} aria-label={showPw ? 'Hide password' : 'Show password'}
+                  style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.35)', display:'flex', padding:4, transition:'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.7)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.35)'}
+                >
                   {showPw ? <EyeOff size={15}/> : <Eye size={15}/>}
                 </button>
-                {errors.password && <p style={{ fontSize:12, color:'#f87171', marginTop:3, paddingLeft:16 }}>{errors.password}</p>}
+                {errors.password && <p style={{ fontSize:12, color:'#f87171', marginTop:4, paddingLeft:4 }}>{errors.password}</p>}
               </div>
 
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 4px' }}>
-                <label style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.5)' }}>
-                  <input type="checkbox" style={{ accentColor:AMBER, width:14, height:14 }} />
-                  Remember
+              {/* Remember + forgot */}
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'2px 2px 0' }}>
+                <label style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.45)' }}>
+                  <input type="checkbox" style={{ accentColor:AMBER, width:14, height:14, borderRadius:4 }} />
+                  Remember me
                 </label>
-                <Link to="/forgot-password" style={{ fontSize:13, color:'rgba(255,255,255,0.5)', textDecoration:'none' }}>
-                  Forgot password ?
+                <Link to="/forgot-password" style={{ fontSize:13, color:'rgba(255,255,255,0.45)', textDecoration:'none', transition:'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.45)'}
+                >
+                  Forgot password?
                 </Link>
               </div>
 
+              {/* Error banner */}
               {error && (
-                <div style={{ display:'flex', alignItems:'center', gap:8, borderRadius:12, padding:'10px 16px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.25)', color:'#f87171', fontSize:13 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div style={{ display:'flex', alignItems:'center', gap:8, borderRadius:10, padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', fontSize:13 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink:0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   {error}
                 </div>
               )}
 
+              {/* Submit */}
               <button type="submit" disabled={loading}
-                style={{ width:'100%', height:52, borderRadius:10, border:'none', background:AMBER, color:'#09090B', fontWeight:700, fontSize:14, fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:'0.1em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.75:1, boxShadow:`0 4px 20px ${AMBER}55`, transition:'background 0.2s,transform 0.15s,box-shadow 0.2s', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}
-                onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.background='#D97706'; (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; } }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background=AMBER; (e.currentTarget as HTMLElement).style.transform='translateY(0)'; }}
+                style={{ width:'100%', height:50, borderRadius:10, border:'none', background:`linear-gradient(135deg, ${AMBER}, #D97706)`, color:'#09090B', fontWeight:800, fontSize:14, letterSpacing:'0.12em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.8:1, boxShadow:`0 4px 24px rgba(245,158,11,0.45)`, transition:'transform 0.15s,box-shadow 0.15s,opacity 0.15s', display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:4 }}
+                onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow=`0 8px 32px rgba(245,158,11,0.55)`; } }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow=`0 4px 24px rgba(245,158,11,0.45)`; }}
               >
                 {loading
-                  ? <><span style={{ width:15, height:15, border:'2px solid #09090B', borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.7s linear infinite', display:'inline-block' }}/> Signing in…</>
+                  ? <><span style={{ width:15, height:15, border:'2.5px solid #09090B', borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.7s linear infinite', display:'inline-block' }}/> Signing in…</>
                   : 'Login'
                 }
               </button>
 
-              <p style={{ textAlign:'center', fontSize:13, color:'rgba(255,255,255,0.4)', marginTop:4 }}>
-                <Link to="/forgot-password" style={{ color:'rgba(255,255,255,0.7)', fontWeight:500, textDecoration:'none' }}>Create Account</Link>
+              <p style={{ textAlign:'center', fontSize:13, color:'rgba(255,255,255,0.35)', marginTop:2 }}>
+                <Link to="/forgot-password" style={{ color:'rgba(255,255,255,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.6)'}
+                >
+                  Create Account
+                </Link>
               </p>
             </form>
           </div>

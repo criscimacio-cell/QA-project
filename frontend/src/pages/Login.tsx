@@ -697,7 +697,7 @@ export default function Login() {
       {/* ── Spline 3D scene overlay on left side ── */}
       <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'56%', zIndex:5, pointerEvents:'none' }}>
         <SplineScene
-          scene="https://prod.spline.design/HLAqHJx4wrDOXzmGyPeRMLMO/scene.splinecode"
+          scene="https://prod.spline.design/QQ1zXNE5ma-qe0g0/scene.splinecode"
           className="w-full h-full"
         />
       </div>

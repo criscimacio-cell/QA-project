@@ -4,6 +4,7 @@ import { Eye, EyeOff, CheckCircle2, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Spotlight } from '../components/ui/spotlight';
+import { SplineScene } from '../components/ui/splite';
 
 const DEMO_USERS = [
   { email: 'admin@qa.com',     role: 'Admin',    color: '#ef4444' },
@@ -690,8 +691,16 @@ export default function Login() {
         }} />
       ))}
 
-      {/* ── Cow mascot in hero area ── */}
+      {/* ── Cow mascot in hero area (hidden when Spline loads) ── */}
       <CowMascot mouseRef={mouseRef} />
+
+      {/* ── Spline 3D scene overlay on left side ── */}
+      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'56%', zIndex:5, pointerEvents:'none' }}>
+        <SplineScene
+          scene="https://prod.spline.design/615b9422-9985-43f6-8593-d7d7bc3b0be1/scene.splinecode"
+          className="w-full h-full"
+        />
+      </div>
 
       {/* ── Left: brand & demo pills ── */}
       <div style={{ position:'absolute', left:'5%', top:'8%', zIndex:6, maxWidth:340 }}>

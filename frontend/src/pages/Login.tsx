@@ -207,8 +207,11 @@ export default function Login() {
           <div style={{ position:'absolute', inset:-3, borderRadius:20, border:'1px solid transparent', borderTop:`1.5px solid rgba(245,158,11,0.7)`, borderRight:`1px solid rgba(245,158,11,0.25)`, animation:'spin 4s linear infinite', pointerEvents:'none' }} />
           <div style={{ position:'absolute', inset:-3, borderRadius:20, border:'1px solid transparent', borderBottom:`1.5px solid rgba(245,158,11,0.55)`, borderLeft:`1px solid rgba(245,158,11,0.25)`, animation:'spin 6s linear infinite reverse', pointerEvents:'none' }} />
 
-          {/* Card — dark, strong contrast against light Spline background */}
-          <div style={{ background:'rgba(15,15,15,0.92)', backdropFilter:'blur(40px)', WebkitBackdropFilter:'blur(40px)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 40px 100px rgba(0,0,0,0.55), 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(245,158,11,0.1)' }}>
+          {/* Ambient amber glow behind card */}
+          <div style={{ position:'absolute', inset:-24, borderRadius:28, background:'radial-gradient(ellipse at center, rgba(245,158,11,0.13) 0%, rgba(180,83,9,0.07) 50%, transparent 75%)', filter:'blur(16px)', pointerEvents:'none', zIndex:0 }} />
+
+          {/* Card */}
+          <div style={{ position:'relative', zIndex:1, background:'rgba(23,20,16,0.93)', backdropFilter:'blur(40px)', WebkitBackdropFilter:'blur(40px)', border:'1px solid rgba(245,158,11,0.12)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 40px 100px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(245,158,11,0.08), inset 0 1px 0 rgba(245,158,11,0.06)' }}>
 
             {/* Header */}
             <div style={{ textAlign:'center', marginBottom:32 }}>

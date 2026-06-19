@@ -210,14 +210,13 @@ export default function Login() {
           {/* Ambient amber glow behind card */}
           <div style={{ position:'absolute', inset:-24, borderRadius:28, background:'radial-gradient(ellipse at center, rgba(245,158,11,0.13) 0%, rgba(180,83,9,0.07) 50%, transparent 75%)', filter:'blur(16px)', pointerEvents:'none', zIndex:0 }} />
 
-          {/* Card */}
-          <div style={{ position:'relative', zIndex:1, background:'rgba(23,20,16,0.93)', backdropFilter:'blur(40px)', WebkitBackdropFilter:'blur(40px)', border:'1px solid rgba(245,158,11,0.12)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 40px 100px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(245,158,11,0.08), inset 0 1px 0 rgba(245,158,11,0.06)' }}>
+          {/* Card — glass morphism */}
+          <div style={{ position:'relative', zIndex:1, background:'rgba(255,255,255,0.08)', backdropFilter:'blur(32px) saturate(180%)', WebkitBackdropFilter:'blur(32px) saturate(180%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 40px 100px rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.08)' }}>
 
             {/* Header */}
             <div style={{ textAlign:'center', marginBottom:32 }}>
-              <h2 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:22, color:'white', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>User Login</h2>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.4)', letterSpacing:'0.01em' }}>Welcome to Qlarity</p>
-              {/* Amber underline accent */}
+              <h2 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:22, color:'#1a1a1a', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>User Login</h2>
+              <p style={{ fontSize:13, color:'rgba(0,0,0,0.45)', letterSpacing:'0.01em' }}>Welcome to Qlarity</p>
               <div style={{ width:36, height:2, borderRadius:2, background:'linear-gradient(90deg,#F59E0B,#FCD34D)', margin:'10px auto 0' }} />
             </div>
 
@@ -225,46 +224,46 @@ export default function Login() {
 
               {/* Email */}
               <div style={{ position:'relative' }}>
-                <Mail size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1, flexShrink:0 }} />
+                <Mail size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1 }} />
                 <input ref={emailInputRef} type="email" value={email}
                   onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(p => ({...p, email:''})); }}
                   placeholder="Email address"
-                  style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:`1px solid ${errors.email?'rgba(248,113,113,0.6)':'rgba(63,63,70,0.9)'}`, background:errors.email?'rgba(239,68,68,0.07)':'rgba(39,39,42,0.7)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
-                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.15)`; }}
-                  onBlur={e => { e.target.style.borderColor=errors.email?'rgba(248,113,113,0.6)':'rgba(63,63,70,0.9)'; e.target.style.boxShadow='none'; }}
+                  style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:`1px solid ${errors.email?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'}`, background:errors.email?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
+                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
+                  onBlur={e => { e.target.style.borderColor=errors.email?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'; e.target.style.background=errors.email?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
                 />
-                {errors.email && <p style={{ fontSize:12, color:'#f87171', marginTop:4, paddingLeft:4 }}>{errors.email}</p>}
+                {errors.email && <p style={{ fontSize:12, color:'#dc2626', marginTop:4, paddingLeft:4 }}>{errors.email}</p>}
               </div>
 
               {/* Password */}
               <div style={{ position:'relative' }}>
-                <Lock size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1, flexShrink:0 }} />
+                <Lock size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1 }} />
                 <input type={showPw?'text':'password'} value={password}
                   onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(p => ({...p, password:''})); }}
                   placeholder="Password"
-                  style={{ width:'100%', paddingLeft:40, paddingRight:44, height:50, borderRadius:10, border:`1px solid ${errors.password?'rgba(248,113,113,0.6)':'rgba(63,63,70,0.9)'}`, background:errors.password?'rgba(239,68,68,0.07)':'rgba(39,39,42,0.7)', fontSize:14, color:'white', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s', boxSizing:'border-box' }}
-                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.15)`; }}
-                  onBlur={e => { e.target.style.borderColor=errors.password?'rgba(248,113,113,0.6)':'rgba(63,63,70,0.9)'; e.target.style.boxShadow='none'; }}
+                  style={{ width:'100%', paddingLeft:40, paddingRight:44, height:50, borderRadius:10, border:`1px solid ${errors.password?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'}`, background:errors.password?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
+                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
+                  onBlur={e => { e.target.style.borderColor=errors.password?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'; e.target.style.background=errors.password?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
                 />
-                <button type="button" tabIndex={-1} onClick={() => setShowPw(s=>!s)} aria-label={showPw ? 'Hide password' : 'Show password'}
-                  style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.35)', display:'flex', padding:4, transition:'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.7)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.35)'}
+                <button type="button" tabIndex={-1} onClick={() => setShowPw(s=>!s)} aria-label={showPw?'Hide password':'Show password'}
+                  style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'rgba(0,0,0,0.35)', display:'flex', padding:4, transition:'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.7)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.35)'}
                 >
                   {showPw ? <EyeOff size={15}/> : <Eye size={15}/>}
                 </button>
-                {errors.password && <p style={{ fontSize:12, color:'#f87171', marginTop:4, paddingLeft:4 }}>{errors.password}</p>}
+                {errors.password && <p style={{ fontSize:12, color:'#dc2626', marginTop:4, paddingLeft:4 }}>{errors.password}</p>}
               </div>
 
               {/* Remember + forgot */}
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'2px 2px 0' }}>
-                <label style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', fontSize:13, color:'rgba(255,255,255,0.45)' }}>
-                  <input type="checkbox" style={{ accentColor:AMBER, width:14, height:14, borderRadius:4 }} />
+                <label style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', fontSize:13, color:'rgba(0,0,0,0.5)' }}>
+                  <input type="checkbox" style={{ accentColor:AMBER, width:14, height:14 }} />
                   Remember me
                 </label>
-                <Link to="/forgot-password" style={{ fontSize:13, color:'rgba(255,255,255,0.45)', textDecoration:'none', transition:'color 0.15s' }}
+                <Link to="/forgot-password" style={{ fontSize:13, color:'rgba(0,0,0,0.5)', textDecoration:'none', transition:'color 0.15s' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.45)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.5)'}
                 >
                   Forgot password?
                 </Link>
@@ -272,7 +271,7 @@ export default function Login() {
 
               {/* Error banner */}
               {error && (
-                <div style={{ display:'flex', alignItems:'center', gap:8, borderRadius:10, padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', fontSize:13 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, borderRadius:10, padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#dc2626', fontSize:13, backdropFilter:'blur(8px)' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink:0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   {error}
                 </div>
@@ -280,9 +279,9 @@ export default function Login() {
 
               {/* Submit */}
               <button type="submit" disabled={loading}
-                style={{ width:'100%', height:50, borderRadius:10, border:'none', background:`linear-gradient(135deg, ${AMBER}, #D97706)`, color:'#09090B', fontWeight:800, fontSize:14, letterSpacing:'0.12em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.8:1, boxShadow:`0 4px 24px rgba(245,158,11,0.45)`, transition:'transform 0.15s,box-shadow 0.15s,opacity 0.15s', display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:4 }}
+                style={{ width:'100%', height:50, borderRadius:10, border:'none', background:`linear-gradient(135deg, ${AMBER}, #D97706)`, color:'#09090B', fontWeight:800, fontSize:14, letterSpacing:'0.12em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.8:1, boxShadow:`0 4px 24px rgba(245,158,11,0.4)`, transition:'transform 0.15s,box-shadow 0.15s,opacity 0.15s', display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:4 }}
                 onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLElement).style.transform='translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow=`0 8px 32px rgba(245,158,11,0.55)`; } }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow=`0 4px 24px rgba(245,158,11,0.45)`; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow=`0 4px 24px rgba(245,158,11,0.4)`; }}
               >
                 {loading
                   ? <><span style={{ width:15, height:15, border:'2.5px solid #09090B', borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.7s linear infinite', display:'inline-block' }}/> Signing in…</>
@@ -290,10 +289,10 @@ export default function Login() {
                 }
               </button>
 
-              <p style={{ textAlign:'center', fontSize:13, color:'rgba(255,255,255,0.35)', marginTop:2 }}>
-                <Link to="/forgot-password" style={{ color:'rgba(255,255,255,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
+              <p style={{ textAlign:'center', fontSize:13, color:'rgba(0,0,0,0.4)', marginTop:2 }}>
+                <Link to="/forgot-password" style={{ color:'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.6)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.6)'}
                 >
                   Create Account
                 </Link>

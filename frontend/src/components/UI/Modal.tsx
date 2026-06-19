@@ -17,26 +17,57 @@ const sizes = {
   xl: 'max-w-4xl',
 };
 
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
 export default function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef<Element | null>(null);
 
   useEffect(() => {
     if (open) {
+      previousFocus.current = document.activeElement;
       setClosing(false);
-      // Tiny delay lets CSS reset before animating in
-      requestAnimationFrame(() => setVisible(true));
+      requestAnimationFrame(() => {
+        setVisible(true);
+        // Focus first focusable element inside modal
+        requestAnimationFrame(() => {
+          const first = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE)?.[0];
+          first?.focus();
+        });
+      });
     } else {
       setVisible(false);
+      // Restore focus to the element that opened the modal
+      (previousFocus.current as HTMLElement | null)?.focus();
     }
   }, [open]);
 
-  // Keyboard handler
+  // ESC to close
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
     if (open) document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
+  }, [open]);
+
+  // Focus trap — keep Tab/Shift+Tab cycling inside the modal
+  useEffect(() => {
+    if (!open) return;
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusable = Array.from(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', trap);
+    return () => document.removeEventListener('keydown', trap);
   }, [open]);
 
   const handleClose = () => {
@@ -54,6 +85,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
       className="fixed inset-0 z-[200] flex items-start justify-center pt-16 px-4 pb-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="modal-title"
     >
       {/* Backdrop */}
       <div
@@ -91,10 +123,9 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
           }}
         >
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+            <h2 id="modal-title" className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
               {title}
             </h2>
-            {/* Gradient accent line */}
             <div
               className="h-0.5 w-8 rounded-full mt-1"
               style={{ background: 'linear-gradient(90deg, #F59E0B, #FBBF24)' }}

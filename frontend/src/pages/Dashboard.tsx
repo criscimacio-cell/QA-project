@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import {
@@ -315,7 +316,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => setStatsError(true));
-    api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => {});
+    api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => toast.error('Failed to load activity feed'));
   }, []);
 
   if (statsError) return (

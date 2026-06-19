@@ -186,14 +186,21 @@ export default function Repositories() {
       const r = await api.get('/repositories');
       setRepos(r.data);
       setTree(buildTree(r.data));
-    } catch {}
+    } catch {
+      toast.error('Failed to load repositories');
+    }
   };
 
   const loadDetail = async (id: number) => {
     setLoading(true);
-    const r = await api.get(`/repositories/${id}`);
-    setRepoDetail(r.data);
-    setLoading(false);
+    try {
+      const r = await api.get(`/repositories/${id}`);
+      setRepoDetail(r.data);
+    } catch {
+      toast.error('Failed to load repository contents');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { loadRepos(); }, []);
@@ -393,8 +400,8 @@ export default function Repositories() {
 
           {/* View toggle */}
           <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-            <button onClick={() => setView('list')} className={`p-1.5 transition-colors ${view === 'list' ? 'bg-[#F59E0B] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><List size={14} /></button>
-            <button onClick={() => setView('grid')} className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-[#F59E0B] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={14} /></button>
+            <button onClick={() => setView('list')} aria-label="List view" aria-pressed={view === 'list'} className={`p-1.5 transition-colors ${view === 'list' ? 'bg-[#F59E0B] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><List size={14} /></button>
+            <button onClick={() => setView('grid')} aria-label="Grid view" aria-pressed={view === 'grid'} className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-[#F59E0B] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={14} /></button>
           </div>
 
           {selected && isLead && (

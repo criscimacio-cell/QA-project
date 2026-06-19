@@ -549,7 +549,7 @@ export default function FileManager() {
                           <span className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] px-2 py-0.5 rounded font-mono">v{v.version}</span>
                           <span className="text-slate-500">{v.change_log}</span>
                           <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString()}</span>
-                          <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version"><Download size={12} /></button>
+                          <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version" aria-label={`Download version ${v.version}`}><Download size={12} /></button>
                         </div>
                       ))}
                     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Database, Download, Search, Tag, Filter } from 'lucide-react';
+import { Database, Download, Search } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
@@ -17,18 +18,39 @@ export default function TestDataLibrary() {
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [project, setProject] = useState('');
+  const [projects, setProjects] = useState<string[]>([]);
 
   const load = () => {
     const params: any = { status: 'published' };
     if (category !== 'All') params.category = category;
     if (search) params.search = search;
     if (project) params.project = project;
-    api.get('/files', { params }).then(r => setFiles(r.data));
+    api.get('/files', { params })
+      .then(r => {
+        setFiles(r.data);
+        // Derive project list dynamically from results
+        const unique = [...new Set(r.data.map((f: any) => f.project).filter(Boolean))] as string[];
+        setProjects(unique);
+      })
+      .catch(() => toast.error('Failed to load test assets'));
   };
 
   useEffect(() => { load(); }, [category, project]);
 
-  const projects = ['All Projects', 'PhilHealth', 'Interim', 'ETL', 'Automation'];
+  const handleDownload = async (f: any) => {
+    try {
+      const res = await fetch(`/api/files/${f.id}/download`, { credentials: 'include' });
+      if (!res.ok) { toast.error('Download failed — file not found'); return; }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = f.original_name || f.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      toast.error('Download failed');
+    }
+  };
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -61,10 +83,11 @@ export default function TestDataLibrary() {
       <div className="flex flex-wrap gap-3 items-center">
         <form onSubmit={e => { e.preventDefault(); load(); }} className="relative">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search assets..." className="input pl-8 text-sm h-8 w-56" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search assets…" className="input pl-8 text-sm h-8 w-56" />
         </form>
-        <select value={project} onChange={e => setProject(e.target.value === 'All Projects' ? '' : e.target.value)} className="input h-8 text-sm w-40">
-          {projects.map(p => <option key={p}>{p}</option>)}
+        <select value={project} onChange={e => setProject(e.target.value)} className="input h-8 text-sm w-40">
+          <option value="">All Projects</option>
+          {projects.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
       </div>
 
@@ -93,7 +116,7 @@ export default function TestDataLibrary() {
                   <FileIcon mimeType={f.mime_type} name={f.original_name} size={30} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate group-hover:text-teal-600 dark:group-hover:text-teal-400">{f.name}</h3>
+                  <h3 className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate group-hover:text-teal-600 dark:group-hover:text-teal-400" title={f.name}>{f.name}</h3>
                   <p className="text-xs text-slate-400 mt-0.5">{formatBytes(f.size)}</p>
                 </div>
               </div>
@@ -125,17 +148,8 @@ export default function TestDataLibrary() {
               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <span className="text-xs text-slate-400">v{f.version} · {f.owner_name?.split(' ')[0]}</span>
                 <button
-                  onClick={async () => {
-                    const token = localStorage.getItem('token');
-                    const res = await fetch(`/api/files/${f.id}/download`, { headers: { Authorization: `Bearer ${token}` } });
-                    if (!res.ok) { alert('Download failed'); return; }
-                    const blob = await res.blob();
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = f.original_name || f.name;
-                    document.body.appendChild(a); a.click(); a.remove();
-                    URL.revokeObjectURL(a.href);
-                  }}
+                  onClick={() => handleDownload(f)}
+                  aria-label={`Download ${f.name}`}
                   className="flex items-center gap-1 text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 font-medium"
                 >
                   <Download size={13} /> Download

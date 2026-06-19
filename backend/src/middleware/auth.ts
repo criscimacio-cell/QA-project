@@ -9,7 +9,8 @@ export const JWT_SECRET = () => {
 };
 
 export function authenticate(req: Request, res: Response, next: NextFunction) {
-  const token = req.headers.authorization?.split(' ')[1];
+  // Prefer httpOnly cookie; fall back to Authorization header for API clients
+  const token = req.cookies?.accessToken ?? req.headers.authorization?.split(' ')[1];
   if (!token) {
     res.status(401).json({ error: 'No token provided' });
     return;

@@ -28,20 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.get('/auth/me').then(r => setUser(r.data)).catch(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }).finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    // Cookie is sent automatically; just verify the session is valid
+    api.get('/auth/me')
+      .then(r => setUser(r.data))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email: string, password: string) => {
     const res = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
   };
 
@@ -52,10 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     api.post('/auth/logout').catch(() => {});
-    localStorage.removeItem('token');
     setUser(null);
-    // Navigation is handled by the caller (LogoutContext) so the animation
-    // can complete before the page changes.
   };
 
   return (

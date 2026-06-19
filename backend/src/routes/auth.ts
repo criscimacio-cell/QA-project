@@ -8,6 +8,22 @@ import { sendPasswordReset } from '../mailer';
 
 const router = Router();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+const ACCESS_COOKIE_OPTS = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: 'strict' as const,
+  path: '/',
+};
+
+const REFRESH_COOKIE_OPTS = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: 'strict' as const,
+  path: '/api/auth',
+};
+
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 setInterval(() => {
   const now = Date.now();
@@ -39,13 +55,19 @@ router.post('/login', async (req: Request, res: Response) => {
   if (!user || !bcrypt.compareSync(password, user.password_hash)) { res.status(401).json({ error: 'Invalid credentials' }); return; }
   await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${user.id}, 'LOGIN', 'user', ${user.id}, 'Successful login', ${req.ip || ''})`;
-  const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET(), { expiresIn: (process.env.JWT_EXPIRES_IN || '8h') as any, algorithm: 'HS256' });
+
+  const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
+  const accessToken = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET(), { expiresIn: expiresIn as any, algorithm: 'HS256' });
   const refreshToken = crypto.randomBytes(64).toString('hex');
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (${user.id}, ${refreshToken}, ${expiresAt.toISOString()})`;
-  res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', expires: expiresAt, path: '/api/auth' });
+  const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (${user.id}, ${refreshToken}, ${refreshExpiresAt.toISOString()})`;
+
+  res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });
+  res.cookie('refreshToken', refreshToken, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
+
   const { password_hash, ...safeUser } = user;
-  res.json({ token, user: safeUser });
+  res.json({ user: safeUser });
 });
 
 router.post('/refresh', async (req: Request, res: Response) => {
@@ -58,12 +80,17 @@ router.post('/refresh', async (req: Request, res: Response) => {
   `;
   if (!record) { res.status(401).json({ error: 'Invalid or expired refresh token' }); return; }
   await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE token = ${token}`;
+
   const newRefresh = crypto.randomBytes(64).toString('hex');
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (${record.uid}, ${newRefresh}, ${expiresAt.toISOString()})`;
-  res.cookie('refreshToken', newRefresh, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', expires: expiresAt, path: '/api/auth' });
-  const accessToken = jwt.sign({ userId: record.uid, email: record.email, role: record.role }, JWT_SECRET(), { expiresIn: (process.env.JWT_EXPIRES_IN || '8h') as any, algorithm: 'HS256' });
-  res.json({ token: accessToken });
+  const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (${record.uid}, ${newRefresh}, ${refreshExpiresAt.toISOString()})`;
+
+  const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
+  const accessToken = jwt.sign({ userId: record.uid, email: record.email, role: record.role }, JWT_SECRET(), { expiresIn: expiresIn as any, algorithm: 'HS256' });
+
+  res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });
+  res.cookie('refreshToken', newRefresh, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
+  res.json({ ok: true });
 });
 
 router.get('/me', authenticate, async (req: Request, res: Response) => {
@@ -75,6 +102,7 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
 router.post('/logout', authenticate, async (req: Request, res: Response) => {
   const token = req.cookies?.refreshToken;
   if (token) await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE token = ${token}`;
+  res.clearCookie('accessToken', { path: '/' });
   res.clearCookie('refreshToken', { path: '/api/auth' });
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'LOGOUT', 'user', ${req.user!.userId}, 'User logged out', ${req.ip || ''})`;
   res.json({ message: 'Logged out' });

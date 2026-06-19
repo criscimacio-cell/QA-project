@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, FileText, BookOpen, Filter, Download, ExternalLink } from 'lucide-react';
+import { Search, FileText, BookOpen, Download, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
@@ -15,7 +16,7 @@ function highlight(text: string, q: string) {
   const escaped = escapeHtml(text);
   const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const re = new RegExp(`(${safeQ})`, 'gi');
-  return escaped.replace(re, '<mark class="bg-yellow-200 dark:bg-yellow-900/50 rounded px-0.5">$1</mark>');
+  return escaped.replace(re, '<mark class="bg-yellow-200 dark:bg-yellow-700/70 dark:text-white rounded px-0.5">$1</mark>');
 }
 
 // Safe highlighted span — only use dangerouslySetInnerHTML for the highlight markup;
@@ -158,16 +159,17 @@ export default function SearchResults() {
                       )}
                     </div>
                     <button onClick={async () => {
-                      const token = localStorage.getItem('token');
-                      const res = await fetch(`/api/files/${f.id}/download`, { headers: { Authorization: `Bearer ${token}` } });
-                      if (!res.ok) { alert('Download failed'); return; }
-                      const blob = await res.blob();
-                      const a = document.createElement('a');
-                      a.href = URL.createObjectURL(blob);
-                      a.download = f.original_name || f.name;
-                      document.body.appendChild(a); a.click(); a.remove();
-                      URL.revokeObjectURL(a.href);
-                    }} className="btn-ghost p-2 flex-shrink-0 text-teal-500">
+                      try {
+                        const res = await fetch(`/api/files/${f.id}/download`, { credentials: 'include' });
+                        if (!res.ok) { toast.error('Download failed — file not found'); return; }
+                        const blob = await res.blob();
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = f.original_name || f.name;
+                        document.body.appendChild(a); a.click(); a.remove();
+                        URL.revokeObjectURL(a.href);
+                      } catch { toast.error('Download failed'); }
+                    }} aria-label={`Download ${f.name}`} className="btn-ghost p-2 flex-shrink-0 text-teal-500">
                       <Download size={16} />
                     </button>
                   </div>

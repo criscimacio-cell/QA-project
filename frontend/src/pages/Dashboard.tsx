@@ -44,17 +44,19 @@ function useClock() {
 /* ── Typing text hook ── */
 function useTyping(text: string, speed = 38) {
   const [displayed, setDisplayed] = useState('');
+  const [done, setDone] = useState(false);
   useEffect(() => {
     setDisplayed('');
+    setDone(false);
     let i = 0;
     const id = setInterval(() => {
       i++;
       setDisplayed(text.slice(0, i));
-      if (i >= text.length) clearInterval(id);
+      if (i >= text.length) { clearInterval(id); setDone(true); }
     }, speed);
     return () => clearInterval(id);
   }, [text, speed]);
-  return displayed;
+  return { displayed, done };
 }
 
 /* ── Animated counter hook ── */
@@ -301,20 +303,28 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<any>(null);
+  const [statsError, setStatsError] = useState(false);
   const [activityFeed, setActivityFeed] = useState<any[]>([]);
   const clock = useClock();
   const hour = clock.getHours();
   const greetingWord = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const firstName = user?.name?.split(' ')[0] || 'there';
-  const typedGreeting = useTyping(`${greetingWord}, ${firstName}`, 42);
+  const { displayed: typedGreeting, done: typingDone } = useTyping(`${greetingWord}, ${firstName}`, 42);
   const timeStr = clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dateStr = clock.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 
   useEffect(() => {
-    api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => {});
+    api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => setStatsError(true));
     api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => {});
   }, []);
 
+  if (statsError) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
+      <AlertCircle size={40} className="text-red-400" />
+      <p className="text-slate-600 dark:text-slate-300 font-medium">Failed to load dashboard data</p>
+      <button className="btn-secondary text-sm" onClick={() => { setStatsError(false); api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => setStatsError(true)); }}>Retry</button>
+    </div>
+  );
   if (!stats) return <DashboardSkeleton />;
 
   /* Derive spark data from upload trend */
@@ -351,7 +361,7 @@ export default function Dashboard() {
             </div>
             <h1 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight" style={{ minHeight: 32 }}>
               {typedGreeting}
-              <span style={{ animation: 'cursorBlink 0.8s step-end infinite', color: '#f59e0b', marginLeft: 1 }}>|</span>
+              {!typingDone && <span style={{ animation: 'cursorBlink 0.8s step-end infinite', color: '#f59e0b', marginLeft: 1 }}>|</span>}
             </h1>
             <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
               Here's what's happening with your QA assets today.

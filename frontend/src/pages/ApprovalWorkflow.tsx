@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { GitPullRequest, CheckCircle, XCircle, Clock, FileText, ArrowRight } from 'lucide-react';
+import { CheckCircle, Clock, FileText, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import Modal from '../components/UI/Modal';
@@ -42,7 +43,7 @@ export default function ApprovalWorkflow() {
       await api.post(`/files/${target.id}/approve`, { status: newStatus, comments: comment });
       setApproveModal(false); setApproveTarget(null); setSelected(null); setNewStatus('approved'); setComment(''); load();
     } catch (err: any) {
-      alert(err?.response?.data?.error || 'Failed to update status');
+      toast.error(err?.response?.data?.error || 'Failed to update status');
     }
   };
 
@@ -53,7 +54,7 @@ export default function ApprovalWorkflow() {
       setTimeout(() => setFlashId(null), 700);
       load();
     } catch {
-      alert('Failed to move file. Please try again.');
+      toast.error('Failed to move file. Please try again.');
       load();
     }
   };
@@ -94,9 +95,8 @@ export default function ApprovalWorkflow() {
       await api.post(`/files/${f.id}/approve`, { status: stageKey, comments: '' });
       load();
     } catch {
-      // Rollback optimistic update
       load();
-      alert('Failed to move file. Please try again.');
+      toast.error('Failed to move file. Please try again.');
     }
   };
 
@@ -196,17 +196,19 @@ export default function ApprovalWorkflow() {
                     onClick={() => { if (draggingId === null) setSelected(f); }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      {/* Drag handle dots */}
-                      <div className="flex flex-col gap-[3px] opacity-30 flex-shrink-0">
-                        <div className="flex gap-[3px]">
-                          <div className="w-1 h-1 rounded-full bg-slate-500" />
-                          <div className="w-1 h-1 rounded-full bg-slate-500" />
+                      {/* Drag handle — only visible to leads who can actually drag */}
+                      {isLead && (
+                        <div className="flex flex-col gap-[3px] opacity-30 flex-shrink-0">
+                          <div className="flex gap-[3px]">
+                            <div className="w-1 h-1 rounded-full bg-slate-500" />
+                            <div className="w-1 h-1 rounded-full bg-slate-500" />
+                          </div>
+                          <div className="flex gap-[3px]">
+                            <div className="w-1 h-1 rounded-full bg-slate-500" />
+                            <div className="w-1 h-1 rounded-full bg-slate-500" />
+                          </div>
                         </div>
-                        <div className="flex gap-[3px]">
-                          <div className="w-1 h-1 rounded-full bg-slate-500" />
-                          <div className="w-1 h-1 rounded-full bg-slate-500" />
-                        </div>
-                      </div>
+                      )}
                       <FileIcon mimeType={f.mime_type} name={f.original_name} size={16} />
                       <span className="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">{f.name}</span>
                     </div>

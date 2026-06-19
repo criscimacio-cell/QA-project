@@ -111,6 +111,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
         <button
           onClick={toggle}
           className="relative w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#F59E0B] dark:hover:text-[#FCD34D] transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50"
+          aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
           title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           <div className="transition-all duration-300" style={{ transform: dark ? 'rotate(0deg)' : 'rotate(180deg)' }}>

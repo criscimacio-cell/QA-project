@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Download, Filter } from 'lucide-react';
+import { ShieldCheck, Download, Filter, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../api/client';
 
 const ACTION_STYLES: Record<string, string> = {
@@ -29,7 +30,10 @@ export default function AuditLog() {
 
   const load = () => {
     setLoading(true);
-    api.get('/audit', { params: { action: action || undefined, page, limit: 50 } }).then(r => { setLogs(r.data.logs); setTotal(r.data.total); }).finally(() => setLoading(false));
+    api.get('/audit', { params: { action: action || undefined, page, limit: 50 } })
+      .then(r => { setLogs(r.data.logs); setTotal(r.data.total); })
+      .catch(() => toast.error('Failed to load audit logs'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [action, page]);
@@ -114,7 +118,15 @@ export default function AuditLog() {
                   </tr>
                 ))}
                 {logs.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-400 text-sm">No audit events found</td></tr>
+                  <tr>
+                    <td colSpan={7} className="px-4 py-14 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <ShieldCheck size={32} className="text-slate-300 dark:text-slate-600" />
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No audit events found</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting the filter or come back later</p>
+                      </div>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>

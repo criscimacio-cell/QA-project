@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Edit2, UserCheck, UserX } from 'lucide-react';
+import { Plus, Edit2, UserCheck, UserX, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../api/client';
 import Modal from '../components/UI/Modal';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +14,7 @@ export default function UserManagement() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', email: '', role: 'engineer', department: '', active: 1 });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   const load = () => api.get('/users').then(r => setUsers(r.data));
   useEffect(() => { load(); }, []);
@@ -37,12 +39,21 @@ export default function UserManagement() {
 
   const save = async () => {
     if (!validate()) return;
-    if (editing) {
-      await api.put(`/users/${editing.id}`, form);
-    } else {
-      await api.post('/users', { ...form, password: 'password123' });
+    setSaving(true);
+    try {
+      if (editing) {
+        await api.put(`/users/${editing.id}`, form);
+        toast.success('User updated successfully');
+      } else {
+        await api.post('/users', { ...form, password: 'password123' });
+        toast.success('User created successfully');
+      }
+      closeModal(); load();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to save user');
+    } finally {
+      setSaving(false);
     }
-    closeModal(); load();
   };
 
   const startEdit = (u: any) => {
@@ -50,8 +61,14 @@ export default function UserManagement() {
   };
 
   const toggleActive = async (u: any) => {
-    if (u.id === user?.id) { alert("You cannot deactivate your own account."); return; }
-    await api.put(`/users/${u.id}`, { ...u, active: u.active ? 0 : 1 }); load();
+    if (u.id === user?.id) { toast.error('You cannot deactivate your own account.'); return; }
+    try {
+      await api.put(`/users/${u.id}`, { ...u, active: u.active ? 0 : 1 });
+      toast.success(u.active ? 'User deactivated' : 'User activated');
+      load();
+    } catch {
+      toast.error('Failed to update user status');
+    }
   };
 
   const roleCount = (role: string) => users.filter(u => u.role === role).length;
@@ -201,7 +218,10 @@ export default function UserManagement() {
           </div>
           <div className="flex gap-2 justify-end pt-2">
             <button onClick={closeModal} className="btn-secondary">Cancel</button>
-            <button onClick={save} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>{editing ? 'Save Changes' : 'Create User'}</button>
+            <button onClick={save} disabled={saving} className="btn-primary">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+              {editing ? (saving ? 'Saving...' : 'Save Changes') : (saving ? 'Creating...' : 'Create User')}
+            </button>
           </div>
         </div>
       </Modal>

@@ -10,18 +10,19 @@ import EmptyState from '../components/UI/EmptyState';
 import { useAuth } from '../context/AuthContext';
 
 async function downloadFile(fileId: number, filename: string, versionPath?: string) {
-  const url = versionPath || `/api/files/${fileId}/download`;
-  const token = localStorage.getItem('token');
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) { alert('Download failed — file not found on disk.'); return; }
-  const blob = await res.blob();
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(a.href);
+  try {
+    const url = versionPath || `/api/files/${fileId}/download`;
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) { toast.error('Download failed — file not found on disk.'); return; }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  } catch { toast.error('Download failed'); }
 }
 
 function formatBytes(b: number) {
@@ -85,8 +86,7 @@ export default function FileManager() {
 
   useEffect(() => {
     if (!previewFile) { setPreviewBlobUrl(null); return; }
-    const token = localStorage.getItem('token');
-    fetch(`/api/files/${previewFile.id}/preview`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`/api/files/${previewFile.id}/preview`, { credentials: 'include' })
       .then(r => r.ok ? r.blob() : Promise.reject())
       .then(blob => setPreviewBlobUrl(URL.createObjectURL(blob)))
       .catch(() => setPreviewBlobUrl(null));
@@ -112,7 +112,7 @@ export default function FileManager() {
     if (effectiveSearch) params.search = effectiveSearch;
     if (effectiveProject) params.project = effectiveProject;
     if (effectiveCategory) params.category = effectiveCategory;
-    api.get('/files', { params }).then(r => setFiles(r.data)).finally(() => setLoading(false));
+    api.get('/files', { params }).then(r => setFiles(r.data)).catch(() => toast.error('Failed to load files')).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [tab, project, category]);
@@ -279,10 +279,10 @@ export default function FileManager() {
   };
 
   const doBulkDownload = async () => {
-    const token = localStorage.getItem('token');
     const res = await fetch('/api/files/bulk-download', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: Array.from(selectedIds) }),
     });
     if (!res.ok) { toast.error('Download failed'); return; }
@@ -319,8 +319,7 @@ export default function FileManager() {
 
   // Export CSV
   const exportFiles = async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch('/api/files/export', { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch('/api/files/export', { credentials: 'include' });
     const blob = await res.blob();
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = `files-export-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -450,9 +449,9 @@ export default function FileManager() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 max-w-[220px]">
                         <FileIcon mimeType={f.mime_type} name={f.original_name} size={18} />
-                        <div>
-                          <div className="font-medium text-slate-900 dark:text-slate-100 truncate">{f.name}</div>
-                          <div className="text-xs text-slate-400 truncate">{f.original_name}</div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-slate-900 dark:text-slate-100 truncate" title={f.name}>{f.name}</div>
+                          <div className="text-xs text-slate-400 truncate" title={f.original_name}>{f.original_name}</div>
                         </div>
                       </div>
                     </td>
@@ -578,7 +577,10 @@ export default function FileManager() {
             {detailTab === 'comments' && (
               <div className="space-y-3">
                 {commentLoading && comments.length === 0 ? (
-                  <div className="text-center py-6 text-slate-400 text-sm">Loading comments…</div>
+                  <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
+                    <Loader2 size={20} className="animate-spin text-amber-400" />
+                    Loading comments…
+                  </div>
                 ) : comments.length === 0 ? (
                   <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
                     <MessageSquare size={28} className="opacity-30" />

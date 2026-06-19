@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Plus, Search, Tag, Clock, User, ChevronRight, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { BookOpen, Plus, Search, Tag, Clock, User, ChevronRight, Edit2, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import StatusBadge from '../components/UI/Badge';
@@ -86,6 +86,7 @@ export default function KnowledgeBase() {
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number | null; title: string }>({ open: false, id: null, title: '' });
   const [actionLoading, setActionLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [articleLoading, setArticleLoading] = useState(false);
 
   const load = () => {
     const params: any = {};
@@ -121,8 +122,16 @@ export default function KnowledgeBase() {
 
   useEffect(() => { load(); }, [category]);
 
-  const openArticle = (a: any) => {
-    api.get(`/knowledge/${a.id}`).then(r => setSelected(r.data));
+  const openArticle = async (a: any) => {
+    setArticleLoading(true);
+    try {
+      const r = await api.get(`/knowledge/${a.id}`);
+      setSelected(r.data);
+    } catch {
+      toast.error('Failed to load article');
+    } finally {
+      setArticleLoading(false);
+    }
   };
 
   const validate = () => {
@@ -229,7 +238,7 @@ export default function KnowledgeBase() {
               <p className="text-xs mt-1 text-slate-400">Try a different category or search term</p>
             </div>
           ) : articles.map(a => (
-            <div key={a.id} onClick={() => openArticle(a)} className="card p-5 cursor-pointer hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group">
+            <div key={a.id} onClick={() => !articleLoading && openArticle(a)} className={`card p-5 cursor-pointer hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group ${articleLoading ? 'opacity-60 pointer-events-none' : ''}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -245,7 +254,7 @@ export default function KnowledgeBase() {
                     {a.tags && <span className="flex items-center gap-1"><Tag size={11} />{a.tags.split(',').slice(0, 3).join(', ')}</span>}
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-slate-300 group-hover:text-[#FCD34D] flex-shrink-0 mt-1 transition-colors" />
+                {articleLoading ? <Loader2 size={18} className="text-amber-400 animate-spin flex-shrink-0 mt-1" /> : <ChevronRight size={18} className="text-slate-300 group-hover:text-[#FCD34D] flex-shrink-0 mt-1 transition-colors" />}
               </div>
             </div>
           ))}

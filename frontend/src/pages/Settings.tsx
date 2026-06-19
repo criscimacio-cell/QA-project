@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api/client';
+import ConfirmModal from '../components/UI/ConfirmModal';
 
 export default function Settings() {
   const { user, isAdmin, refreshUser } = useAuth();
@@ -158,6 +159,7 @@ export default function Settings() {
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState<'file' | 'knowledge'>('file');
   const [catSaving, setCatSaving] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: number; name: string } | null>(null);
 
   const loadCategories = () => {
     setCatLoading(true);
@@ -412,7 +414,7 @@ export default function Settings() {
                               <span className="text-sm text-slate-700 dark:text-slate-300">{cat.name}</span>
                               {isAdmin && (
                                 <button
-                                  onClick={() => deleteCategory(cat.id)}
+                                  onClick={() => setCategoryToDelete({ id: cat.id, name: cat.name })}
                                   className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5 rounded"
                                   title="Delete category"
                                 >
@@ -588,6 +590,19 @@ export default function Settings() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={!!categoryToDelete}
+        onClose={() => setCategoryToDelete(null)}
+        onConfirm={async () => {
+          if (!categoryToDelete) return;
+          await deleteCategory(categoryToDelete.id);
+          setCategoryToDelete(null);
+        }}
+        title="Delete Category"
+        message={`"${categoryToDelete?.name}" will be permanently deleted. This action cannot be undone.`}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

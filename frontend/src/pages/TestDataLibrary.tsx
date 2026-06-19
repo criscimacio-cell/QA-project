@@ -82,8 +82,9 @@ export default function TestDataLibrary() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <form onSubmit={e => { e.preventDefault(); load(); }} className="relative">
+          <label htmlFor="tdl-search" className="sr-only">Search assets</label>
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search assets…" className="input pl-8 text-sm h-8 w-56" />
+          <input id="tdl-search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search assets…" className="input pl-8 text-sm h-8 w-56" />
         </form>
         <select value={project} onChange={e => setProject(e.target.value)} className="input h-8 text-sm w-40">
           <option value="">All Projects</option>

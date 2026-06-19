@@ -1,5 +1,36 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Component, ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
+/* ── Error Boundary ── */
+interface ErrorBoundaryState { hasError: boolean; }
+class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 p-8">
+          <div className="text-5xl">⚠️</div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Something went wrong</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-md">
+            An unexpected error occurred. Please reload the page to continue.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm transition-colors"
+          >
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { ThemeProvider } from './context/ThemeContext';
 import { LogoutProvider } from './context/LogoutContext';
 import AppLayout from './components/Layout/AppLayout';
@@ -56,14 +87,16 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <LogoutProvider>
-            <AppRoutes />
-          </LogoutProvider>
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <LogoutProvider>
+              <AppRoutes />
+            </LogoutProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

@@ -56,8 +56,10 @@ export default function SearchResults() {
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       {/* Search bar */}
       <form onSubmit={handleSearch} className="relative">
+        <label htmlFor="sr-search" className="sr-only">Search</label>
         <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
+          id="sr-search"
           value={query}
           onChange={e => setQuery(e.target.value)}
           className="input pl-12 pr-4 py-4 text-base rounded-2xl shadow-sm"

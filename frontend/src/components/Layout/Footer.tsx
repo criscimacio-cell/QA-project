@@ -5,7 +5,7 @@ export default function Footer({ sidebarWidth }: { sidebarWidth: number }) {
 
   return (
     <footer
-      className="transition-all duration-300 ease-in-out border-t px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 fixed bottom-0 right-0 z-50"
+      className="transition-all duration-300 ease-in-out border-t px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 fixed bottom-0 right-0 z-[49]"
       style={{
         left: sidebarWidth,
         borderColor: 'var(--border)',

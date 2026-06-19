@@ -684,7 +684,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
     if (!selectedRepo) errs.repository_id = 'Please select a repository';
     if (mode === 'file' && !file) errs.file = 'Please choose a file to upload';
     if (mode === 'folder' && !folderFiles.length) errs.file = 'Please select a folder';
-    if (form.jira_ticket.trim() && !/^[A-Z]+-\d+$/i.test(form.jira_ticket.trim())) errs.jira_ticket = 'Format: PROJECT-123';
+    if (form.jira_ticket.trim() && !/^[A-Z]+-\d+$/.test(form.jira_ticket.trim())) errs.jira_ticket = 'Format: PROJECT-123';
     if (form.tags.trim() && /[^a-zA-Z0-9,\- ]/.test(form.tags)) errs.tags = 'Tags may only contain letters, numbers, commas, hyphens, and spaces';
     if (mode === 'file') {
       const vNum = parseInt(form.version, 10);

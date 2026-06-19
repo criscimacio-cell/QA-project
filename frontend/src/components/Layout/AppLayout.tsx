@@ -129,7 +129,7 @@ export default function AppLayout() {
         className="pt-16 min-h-screen transition-all duration-300 ease-in-out flex flex-col"
         style={{ marginLeft: sidebarWidth }}
       >
-        <div className="p-6 flex-1">
+        <div className="p-6 pb-16 flex-1">
           <div key={location.pathname} className="page-transition-wrapper anim-fade-slide-up">
             <Outlet />
           </div>

@@ -126,11 +126,10 @@ export default function AppLayout() {
       <TopBar sidebarWidth={sidebarWidth} />
 
       <main
-        className="pt-16 min-h-screen transition-all duration-300 ease-in-out"
+        className="pt-16 min-h-screen transition-all duration-300 ease-in-out flex flex-col"
         style={{ marginLeft: sidebarWidth }}
       >
-        <div className="p-6">
-          {/* Page transition wrapper - key on pathname for re-mount animation */}
+        <div className="p-6 flex-1">
           <div key={location.pathname} className="page-transition-wrapper anim-fade-slide-up">
             <Outlet />
           </div>

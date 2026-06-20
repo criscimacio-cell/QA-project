@@ -18,7 +18,11 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
   const [repo] = await sql`SELECT * FROM repositories WHERE id = ${req.params.id}`;
   if (!repo) { res.status(404).json({ error: 'Not found' }); return; }
   const files = await sql`
-    SELECT f.*, u.name as owner_name FROM files f
+    SELECT f.id, f.name, f.original_name, f.size, f.mime_type, f.status,
+           f.project, f.module, f.category, f.jira_ticket, f.tags,
+           f.description, f.version, f.created_at, f.updated_at,
+           u.name as owner_name
+    FROM files f
     LEFT JOIN users u ON f.owner_id = u.id
     WHERE f.repository_id = ${req.params.id} AND f.status != 'archived'
     ORDER BY f.updated_at DESC

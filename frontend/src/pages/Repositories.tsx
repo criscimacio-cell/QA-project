@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   ChevronRight, ChevronDown, Folder, FolderOpen, Plus,
   LayoutGrid, List, Upload, Search, RefreshCw, MoreVertical,
-  Pencil, Trash2, FolderPlus, Database, ChevronsDownUp, ChevronsUpDown,
+  Pencil, Trash2, FolderPlus, Database, ChevronsDownUp, ChevronsUpDown, Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
@@ -118,6 +118,8 @@ function TreeNode({
           >
             <button
               onClick={() => setMenuOpen(m => !m)}
+              aria-label="Repository options"
+              aria-expanded={menuOpen}
               className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
             >
               <MoreVertical size={13} />
@@ -207,11 +209,11 @@ export default function Repositories() {
   useEffect(() => { if (selected) loadDetail(selected); }, [selected]);
 
   const selectedRepo = repos.find(r => r.id === selected);
-  const breadcrumb: string[] = [];
+  const breadcrumb: { id: number; name: string }[] = [];
   if (selected) {
     let cur = repos.find(r => r.id === selected);
     while (cur) {
-      breadcrumb.unshift(cur.name);
+      breadcrumb.unshift({ id: cur.id, name: cur.name });
       cur = cur.parent_id ? repos.find(r => r.id === cur!.parent_id) : undefined;
     }
   }
@@ -275,12 +277,16 @@ export default function Repositories() {
     if (!deleteModal.repo) return;
     setSaving(true);
     const deletedId = deleteModal.repo.id;
+    const parentId = deleteModal.repo.parent_id;
     try {
       await api.delete(`/repositories/${deletedId}`);
       toast.success('Repository deleted');
       setDeleteModal({ open: false, repo: null });
       if (selected === deletedId) setSelected(null);
       await loadRepos();
+      // Reload detail for current selection if it's still valid
+      if (selected && selected !== deletedId) loadDetail(selected);
+      else if (parentId && parentId !== deletedId) loadDetail(parentId);
     } catch {
       toast.error('Failed to delete. Please try again.');
     } finally {
@@ -325,6 +331,7 @@ export default function Repositories() {
               value={treeSearch}
               onChange={e => setTreeSearch(e.target.value)}
               placeholder="Find repository…"
+              aria-label="Search repositories"
               className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 placeholder-slate-400 outline-none focus:border-[#F59E0B] transition-colors"
             />
           </div>
@@ -377,12 +384,15 @@ export default function Repositories() {
             {breadcrumb.length === 0 ? (
               <span className="text-slate-400 text-xs">Select a folder from the left panel</span>
             ) : breadcrumb.map((b, i) => (
-              <span key={i} className="flex items-center gap-1 text-xs">
+              <span key={b.id} className="flex items-center gap-1 text-xs">
                 {i > 0 && <ChevronRight size={12} className="text-slate-300" />}
-                <span className={i === breadcrumb.length - 1
-                  ? 'font-semibold text-slate-900 dark:text-slate-100'
-                  : 'text-slate-400 hover:text-[#F59E0B] cursor-pointer transition-colors'}>
-                  {b}
+                <span
+                  className={i === breadcrumb.length - 1
+                    ? 'font-semibold text-slate-900 dark:text-slate-100'
+                    : 'text-slate-400 hover:text-[#F59E0B] cursor-pointer transition-colors'}
+                  onClick={i < breadcrumb.length - 1 ? () => setSelected(b.id) : undefined}
+                >
+                  {b.name}
                 </span>
               </span>
             ))}
@@ -394,6 +404,7 @@ export default function Repositories() {
             <input
               value={fileSearch} onChange={e => setFileSearch(e.target.value)}
               placeholder="Filter files…"
+              aria-label="Filter files"
               className="input pl-8 h-8 text-xs w-44"
             />
           </div>
@@ -425,6 +436,11 @@ export default function Repositories() {
               </div>
               <p className="text-sm font-medium">Select a repository</p>
               <p className="text-xs text-slate-400">Choose a folder from the left panel to view its contents</p>
+              {isLead && tree.length === 0 && (
+                <button onClick={() => openCreate(null)} className="btn-primary text-xs mt-2">
+                  <Plus size={13} /> Create First Repository
+                </button>
+              )}
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center h-32">
@@ -466,7 +482,10 @@ export default function Repositories() {
                     {repoDetail.children.map((c: any) => (
                       <div
                         key={c.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => setSelected(c.id)}
+                        onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setSelected(c.id)}
                         className="card p-3 cursor-pointer hover:border-[#F59E0B]/40 hover:shadow-md transition-all group"
                       >
                         <Folder size={26} className="text-amber-400 mb-2 group-hover:text-amber-500 transition-colors" />
@@ -534,7 +553,7 @@ export default function Repositories() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {filteredFiles.map((f: FileRecord) => (
-                    <div key={f.id} className="card p-3 hover:shadow-md transition-all cursor-pointer group">
+                    <div key={f.id} title={f.name} aria-label={f.name} role="article" className="card p-3 hover:shadow-md transition-all cursor-pointer group">
                       <FileIcon mimeType={f.mime_type} name={f.original_name} size={24} />
                       <div className="text-xs font-medium text-slate-800 dark:text-slate-100 truncate mt-2">{f.name}</div>
                       <div className="text-xs text-slate-400 mt-0.5">{formatBytes(f.size)}</div>
@@ -578,7 +597,7 @@ export default function Repositories() {
           <div className="flex justify-end gap-2 pt-1">
             <button onClick={() => setCreateModal(m => ({ ...m, open: false }))} className="btn-secondary">Cancel</button>
             <button onClick={doCreate} disabled={!formData.name.trim() || saving} className="btn-primary">
-              {saving ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
               {createModal.parentId ? 'Create Folder' : 'Create Repository'}
             </button>
           </div>
@@ -607,7 +626,7 @@ export default function Repositories() {
           <div className="flex justify-end gap-2">
             <button onClick={() => setEditModal({ open: false, repo: null })} className="btn-secondary">Cancel</button>
             <button onClick={doEdit} disabled={!formData.name.trim() || saving} className="btn-primary">
-              {saving ? <RefreshCw size={14} className="animate-spin" /> : <Pencil size={14} />}
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Pencil size={14} />}
               Save
             </button>
           </div>
@@ -630,7 +649,7 @@ export default function Repositories() {
               disabled={saving}
               className="btn-danger"
             >
-              {saving ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
               Delete
             </button>
           </div>
@@ -675,6 +694,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
     setFile(null); setFolderFiles([]); setUploadErrors({}); setProgress('');
     setForm({ name: '', project: '', module: '', category: '', jira_ticket: '', tags: '', description: '', version: '1' });
     setMode('file');
+    setSelectedRepo(repositoryId?.toString() || '');
   };
 
   const validate = () => {
@@ -683,7 +703,9 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
     if (mode === 'file' && form.name.trim().length > 200) errs.name = 'Display name must be 200 characters or fewer';
     if (!selectedRepo) errs.repository_id = 'Please select a repository';
     if (mode === 'file' && !file) errs.file = 'Please choose a file to upload';
+    else if (mode === 'file' && file && file.size > 50 * 1024 * 1024) errs.file = 'File exceeds the 50 MB limit';
     if (mode === 'folder' && !folderFiles.length) errs.file = 'Please select a folder';
+    else if (mode === 'folder' && folderFiles.some(f => f.size > 50 * 1024 * 1024)) errs.file = 'One or more files exceed the 50 MB limit';
     if (form.jira_ticket.trim() && !/^[A-Z]+-\d+$/.test(form.jira_ticket.trim())) errs.jira_ticket = 'Format: PROJECT-123';
     if (form.tags.trim() && /[^a-zA-Z0-9,\- ]/.test(form.tags)) errs.tags = 'Tags may only contain letters, numbers, commas, hyphens, and spaces';
     if (mode === 'file') {
@@ -700,10 +722,6 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    if (form.category && !categories.includes(form.category)) {
-      await api.post('/categories', { name: form.category, type: 'file' });
-      setCategories(prev => [...prev, form.category]);
-    }
     try {
       if (mode === 'file') {
         const fd = new FormData();
@@ -724,7 +742,13 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
         setProgress(`✓ ${folderFiles.length} files uploaded`);
         await new Promise(r => setTimeout(r, 800));
       }
-      toast.success('File uploaded successfully');
+      // Only create category after successful upload
+      const catName = form.category.trim();
+      if (catName && catName.length <= 100 && !categories.includes(catName)) {
+        await api.post('/categories', { name: catName, type: 'file' }).catch(() => {});
+        setCategories(prev => [...prev, catName]);
+      }
+      toast.success(mode === 'folder' ? `${folderFiles.length} files uploaded successfully` : 'File uploaded successfully');
       onClose(); onSuccess(); reset();
     } catch (err: any) {
       const msg = err?.response?.data?.error || 'Upload failed';
@@ -734,7 +758,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
   };
 
   return (
-    <Modal open={open} onClose={() => { onClose(); reset(); }} title="Upload to Repository" size="lg">
+    <Modal open={open} onClose={() => { if (!loading) { onClose(); reset(); } }} title="Upload to Repository" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Mode toggle */}
         <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
@@ -820,7 +844,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
             <label className="label">Repository<span className="text-red-500 ml-0.5">*</span></label>
             <select value={selectedRepo} onChange={e => { setSelectedRepo(e.target.value); if (uploadErrors.repository_id) setUploadErrors(p => ({ ...p, repository_id: '' })); }} className={`input ${uploadErrors.repository_id ? 'border-red-400 focus:ring-red-300' : ''}`}>
               <option value="">Select repository…</option>
-              {repos.filter((r: any) => r.parent_id !== null).map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              {repos.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
             {uploadErrors.repository_id && <p className="text-xs text-red-500 mt-1">{uploadErrors.repository_id}</p>}
           </div>
@@ -862,9 +886,9 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
         {progress && <p className={`text-sm text-center font-medium ${progress.startsWith('✓') ? 'text-emerald-500' : progress.includes('failed') ? 'text-red-500' : 'text-slate-500'}`}>{progress}</p>}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={() => { onClose(); reset(); }} className="btn-secondary">Cancel</button>
+          <button type="button" onClick={() => { if (!loading) { onClose(); reset(); } }} disabled={loading} className="btn-secondary">Cancel</button>
           <button type="submit" disabled={(mode === 'file' ? !file : !folderFiles.length) || loading} className="btn-primary">
-            {loading ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} />}
+            {loading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
             {mode === 'folder' ? `Upload ${folderFiles.length || ''} Files` : 'Upload File'}
           </button>
         </div>

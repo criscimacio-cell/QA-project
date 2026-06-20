@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { RotateCcw, Trash2, Archive as ArchiveIcon, Files } from 'lucide-react';
+import { RotateCcw, Trash2, Archive as ArchiveIcon, Files, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
+import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
 import EmptyState from '../components/UI/EmptyState';
 
@@ -16,8 +17,13 @@ export default function Archive() {
   const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number | null; name: string }>({ open: false, id: null, name: '' });
-  const [actionLoading, setActionLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const [confirmRestore, setConfirmRestore] = useState<{ open: boolean; id: number | null; name: string }>({ open: false, id: null, name: '' });
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreSuccess, setRestoreSuccess] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -33,28 +39,33 @@ export default function Archive() {
 
   useEffect(() => { load(); }, []);
 
-  const doRestore = async (id: number) => {
+  const doRestore = async () => {
+    if (!confirmRestore.id) return;
+    setRestoreLoading(true);
     try {
-      await api.post(`/files/${id}/restore`);
-      toast.success('File restored to draft');
-      load();
+      await api.post(`/files/${confirmRestore.id}/restore`);
+      setFiles(prev => prev.filter(f => f.id !== confirmRestore.id));
+      setConfirmRestore({ open: false, id: null, name: '' });
+      setRestoreSuccess(true);
     } catch {
       toast.error('Failed to restore file');
+    } finally {
+      setRestoreLoading(false);
     }
   };
 
   const doDelete = async () => {
     if (!confirmDelete.id) return;
-    setActionLoading(true);
+    setDeleteLoading(true);
     try {
       await api.delete(`/files/${confirmDelete.id}`);
       toast.success('File permanently deleted');
+      setFiles(prev => prev.filter(f => f.id !== confirmDelete.id));
       setConfirmDelete({ open: false, id: null, name: '' });
-      load();
     } catch {
       toast.error('Failed to delete file');
     } finally {
-      setActionLoading(false);
+      setDeleteLoading(false);
     }
   };
 
@@ -136,10 +147,18 @@ export default function Archive() {
                     <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString('en-CA')}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => doRestore(f.id)} title="Restore to draft" className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500">
+                        <button
+                          onClick={() => setConfirmRestore({ open: true, id: f.id, name: f.name })}
+                          title="Restore to draft"
+                          className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500"
+                        >
                           <RotateCcw size={14} />
                         </button>
-                        <button onClick={() => setConfirmDelete({ open: true, id: f.id, name: f.name })} title="Permanently delete" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400">
+                        <button
+                          onClick={() => setConfirmDelete({ open: true, id: f.id, name: f.name })}
+                          title="Permanently delete"
+                          className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"
+                        >
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -152,6 +171,43 @@ export default function Archive() {
         )}
       </div>
 
+      {/* Confirm Restore Modal */}
+      <Modal open={confirmRestore.open} onClose={() => setConfirmRestore({ open: false, id: null, name: '' })} title="Restore File" size="sm">
+        <div className="space-y-5">
+          <div className="flex items-start gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800">
+            <RotateCcw size={18} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-emerald-700 dark:text-emerald-400">
+              <strong>"{confirmRestore.name}"</strong> will be restored and moved back to Draft status in File Manager.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setConfirmRestore({ open: false, id: null, name: '' })} disabled={restoreLoading} className="btn-secondary">Cancel</button>
+            <button onClick={doRestore} disabled={restoreLoading} className="btn-primary flex items-center gap-1.5">
+              {restoreLoading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <RotateCcw size={14} />}
+              Restore
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Restore Success Modal */}
+      <Modal open={restoreSuccess} onClose={() => setRestoreSuccess(false)} title="File Restored" size="sm">
+        <div className="space-y-4">
+          <div className="flex flex-col items-center gap-3 py-4">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+              <CheckCircle size={28} className="text-emerald-500" />
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-300 text-center">
+              The file has been restored successfully and is now available in <span className="font-semibold text-slate-800 dark:text-slate-100">File Manager</span> as a Draft.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <button onClick={() => setRestoreSuccess(false)} className="btn-primary px-8">Done</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirm Delete Modal */}
       <ConfirmModal
         open={confirmDelete.open}
         onClose={() => setConfirmDelete({ open: false, id: null, name: '' })}
@@ -159,7 +215,7 @@ export default function Archive() {
         title="Permanently Delete File"
         message={`"${confirmDelete.name}" will be permanently deleted and cannot be recovered. This action cannot be undone.`}
         confirmLabel="Delete permanently"
-        loading={actionLoading}
+        loading={deleteLoading}
       />
     </div>
   );

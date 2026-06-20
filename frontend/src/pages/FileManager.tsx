@@ -31,7 +31,7 @@ function formatBytes(b: number) {
   return b + ' B';
 }
 
-const TABS = ['All Files', 'Pending Approval', 'Published', 'Archived'];
+const TABS = ['All Files', 'Pending Approval', 'Published'];
 const TAB_STATUS: Record<string, string> = { 'Pending Approval': 'submitted', 'Published': 'published', 'Archived': 'archived' };
 
 const APPROVAL_DOT: Record<string, string> = {
@@ -84,6 +84,11 @@ export default function FileManager() {
   // Confirm delete modal
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number | null; name: string }>({ open: false, id: null, name: '' });
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Confirm archive modal + success modal
+  const [confirmArchive, setConfirmArchive] = useState<{ open: boolean; id: number | null; name: string }>({ open: false, id: null, name: '' });
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [archiveSuccess, setArchiveSuccess] = useState(false);
 
   useEffect(() => {
     if (!previewFile) { setPreviewBlobUrl(null); return; }
@@ -140,13 +145,18 @@ export default function FileManager() {
     }
   };
 
-  const doArchive = async (id: number) => {
+  const doArchive = async () => {
+    if (!confirmArchive.id) return;
+    setArchiveLoading(true);
     try {
-      await api.post(`/files/${id}/archive`);
-      toast.success('File archived');
-      load();
+      await api.post(`/files/${confirmArchive.id}/archive`);
+      setFiles(prev => prev.filter(f => f.id !== confirmArchive.id));
+      setConfirmArchive({ open: false, id: null, name: '' });
+      setArchiveSuccess(true);
     } catch {
       toast.error('Failed to archive file');
+    } finally {
+      setArchiveLoading(false);
     }
   };
 
@@ -529,17 +539,15 @@ export default function FileManager() {
                           </button>
                         )}
                         <button onClick={() => downloadFile(f.id, f.original_name)} title="Download" aria-label="Download file" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
-                        {f.status === 'archived' && isLead ? (
-                          <button onClick={() => doRestore(f.id)} title="Restore" aria-label="Restore file" className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500"><RotateCcw size={14} /></button>
-                        ) : isLead ? (
+                        {isLead ? (
                           <>
                             <button onClick={() => { setSelected(f); setShowApprove(true); }} title="Review" aria-label="Review file" className="p-1.5 rounded hover:bg-[#F59E0B]/10 text-[#F59E0B]">
                               <GitBranch size={14} />
                             </button>
-                            <button onClick={() => doArchive(f.id)} title="Archive" aria-label="Archive file" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
+                            <button onClick={() => setConfirmArchive({ open: true, id: f.id, name: f.name })} title="Archive" aria-label="Archive file" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
                           </>
-                        ) : isEngineer && f.owner_id === user?.id && f.status !== 'archived' ? (
-                          <button onClick={() => doArchive(f.id)} title="Archive" aria-label="Archive file" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
+                        ) : isEngineer && f.owner_id === user?.id ? (
+                          <button onClick={() => setConfirmArchive({ open: true, id: f.id, name: f.name })} title="Archive" aria-label="Archive file" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
                         ) : null}
                       </div>
                     </td>
@@ -813,6 +821,43 @@ export default function FileManager() {
         confirmLabel="Delete permanently"
         loading={actionLoading}
       />
+
+      {/* Confirm Archive Modal */}
+      <Modal open={confirmArchive.open} onClose={() => setConfirmArchive({ open: false, id: null, name: '' })} title="Archive File" size="sm">
+        <div className="space-y-5">
+          <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
+            <Archive size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              <strong>"{confirmArchive.name}"</strong> will be moved to the Archive. It will no longer appear in File Manager and can only be restored from the Archive module.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setConfirmArchive({ open: false, id: null, name: '' })} disabled={archiveLoading} className="btn-secondary">Cancel</button>
+            <button onClick={doArchive} disabled={archiveLoading} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-60">
+              {archiveLoading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Archive size={14} />}
+              Archive
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Archive Success Modal */}
+      <Modal open={archiveSuccess} onClose={() => setArchiveSuccess(false)} title="File Archived" size="sm">
+        <div className="space-y-4">
+          <div className="flex flex-col items-center gap-3 py-4">
+            <div className="w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+              <Archive size={28} className="text-amber-500" />
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-300 text-center">
+              The file has been archived successfully.<br />
+              You can restore it anytime from the <span className="font-semibold text-slate-800 dark:text-slate-100">Archive</span> module.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <button onClick={() => setArchiveSuccess(false)} className="btn-primary px-8">Done</button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Preview Modal */}
       {previewFile && (

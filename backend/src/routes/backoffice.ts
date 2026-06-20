@@ -1,10 +1,13 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import sql from '../db';
 import { JWT_SECRET } from '../middleware/auth';
 
 const router = Router();
+
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
 
 const isProduction = process.env.NODE_ENV === 'production';
 const BO_COOKIE_OPTS = {
@@ -35,21 +38,26 @@ router.post('/auth/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
   if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }
 
-  const [admin] = await sql`SELECT * FROM platform_admins WHERE email = ${email} AND active = TRUE`;
-  if (!admin || !(await bcrypt.compare(password, admin.password_hash))) {
-    res.status(401).json({ error: 'Invalid credentials' }); return;
+  try {
+    const [admin] = await sql`SELECT * FROM platform_admins WHERE email = ${email} AND active = TRUE`;
+    if (!admin || !(await bcrypt.compare(password, admin.password_hash))) {
+      res.status(401).json({ error: 'Invalid credentials' }); return;
+    }
+
+    await sql`UPDATE platform_admins SET last_login = NOW() WHERE id = ${admin.id}`;
+
+    const token = jwt.sign(
+      { type: 'platform_admin', adminId: admin.id, email: admin.email, name: admin.name },
+      JWT_SECRET(),
+      { expiresIn: '8h', algorithm: 'HS256' }
+    );
+
+    res.cookie('boAccessToken', token, { ...BO_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });
+    res.json({ admin: { id: admin.id, name: admin.name, email: admin.email } });
+  } catch (err: any) {
+    console.error('[backoffice login]', err?.message ?? err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  await sql`UPDATE platform_admins SET last_login = NOW() WHERE id = ${admin.id}`;
-
-  const token = jwt.sign(
-    { type: 'platform_admin', adminId: admin.id, email: admin.email, name: admin.name },
-    JWT_SECRET(),
-    { expiresIn: '8h', algorithm: 'HS256' }
-  );
-
-  res.cookie('boAccessToken', token, { ...BO_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });
-  res.json({ admin: { id: admin.id, name: admin.name, email: admin.email } });
 });
 
 router.post('/auth/logout', authenticatePlatformAdmin, (_req: Request, res: Response) => {
@@ -57,16 +65,16 @@ router.post('/auth/logout', authenticatePlatformAdmin, (_req: Request, res: Resp
   res.json({ message: 'Logged out' });
 });
 
-router.get('/auth/me', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+router.get('/auth/me', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const pa = (req as any).platformAdmin;
   const [admin] = await sql`SELECT id, name, email, active, last_login, created_at FROM platform_admins WHERE id = ${pa.adminId}`;
   if (!admin) { res.status(404).json({ error: 'Not found' }); return; }
   res.json(admin);
-});
+}));
 
 // ── Platform Stats ──────────────────────────────────────────────────────────
 
-router.get('/stats', authenticatePlatformAdmin, async (_req: Request, res: Response) => {
+router.get('/stats', authenticatePlatformAdmin, asyncHandler(async (_req: Request, res: Response) => {
   const [[{ c: totalOrgs }], [{ c: activeOrgs }], [{ c: totalUsers }], [{ c: totalFiles }],
          [{ s: totalStorage }], [{ c: orgsThisMonth }]] = await Promise.all([
     sql`SELECT COUNT(*)::int as c FROM organizations`,
@@ -99,11 +107,11 @@ router.get('/stats', authenticatePlatformAdmin, async (_req: Request, res: Respo
     totalStorage: Number(totalStorage), orgsThisMonth,
     recentOrgs, orgGrowth,
   });
-});
+}));
 
 // ── Organizations ───────────────────────────────────────────────────────────
 
-router.get('/organizations', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+router.get('/organizations', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const { search, plan, status } = req.query;
   const orgs = await sql`
     SELECT o.id, o.name, o.slug, o.plan, o.active, o.created_at,
@@ -121,9 +129,9 @@ router.get('/organizations', authenticatePlatformAdmin, async (req: Request, res
     ORDER BY o.created_at DESC
   `;
   res.json(orgs);
-});
+}));
 
-router.get('/organizations/:id', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+router.get('/organizations/:id', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const [org] = await sql`SELECT * FROM organizations WHERE id = ${req.params.id}`;
   if (!org) { res.status(404).json({ error: 'Not found' }); return; }
 
@@ -153,7 +161,7 @@ router.get('/organizations/:id', authenticatePlatformAdmin, async (req: Request,
   `;
 
   res.json({ ...org, users, stats: stats[0], recentActivity });
-});
+}));
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,48}[a-z0-9]$|^[a-z0-9]{2}$/;
 
@@ -209,43 +217,41 @@ router.post('/organizations/:id/users', authenticatePlatformAdmin, async (req: R
   }
 });
 
-router.delete('/organizations/:id', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+router.delete('/organizations/:id', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const [org] = await sql`SELECT id, name FROM organizations WHERE id = ${req.params.id}`;
   if (!org) { res.status(404).json({ error: 'Not found' }); return; }
-  // Soft-delete: suspend + revoke all sessions
   await sql`UPDATE organizations SET active = FALSE, archived_at = NOW() WHERE id = ${req.params.id}`;
   await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE organization_id = ${req.params.id}`;
   res.json({ message: `Organization "${org.name}" archived and all sessions revoked` });
-});
+}));
 
-router.put('/organizations/:id/suspend', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+router.put('/organizations/:id/suspend', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const [org] = await sql`SELECT id, name FROM organizations WHERE id = ${req.params.id}`;
   if (!org) { res.status(404).json({ error: 'Not found' }); return; }
   await sql`UPDATE organizations SET active = FALSE WHERE id = ${req.params.id}`;
-  // Immediately invalidate all active sessions for this org
   await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE organization_id = ${req.params.id} AND revoked = FALSE`;
   res.json({ message: `Organization "${org.name}" suspended` });
-});
+}));
 
-router.put('/organizations/:id/activate', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+router.put('/organizations/:id/activate', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const [org] = await sql`SELECT id, name FROM organizations WHERE id = ${req.params.id}`;
   if (!org) { res.status(404).json({ error: 'Not found' }); return; }
   await sql`UPDATE organizations SET active = TRUE WHERE id = ${req.params.id}`;
   res.json({ message: `Organization "${org.name}" activated` });
-});
+}));
 
-router.put('/organizations/:id/plan', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+router.put('/organizations/:id/plan', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const { plan } = req.body;
   const VALID_PLANS = ['free', 'pro', 'enterprise'];
   if (!VALID_PLANS.includes(plan)) { res.status(400).json({ error: 'Invalid plan' }); return; }
   const [org] = await sql`UPDATE organizations SET plan = ${plan} WHERE id = ${req.params.id} RETURNING id, name`;
   if (!org) { res.status(404).json({ error: 'Not found' }); return; }
   res.json({ message: `Plan updated to "${plan}"` });
-});
+}));
 
 // ── Users (cross-org) ───────────────────────────────────────────────────────
 
-router.get('/users', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+router.get('/users', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const { search, org_id } = req.query;
   const users = await sql`
     SELECT u.id, u.name, u.email, u.role, u.active, u.created_at, u.last_login,
@@ -258,6 +264,12 @@ router.get('/users', authenticatePlatformAdmin, async (req: Request, res: Respon
     LIMIT 200
   `;
   res.json(users);
+}));
+
+// Catch unhandled async errors in all routes above
+router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[backoffice]', err?.message ?? err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 export default router;

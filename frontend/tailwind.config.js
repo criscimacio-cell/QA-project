@@ -17,7 +17,6 @@ export default {
           800: '#78350F',
           900: '#09090B',
         },
-        amber: '#F59E0B',
         obsidian: '#09090B',
       },
       animation: {

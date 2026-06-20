@@ -56,6 +56,8 @@ export default function Login() {
   const [error, setError]       = useState('');
   const [errors, setErrors]     = useState<Record<string, string>>({});
   const [filledRole, setFilledRole] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [phase, setPhase]             = useState<'idle'|'slideOut'|'morph'>('idle');
   const [morphGrown, setMorphGrown]   = useState(false);
@@ -92,7 +94,7 @@ export default function Login() {
 
   /* Animated email placeholder */
   useEffect(() => {
-    const text = 'admin@qa.com';
+    const text = 'your@email.com';
     let i = 0; let fwd = true;
     const el = emailInputRef.current;
     if (!el) return;
@@ -111,7 +113,6 @@ export default function Login() {
     if (!email.trim()) e.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Enter a valid email address';
     if (!password) e.password = 'Password is required';
-    else if (password.length < 8) e.password = 'Password must be at least 8 characters';
     setErrors(e);
     if (Object.keys(e).length > 0) triggerScratchHead();
     return Object.keys(e).length === 0;
@@ -119,12 +120,14 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFilledRole('');
     if (!validate()) return;
     setLoading(true); setError('');
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       setLoginSuccess(true);
     } catch (err: any) {
+      setFilledRole('');
       setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
       triggerScratchHead();
     } finally {
@@ -134,15 +137,22 @@ export default function Login() {
 
   const quickLogin = (u: typeof DEMO_USERS[0]) => {
     setEmail(u.email); setPassword('password123'); setFilledRole(u.role);
+    setTimeout(() => formRef.current?.requestSubmit(), 150);
   };
 
 
   const AMBER = '#F59E0B';
 
-  if (authLoading) return null;
+  if (authLoading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid rgba(245,158,11,0.2)', borderTopColor: '#F59E0B', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   return (
     <div
+      className="login-root"
       style={{
         minHeight: '100vh', position: 'relative', overflow: 'hidden',
         background: '#f0f0f0',
@@ -156,7 +166,7 @@ export default function Login() {
       {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />}
 
       {/* ── Spline scene — full-bleed background, shifted left ── */}
-      <div style={{ position:'fixed', top:0, bottom:0, left:'-20%', right:0, zIndex:0 }}>
+      <div tabIndex={-1} style={{ position:'fixed', top:0, bottom:0, left:'-20%', right:0, zIndex:0 }}>
         <SplineScene
           scene="https://prod.spline.design/QQ1zXNE5ma-qe0g0/scene.splinecode"
           className="w-full h-full"
@@ -168,22 +178,22 @@ export default function Login() {
       <div style={{ position:'relative', zIndex:1, minHeight:'100vh', pointerEvents:'none' }}>
 
       {/* ── Left: brand & demo pills ── */}
-      <div style={{ position:'absolute', left:'5%', top:'8%', maxWidth:340 }}>
+      <div className="login-left-panel" style={{ position:'absolute', left:'5%', top:'8%', maxWidth:340 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
           <div style={{ width:36, height:36, borderRadius:10, background:AMBER, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 4px 14px ${AMBER}66` }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
             </svg>
           </div>
-          <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:18, color:'#1a1a1a', letterSpacing:'0.04em' }}>Qlarity</span>
+          <span className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:18, color:'#1a1a1a', letterSpacing:'0.04em' }}>Qlarity</span>
         </div>
-        <h1 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:32, fontWeight:800, color:'#1a1a1a', lineHeight:1.2, marginBottom:8 }}>
+        <h1 className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:32, fontWeight:800, color:'#1a1a1a', lineHeight:1.2, marginBottom:8 }}>
           QA Asset Platform
         </h1>
-        <p style={{ fontSize:15, color:'rgba(0,0,0,0.5)' }}>Clarity in every QA decision.</p>
+        <p className="brand-tagline" style={{ fontSize:15, color:'rgba(0,0,0,0.5)' }}>Clarity in every QA decision.</p>
       </div>
 
-      <div style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340, pointerEvents:'auto' }}>
+      <div className="login-demo-panel" style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340, pointerEvents:'auto' }}>
         <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(0,0,0,0.4)', marginBottom:8 }}>Demo accounts</p>
         <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
           {DEMO_USERS.map(u => (
@@ -194,13 +204,15 @@ export default function Login() {
             </button>
           ))}
         </div>
-        <p style={{ fontSize:11, color:'rgba(0,0,0,0.4)', marginTop:6 }}>
-          Password: <span style={{ fontFamily:'monospace', color:'#b45309', fontWeight:700 }}>password123</span>
-        </p>
+        <div className="demo-section" style={{ marginTop:6 }}>
+          <p style={{ fontSize:11, color:'rgba(0,0,0,0.4)' }}>
+            Password: <span style={{ fontFamily:'monospace', color:'#b45309', fontWeight:700 }}>password123</span>
+          </p>
+        </div>
       </div>
 
       {/* ── Login card — right side, floating over scene ── */}
-      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'44%', minWidth:360, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px', pointerEvents:'none' }}>
+      <div className="login-card-wrapper" style={{ position:'absolute', right:0, top:0, bottom:0, width:'44%', minWidth:360, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 48px', pointerEvents:'none' }}>
         <div data-no-ripple style={{ position:'relative', width:'100%', maxWidth:440, pointerEvents:'auto' }}>
 
           {/* Rotating amber rings */}
@@ -211,16 +223,16 @@ export default function Login() {
           <div style={{ position:'absolute', inset:-24, borderRadius:28, background:'radial-gradient(ellipse at center, rgba(245,158,11,0.13) 0%, rgba(180,83,9,0.07) 50%, transparent 75%)', filter:'blur(16px)', pointerEvents:'none', zIndex:0 }} />
 
           {/* Card — glass morphism */}
-          <div style={{ position:'relative', zIndex:1, background:'rgba(255,255,255,0.08)', backdropFilter:'blur(32px) saturate(180%)', WebkitBackdropFilter:'blur(32px) saturate(180%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 40px 100px rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.08)' }}>
+          <div className="login-card" style={{ position:'relative', zIndex:1, background:'rgba(255,255,255,0.82)', backdropFilter:'blur(32px) saturate(180%)', WebkitBackdropFilter:'blur(32px) saturate(180%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 40px 100px rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.08)' }}>
 
             {/* Header */}
             <div style={{ textAlign:'center', marginBottom:32 }}>
-              <h2 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:22, color:'#1a1a1a', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>User Login</h2>
-              <p style={{ fontSize:13, color:'rgba(0,0,0,0.45)', letterSpacing:'0.01em' }}>Welcome to Qlarity</p>
+              <h2 className="login-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:22, color:'#1a1a1a', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>User Login</h2>
+              <p className="login-subtitle" style={{ fontSize:13, color:'rgba(0,0,0,0.45)', letterSpacing:'0.01em' }}>Welcome to Qlarity</p>
               <div style={{ width:36, height:2, borderRadius:2, background:'linear-gradient(90deg,#F59E0B,#FCD34D)', margin:'10px auto 0' }} />
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <form ref={formRef} onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
               {/* Email */}
               <div style={{ position:'relative' }}>
@@ -228,11 +240,14 @@ export default function Login() {
                 <input ref={emailInputRef} type="email" value={email}
                   onChange={e => { setEmail(e.target.value); if (errors.email) setErrors(p => ({...p, email:''})); }}
                   placeholder="Email address"
+                  aria-label="Email address"
+                  autoComplete="email"
+                  className="login-input"
                   style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:`1px solid ${errors.email?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'}`, background:errors.email?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
                   onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
                   onBlur={e => { e.target.style.borderColor=errors.email?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'; e.target.style.background=errors.email?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
                 />
-                {errors.email && <p style={{ fontSize:12, color:'#dc2626', marginTop:4, paddingLeft:4 }}>{errors.email}</p>}
+                {errors.email && <p role="alert" style={{ fontSize:12, color:'#dc2626', marginTop:4, paddingLeft:4 }}>{errors.email}</p>}
               </div>
 
               {/* Password */}
@@ -241,6 +256,9 @@ export default function Login() {
                 <input type={showPw?'text':'password'} value={password}
                   onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(p => ({...p, password:''})); }}
                   placeholder="Password"
+                  aria-label="Password"
+                  autoComplete="current-password"
+                  className="login-input"
                   style={{ width:'100%', paddingLeft:40, paddingRight:44, height:50, borderRadius:10, border:`1px solid ${errors.password?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'}`, background:errors.password?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
                   onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
                   onBlur={e => { e.target.style.borderColor=errors.password?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'; e.target.style.background=errors.password?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
@@ -252,13 +270,13 @@ export default function Login() {
                 >
                   {showPw ? <EyeOff size={15}/> : <Eye size={15}/>}
                 </button>
-                {errors.password && <p style={{ fontSize:12, color:'#dc2626', marginTop:4, paddingLeft:4 }}>{errors.password}</p>}
+                {errors.password && <p role="alert" style={{ fontSize:12, color:'#dc2626', marginTop:4, paddingLeft:4 }}>{errors.password}</p>}
               </div>
 
               {/* Remember + forgot */}
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'2px 2px 0' }}>
-                <label style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', fontSize:13, color:'rgba(0,0,0,0.5)' }}>
-                  <input type="checkbox" style={{ accentColor:AMBER, width:14, height:14 }} />
+                <label className="login-label" style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', fontSize:13, color:'rgba(0,0,0,0.5)' }}>
+                  <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={{ accentColor:AMBER, width:14, height:14 }} />
                   Remember me
                 </label>
                 <Link to="/forgot-password" style={{ fontSize:13, color:'rgba(0,0,0,0.5)', textDecoration:'none', transition:'color 0.15s' }}
@@ -271,7 +289,7 @@ export default function Login() {
 
               {/* Error banner */}
               {error && (
-                <div style={{ display:'flex', alignItems:'center', gap:8, borderRadius:10, padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#dc2626', fontSize:13, backdropFilter:'blur(8px)' }}>
+                <div role="alert" style={{ display:'flex', alignItems:'center', gap:8, borderRadius:10, padding:'10px 14px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#dc2626', fontSize:13, backdropFilter:'blur(8px)' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink:0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   {error}
                 </div>
@@ -289,9 +307,9 @@ export default function Login() {
                 }
               </button>
 
-              <p style={{ textAlign:'center', fontSize:13, color:'rgba(0,0,0,0.4)', marginTop:2 }}>
+              <p className="login-footer-text" style={{ textAlign:'center', fontSize:13, color:'rgba(0,0,0,0.4)', marginTop:2 }}>
                 Don't have an account?{' '}
-                <a href="mailto:admin@qa.com" style={{ color:'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
+                <a className="login-footer-link" href="mailto:admin@qa.com" style={{ color:'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.6)'}
                 >
@@ -310,6 +328,25 @@ export default function Login() {
         @keyframes ringExpand {
           from { transform: translate(-50%,-50%) scale(1); opacity: 0.7; }
           to   { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
+        }
+        @media (prefers-color-scheme: dark) {
+          .login-root { background: #0f172a !important; }
+          .login-card { background: rgba(15,23,42,0.85) !important; border-color: rgba(255,255,255,0.08) !important; }
+          .login-title { color: #f1f5f9 !important; }
+          .login-subtitle { color: rgba(255,255,255,0.45) !important; }
+          .login-input { color: #f1f5f9 !important; background: rgba(255,255,255,0.06) !important; border-color: rgba(255,255,255,0.12) !important; }
+          .login-input:focus { background: rgba(255,255,255,0.10) !important; }
+          .login-label { color: rgba(255,255,255,0.5) !important; }
+          .login-footer-text { color: rgba(255,255,255,0.35) !important; }
+          .login-footer-link { color: rgba(255,255,255,0.6) !important; }
+          .demo-section p { color: rgba(255,255,255,0.4) !important; }
+          .brand-title { color: #f1f5f9 !important; }
+          .brand-tagline { color: rgba(255,255,255,0.5) !important; }
+        }
+        @media (max-width: 768px) {
+          .login-left-panel { display: none !important; }
+          .login-demo-panel { display: none !important; }
+          .login-card-wrapper { position: relative !important; width: 100% !important; min-width: unset !important; padding: 24px 20px !important; top: unset !important; right: unset !important; bottom: unset !important; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         }
       `}</style>
     </div>

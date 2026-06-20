@@ -24,18 +24,14 @@ const REFRESH_COOKIE_OPTS = {
   path: '/api/auth',
 };
 
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, e] of loginAttempts) if (e.resetAt < now) loginAttempts.delete(ip);
-}, 5 * 60 * 1000);
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const e = loginAttempts.get(ip);
-  if (!e || e.resetAt < now) { loginAttempts.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 }); return true; }
-  if (e.count >= 10) return false;
-  e.count++; return true;
+async function checkRateLimit(ip: string): Promise<boolean> {
+  const [{ count }] = await sql`
+    SELECT COUNT(*)::int as count FROM audit_logs
+    WHERE ip_address = ${ip}
+      AND action = 'LOGIN_FAIL'
+      AND created_at > NOW() - INTERVAL '15 minutes'
+  ` as any[];
+  return count < 5;
 }
 
 function getClientIp(req: Request): string {
@@ -48,11 +44,23 @@ function getClientIp(req: Request): string {
 
 router.post('/login', async (req: Request, res: Response) => {
   const ip = getClientIp(req);
-  if (!checkRateLimit(ip)) { res.status(429).json({ error: 'Too many login attempts, try again in 15 minutes' }); return; }
-  const { email, password } = req.body;
+  if (!await checkRateLimit(ip)) { res.status(429).json({ error: 'Too many login attempts, try again in 15 minutes' }); return; }
+  const { email, password, rememberMe } = req.body;
   if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }
+
+  const [{ emailCount }] = await sql`
+    SELECT COUNT(*)::int as "emailCount" FROM audit_logs
+    WHERE details LIKE ${'%' + email + '%'}
+      AND action = 'LOGIN_FAIL'
+      AND created_at > NOW() - INTERVAL '15 minutes'
+  ` as any[];
+  if (emailCount >= 5) { res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again in 15 minutes.' }); return; }
+
   const [user] = await sql`SELECT * FROM users WHERE email = ${email} AND active = TRUE`;
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) { res.status(401).json({ error: 'Invalid credentials' }); return; }
+  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (0, 'LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip})`;
+    res.status(401).json({ error: 'Invalid credentials' }); return;
+  }
   await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${user.id}, 'LOGIN', 'user', ${user.id}, 'Successful login', ${req.ip || ''})`;
 
@@ -60,10 +68,11 @@ router.post('/login', async (req: Request, res: Response) => {
   const accessToken = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET(), { expiresIn: expiresIn as any, algorithm: 'HS256' });
   const refreshToken = crypto.randomBytes(64).toString('hex');
   const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessTTL = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
 
   await sql`INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (${user.id}, ${refreshToken}, ${refreshExpiresAt.toISOString()})`;
 
-  res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });
+  res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + accessTTL) });
   res.cookie('refreshToken', refreshToken, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
 
   const { password_hash, ...safeUser } = user;

@@ -15,6 +15,8 @@ function generatePassword() {
 
 const ROLES = ['admin', 'lead', 'engineer', 'viewer'];
 
+const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise: Infinity };
+
 export default function UserManagement() {
   const { isAdmin, user } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
@@ -143,6 +145,12 @@ export default function UserManagement() {
 
   const roleLabel = (r: string) => r === 'admin' ? 'Admin' : r === 'lead' ? 'Lead' : r === 'engineer' ? 'Engineer' : 'Viewer';
 
+  const orgPlan = (user as any)?.org_plan ?? 'free';
+  const userLimit = PLAN_USER_LIMITS[orgPlan] ?? 5;
+  const activeUsers = users.filter(u => u.active).length;
+  const atLimit = isFinite(userLimit) && activeUsers >= userLimit;
+  const nearLimit = isFinite(userLimit) && activeUsers >= userLimit * 0.8;
+
   return (
     <div className="space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between">
@@ -156,6 +164,27 @@ export default function UserManagement() {
           </button>
         )}
       </div>
+
+      {/* Plan user limit banner */}
+      {isAdmin && isFinite(userLimit) && (
+        <div className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm ${
+          atLimit   ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' :
+          nearLimit ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800' :
+                      'bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700'
+        }`}>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${atLimit ? 'bg-red-500' : nearLimit ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+            <span className={atLimit ? 'text-red-700 dark:text-red-300' : nearLimit ? 'text-amber-700 dark:text-amber-300' : 'text-slate-600 dark:text-slate-400'}>
+              {activeUsers} of {userLimit} users used
+              {atLimit ? ' — limit reached' : nearLimit ? ' — approaching limit' : ''}
+            </span>
+            <span className="text-xs text-slate-400 capitalize">({orgPlan} plan)</span>
+          </div>
+          {(atLimit || nearLimit) && (
+            <a href="/org-settings" className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline">View plan →</a>
+          )}
+        </div>
+      )}
 
       {/* Role summary */}
       <div className="grid grid-cols-4 gap-4">

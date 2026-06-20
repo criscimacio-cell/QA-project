@@ -10,11 +10,13 @@ function formatBytes(b: number) {
   return b + ' B';
 }
 
-const PLAN_LIMITS: Record<string, { users: number | string; storage: string }> = {
-  free:       { users: 5,         storage: '1 GB' },
-  pro:        { users: 25,        storage: '50 GB' },
-  enterprise: { users: 'Unlimited', storage: 'Unlimited' },
+const PLAN_LIMITS: Record<string, { users: number; usersLabel: string; storageBytes: number; storageLabel: string }> = {
+  free:       { users: 5,         usersLabel: '5',         storageBytes: 1 * 1024 ** 3,  storageLabel: '1 GB' },
+  pro:        { users: 25,        usersLabel: '25',        storageBytes: 50 * 1024 ** 3, storageLabel: '50 GB' },
+  enterprise: { users: Infinity,  usersLabel: 'Unlimited', storageBytes: Infinity,        storageLabel: 'Unlimited' },
 };
+
+const VALID_PLANS = Object.keys(PLAN_LIMITS);
 
 export default function OrgSettings() {
   const { user } = useAuth();
@@ -32,8 +34,9 @@ export default function OrgSettings() {
     }).catch(() => {});
   }, []);
 
-  const plan = (user as any)?.org_plan ?? 'free';
-  const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
+  const rawPlan = (user as any)?.org_plan;
+  const plan = rawPlan && VALID_PLANS.includes(rawPlan) ? rawPlan : 'free';
+  const limits = PLAN_LIMITS[plan];
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
@@ -85,11 +88,11 @@ export default function OrgSettings() {
                 <Users size={13} /> Users
               </div>
               <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.userCount}</p>
-              <p className="text-xs text-slate-400">of {limits.users} allowed</p>
-              {typeof limits.users === 'number' && (
+              <p className="text-xs text-slate-400">of {limits.usersLabel} allowed</p>
+              {isFinite(limits.users) && (
                 <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-amber-400"
+                    className={`h-full rounded-full ${stats.userCount >= limits.users ? 'bg-red-400' : stats.userCount >= limits.users * 0.8 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                     style={{ width: `${Math.min(100, (stats.userCount / limits.users) * 100)}%` }}
                   />
                 </div>
@@ -102,12 +105,12 @@ export default function OrgSettings() {
                 <HardDrive size={13} /> Storage
               </div>
               <p className="text-2xl font-bold text-slate-800 dark:text-white">{formatBytes(stats.storageUsed)}</p>
-              <p className="text-xs text-slate-400">of {limits.storage} allowed</p>
-              {plan !== 'enterprise' && (
+              <p className="text-xs text-slate-400">of {limits.storageLabel} allowed</p>
+              {isFinite(limits.storageBytes) && (
                 <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-amber-400"
-                    style={{ width: `${Math.min(100, (stats.storageUsed / (plan === 'pro' ? 50 * 1024 ** 3 : 1 * 1024 ** 3)) * 100)}%` }}
+                    className={`h-full rounded-full ${stats.storageUsed >= limits.storageBytes ? 'bg-red-400' : stats.storageUsed >= limits.storageBytes * 0.8 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                    style={{ width: `${Math.min(100, (stats.storageUsed / limits.storageBytes) * 100)}%` }}
                   />
                 </div>
               )}

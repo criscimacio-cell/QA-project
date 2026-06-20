@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../api/client';
 
@@ -68,6 +68,8 @@ function PlanDropdown({ org, onPlanChange }: { org: Org; onPlanChange: (id: stri
   );
 }
 
+const emptyForm = { name: '', slug: '', plan: 'free', adminName: '', adminEmail: '', adminPassword: '' };
+
 export default function BackofficeOrganizations() {
   const navigate = useNavigate();
   const [orgs, setOrgs] = useState<Org[]>([]);
@@ -75,6 +77,9 @@ export default function BackofficeOrganizations() {
   const [search, setSearch] = useState('');
   const [plan, setPlan] = useState('');
   const [status, setStatus] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState(emptyForm);
+  const [creating, setCreating] = useState(false);
 
   const fetchOrgs = useCallback(() => {
     setLoading(true);
@@ -115,12 +120,79 @@ export default function BackofficeOrganizations() {
     }
   };
 
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true);
+    try {
+      await api.post('/api/backoffice/organizations', createForm);
+      toast.success(`Organization "${createForm.name}" created`);
+      setShowCreate(false);
+      setCreateForm(emptyForm);
+      fetchOrgs();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to create organization');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-white">Organizations</h1>
-        <p className="text-slate-500 text-sm mt-0.5">{orgs.length} organization{orgs.length !== 1 ? 's' : ''} found</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white">Organizations</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{orgs.length} organization{orgs.length !== 1 ? 's' : ''} found</p>
+        </div>
+        <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+          <Plus className="w-4 h-4" /> New Organization
+        </button>
       </div>
+
+      {/* Create org modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-slate-800">
+              <h2 className="font-semibold text-white">Create Organization</h2>
+              <button onClick={() => { setShowCreate(false); setCreateForm(emptyForm); }} className="text-slate-500 hover:text-slate-300"><X className="w-4 h-4" /></button>
+            </div>
+            <form onSubmit={handleCreate} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1">Organization Name *</label>
+                  <input required value={createForm.name} onChange={e => { const n = e.target.value; setCreateForm(f => ({ ...f, name: n, slug: f.slug || n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') })); }} placeholder="Acme Corp" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1">Slug *</label>
+                  <input required value={createForm.slug} onChange={e => setCreateForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))} placeholder="acme-corp" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">Plan</label>
+                <select value={createForm.plan} onChange={e => setCreateForm(f => ({ ...f, plan: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="free">Free</option>
+                  <option value="pro">Pro</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
+              </div>
+              <div className="border-t border-slate-800 pt-4">
+                <p className="text-xs text-slate-500 mb-3">First Admin User (optional)</p>
+                <div className="space-y-3">
+                  <input value={createForm.adminName} onChange={e => setCreateForm(f => ({ ...f, adminName: e.target.value }))} placeholder="Admin name" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  <input type="email" value={createForm.adminEmail} onChange={e => setCreateForm(f => ({ ...f, adminEmail: e.target.value }))} placeholder="admin@example.com" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  <input type="password" value={createForm.adminPassword} onChange={e => setCreateForm(f => ({ ...f, adminPassword: e.target.value }))} placeholder="Password (min 8 chars)" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => { setShowCreate(false); setCreateForm(emptyForm); }} className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">Cancel</button>
+                <button type="submit" disabled={creating} className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium transition-colors">
+                  {creating ? 'Creating…' : 'Create Organization'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">

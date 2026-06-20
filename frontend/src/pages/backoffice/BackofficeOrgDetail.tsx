@@ -10,6 +10,7 @@ interface OrgDetail {
   slug: string;
   plan: string;
   active: boolean;
+  archived_at: string | null;
   created_at: string;
   stats: {
     total_files: number;
@@ -138,9 +139,15 @@ export default function BackofficeOrgDetail() {
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl font-bold text-white">{org.name}</h1>
             <PlanBadge plan={org.plan} />
-            <span className={`inline-flex px-2.5 py-1 rounded text-xs font-medium ${org.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-              {org.active ? 'Active' : 'Suspended'}
-            </span>
+            {org.archived_at ? (
+              <span className="inline-flex px-2.5 py-1 rounded text-xs font-medium bg-slate-600/20 text-slate-400 border border-slate-600/30">
+                Archived {new Date(org.archived_at).toLocaleDateString()}
+              </span>
+            ) : (
+              <span className={`inline-flex px-2.5 py-1 rounded text-xs font-medium ${org.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                {org.active ? 'Active' : 'Suspended'}
+              </span>
+            )}
           </div>
           <div className="text-slate-500 text-sm mt-0.5">
             {org.slug} &middot; Created {new Date(org.created_at).toLocaleDateString()}

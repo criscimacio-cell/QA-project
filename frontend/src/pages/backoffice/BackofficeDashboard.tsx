@@ -64,22 +64,46 @@ function StatCard({ label, value, icon: Icon, sub }: { label: string; value: str
 }
 
 function GrowthChart({ data }: { data: GrowthPoint[] }) {
-  if (!data || data.length === 0) return <div className="text-slate-500 text-sm">No data</div>;
+  if (!data || data.length === 0) return <div className="text-slate-500 text-sm py-8 text-center">No growth data yet</div>;
   const max = Math.max(...data.map(d => d.count), 1);
+  const total = data.reduce((s, d) => s + d.count, 0);
   return (
-    <div className="flex items-end gap-2 h-24">
-      {data.map((point, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-          <div className="w-full flex flex-col justify-end" style={{ height: '80px' }}>
-            <div
-              className="w-full bg-indigo-600 rounded-t opacity-80 hover:opacity-100 transition-opacity"
-              style={{ height: `${Math.max((point.count / max) * 80, 2)}px` }}
-              title={`${point.month}: ${point.count}`}
-            />
-          </div>
-          <span className="text-xs text-slate-500 truncate w-full text-center">{point.month}</span>
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs text-slate-500">New orgs per month</span>
+        <span className="text-xs font-medium text-indigo-400">{total} total over 6 mo</span>
+      </div>
+      {/* Y-axis labels + bars */}
+      <div className="flex gap-3">
+        <div className="flex flex-col justify-between text-right pb-5" style={{ width: 20 }}>
+          <span className="text-xs text-slate-600">{max}</span>
+          <span className="text-xs text-slate-600">{Math.round(max / 2)}</span>
+          <span className="text-xs text-slate-600">0</span>
         </div>
-      ))}
+        <div className="flex-1">
+          <div className="flex items-end gap-1.5" style={{ height: 80 }}>
+            {data.map((point, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                <div
+                  className="w-full bg-indigo-600 rounded-t group-hover:bg-indigo-500 transition-colors"
+                  style={{ height: `${Math.max((point.count / max) * 80, 2)}px` }}
+                >
+                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-700 text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap z-10">
+                    {point.count} org{point.count !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-1.5 mt-1.5">
+            {data.map((point, i) => (
+              <div key={i} className="flex-1 text-center">
+                <span className="text-xs text-slate-500 block truncate">{point.month}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

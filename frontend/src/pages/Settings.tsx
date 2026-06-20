@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, Camera, X, Check, Sun, Moon, Monitor, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, Camera, X, Check, Sun, Moon, Monitor, Loader2, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -214,7 +214,8 @@ export default function Settings() {
     { icon: Database, label: 'Storage' },
     { icon: Tag, label: 'Categories' },
     { icon: Key, label: 'API Access' },
-  ];
+    ...(isAdmin ? [{ icon: Building2, label: 'Organization', href: '/org-settings' }] : []),
+  ] as { icon: any; label: string; href?: string }[];
 
   return (
     <div className="space-y-5 max-w-4xl animate-fade-in-up">
@@ -227,7 +228,11 @@ export default function Settings() {
         {/* Nav */}
         <div className="w-48 flex-shrink-0">
           <nav className="space-y-1">
-            {sections.map(s => (
+            {sections.map(s => s.href ? (
+              <a key={s.label} href={s.href} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <s.icon size={16} />{s.label}
+              </a>
+            ) : (
               <button key={s.label} onClick={() => setActiveSection(s.label)} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeSection === s.label ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                 <s.icon size={16} />{s.label}
               </button>

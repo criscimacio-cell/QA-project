@@ -1,11 +1,15 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBackofficeAuth } from '../../context/BackofficeAuthContext';
 import { Lock } from 'lucide-react';
 
 export default function BackofficeLogin() {
-  const { login } = useBackofficeAuth();
+  const { login, isAuthenticated, loading } = useBackofficeAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) navigate('/backoffice', { replace: true });
+  }, [isAuthenticated, loading, navigate]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

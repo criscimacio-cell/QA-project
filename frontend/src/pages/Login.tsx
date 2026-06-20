@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { SplineScene, type SplineApp } from '../components/ui/splite';
@@ -42,8 +42,9 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
 export default function Login() {
   const { login, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [orgSlug, setOrgSlug]   = useState('');
+  const [orgSlug, setOrgSlug]   = useState(searchParams.get('slug') ?? '');
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]     = useState(false);
@@ -209,18 +210,23 @@ export default function Login() {
             <form ref={formRef} onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
               {/* Organization slug (optional) */}
-              <div style={{ position:'relative' }}>
-                <Building2 size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1 }} />
-                <input type="text" value={orgSlug}
-                  onChange={e => setOrgSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  placeholder="Organization ID (optional)"
-                  aria-label="Organization ID"
-                  autoComplete="organization"
-                  className="login-input"
-                  style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:'1px solid rgba(0,0,0,0.12)', background:'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
-                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
-                  onBlur={e => { e.target.style.borderColor='rgba(0,0,0,0.12)'; e.target.style.background='rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
-                />
+              <div>
+                <div style={{ position:'relative' }}>
+                  <Building2 size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1 }} />
+                  <input type="text" value={orgSlug}
+                    onChange={e => setOrgSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    placeholder="your-org-id (e.g. acme-corp)"
+                    aria-label="Organization ID"
+                    autoComplete="organization"
+                    className="login-input"
+                    style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:'1px solid rgba(0,0,0,0.12)', background:'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
+                    onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
+                    onBlur={e => { e.target.style.borderColor='rgba(0,0,0,0.12)'; e.target.style.background='rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
+                  />
+                </div>
+                <p style={{ fontSize:11, color:'rgba(0,0,0,0.38)', marginTop:4, paddingLeft:2 }}>
+                  Your workspace ID — provided when your organization was created. Optional if you're the only org.
+                </p>
               </div>
 
               {/* Email */}

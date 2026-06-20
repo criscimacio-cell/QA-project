@@ -49,8 +49,9 @@ router.put('/:id', authenticate, requireRole('admin', 'lead'), async (req: Reque
   const orgId = req.user!.organizationId;
   const [existing] = await sql`SELECT id FROM repositories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
-  const { name, description } = req.body;
-  await sql`UPDATE repositories SET name=${name}, description=${description} WHERE id=${req.params.id} AND organization_id=${orgId}`;
+  const { name, description, required_approvals } = req.body;
+  const reqApprovals = Number(required_approvals) >= 1 ? Number(required_approvals) : 1;
+  await sql`UPDATE repositories SET name=${name}, description=${description}, required_approvals=${reqApprovals} WHERE id=${req.params.id} AND organization_id=${orgId}`;
   res.json({ message: 'Updated' });
 });
 

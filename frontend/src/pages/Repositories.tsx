@@ -14,6 +14,7 @@ import Modal from '../components/UI/Modal';
 interface Repo {
   id: number; name: string; description: string;
   parent_id: number | null; type: string; file_count: number;
+  required_approvals?: number;
   children?: Repo[];
 }
 interface FileRecord {
@@ -179,7 +180,7 @@ export default function Repositories() {
   const [createModal, setCreateModal] = useState<{ open: boolean; parentId: number | null; parentName: string }>({ open: false, parentId: null, parentName: '' });
   const [editModal, setEditModal] = useState<{ open: boolean; repo: Repo | null }>({ open: false, repo: null });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; repo: Repo | null }>({ open: false, repo: null });
-  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', required_approvals: 1 });
   const [repoErrors, setRepoErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -224,7 +225,7 @@ export default function Repositories() {
 
   /* ── CRUD handlers ── */
   const openCreate = (parentId: number | null, parentName = '') => {
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '', description: '', required_approvals: 1 });
     setRepoErrors({});
     setCreateModal({ open: true, parentId, parentName });
   };
@@ -261,7 +262,7 @@ export default function Repositories() {
     if (nameTrimmed.length > 100) { setRepoErrors({ name: 'Name must be 100 characters or fewer' }); return; }
     setSaving(true);
     try {
-      await api.put(`/repositories/${editModal.repo.id}`, { name: formData.name.trim(), description: formData.description });
+      await api.put(`/repositories/${editModal.repo.id}`, { name: formData.name.trim(), description: formData.description, required_approvals: formData.required_approvals });
       toast.success('Renamed successfully');
       setEditModal({ open: false, repo: null });
       await loadRepos();
@@ -354,7 +355,7 @@ export default function Repositories() {
               key={node.id} node={node} selected={selected} onSelect={setSelected}
               level={0} forceOpen={allOpen || !!treeSearch} isLead={isLead} isAdmin={isAdmin}
               onAddSub={repo => openCreate(repo.id, repo.name)}
-              onEdit={repo => { setFormData({ name: repo.name, description: repo.description }); setRepoErrors({}); setEditModal({ open: true, repo }); }}
+              onEdit={repo => { setFormData({ name: repo.name, description: repo.description, required_approvals: repo.required_approvals ?? 1 }); setRepoErrors({}); setEditModal({ open: true, repo }); }}
               onDelete={repo => setDeleteModal({ open: true, repo })}
               treeSearch={treeSearch}
             />
@@ -464,7 +465,7 @@ export default function Repositories() {
                   {isLead && (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => { setFormData({ name: selectedRepo.name, description: selectedRepo.description }); setRepoErrors({}); setEditModal({ open: true, repo: selectedRepo as Repo }); }}
+                        onClick={() => { setFormData({ name: selectedRepo.name, description: selectedRepo.description, required_approvals: (selectedRepo as Repo).required_approvals ?? 1 }); setRepoErrors({}); setEditModal({ open: true, repo: selectedRepo as Repo }); }}
                         className="btn-secondary text-xs py-1.5 px-3"
                       >
                         <Pencil size={12} /> Rename
@@ -622,6 +623,15 @@ export default function Repositories() {
             <label className="label">Description</label>
             <textarea value={formData.description} onChange={e => setFormData(f => ({ ...f, description: e.target.value.slice(0, 500) }))} maxLength={500} className="input" rows={2} />
             <p className="text-xs text-slate-400 mt-1 text-right">{formData.description.length}/500</p>
+          </div>
+          <div>
+            <label className="label">Required Approvals</label>
+            <select value={formData.required_approvals || 1} onChange={e => setFormData(f => ({ ...f, required_approvals: Number(e.target.value) }))} className="input">
+              <option value={1}>1 approver (default)</option>
+              <option value={2}>2 approvers</option>
+              <option value={3}>3 approvers</option>
+            </select>
+            <p className="text-xs text-slate-400 mt-1">Files need this many approvals before being published</p>
           </div>
           <div className="flex justify-end gap-2">
             <button onClick={() => setEditModal({ open: false, repo: null })} className="btn-secondary">Cancel</button>

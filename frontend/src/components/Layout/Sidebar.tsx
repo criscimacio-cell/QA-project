@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import clsx from 'clsx';
+import OrgSwitcher from '../UI/OrgSwitcher';
 
 interface SidebarProps { collapsed: boolean; onToggle: () => void; }
 
@@ -252,6 +253,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 style={{ color: '#FCD34D' }}
               >
                 {user?.role}
+              </div>
+              <div className="mt-1">
+                <OrgSwitcher />
               </div>
             </div>
           </div>

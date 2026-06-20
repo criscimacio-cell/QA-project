@@ -331,20 +331,39 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
     under_review: ['approved','draft'], approved: ['under_review','draft','published'],
     published: ['archived','draft'],
   };
-  const [cur] = await sql`SELECT status FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  const [cur] = await sql`
+    SELECT f.status, f.repository_id, COALESCE(r.required_approvals, 1) as required_approvals
+    FROM files f LEFT JOIN repositories r ON f.repository_id = r.id
+    WHERE f.id = ${req.params.id} AND f.organization_id = ${orgId}
+  `;
   if (!cur) { res.status(404).json({ error: 'Not found' }); return; }
   if (!VALID_TRANSITIONS[cur.status]?.includes(status)) {
     res.status(400).json({ error: `Cannot transition from '${cur.status}' to '${status as string}'` }); return;
   }
-  await sql`UPDATE files SET status=${status as string}, updated_at=NOW() WHERE id=${req.params.id} AND organization_id=${orgId}`;
+
+  // For 'approved' transitions, check multi-step approval chain
+  let effectiveStatus = status as string;
+  if (status === 'approved' || status === 'published') {
+    const [{ approval_count }] = await sql`
+      SELECT COUNT(*)::int as approval_count FROM approvals
+      WHERE file_id = ${req.params.id} AND organization_id = ${orgId}
+        AND status = 'approved' AND reviewer_id != ${req.user!.userId}
+    ` as any[];
+    // approval_count excludes current reviewer; adding 1 for this approval
+    if ((approval_count + 1) < cur.required_approvals) {
+      effectiveStatus = 'in_review';
+    }
+  }
+
+  await sql`UPDATE files SET status=${effectiveStatus}, updated_at=NOW() WHERE id=${req.params.id} AND organization_id=${orgId}`;
   await sql`INSERT INTO approvals (file_id, reviewer_id, status, comments, organization_id) VALUES (${req.params.id}, ${req.user!.userId}, ${status as string}, ${comments || ''}, ${orgId})`;
   const [file] = await sql`SELECT f.name, f.owner_id, u.name as owner_name, u.email as owner_email FROM files f JOIN users u ON f.owner_id = u.id WHERE f.id=${req.params.id} AND f.organization_id=${orgId}`;
   if (file) {
-    await notificationQueue.add('notify', { userId: file.owner_id, type: 'approval', title: `File ${status === 'approved' ? 'Approved' : 'Status Updated'}`, message: `Your file "${file.name}" is now: ${status as string}`, organizationId: orgId });
-    try { await sendApprovalNotification(file.owner_email, file.owner_name, file.name, status); } catch {}
+    await notificationQueue.add('notify', { userId: file.owner_id, type: 'approval', title: `File ${effectiveStatus === 'approved' ? 'Approved' : 'Status Updated'}`, message: `Your file "${file.name}" is now: ${effectiveStatus}`, organizationId: orgId });
+    try { await sendApprovalNotification(file.owner_email, file.owner_name, file.name, effectiveStatus); } catch {}
   }
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'APPROVE', 'file', ${req.params.id}, ${`Changed status to ${status as string}`}, ${req.ip || ''}, ${orgId})`;
-  res.json({ message: 'Status updated' });
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'APPROVE', 'file', ${req.params.id}, ${`Changed status to ${effectiveStatus}`}, ${req.ip || ''}, ${orgId})`;
+  res.json({ message: 'Status updated', status: effectiveStatus });
 });
 
 router.post('/:id/archive', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {

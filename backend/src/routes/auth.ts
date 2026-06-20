@@ -270,6 +270,41 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 });
 
+// GET /auth/orgs — list all orgs the current user belongs to
+router.get('/orgs', authenticate, asyncHandler(async (req, res) => {
+  const orgs = await sql`
+    SELECT o.id, o.name, o.slug, o.plan, m.role
+    FROM user_org_memberships m
+    JOIN organizations o ON o.id = m.organization_id
+    WHERE m.user_id = ${req.user!.userId} AND m.active = TRUE AND o.active = TRUE AND o.archived_at IS NULL
+    ORDER BY o.name
+  `;
+  res.json(orgs);
+}));
+
+// POST /auth/switch-org — switch to a different org
+router.post('/switch-org', authenticate, asyncHandler(async (req, res) => {
+  const { organizationId } = req.body;
+  const [membership] = await sql`
+    SELECT m.role, o.id, o.name, o.slug, o.plan
+    FROM user_org_memberships m
+    JOIN organizations o ON o.id = m.organization_id
+    WHERE m.user_id = ${req.user!.userId} AND m.organization_id = ${organizationId}
+      AND m.active = TRUE AND o.active = TRUE
+  `;
+  if (!membership) { res.status(403).json({ error: 'Not a member of this organization' }); return; }
+
+  // Issue new token with new org
+  const [user] = await sql`SELECT * FROM users WHERE id = ${req.user!.userId}`;
+  const token = jwt.sign(
+    { userId: user.id, email: user.email, role: membership.role, organizationId: membership.id, orgSlug: membership.slug },
+    JWT_SECRET(),
+    { expiresIn: '8h', algorithm: 'HS256' }
+  );
+  res.cookie('accessToken', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', expires: new Date(Date.now() + 8*60*60*1000) });
+  res.json({ message: 'Switched organization', org: { id: membership.id, name: membership.name, slug: membership.slug } });
+}));
+
 router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error('[auth]', err?.message ?? err);
   res.status(500).json({ error: 'Internal server error' });

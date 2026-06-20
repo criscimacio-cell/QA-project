@@ -53,9 +53,12 @@ router.post('/', authenticate, requireRole('admin', 'lead', 'engineer'), async (
 
 router.put('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const { title, content, category, tags, status } = req.body;
+  const [art] = await sql`SELECT author_id, status as current_status FROM knowledge_articles WHERE id = ${req.params.id}`;
+  if (!art) { res.status(404).json({ error: 'Not found' }); return; }
   if (req.user!.role === 'engineer') {
-    const [art] = await sql`SELECT author_id FROM knowledge_articles WHERE id = ${req.params.id}`;
-    if (!art || art.author_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
+    if (art.author_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
+    // Engineers cannot publish — force status to stay draft or keep current non-published status
+    if (status === 'published') { res.status(403).json({ error: 'Engineers cannot publish articles. Submit for lead/admin review.' }); return; }
   }
   const safeContent = (content || '').replace(/<script[\s\S]*?<\/script>/gi, '').replace(/on\w+\s*=/gi, 'data-removed=');
   await sql`

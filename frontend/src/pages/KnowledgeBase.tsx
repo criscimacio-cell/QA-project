@@ -417,8 +417,8 @@ export default function KnowledgeBase() {
             <label className="label">Status</label>
             <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className="input">
               <option value="draft">Draft</option>
-              <option value="published">Published</option>
-              {editing && <option value="archived">Archived</option>}
+              {!isEngineer && <option value="published">Published</option>}
+              {editing && !isEngineer && <option value="archived">Archived</option>}
             </select>
           </div>
           <div>

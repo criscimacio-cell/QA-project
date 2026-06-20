@@ -96,7 +96,7 @@ export default function SearchResults() {
           <p className="text-lg font-medium text-slate-600 dark:text-slate-300">Search Qlarity</p>
           <p className="text-sm mt-1 text-slate-400">Search across files, knowledge articles, Jira tickets, tags, and more</p>
           <div className="mt-6 flex flex-wrap gap-2 justify-center">
-            {['test script', 'ETL template', 'automation', 'RCA Report', 'QA-123'].map(s => (
+            {['report', 'template', 'contract', 'RCA', 'PROJ-123'].map(s => (
               <button key={s} onClick={() => navigate(`/search?q=${encodeURIComponent(s)}`)} className="text-sm bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/20 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-1.5 rounded-full transition-colors">
                 {s}
               </button>

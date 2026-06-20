@@ -141,7 +141,7 @@ export default function UserManagement() {
 
   const roleCount = (role: string) => users.filter(u => u.role === role).length;
 
-  const roleLabel = (r: string) => r === 'admin' ? 'QA Admin' : r === 'lead' ? 'QA Lead' : r === 'engineer' ? 'QA Engineer' : 'Viewer';
+  const roleLabel = (r: string) => r === 'admin' ? 'Admin' : r === 'lead' ? 'Lead' : r === 'engineer' ? 'Engineer' : 'Viewer';
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -175,7 +175,7 @@ export default function UserManagement() {
             <thead>
               <tr>
                 <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Permission</th>
-                {['QA Admin', 'QA Lead', 'QA Engineer', 'Viewer'].map(r => <th key={r} className="py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-center">{r}</th>)}
+                {['Admin', 'Lead', 'Engineer', 'Viewer'].map(r => <th key={r} className="py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-center">{r}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -287,16 +287,16 @@ export default function UserManagement() {
           <div>
             <label className="label">Role<span className="text-red-500 ml-0.5">*</span></label>
             <select value={form.role} onChange={e => { setForm(p => ({ ...p, role: e.target.value })); if (errors.role) setErrors(p => ({ ...p, role: '' })); }} className={`input ${errors.role ? 'border-red-400 focus:ring-red-300' : ''}`}>
-              <option value="admin">QA Admin</option>
-              <option value="lead">QA Lead</option>
-              <option value="engineer">QA Engineer</option>
+              <option value="admin">Admin</option>
+              <option value="lead">Lead</option>
+              <option value="engineer">Engineer</option>
               <option value="viewer">Viewer</option>
             </select>
             {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role}</p>}
           </div>
           <div>
             <label className="label">Department</label>
-            <input value={form.department} onChange={e => { setForm(p => ({ ...p, department: e.target.value })); if (errors.department) setErrors(p => ({ ...p, department: '' })); }} className={`input ${errors.department ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="QA Department" />
+            <input value={form.department} onChange={e => { setForm(p => ({ ...p, department: e.target.value })); if (errors.department) setErrors(p => ({ ...p, department: '' })); }} className={`input ${errors.department ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="e.g. Engineering, Sales, Operations" />
             {errors.department && <p className="text-xs text-red-500 mt-1">{errors.department}</p>}
           </div>
           <div>

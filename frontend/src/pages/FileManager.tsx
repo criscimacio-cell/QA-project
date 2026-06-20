@@ -385,7 +385,7 @@ export default function FileManager() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">File Manager</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage all QA files and assets</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage all files and assets</p>
         </div>
         <div className="flex items-center gap-2">
           {isLead && (
@@ -472,7 +472,7 @@ export default function FileManager() {
             <EmptyState
               icon={<Files size={28} className="text-amber-400" />}
               title={search ? 'No files match your search' : 'No files yet'}
-              description={search ? 'Try a different search term or clear your filters.' : 'Upload your first file to start managing QA assets.'}
+              description={search ? 'Try a different search term or clear your filters.' : 'Upload your first file to get started.'}
               action={!search ? <button className="btn-primary" onClick={() => setShowBulkUpload(true)}>Upload File</button> : undefined}
             />
           </div>

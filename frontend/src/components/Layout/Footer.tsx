@@ -15,7 +15,7 @@ export default function Footer({ sidebarWidth }: { sidebarWidth: number }) {
       <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
         © {year} Qlarity. Built with
         <Heart size={11} className="text-red-400 fill-red-400 mx-0.5" />
-        for QA teams.
+        for your team.
       </p>
       <p className="text-xs text-slate-400 dark:text-slate-500">
         Powered by <span className="font-semibold text-slate-500 dark:text-slate-400">Stash Ph Pinas Inc.</span>

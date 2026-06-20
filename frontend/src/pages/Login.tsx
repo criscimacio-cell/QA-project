@@ -176,9 +176,9 @@ export default function Login() {
           <span className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:18, color:'#1a1a1a', letterSpacing:'0.04em' }}>Qlarity</span>
         </div>
         <h1 className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:32, fontWeight:800, color:'#1a1a1a', lineHeight:1.2, marginBottom:8 }}>
-          QA Asset Platform
+          Asset Platform
         </h1>
-        <p className="brand-tagline" style={{ fontSize:15, color:'rgba(0,0,0,0.5)' }}>Clarity in every QA decision.</p>
+        <p className="brand-tagline" style={{ fontSize:15, color:'rgba(0,0,0,0.5)' }}>Clarity in every decision.</p>
       </div>
 
       <div className="login-demo-panel" style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340, pointerEvents:'auto' }}>

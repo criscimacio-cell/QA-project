@@ -579,7 +579,7 @@ export default function Repositories() {
               onChange={e => { setFormData(f => ({ ...f, name: e.target.value })); if (repoErrors.name) setRepoErrors(p => ({ ...p, name: '' })); }}
               onKeyDown={e => e.key === 'Enter' && doCreate()}
               className={`input ${repoErrors.name ? 'border-red-400 focus:ring-red-300' : ''}`}
-              placeholder={createModal.parentId ? 'e.g. Test Cases' : 'e.g. PhilHealth QA'}
+              placeholder={createModal.parentId ? 'e.g. Contracts' : 'e.g. Acme Project'}
             />
             {repoErrors.name && <p className="text-xs text-red-500 mt-1">{repoErrors.name}</p>}
           </div>
@@ -865,7 +865,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
           </div>
           <div>
             <label className="label">Jira Ticket</label>
-            <input value={form.jira_ticket} onChange={e => { setForm(p => ({ ...p, jira_ticket: e.target.value })); if (uploadErrors.jira_ticket) setUploadErrors(p => ({ ...p, jira_ticket: '' })); }} className={`input ${uploadErrors.jira_ticket ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="e.g. QA-123" />
+            <input value={form.jira_ticket} onChange={e => { setForm(p => ({ ...p, jira_ticket: e.target.value })); if (uploadErrors.jira_ticket) setUploadErrors(p => ({ ...p, jira_ticket: '' })); }} className={`input ${uploadErrors.jira_ticket ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="e.g. PROJ-123" />
             {uploadErrors.jira_ticket && <p className="text-xs text-red-500 mt-1">{uploadErrors.jira_ticket}</p>}
           </div>
           {mode === 'file' && (

@@ -142,7 +142,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               Qlarity
             </div>
             <div className="text-xs font-medium" style={{ color: 'rgba(252,211,77,0.85)' }}>
-              QA Asset Platform
+              Asset Platform
             </div>
           </div>
         )}

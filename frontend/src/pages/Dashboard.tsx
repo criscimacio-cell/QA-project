@@ -369,7 +369,7 @@ export default function Dashboard() {
               {!typingDone && <span style={{ animation: 'cursorBlink 0.8s step-end infinite', color: '#f59e0b', marginLeft: 1 }}>|</span>}
             </h1>
             <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
-              Here's what's happening with your QA assets today.
+              Here's what's happening with your assets today.
             </p>
           </div>
 

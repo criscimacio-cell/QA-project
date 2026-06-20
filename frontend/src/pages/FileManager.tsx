@@ -538,7 +538,7 @@ export default function FileManager() {
                             </button>
                             <button onClick={() => doArchive(f.id)} title="Archive" aria-label="Archive file" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
                           </>
-                        ) : isEngineer && f.owner_id === user?.id ? (
+                        ) : isEngineer && f.owner_id === user?.id && f.status !== 'archived' ? (
                           <button onClick={() => doArchive(f.id)} title="Archive" aria-label="Archive file" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
                         ) : null}
                       </div>

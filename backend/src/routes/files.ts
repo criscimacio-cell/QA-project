@@ -268,6 +268,9 @@ router.post('/:id/archive', authenticate, requireRole('admin', 'lead', 'engineer
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
   if (req.user!.role === 'engineer' && file.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
   if (file.status === 'archived') { res.status(400).json({ error: 'File is already archived' }); return; }
+  if (req.user!.role === 'engineer' && file.owner_id !== req.user!.userId) {
+    res.status(403).json({ error: 'Forbidden: engineers can only archive their own files' }); return;
+  }
   await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id=${req.params.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'ARCHIVE', 'file', ${req.params.id}, 'Archived file', ${req.ip || ''})`;
   res.json({ message: 'Archived' });

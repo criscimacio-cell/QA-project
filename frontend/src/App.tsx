@@ -77,10 +77,10 @@ function AppRoutes() {
         <Route path="knowledge" element={<KnowledgeBase />} />
         <Route path="test-data" element={<TestDataLibrary />} />
         <Route path="approvals" element={<ProtectedRoute requireLead><ApprovalWorkflow /></ProtectedRoute>} />
+        <Route path="archive" element={<ProtectedRoute requireAdmin><Archive /></ProtectedRoute>} />
         <Route path="audit" element={<ProtectedRoute requireAdmin><AuditLog /></ProtectedRoute>} />
         <Route path="users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
         <Route path="settings" element={<Settings />} />
-        <Route path="archive" element={<ProtectedRoute requireAdmin><Archive /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

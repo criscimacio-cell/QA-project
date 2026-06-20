@@ -2,8 +2,8 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FolderOpen, Files, Search, BookOpen,
-  Database, GitPullRequest, Users, ShieldCheck, Settings,
-  ChevronLeft, ChevronRight, Layers, Archive
+  Database, GitPullRequest, Users, ShieldCheck, Settings, Archive,
+  ChevronLeft, ChevronRight, Layers
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';

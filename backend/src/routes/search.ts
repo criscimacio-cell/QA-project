@@ -8,6 +8,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
   const { q, type, project, category, dateFrom, dateTo } = req.query;
   if (!q) { res.json({ files: [], knowledge: [], total: 0 }); return; }
 
+  const orgId = req.user!.organizationId;
   let files: any[] = [];
   let knowledge: any[] = [];
   const query = q as string;
@@ -18,7 +19,8 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
       FROM files f
       LEFT JOIN users u ON f.owner_id = u.id
       LEFT JOIN repositories r ON f.repository_id = r.id
-      WHERE (
+      WHERE f.organization_id = ${orgId}
+      AND (
         to_tsvector('english', coalesce(f.name,'') || ' ' || coalesce(f.description,'') || ' ' || coalesce(f.tags,'') || ' ' || coalesce(f.project,'') || ' ' || coalesce(f.jira_ticket,''))
         @@ plainto_tsquery('english', ${query})
         OR f.name ILIKE ${'%' + query + '%'}
@@ -35,7 +37,8 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     knowledge = await sql`
       SELECT k.*, u.name as author_name FROM knowledge_articles k
       LEFT JOIN users u ON k.author_id = u.id
-      WHERE (
+      WHERE k.organization_id = ${orgId}
+      AND (
         to_tsvector('english', coalesce(k.title,'') || ' ' || coalesce(k.tags,'') || ' ' || coalesce(k.category,''))
         @@ plainto_tsquery('english', ${query})
         OR k.title ILIKE ${'%' + query + '%'}
@@ -45,16 +48,17 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     `;
   }
 
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'SEARCH', 'search', 0, ${`Searched: ${q}`}, ${req.ip || ''})`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'SEARCH', 'search', 0, ${`Searched: ${q}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ files, knowledge, total: files.length + knowledge.length });
 });
 
 router.get('/suggestions', authenticate, async (req: Request, res: Response) => {
   const { q } = req.query;
   if (!q) { res.json([]); return; }
+  const orgId = req.user!.organizationId;
   const s = '%' + q + '%';
-  const fileNames = await sql`SELECT name FROM files WHERE name ILIKE ${s} LIMIT 5`;
-  const articleTitles = await sql`SELECT title as name FROM knowledge_articles WHERE title ILIKE ${s} LIMIT 3`;
+  const fileNames = await sql`SELECT name FROM files WHERE name ILIKE ${s} AND organization_id = ${orgId} LIMIT 5`;
+  const articleTitles = await sql`SELECT title as name FROM knowledge_articles WHERE title ILIKE ${s} AND organization_id = ${orgId} LIMIT 3`;
   res.json([...fileNames, ...articleTitles].map((r: any) => r.name));
 });
 

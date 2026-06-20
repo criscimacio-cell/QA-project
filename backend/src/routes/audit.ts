@@ -6,13 +6,14 @@ const router = Router();
 
 router.get('/', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const { action, user_id, dateFrom, dateTo, page = '1', limit = '50' } = req.query;
+  const orgId = req.user!.organizationId;
   const limitInt = Math.max(1, Math.min(200, parseInt(limit as string) || 50));
   const offsetInt = Math.max(0, (parseInt(page as string) - 1)) * limitInt;
 
   const logs = await sql`
     SELECT al.*, u.name as user_name, u.email as user_email, u.role as user_role
     FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id
-    WHERE 1=1
+    WHERE al.organization_id = ${orgId}
     ${action ? sql`AND al.action = ${action as string}` : sql``}
     ${user_id ? sql`AND al.user_id = ${user_id as string}` : sql``}
     ${dateFrom ? sql`AND al.created_at >= ${dateFrom as string}` : sql``}
@@ -23,7 +24,7 @@ router.get('/', authenticate, requireRole('admin'), async (req: Request, res: Re
 
   const [{ c: total }] = await sql`
     SELECT COUNT(*)::int as c FROM audit_logs al
-    WHERE 1=1
+    WHERE al.organization_id = ${orgId}
     ${action ? sql`AND al.action = ${action as string}` : sql``}
     ${user_id ? sql`AND al.user_id = ${user_id as string}` : sql``}
     ${dateFrom ? sql`AND al.created_at >= ${dateFrom as string}` : sql``}
@@ -34,9 +35,11 @@ router.get('/', authenticate, requireRole('admin'), async (req: Request, res: Re
 });
 
 router.get('/export', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
   const logs = await sql`
     SELECT al.id, u.name as user, al.action, al.entity_type, al.entity_id, al.details, al.ip_address, al.created_at
     FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id
+    WHERE al.organization_id = ${orgId}
     ORDER BY al.created_at DESC
     LIMIT 5000
   `;

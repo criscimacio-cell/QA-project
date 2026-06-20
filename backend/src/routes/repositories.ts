@@ -5,17 +5,20 @@ import { authenticate, requireRole } from '../middleware/auth';
 const router = Router();
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
   const repos = await sql`
     SELECT r.*, u.name as owner_name,
-      (SELECT COUNT(*)::int FROM files f WHERE f.repository_id = r.id AND f.status != 'archived') as file_count
+      (SELECT COUNT(*)::int FROM files f WHERE f.repository_id = r.id AND f.status != 'archived' AND f.organization_id = ${orgId}) as file_count
     FROM repositories r LEFT JOIN users u ON r.owner_id = u.id
+    WHERE r.organization_id = ${orgId}
     ORDER BY r.parent_id NULLS FIRST, r.name
   `;
   res.json(repos);
 });
 
 router.get('/:id', authenticate, async (req: Request, res: Response) => {
-  const [repo] = await sql`SELECT * FROM repositories WHERE id = ${req.params.id}`;
+  const orgId = req.user!.organizationId;
+  const [repo] = await sql`SELECT * FROM repositories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!repo) { res.status(404).json({ error: 'Not found' }); return; }
   const files = await sql`
     SELECT f.id, f.name, f.original_name, f.size, f.mime_type, f.status,
@@ -24,49 +27,51 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
            u.name as owner_name
     FROM files f
     LEFT JOIN users u ON f.owner_id = u.id
-    WHERE f.repository_id = ${req.params.id} AND f.status != 'archived'
+    WHERE f.repository_id = ${req.params.id} AND f.status != 'archived' AND f.organization_id = ${orgId}
     ORDER BY f.updated_at DESC
   `;
-  const children = await sql`SELECT * FROM repositories WHERE parent_id = ${req.params.id} ORDER BY name`;
+  const children = await sql`SELECT * FROM repositories WHERE parent_id = ${req.params.id} AND organization_id = ${orgId} ORDER BY name`;
   res.json({ ...repo, files, children });
 });
 
 router.post('/', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
   const { name, description, parent_id, type, project } = req.body;
   const [{ id }] = await sql`
-    INSERT INTO repositories (name, description, parent_id, type, project, owner_id)
-    VALUES (${name}, ${description || ''}, ${parent_id || null}, ${type || 'folder'}, ${project || ''}, ${req.user!.userId})
+    INSERT INTO repositories (name, description, parent_id, type, project, owner_id, organization_id)
+    VALUES (${name}, ${description || ''}, ${parent_id || null}, ${type || 'folder'}, ${project || ''}, ${req.user!.userId}, ${orgId})
     RETURNING id
   `;
   res.json({ id });
 });
 
 router.put('/:id', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
-  const [existing] = await sql`SELECT id FROM repositories WHERE id = ${req.params.id}`;
+  const orgId = req.user!.organizationId;
+  const [existing] = await sql`SELECT id FROM repositories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
   const { name, description } = req.body;
-  await sql`UPDATE repositories SET name=${name}, description=${description} WHERE id=${req.params.id}`;
+  await sql`UPDATE repositories SET name=${name}, description=${description} WHERE id=${req.params.id} AND organization_id=${orgId}`;
   res.json({ message: 'Updated' });
 });
 
 router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
-  const [existing] = await sql`SELECT id FROM repositories WHERE id = ${req.params.id}`;
+  const orgId = req.user!.organizationId;
+  const [existing] = await sql`SELECT id FROM repositories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
 
-  // Collect all descendant IDs via recursive CTE
   const descendants = await sql`
     WITH RECURSIVE tree AS (
-      SELECT id FROM repositories WHERE id = ${req.params.id}
+      SELECT id FROM repositories WHERE id = ${req.params.id} AND organization_id = ${orgId}
       UNION ALL
-      SELECT r.id FROM repositories r JOIN tree t ON r.parent_id = t.id
+      SELECT r.id FROM repositories r JOIN tree t ON r.parent_id = t.id WHERE r.organization_id = ${orgId}
     )
     SELECT id FROM tree
   `;
   const ids = descendants.map((r: any) => r.id);
 
   await sql.begin(async tx => {
-    await tx`UPDATE files SET repository_id = NULL WHERE repository_id = ANY(${ids}::int[])`;
-    await tx`DELETE FROM repositories WHERE id = ANY(${ids}::int[])`;
+    await tx`UPDATE files SET repository_id = NULL WHERE repository_id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
+    await tx`DELETE FROM repositories WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
   });
 
   res.json({ message: 'Deleted' });

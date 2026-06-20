@@ -8,12 +8,15 @@ interface User {
   role: 'admin' | 'lead' | 'engineer' | 'viewer';
   department: string;
   avatar: string;
+  organization_id: number;
+  org_slug: string;
+  org_name: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean, orgSlug?: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAdmin: boolean;
@@ -35,8 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (email: string, password: string, rememberMe?: boolean) => {
-    const res = await api.post('/auth/login', { email, password, rememberMe });
+  const login = async (email: string, password: string, rememberMe?: boolean, orgSlug?: string) => {
+    const res = await api.post('/auth/login', { email, password, rememberMe, orgSlug: orgSlug || undefined });
     setUser(res.data.user);
   };
 

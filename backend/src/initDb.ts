@@ -2,6 +2,25 @@ import bcrypt from 'bcryptjs';
 import sql from './db';
 
 export async function initDb() {
+  // ── Organizations (must exist before any org-scoped tables) ─────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS organizations (
+      id         SERIAL PRIMARY KEY,
+      name       TEXT NOT NULL,
+      slug       TEXT UNIQUE NOT NULL,
+      plan       TEXT NOT NULL DEFAULT 'free',
+      active     BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
+  // Seed default org so existing rows can reference it
+  await sql`
+    INSERT INTO organizations (id, name, slug, plan)
+    VALUES (1, 'Default Organization', 'default', 'free')
+    ON CONFLICT (id) DO NOTHING
+  `;
+
   // ── Schema ──────────────────────────────────────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS users (
@@ -179,19 +198,78 @@ export async function initDb() {
 
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences TEXT DEFAULT '{}'`;
 
+  // ── Multi-tenancy migration: add organization_id to all tables ──────────
+  // Add to users
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE users SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  // Replace single-email unique constraint with email+org unique constraint
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_email_org_unique') THEN
+        ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
+        ALTER TABLE users ADD CONSTRAINT users_email_org_unique UNIQUE (email, organization_id);
+      END IF;
+    END $$
+  `;
+
+  // Add to core tables
+  await sql`ALTER TABLE repositories ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE repositories SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE files SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  await sql`ALTER TABLE file_versions ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE file_versions SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  await sql`ALTER TABLE file_comments ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE file_comments SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  await sql`ALTER TABLE approvals ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE approvals SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  await sql`ALTER TABLE knowledge_articles ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE knowledge_articles SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  await sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE notifications SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  await sql`ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE audit_logs SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  await sql`ALTER TABLE categories ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE categories SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  // Replace categories unique constraint to include org
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'categories_name_type_org_unique') THEN
+        ALTER TABLE categories DROP CONSTRAINT IF EXISTS categories_name_type_key;
+        ALTER TABLE categories ADD CONSTRAINT categories_name_type_org_unique UNIQUE (name, type, organization_id);
+      END IF;
+    END $$
+  `;
+
+  await sql`ALTER TABLE password_reset_tokens ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE password_reset_tokens SET organization_id = 1 WHERE organization_id IS NULL`;
+
+  await sql`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
+  await sql`UPDATE refresh_tokens SET organization_id = 1 WHERE organization_id IS NULL`;
+
   // ── Seed categories ──────────────────────────────────────────────────────
-  const [{ c: catCount }] = await sql`SELECT COUNT(*)::int as c FROM categories`;
+  const [{ c: catCount }] = await sql`SELECT COUNT(*)::int as c FROM categories WHERE organization_id = 1`;
   if (catCount === 0) {
     for (const name of ['Test Cases','RCA','Evidence','Test Plan','Test Data','Bug Report','Template','Test Scripts','Performance']) {
-      await sql`INSERT INTO categories (name, type) VALUES (${name}, 'file') ON CONFLICT DO NOTHING`;
+      await sql`INSERT INTO categories (name, type, organization_id) VALUES (${name}, 'file', 1) ON CONFLICT DO NOTHING`;
     }
     for (const name of ['Troubleshooting','RCA','Testing Standards','Best Practices','Onboarding','Process Documentation']) {
-      await sql`INSERT INTO categories (name, type) VALUES (${name}, 'knowledge') ON CONFLICT DO NOTHING`;
+      await sql`INSERT INTO categories (name, type, organization_id) VALUES (${name}, 'knowledge', 1) ON CONFLICT DO NOTHING`;
     }
   }
 
   // ── Seed demo users ──────────────────────────────────────────────────────
-  const [existingAdmin] = await sql`SELECT id FROM users WHERE email = 'admin@qa.com'`;
+  const [existingAdmin] = await sql`SELECT id FROM users WHERE email = 'admin@qa.com' AND organization_id = 1`;
   if (!existingAdmin) {
     const hash = (pw: string) => bcrypt.hashSync(pw, 10);
     for (const u of [
@@ -202,9 +280,9 @@ export async function initDb() {
       { name: 'Stakeholder',      email: 'viewer@qa.com',    pw: 'password123', role: 'viewer',   dept: 'Business',      seed: 'viewer'},
     ]) {
       await sql`
-        INSERT INTO users (name, email, password_hash, role, department, avatar)
+        INSERT INTO users (name, email, password_hash, role, department, avatar, organization_id)
         VALUES (${u.name}, ${u.email}, ${hash(u.pw)}, ${u.role}, ${u.dept},
-                ${'https://api.dicebear.com/7.x/avataaars/svg?seed=' + u.seed})
+                ${'https://api.dicebear.com/7.x/avataaars/svg?seed=' + u.seed}, 1)
         ON CONFLICT DO NOTHING
       `;
     }
@@ -212,11 +290,11 @@ export async function initDb() {
   }
 
   // ── Seed KB articles ─────────────────────────────────────────────────────
-  const [{ c: kbCount }] = await sql`SELECT COUNT(*)::int as c FROM knowledge_articles WHERE category != 'General'`;
+  const [{ c: kbCount }] = await sql`SELECT COUNT(*)::int as c FROM knowledge_articles WHERE category != 'General' AND organization_id = 1`;
   if (kbCount === 0) {
-    const [admin] = await sql`SELECT id FROM users WHERE email = 'admin@qa.com'`;
-    const [lead]  = await sql`SELECT id FROM users WHERE email = 'lead@qa.com'`;
-    const [eng3]  = await sql`SELECT id FROM users WHERE email = 'engineer1@qa.com'`;
+    const [admin] = await sql`SELECT id FROM users WHERE email = 'admin@qa.com' AND organization_id = 1`;
+    const [lead]  = await sql`SELECT id FROM users WHERE email = 'lead@qa.com' AND organization_id = 1`;
+    const [eng3]  = await sql`SELECT id FROM users WHERE email = 'engineer1@qa.com' AND organization_id = 1`;
     const adminId = admin?.id ?? 1;
     const leadId  = lead?.id ?? 2;
     const eng3Id  = eng3?.id ?? 3;
@@ -250,8 +328,8 @@ export async function initDb() {
 
     for (const a of articles) {
       await sql`
-        INSERT INTO knowledge_articles (title, content, category, author_id, status, tags, created_at, updated_at)
-        VALUES (${a.title}, ${a.content}, ${a.category}, ${a.authorId}, 'published', ${a.tags}, ${a.created}, ${a.updated})
+        INSERT INTO knowledge_articles (title, content, category, author_id, status, tags, created_at, updated_at, organization_id)
+        VALUES (${a.title}, ${a.content}, ${a.category}, ${a.authorId}, 'published', ${a.tags}, ${a.created}, ${a.updated}, 1)
       `;
     }
     console.log('Knowledge base articles seeded.');

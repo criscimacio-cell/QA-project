@@ -28,49 +28,53 @@ const avatarUpload = multer({
 const router = Router();
 
 router.get('/', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
-  const users = await sql`SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users`;
+  const orgId = req.user!.organizationId;
+  const users = await sql`SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users WHERE organization_id = ${orgId}`;
   res.json(users);
 });
 
 router.patch('/me/preferences', authenticate, async (req: Request, res: Response) => {
   const { preferences } = req.body;
-  await sql`UPDATE users SET preferences = ${JSON.stringify(preferences)} WHERE id = ${req.user!.userId}`;
+  await sql`UPDATE users SET preferences = ${JSON.stringify(preferences)} WHERE id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}`;
   res.json({ message: 'Preferences saved' });
 });
 
 router.get('/me', authenticate, async (req: Request, res: Response) => {
-  const [user] = await sql`SELECT id, name, email, role, department, avatar, preferences FROM users WHERE id = ${req.user!.userId}`;
+  const [user] = await sql`SELECT id, name, email, role, department, avatar, preferences FROM users WHERE id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}`;
   if (!user) { res.status(404).json({ error: 'Not found' }); return; }
   res.json({ ...user, preferences: JSON.parse(user.preferences || '{}') });
 });
 
 router.get('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   if (req.params.id === 'me') return;
-  const [user] = await sql`SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users WHERE id = ${req.params.id}`;
+  const [user] = await sql`SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users WHERE id = ${req.params.id} AND organization_id = ${req.user!.organizationId}`;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
   res.json(user);
 });
 
 router.post('/', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const { name, email, password, role, department } = req.body;
+  const orgId = req.user!.organizationId;
   const hash = bcrypt.hashSync(password || 'password123', 10);
   const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`;
   try {
-    const [{ id }] = await sql`INSERT INTO users (name, email, password_hash, role, department, avatar) VALUES (${name}, ${email}, ${hash}, ${role || 'viewer'}, ${department || ''}, ${avatar}) RETURNING id`;
-    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_CREATE', 'user', ${id}, ${`Created user: ${email}`}, ${req.ip || ''})`;
+    const [{ id }] = await sql`INSERT INTO users (name, email, password_hash, role, department, avatar, organization_id) VALUES (${name}, ${email}, ${hash}, ${role || 'viewer'}, ${department || ''}, ${avatar}, ${orgId}) RETURNING id`;
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_CREATE', 'user', ${id}, ${`Created user: ${email}`}, ${req.ip || ''}, ${orgId})`;
     res.json({ id, name, email, role });
   } catch { res.status(400).json({ error: 'Operation failed' }); }
 });
 
 router.put('/:id/activate', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
-  await sql`UPDATE users SET active = TRUE WHERE id = ${req.params.id}`;
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_ACTIVATE', 'user', ${req.params.id}, ${`Activated user id=${req.params.id}`}, ${req.ip || ''})`;
+  const orgId = req.user!.organizationId;
+  await sql`UPDATE users SET active = TRUE WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_ACTIVATE', 'user', ${req.params.id}, ${`Activated user id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Activated' });
 });
 
 router.put('/:id/deactivate', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
-  await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id}`;
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''})`;
+  const orgId = req.user!.organizationId;
+  await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Deactivated' });
 });
 
@@ -78,35 +82,37 @@ const VALID_ROLES = ['admin', 'lead', 'engineer', 'viewer'];
 
 router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const { name, role, department, active, password } = req.body;
+  const orgId = req.user!.organizationId;
   if (parseInt(req.params.id) === req.user!.userId && role !== undefined) { res.status(403).json({ error: 'Cannot change your own role' }); return; }
   if (role && !VALID_ROLES.includes(role)) { res.status(400).json({ error: 'Invalid role' }); return; }
   if (password) {
     if (password.length < 8) { res.status(400).json({ error: 'Password must be at least 8 characters' }); return; }
     const hash = bcrypt.hashSync(password, 10);
-    await sql`UPDATE users SET name=${name}, role=${role}, department=${department}, active=${active !== undefined ? active : true}, password_hash=${hash} WHERE id=${req.params.id}`;
+    await sql`UPDATE users SET name=${name}, role=${role}, department=${department}, active=${active !== undefined ? active : true}, password_hash=${hash} WHERE id=${req.params.id} AND organization_id=${orgId}`;
   } else {
-    await sql`UPDATE users SET name=${name}, role=${role}, department=${department}, active=${active !== undefined ? active : true} WHERE id=${req.params.id}`;
+    await sql`UPDATE users SET name=${name}, role=${role}, department=${department}, active=${active !== undefined ? active : true} WHERE id=${req.params.id} AND organization_id=${orgId}`;
   }
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_UPDATE', 'user', ${req.params.id}, ${`Updated user id=${req.params.id}`}, ${req.ip || ''})`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_UPDATE', 'user', ${req.params.id}, ${`Updated user id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Updated' });
 });
 
 router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
-  await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id}`;
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''})`;
+  const orgId = req.user!.organizationId;
+  await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Deactivated' });
 });
 
 router.put('/me/avatar', authenticate, avatarUpload.single('avatar'), async (req: Request, res: Response) => {
   const f = req.file;
   if (!f) { res.status(400).json({ error: 'No image uploaded' }); return; }
-  const [existing] = await sql`SELECT avatar FROM users WHERE id = ${req.user!.userId}` as any[];
+  const [existing] = await sql`SELECT avatar FROM users WHERE id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}` as any[];
   if (existing?.avatar?.startsWith('/api/users/') && existing.avatar.includes('/avatar')) {
     const oldPath = path.join(UPLOAD_DIR, 'avatars', path.basename(existing.avatar));
     if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
   }
   const avatarUrl = `/api/users/${req.user!.userId}/avatar?v=${Date.now()}`;
-  await sql`UPDATE users SET avatar = ${avatarUrl} WHERE id = ${req.user!.userId}`;
+  await sql`UPDATE users SET avatar = ${avatarUrl} WHERE id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}`;
   res.json({ avatar: avatarUrl });
 });
 

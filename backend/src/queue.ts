@@ -14,8 +14,9 @@ export const notificationQueue = new Queue('notifications', { connection });
 const worker = new Worker(
   'notifications',
   async (job) => {
-    const { userId, type, title, message } = job.data as { userId: number; type: string; title: string; message: string };
-    await sql`INSERT INTO notifications (user_id, type, title, message) VALUES (${userId}, ${type}, ${title}, ${message})`;
+    const { userId, type, title, message, organizationId } = job.data as { userId: number; type: string; title: string; message: string; organizationId?: number };
+    const orgId = organizationId ?? 1;
+    await sql`INSERT INTO notifications (user_id, type, title, message, organization_id) VALUES (${userId}, ${type}, ${title}, ${message}, ${orgId})`;
   },
   { connection, concurrency: 5 },
 );

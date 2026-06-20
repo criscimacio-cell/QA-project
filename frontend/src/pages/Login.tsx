@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { SplineScene, type SplineApp } from '../components/ui/splite';
 
@@ -43,6 +43,7 @@ export default function Login() {
   const { login, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  const [orgSlug, setOrgSlug]   = useState('');
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]     = useState(false);
@@ -116,7 +117,7 @@ export default function Login() {
     if (!validate()) return;
     setLoading(true); setError('');
     try {
-      await login(email, password, rememberMe);
+      await login(email, password, rememberMe, orgSlug.trim() || undefined);
       setLoginSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
@@ -207,6 +208,21 @@ export default function Login() {
 
             <form ref={formRef} onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
+              {/* Organization slug (optional) */}
+              <div style={{ position:'relative' }}>
+                <Building2 size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1 }} />
+                <input type="text" value={orgSlug}
+                  onChange={e => setOrgSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  placeholder="Organization ID (optional)"
+                  aria-label="Organization ID"
+                  autoComplete="organization"
+                  className="login-input"
+                  style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:'1px solid rgba(0,0,0,0.12)', background:'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
+                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
+                  onBlur={e => { e.target.style.borderColor='rgba(0,0,0,0.12)'; e.target.style.background='rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
+                />
+              </div>
+
               {/* Email */}
               <div style={{ position:'relative' }}>
                 <Mail size={15} color={AMBER} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', zIndex:1 }} />
@@ -281,13 +297,13 @@ export default function Login() {
               </button>
 
               <p className="login-footer-text" style={{ textAlign:'center', fontSize:13, color:'rgba(0,0,0,0.4)', marginTop:2 }}>
-                Don't have an account?{' '}
-                <a className="login-footer-link" href="mailto:admin@qa.com" style={{ color:'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
+                New organization?{' '}
+                <Link to="/register" className="login-footer-link" style={{ color:'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.6)'}
                 >
-                  Contact your admin
-                </a>
+                  Create an account
+                </Link>
               </p>
             </form>
           </div>

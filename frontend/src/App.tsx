@@ -48,6 +48,7 @@ import AuditLog from './pages/AuditLog';
 import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
 import Archive from './pages/Archive';
+import Register from './pages/Register';
 
 function ProtectedRoute({ children, requireAdmin = false, requireLead = false }: { children: React.ReactNode; requireAdmin?: boolean; requireLead?: boolean }) {
   const { user, loading } = useAuth();
@@ -67,6 +68,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

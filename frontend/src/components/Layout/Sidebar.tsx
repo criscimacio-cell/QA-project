@@ -1,4 +1,5 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FolderOpen, Files, Search, BookOpen,
   Database, GitPullRequest, Users, ShieldCheck, Settings,
@@ -10,7 +11,48 @@ import clsx from 'clsx';
 
 interface SidebarProps { collapsed: boolean; onToggle: () => void; }
 
-const nav = [
+function renderNavSection(
+  label: string,
+  items: { to: string; icon: React.ElementType; label: string }[],
+  startIdx: number,
+  collapsed: boolean,
+) {
+  return (
+    <div>
+      {!collapsed && (
+        <div className="px-3 mb-2 text-xs font-bold uppercase tracking-widest animate-fade-in" style={{ color: 'rgba(252,165,165,0.5)' }}>
+          {label}
+        </div>
+      )}
+      {collapsed && (
+        <div className="px-1.5 mb-2">
+          <div className="h-px w-full rounded-full border-slate-200 dark:border-slate-700/50 border-t" />
+        </div>
+      )}
+      <div className="space-y-0.5">
+        {items.map((item, idx) => (
+          <div key={item.to} style={{ animation: 'fadeSlideIn 0.3s ease both', animationDelay: `${(startIdx + idx) * 0.05}s` }}>
+            <NavLink
+              to={item.to}
+              title={collapsed ? item.label : undefined}
+              className={({ isActive }) => clsx(isActive ? 'sidebar-link-active' : 'sidebar-link', collapsed && 'justify-center !px-0 !pl-0')}
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && <span className="nav-indicator" style={{ animation: 'navIndicatorIn 0.2s ease forwards, pulsingDot 1.8s ease-in-out infinite 0.2s' }} />}
+                  <item.icon size={18} className={clsx('sidebar-icon flex-shrink-0', isActive ? 'text-white' : 'text-white/60')} />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </>
+              )}
+            </NavLink>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const mainNav = [
   {
     section: 'Main',
     items: [
@@ -25,19 +67,22 @@ const nav = [
     items: [
       { to: '/knowledge', icon: BookOpen, label: 'Knowledge Base' },
       { to: '/test-data', icon: Database, label: 'Test Data Library' },
-      { to: '/approvals', icon: GitPullRequest, label: 'Approval Workflow' },
     ],
   },
 ];
 
-const adminNav = [
-  { to: '/users', icon: Users, label: 'User Management' },
-  { to: '/audit', icon: ShieldCheck, label: 'Audit Log' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
-];
-
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { user, isLead, isAdmin } = useAuth();
+  const leadNav = [
+    { to: '/approvals', icon: GitPullRequest, label: 'Approval Workflow' },
+  ];
+  const adminNav = [
+    { to: '/users', icon: Users, label: 'User Management' },
+    { to: '/audit', icon: ShieldCheck, label: 'Audit Log' },
+  ];
+  const settingsNav = [
+    { to: '/settings', icon: Settings, label: 'Settings' },
+  ];
   const { dark } = useTheme();
 
   return (
@@ -104,7 +149,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* ── Navigation ── */}
       <nav className="relative z-10 flex-1 overflow-y-auto py-4 space-y-5 px-2 scrollbar-thin">
-        {nav.map(section => (
+        {mainNav.map(section => (
           <div key={section.section}>
             {!collapsed && (
               <div
@@ -121,8 +166,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             )}
             <div className="space-y-0.5">
               {section.items.map((item, itemIdx) => {
-                const sectionOffset = nav.indexOf(section);
-                const globalIdx = nav.slice(0, sectionOffset).reduce((acc, s) => acc + s.items.length, 0) + itemIdx;
+                const sectionOffset = mainNav.indexOf(section);
+                const globalIdx = mainNav.slice(0, sectionOffset).reduce((acc, s) => acc + s.items.length, 0) + itemIdx;
                 return (
                   <div key={item.to} style={{ animation: 'fadeSlideIn 0.3s ease both', animationDelay: `${globalIdx * 0.05}s` }}>
                     <NavLink
@@ -166,67 +211,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </div>
         ))}
 
-        {/* Admin section */}
-        {isLead && (
-          <div>
-            {!collapsed && (
-              <div
-                className="px-3 mb-2 text-xs font-bold uppercase tracking-widest animate-fade-in"
-                style={{ color: 'rgba(252,165,165,0.5)' }}
-              >
-                Admin
-              </div>
-            )}
-            {collapsed && (
-              <div className="px-1.5 mb-2">
-                <div className="h-px w-full rounded-full border-slate-200 dark:border-slate-700/50 border-t" />
-              </div>
-            )}
-            <div className="space-y-0.5">
-              {adminNav.map((item, itemIdx) => {
-                const totalMainItems = nav.reduce((acc, s) => acc + s.items.length, 0);
-                const globalIdx = totalMainItems + itemIdx;
-                return (
-                  <div key={item.to} style={{ animation: 'fadeSlideIn 0.3s ease both', animationDelay: `${globalIdx * 0.05}s` }}>
-                    <NavLink
-                      to={item.to}
-                      title={collapsed ? item.label : undefined}
-                      className={({ isActive }) =>
-                        clsx(
-                          isActive ? 'sidebar-link-active' : 'sidebar-link',
-                          collapsed && 'justify-center !px-0 !pl-0',
-                        )
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          {isActive && (
-                            <span
-                              className="nav-indicator"
-                              style={{ animation: 'navIndicatorIn 0.2s ease forwards, pulsingDot 1.8s ease-in-out infinite 0.2s' }}
-                            />
-                          )}
-                          <item.icon
-                            size={18}
-                            className={clsx(
-                              'sidebar-icon flex-shrink-0',
-                              isActive
-                                ? 'text-white'
-                                : 'text-white/60',
-                            )}
-                          />
-                          {!collapsed && (
-                            <span className="truncate">{item.label}</span>
-                          )}
-                        </>
-                      )}
-                    </NavLink>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Approval Workflow — Lead + Admin only */}
+        {isLead && renderNavSection('Workflow', leadNav, mainNav.reduce((a, s) => a + s.items.length, 0), collapsed)}
+
+        {/* Admin section — Admin only */}
+        {isAdmin && renderNavSection('Admin', adminNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length, collapsed)}
+
+        {/* Settings — all roles */}
+        {renderNavSection('Account', settingsNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length + adminNav.length, collapsed)}
       </nav>
 
       {/* ── User card ── */}

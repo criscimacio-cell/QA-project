@@ -1,7 +1,9 @@
 import { NavLink, Outlet, Navigate, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, LogOut, Shield } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, LogOut, Shield, Sun, Moon } from 'lucide-react';
 import { useBackofficeAuth } from '../../context/BackofficeAuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 
 const navItems = [
   { to: '/backoffice', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -9,8 +11,24 @@ const navItems = [
   { to: '/backoffice/users', label: 'Users', icon: Users, end: false },
 ];
 
+function Clock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span className="tabular-nums">
+      {now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+      {' · '}
+      {now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+    </span>
+  );
+}
+
 export default function BackofficeLayout() {
   const { admin, loading, isAuthenticated, logout } = useBackofficeAuth();
+  const { dark, setMode } = useTheme();
   const navigate = useNavigate();
 
   if (loading) {
@@ -33,6 +51,8 @@ export default function BackofficeLayout() {
       toast.error('Logout failed');
     }
   };
+
+  const toggleTheme = () => setMode(dark ? 'light' : 'dark');
 
   return (
     <div className="min-h-screen flex bg-slate-950 text-slate-100">
@@ -74,7 +94,7 @@ export default function BackofficeLayout() {
 
         {/* Bottom admin info */}
         <div className="px-4 py-4 border-t border-slate-800">
-          <div className="text-xs text-slate-500 truncate mb-1">{admin?.name}</div>
+          <div className="text-xs text-slate-400 font-medium truncate mb-0.5">{admin?.name}</div>
           <div className="text-xs text-slate-600 truncate">{admin?.email}</div>
         </div>
       </aside>
@@ -86,19 +106,34 @@ export default function BackofficeLayout() {
           <div className="text-sm text-slate-400">
             Logged in as <span className="text-slate-200 font-medium">{admin?.name}</span>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-800"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+              title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-800"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
         </header>
 
         {/* Page content */}
         <main className="flex-1 overflow-auto p-6">
           <Outlet />
         </main>
+
+        {/* Footer */}
+        <footer className="flex-shrink-0 px-6 py-2.5 border-t border-slate-800 bg-slate-900/30 flex items-center justify-between">
+          <span className="text-xs text-slate-600"><Clock /></span>
+          <span className="text-xs text-slate-700">Qlarity Admin Console</span>
+        </footer>
       </div>
     </div>
   );

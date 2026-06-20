@@ -27,7 +27,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: MAX_FILE_SIZE } });
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
-  const { repository_id, status, project, category, search } = req.query;
+  const { repository_id, status, project, category, search, limit = '20', offset = '0' } = req.query;
+  const lim = Math.min(parseInt(limit as string) || 20, 200);
+  const off = parseInt(offset as string) || 0;
   const orgId = req.user!.organizationId;
   const isLead = ['admin','lead'].includes(req.user!.role);
   const rows = await sql`
@@ -45,8 +47,19 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     ${category ? sql`AND f.category = ${category as string}` : sql``}
     ${search ? sql`AND (f.name ILIKE ${'%'+search+'%'} OR f.description ILIKE ${'%'+search+'%'} OR f.tags ILIKE ${'%'+search+'%'} OR f.jira_ticket ILIKE ${'%'+search+'%'})` : sql``}
     ORDER BY f.updated_at DESC
+    LIMIT ${lim} OFFSET ${off}
   `;
-  res.json(rows);
+  const [{ total }] = await sql`
+    SELECT COUNT(*)::int as total FROM files f
+    WHERE f.organization_id = ${orgId}
+    ${!isLead ? sql`AND (f.owner_id = ${req.user!.userId} OR f.status IN ('published','approved'))` : sql``}
+    ${repository_id ? sql`AND f.repository_id = ${repository_id as string}` : sql``}
+    ${status ? sql`AND f.status = ${status as string}` : sql`AND f.status != 'archived'`}
+    ${project ? sql`AND f.project = ${project as string}` : sql``}
+    ${category ? sql`AND f.category = ${category as string}` : sql``}
+    ${search ? sql`AND (f.name ILIKE ${'%'+search+'%'} OR f.description ILIKE ${'%'+search+'%'} OR f.tags ILIKE ${'%'+search+'%'} OR f.jira_ticket ILIKE ${'%'+search+'%'})` : sql``}
+  ` as any[];
+  res.json({ files: rows, total, limit: lim, offset: off });
 });
 
 router.get('/export', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {

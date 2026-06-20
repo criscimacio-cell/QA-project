@@ -31,8 +31,12 @@ const router = Router();
 
 router.get('/', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
-  const users = await sql`SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users WHERE organization_id = ${orgId}`;
-  res.json(users);
+  const { limit = '20', offset = '0' } = req.query;
+  const lim = Math.min(parseInt(limit as string) || 20, 200);
+  const off = parseInt(offset as string) || 0;
+  const users = await sql`SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users WHERE organization_id = ${orgId} LIMIT ${lim} OFFSET ${off}`;
+  const [{ total }] = await sql`SELECT COUNT(*)::int as total FROM users WHERE organization_id = ${orgId}` as any[];
+  res.json({ users, total, limit: lim, offset: off });
 });
 
 router.patch('/me/preferences', authenticate, async (req: Request, res: Response) => {

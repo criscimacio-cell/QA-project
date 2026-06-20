@@ -162,7 +162,7 @@ export default function Settings() {
   const [allCategories, setAllCategories] = useState<any[]>([]);
   const [catLoading, setCatLoading] = useState(false);
   const [newCatName, setNewCatName] = useState('');
-  const [newCatType, setNewCatType] = useState<'file' | 'knowledge'>('file');
+  const [newCatType, setNewCatType] = useState<'file' | 'knowledge' | 'user_type'>('file');
   const [catSaving, setCatSaving] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: number; name: string } | null>(null);
   const [deletingCategory, setDeletingCategory] = useState(false);
@@ -405,9 +405,10 @@ export default function Settings() {
                   </div>
                   <div>
                     <label className="label">Type</label>
-                    <select value={newCatType} onChange={e => setNewCatType(e.target.value as 'file' | 'knowledge')} className="input">
+                    <select value={newCatType} onChange={e => setNewCatType(e.target.value as 'file' | 'knowledge' | 'user_type')} className="input">
                       <option value="file">File</option>
                       <option value="knowledge">Knowledge</option>
+                      <option value="user_type">User Type</option>
                     </select>
                   </div>
                   <button onClick={addCategory} disabled={!newCatName.trim() || catSaving} className="btn-primary h-9">
@@ -420,13 +421,14 @@ export default function Settings() {
               {catLoading ? (
                 <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-[#F59E0B]" /></div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {(['file', 'knowledge'] as const).map(type => {
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {(['file', 'knowledge', 'user_type'] as const).map(type => {
                     const cats = allCategories.filter(c => c.type === type);
+                    const label = type === 'file' ? 'File Categories' : type === 'knowledge' ? 'Knowledge Categories' : 'User Types';
                     return (
                       <div key={type}>
                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                          {type === 'file' ? 'File Categories' : 'Knowledge Categories'}
+                          {label}
                         </h3>
                         <div className="space-y-1.5">
                           {cats.length === 0 && <p className="text-xs text-slate-400 italic">No categories yet</p>}

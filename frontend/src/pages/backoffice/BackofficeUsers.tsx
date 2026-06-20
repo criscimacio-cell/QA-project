@@ -66,7 +66,7 @@ export default function BackofficeUsers() {
             placeholder="Search by name or email…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
         </div>
         <div className="flex flex-col gap-0.5">
@@ -76,7 +76,7 @@ export default function BackofficeUsers() {
             placeholder="Organization ID…"
             value={orgId}
             onChange={e => setOrgId(e.target.value)}
-            className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-48"
+            className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent w-48"
           />
         </div>
       </div>
@@ -84,7 +84,7 @@ export default function BackofficeUsers() {
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-48">
-            <div className="animate-spin w-7 h-7 border-2 border-indigo-500 border-t-transparent rounded-full" />
+            <div className="animate-spin w-7 h-7 border-2 border-amber-500 border-t-transparent rounded-full" />
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-16 text-slate-500 text-sm">No users found</div>
@@ -115,7 +115,7 @@ export default function BackofficeUsers() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => navigate(`/backoffice/organizations/${user.org_id}`)}
-                        className="text-slate-300 hover:text-indigo-400 transition-colors text-left"
+                        className="text-slate-300 hover:text-amber-400 transition-colors text-left"
                       >
                         {user.org_name}
                       </button>

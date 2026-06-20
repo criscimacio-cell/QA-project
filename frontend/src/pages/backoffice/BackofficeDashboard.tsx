@@ -39,7 +39,7 @@ function formatBytes(bytes: number): string {
 function PlanBadge({ plan }: { plan: string }) {
   const styles: Record<string, string> = {
     free: 'bg-slate-700 text-slate-300',
-    pro: 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30',
+    pro: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
     enterprise: 'bg-violet-600/20 text-violet-400 border border-violet-500/30',
   };
   return (
@@ -54,8 +54,8 @@ function StatCard({ label, value, icon: Icon, sub }: { label: string; value: str
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{label}</span>
-        <div className="w-8 h-8 rounded-lg bg-indigo-600/10 flex items-center justify-center">
-          <Icon className="w-4 h-4 text-indigo-400" />
+        <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+          <Icon className="w-4 h-4 text-amber-400" />
         </div>
       </div>
       <div className="text-2xl font-bold text-white">{value}</div>
@@ -72,7 +72,7 @@ function GrowthChart({ data }: { data: GrowthPoint[] }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-slate-500">New orgs per month</span>
-        <span className="text-xs font-medium text-indigo-400">{total} total over 6 mo</span>
+        <span className="text-xs font-medium text-amber-400">{total} total over 6 mo</span>
       </div>
       <div className="flex gap-3">
         <div className="flex flex-col justify-between text-right pb-5" style={{ width: 20 }}>
@@ -85,7 +85,7 @@ function GrowthChart({ data }: { data: GrowthPoint[] }) {
             {data.map((point, i) => (
               <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
                 <div
-                  className="w-full bg-indigo-600 rounded-t group-hover:bg-indigo-500 transition-colors"
+                  className="w-full bg-amber-500 rounded-t group-hover:bg-amber-400 transition-colors"
                   style={{ height: `${Math.max((point.count / max) * 80, 2)}px` }}
                 >
                   <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-700 text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap z-10">
@@ -127,7 +127,7 @@ export default function BackofficeDashboard() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full" />
+      <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
     </div>
   );
 
@@ -167,7 +167,7 @@ export default function BackofficeDashboard() {
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-slate-300">Recent Organizations</h2>
-            <button onClick={() => navigate('/backoffice/organizations')} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+            <button onClick={() => navigate('/backoffice/organizations')} className="text-xs text-amber-400 hover:text-amber-300 transition-colors">
               View all →
             </button>
           </div>
@@ -189,7 +189,7 @@ export default function BackofficeDashboard() {
                   {stats.recentOrgs.map(org => (
                     <tr key={org.id} className="hover:bg-slate-800/40 transition-colors cursor-pointer" onClick={() => navigate(`/backoffice/organizations/${org.id}`)}>
                       <td className="py-2.5 pr-4">
-                        <div className="font-medium text-slate-200 hover:text-indigo-400 transition-colors">{org.name}</div>
+                        <div className="font-medium text-slate-200 hover:text-amber-400 transition-colors">{org.name}</div>
                         <div className="text-xs text-slate-500">{org.slug}</div>
                       </td>
                       <td className="py-2.5 pr-4"><PlanBadge plan={org.plan} /></td>

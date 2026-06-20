@@ -26,7 +26,7 @@ function formatBytes(bytes: number): string {
 function PlanBadge({ plan }: { plan: string }) {
   const styles: Record<string, string> = {
     free: 'bg-slate-700 text-slate-300',
-    pro: 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30',
+    pro: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
     enterprise: 'bg-violet-600/20 text-violet-400 border border-violet-500/30',
   };
   return (
@@ -54,7 +54,7 @@ function PlanDropdown({ org, onPlanChange }: { org: Org; onPlanChange: (id: stri
               <button
                 key={p}
                 onClick={e => { e.stopPropagation(); onPlanChange(org.id, p); setOpen(false); }}
-                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700 transition-colors capitalize ${p === org.plan ? 'text-indigo-400' : 'text-slate-300'}`}
+                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700 transition-colors capitalize ${p === org.plan ? 'text-amber-400' : 'text-slate-300'}`}
               >
                 {p} {p === org.plan && '✓'}
               </button>
@@ -165,7 +165,7 @@ export default function BackofficeOrganizations() {
           <h1 className="text-xl font-bold text-white">Organizations</h1>
           <p className="text-slate-500 text-sm mt-0.5">{orgs.length} organization{orgs.length !== 1 ? 's' : ''} found</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+        <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-white text-sm font-medium transition-colors">
           <Plus className="w-4 h-4" /> New Organization
         </button>
       </div>
@@ -181,16 +181,16 @@ export default function BackofficeOrganizations() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-slate-400 block mb-1">Organization Name *</label>
-                  <input required value={createForm.name} onChange={e => handleNameChange(e.target.value)} placeholder="Acme Corp" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  <input required value={createForm.name} onChange={e => handleNameChange(e.target.value)} placeholder="Acme Corp" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1">Slug *</label>
-                  <input required value={createForm.slug} onChange={e => { setSlugEdited(true); setCreateForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })); }} placeholder="acme-corp" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  <input required value={createForm.slug} onChange={e => { setSlugEdited(true); setCreateForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })); }} placeholder="acme-corp" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
               </div>
               <div>
                 <label className="text-xs text-slate-400 block mb-1">Plan</label>
-                <select value={createForm.plan} onChange={e => setCreateForm(f => ({ ...f, plan: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select value={createForm.plan} onChange={e => setCreateForm(f => ({ ...f, plan: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
                   <option value="free">Free</option>
                   <option value="pro">Pro</option>
                   <option value="enterprise">Enterprise</option>
@@ -199,14 +199,14 @@ export default function BackofficeOrganizations() {
               <div className="border-t border-slate-800 pt-4">
                 <p className="text-xs text-slate-500 mb-3">First Admin User <span className="text-slate-600">(optional — fill all or none)</span></p>
                 <div className="space-y-3">
-                  <input value={createForm.adminName} onChange={e => setCreateForm(f => ({ ...f, adminName: e.target.value }))} placeholder="Admin name" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                  <input type="email" value={createForm.adminEmail} onChange={e => setCreateForm(f => ({ ...f, adminEmail: e.target.value }))} placeholder="admin@example.com" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                  <input type="password" value={createForm.adminPassword} onChange={e => setCreateForm(f => ({ ...f, adminPassword: e.target.value }))} placeholder="Password (min 8 chars)" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  <input value={createForm.adminName} onChange={e => setCreateForm(f => ({ ...f, adminName: e.target.value }))} placeholder="Admin name" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <input type="email" value={createForm.adminEmail} onChange={e => setCreateForm(f => ({ ...f, adminEmail: e.target.value }))} placeholder="admin@example.com" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                  <input type="password" value={createForm.adminPassword} onChange={e => setCreateForm(f => ({ ...f, adminPassword: e.target.value }))} placeholder="Password (min 8 chars)" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => { setShowCreate(false); setCreateForm(emptyForm); setSlugEdited(false); }} className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">Cancel</button>
-                <button type="submit" disabled={creating} className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium transition-colors">
+                <button type="submit" disabled={creating} className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white text-sm font-medium transition-colors">
                   {creating ? 'Creating…' : 'Create Organization'}
                 </button>
               </div>
@@ -223,16 +223,16 @@ export default function BackofficeOrganizations() {
             placeholder="Search organizations…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
         </div>
-        <select value={plan} onChange={e => setPlan(e.target.value)} className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <select value={plan} onChange={e => setPlan(e.target.value)} className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500">
           <option value="">All Plans</option>
           <option value="free">Free</option>
           <option value="pro">Pro</option>
           <option value="enterprise">Enterprise</option>
         </select>
-        <select value={status} onChange={e => setStatus(e.target.value)} className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <select value={status} onChange={e => setStatus(e.target.value)} className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500">
           <option value="">All Statuses</option>
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
@@ -243,7 +243,7 @@ export default function BackofficeOrganizations() {
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-48">
-            <div className="animate-spin w-7 h-7 border-2 border-indigo-500 border-t-transparent rounded-full" />
+            <div className="animate-spin w-7 h-7 border-2 border-amber-500 border-t-transparent rounded-full" />
           </div>
         ) : orgs.length === 0 ? (
           <div className="text-center py-16 text-slate-500 text-sm">No organizations found</div>
@@ -266,7 +266,7 @@ export default function BackofficeOrganizations() {
                 {orgs.map(org => (
                   <tr key={org.id} className="hover:bg-slate-800/40 transition-colors cursor-pointer" onClick={() => navigate(`/backoffice/organizations/${org.id}`)}>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-200 hover:text-indigo-400 transition-colors">{org.name}</div>
+                      <div className="font-medium text-slate-200 hover:text-amber-400 transition-colors">{org.name}</div>
                       <div className="text-xs text-slate-500">{org.slug}</div>
                     </td>
                     <td className="px-4 py-3"><PlanBadge plan={org.plan} /></td>

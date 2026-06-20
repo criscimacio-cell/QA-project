@@ -57,7 +57,7 @@ function formatBytes(bytes: number): string {
 function PlanBadge({ plan }: { plan: string }) {
   const styles: Record<string, string> = {
     free: 'bg-slate-700 text-slate-300',
-    pro: 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30',
+    pro: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
     enterprise: 'bg-violet-600/20 text-violet-400 border border-violet-500/30',
   };
   return (
@@ -163,7 +163,7 @@ export default function BackofficeOrgDetail() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full" />
+      <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
     </div>
   );
 
@@ -226,7 +226,7 @@ export default function BackofficeOrgDetail() {
                     <button
                       key={p}
                       onClick={() => handlePlanChange(p)}
-                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-slate-700 transition-colors capitalize ${p === org.plan ? 'text-indigo-400' : 'text-slate-300'}`}
+                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-slate-700 transition-colors capitalize ${p === org.plan ? 'text-amber-400' : 'text-slate-300'}`}
                     >
                       {p} {p === org.plan && '✓'}
                     </button>
@@ -255,7 +255,7 @@ export default function BackofficeOrgDetail() {
           <h2 className="text-sm font-semibold text-slate-400">Users ({org.users?.length ?? 0})</h2>
           <button
             onClick={() => setAddUserOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-500 hover:bg-amber-400 text-white transition-colors"
           >
             <UserPlus className="w-3.5 h-3.5" /> Add User
           </button>
@@ -324,7 +324,7 @@ export default function BackofficeOrgDetail() {
               <div key={item.id} className="flex items-start gap-3 py-2 border-b border-slate-800 last:border-0">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-mono bg-slate-800 text-indigo-400 px-1.5 py-0.5 rounded">
+                    <span className="text-xs font-mono bg-slate-800 text-amber-400 px-1.5 py-0.5 rounded">
                       {item.action}
                     </span>
                     <span className="text-xs text-slate-500">{item.entity_type}</span>
@@ -362,7 +362,7 @@ export default function BackofficeOrgDetail() {
                   required
                   value={addUserForm.name}
                   onChange={e => setAddUserForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   placeholder="Full name"
                 />
               </div>
@@ -373,7 +373,7 @@ export default function BackofficeOrgDetail() {
                   required
                   value={addUserForm.email}
                   onChange={e => setAddUserForm(f => ({ ...f, email: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   placeholder="user@example.com"
                 />
               </div>
@@ -384,7 +384,7 @@ export default function BackofficeOrgDetail() {
                   required
                   value={addUserForm.password}
                   onChange={e => setAddUserForm(f => ({ ...f, password: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   placeholder="Minimum 8 characters"
                 />
               </div>
@@ -393,7 +393,7 @@ export default function BackofficeOrgDetail() {
                 <select
                   value={addUserForm.role}
                   onChange={e => setAddUserForm(f => ({ ...f, role: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="member">Member</option>
                   <option value="admin">Admin</option>
@@ -411,7 +411,7 @@ export default function BackofficeOrgDetail() {
                 <button
                   type="submit"
                   disabled={addUserLoading}
-                  className="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-amber-500 hover:bg-amber-400 text-white transition-colors disabled:opacity-50"
                 >
                   {addUserLoading ? 'Adding…' : 'Add User'}
                 </button>

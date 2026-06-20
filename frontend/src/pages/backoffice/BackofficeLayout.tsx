@@ -16,7 +16,7 @@ export default function BackofficeLayout() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -41,7 +41,7 @@ export default function BackofficeLayout() {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -61,7 +61,7 @@ export default function BackofficeLayout() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                    ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                 }`
               }

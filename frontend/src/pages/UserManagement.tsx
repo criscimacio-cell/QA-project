@@ -124,7 +124,11 @@ export default function UserManagement() {
     if (!confirmToggle) return;
     setToggling(true);
     try {
-      await api.put(`/users/${confirmToggle.id}`, { ...confirmToggle, active: confirmToggle.active ? 0 : 1 });
+      if (confirmToggle.active) {
+        await api.put(`/users/${confirmToggle.id}/deactivate`);
+      } else {
+        await api.put(`/users/${confirmToggle.id}/activate`);
+      }
       toast.success(confirmToggle.active ? 'User deactivated' : 'User activated');
       load();
     } catch {

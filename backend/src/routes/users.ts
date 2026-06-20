@@ -62,6 +62,18 @@ router.post('/', authenticate, requireRole('admin'), async (req: Request, res: R
   } catch { res.status(400).json({ error: 'Operation failed' }); }
 });
 
+router.put('/:id/activate', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+  await sql`UPDATE users SET active = TRUE WHERE id = ${req.params.id}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_ACTIVATE', 'user', ${req.params.id}, ${`Activated user id=${req.params.id}`}, ${req.ip || ''})`;
+  res.json({ message: 'Activated' });
+});
+
+router.put('/:id/deactivate', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+  await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''})`;
+  res.json({ message: 'Deactivated' });
+});
+
 const VALID_ROLES = ['admin', 'lead', 'engineer', 'viewer'];
 
 router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
@@ -80,18 +92,6 @@ router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res:
 });
 
 router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
-  await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id}`;
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''})`;
-  res.json({ message: 'Deactivated' });
-});
-
-router.put('/:id/activate', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
-  await sql`UPDATE users SET active = TRUE WHERE id = ${req.params.id}`;
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_ACTIVATE', 'user', ${req.params.id}, ${`Activated user id=${req.params.id}`}, ${req.ip || ''})`;
-  res.json({ message: 'Activated' });
-});
-
-router.put('/:id/deactivate', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''})`;
   res.json({ message: 'Deactivated' });

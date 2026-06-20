@@ -299,6 +299,24 @@ router.get('/users', authenticatePlatformAdmin, asyncHandler(async (req: Request
   res.json({ users, total, limit: lim, offset: off });
 }));
 
+// Run retention: archive files older than N days for an org
+router.post('/organizations/:id/retention', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+  const { days } = req.body;
+  if (!days || isNaN(Number(days)) || Number(days) < 1) {
+    res.status(400).json({ error: 'days must be a positive number' }); return;
+  }
+  const [org] = await sql`SELECT id, name FROM organizations WHERE id = ${req.params.id}`;
+  if (!org) { res.status(404).json({ error: 'Organization not found' }); return; }
+  const result = await sql`
+    UPDATE files SET status = 'archived', updated_at = NOW()
+    WHERE organization_id = ${req.params.id}
+      AND status NOT IN ('archived')
+      AND updated_at < NOW() - (${Number(days)} || ' days')::interval
+    RETURNING id
+  `;
+  res.json({ message: `Archived ${result.length} files older than ${days} days`, count: result.length });
+}));
+
 router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error('[backoffice]', err?.message ?? err);
   res.status(500).json({ error: 'Internal server error' });

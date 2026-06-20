@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -16,6 +16,10 @@ const PLAN_STORAGE_LIMITS: Record<string, number> = {
 import { notificationQueue } from '../queue';
 
 const router = Router();
+
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
+
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -45,7 +49,16 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     ${status ? sql`AND f.status = ${status as string}` : sql`AND f.status != 'archived'`}
     ${project ? sql`AND f.project = ${project as string}` : sql``}
     ${category ? sql`AND f.category = ${category as string}` : sql``}
-    ${search ? sql`AND (f.name ILIKE ${'%'+search+'%'} OR f.description ILIKE ${'%'+search+'%'} OR f.tags ILIKE ${'%'+search+'%'} OR f.jira_ticket ILIKE ${'%'+search+'%'})` : sql``}
+    ${search ? sql`AND (
+      f.name ILIKE ${'%'+search+'%'} OR
+      f.original_name ILIKE ${'%'+search+'%'} OR
+      f.description ILIKE ${'%'+search+'%'} OR
+      f.tags ILIKE ${'%'+search+'%'} OR
+      f.jira_ticket ILIKE ${'%'+search+'%'} OR
+      f.project ILIKE ${'%'+search+'%'} OR
+      f.module ILIKE ${'%'+search+'%'} OR
+      f.category ILIKE ${'%'+search+'%'}
+    )` : sql``}
     ORDER BY f.updated_at DESC
     LIMIT ${lim} OFFSET ${off}
   `;
@@ -57,10 +70,38 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     ${status ? sql`AND f.status = ${status as string}` : sql`AND f.status != 'archived'`}
     ${project ? sql`AND f.project = ${project as string}` : sql``}
     ${category ? sql`AND f.category = ${category as string}` : sql``}
-    ${search ? sql`AND (f.name ILIKE ${'%'+search+'%'} OR f.description ILIKE ${'%'+search+'%'} OR f.tags ILIKE ${'%'+search+'%'} OR f.jira_ticket ILIKE ${'%'+search+'%'})` : sql``}
+    ${search ? sql`AND (
+      f.name ILIKE ${'%'+search+'%'} OR
+      f.original_name ILIKE ${'%'+search+'%'} OR
+      f.description ILIKE ${'%'+search+'%'} OR
+      f.tags ILIKE ${'%'+search+'%'} OR
+      f.jira_ticket ILIKE ${'%'+search+'%'} OR
+      f.project ILIKE ${'%'+search+'%'} OR
+      f.module ILIKE ${'%'+search+'%'} OR
+      f.category ILIKE ${'%'+search+'%'}
+    )` : sql``}
   ` as any[];
   res.json({ files: rows, total, limit: lim, offset: off });
 });
+
+router.get('/search', authenticate, asyncHandler(async (req: Request, res: Response) => {
+  const { q } = req.query;
+  if (!q || (q as string).trim().length < 2) { res.json([]); return; }
+  const orgId = req.user!.organizationId;
+  const term = '%' + (q as string).trim() + '%';
+  const results = await sql`
+    SELECT f.id, f.name, f.original_name, f.status, f.project, f.module, f.version, f.updated_at,
+           u.name as owner_name
+    FROM files f LEFT JOIN users u ON f.owner_id = u.id
+    WHERE f.organization_id = ${orgId}
+      AND f.status != 'archived'
+      AND (f.name ILIKE ${term} OR f.original_name ILIKE ${term} OR f.description ILIKE ${term}
+           OR f.tags ILIKE ${term} OR f.jira_ticket ILIKE ${term} OR f.project ILIKE ${term})
+    ORDER BY f.updated_at DESC
+    LIMIT 10
+  `;
+  res.json(results);
+}));
 
 router.get('/export', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;

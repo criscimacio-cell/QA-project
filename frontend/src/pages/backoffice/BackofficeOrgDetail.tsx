@@ -87,6 +87,8 @@ export default function BackofficeOrgDetail() {
   const [addUserForm, setAddUserForm] = useState<AddUserForm>({ name: '', email: '', password: '', role: 'member' });
   const [addUserLoading, setAddUserLoading] = useState(false);
   const [togglingUser, setTogglingUser] = useState<string | null>(null);
+  const [retentionDays, setRetentionDays] = useState('');
+  const [retentionLoading, setRetentionLoading] = useState(false);
   const fetchOrgRef = useRef<() => void>(() => {});
 
   const fetchOrg = () => {
@@ -158,6 +160,20 @@ export default function BackofficeOrgDetail() {
       fetchOrg();
     } catch {
       toast.error('Failed to update plan');
+    }
+  };
+
+  const handleRetention = async () => {
+    if (!retentionDays || !org) return;
+    setRetentionLoading(true);
+    try {
+      const res = await api.post(`/backoffice/organizations/${id}/retention`, { days: Number(retentionDays) });
+      toast.success(res.data.message);
+      fetchOrg();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Retention run failed');
+    } finally {
+      setRetentionLoading(false);
     }
   };
 
@@ -343,6 +359,32 @@ export default function BackofficeOrgDetail() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Retention Policy */}
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-5">
+        <h2 className="text-sm font-semibold text-slate-400 mb-4">Retention Policy</h2>
+        <div className="flex items-end gap-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-400 dark:text-slate-500 mb-1">Archive files older than (days)</label>
+            <input
+              type="number"
+              min="1"
+              value={retentionDays}
+              onChange={e => setRetentionDays(e.target.value)}
+              className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 w-32"
+              placeholder="e.g. 365"
+            />
+          </div>
+          <button
+            onClick={handleRetention}
+            disabled={retentionLoading || !retentionDays}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-amber-500 hover:bg-amber-400 text-white transition-colors disabled:opacity-50"
+          >
+            {retentionLoading ? 'Running…' : 'Run Now'}
+          </button>
+        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-600 mt-2">This will archive all non-archived files not updated within the specified number of days.</p>
       </div>
 
       {addUserOpen && (

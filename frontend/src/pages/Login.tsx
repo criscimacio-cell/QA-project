@@ -125,7 +125,7 @@ export default function Login() {
     } catch (orgErr: any) {
       // Org login failed — try backoffice admin login
       try {
-        await api.post('/api/backoffice/auth/login', { email, password });
+        await api.post('/backoffice/auth/login', { email, password });
         setIsAdminLogin(true);
         setLoginSuccess(true);
       } catch {

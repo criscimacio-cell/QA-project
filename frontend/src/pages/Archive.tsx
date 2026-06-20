@@ -180,12 +180,12 @@ export default function Archive() {
               <strong>"{confirmRestore.name}"</strong> will be restored and moved back to Draft status in File Manager.
             </p>
           </div>
-          <div className="flex justify-end gap-2">
-            <button onClick={() => setConfirmRestore({ open: false, id: null, name: '' })} disabled={restoreLoading} className="btn-secondary">Cancel</button>
-            <button onClick={doRestore} disabled={restoreLoading} className="btn-primary flex items-center gap-1.5">
+          <div className="flex flex-col gap-2 pt-1">
+            <button onClick={doRestore} disabled={restoreLoading} className="btn-primary w-full justify-center flex items-center gap-1.5">
               {restoreLoading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <RotateCcw size={14} />}
               Restore
             </button>
+            <button onClick={() => setConfirmRestore({ open: false, id: null, name: '' })} disabled={restoreLoading} className="btn-secondary w-full justify-center">Cancel</button>
           </div>
         </div>
       </Modal>

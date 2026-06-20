@@ -830,12 +830,12 @@ export default function FileManager() {
             <strong>"{confirmArchive.name}"</strong> will be moved to the Archive. It will no longer appear in File Manager and can only be restored from the Archive module.
           </p>
         </div>
-        <div className="flex justify-end gap-2">
-          <button onClick={() => setConfirmArchive({ open: false, id: null, name: '' })} disabled={archiveLoading} className="btn-secondary">Cancel</button>
-          <button onClick={doArchive} disabled={archiveLoading} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-60">
+        <div className="flex flex-col gap-2 pt-1">
+          <button onClick={doArchive} disabled={archiveLoading} className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-60">
             {archiveLoading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Archive size={14} />}
             Archive
           </button>
+          <button onClick={() => setConfirmArchive({ open: false, id: null, name: '' })} disabled={archiveLoading} className="btn-secondary w-full justify-center">Cancel</button>
         </div>
       </Modal>
 

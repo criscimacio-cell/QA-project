@@ -262,8 +262,7 @@ export async function initDb() {
   await sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
   await sql`UPDATE notifications SET organization_id = 1 WHERE organization_id IS NULL`;
 
-  await sql`ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
-  await sql`UPDATE audit_logs SET organization_id = 1 WHERE organization_id IS NULL`;
+  await sql`ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT NULL`;
 
   await sql`ALTER TABLE categories ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
   await sql`UPDATE categories SET organization_id = 1 WHERE organization_id IS NULL`;

@@ -70,7 +70,7 @@ router.post('/login', async (req: Request, res: Response) => {
   if (orgSlug) {
     const [org] = await sql`SELECT id FROM organizations WHERE slug = ${orgSlug} AND active = TRUE`;
     if (!org) {
-      await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (0, 'LOGIN_FAIL', 'user', 0, ${`Failed login: unknown org slug "${orgSlug}" for ${email}`}, ${ip}, 1)`;
+      await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (0, 'LOGIN_FAIL', 'user', 0, ${`Failed login: unknown org slug "${orgSlug}" for ${email}`}, ${ip})`;
       res.status(401).json({ error: 'Invalid credentials' }); return;
     }
     [user] = await sql`SELECT * FROM users WHERE email = ${email} AND organization_id = ${org.id}`;
@@ -84,7 +84,7 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (0, 'LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip}, 1)`;
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (0, 'LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip})`;
     res.status(401).json({ error: 'Invalid credentials' }); return;
   }
   if (!user.active) {

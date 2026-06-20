@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Layers, Mail, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
 import api from '../api/client';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
@@ -54,9 +54,11 @@ export default function ForgotPassword() {
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 If <strong>{email}</strong> is registered, you'll receive a password reset link shortly.
               </p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-                💡 In development mode, the reset link is printed in the <strong>backend terminal</strong> console.
-              </p>
+              {import.meta.env.DEV && (
+                <p className="text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                  💡 In development mode, the reset link is printed in the <strong>backend terminal</strong> console.
+                </p>
+              )}
               <Link to="/login" className="btn-primary w-full justify-center mt-2">
                 Back to Sign In
               </Link>
@@ -85,7 +87,7 @@ export default function ForgotPassword() {
                   </div>
                 </div>
                 <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5">
-                  {loading ? <span className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> : 'Send Reset Link'}
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : 'Send Reset Link'}
                 </button>
               </form>
 

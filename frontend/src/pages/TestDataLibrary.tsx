@@ -18,21 +18,31 @@ export default function TestDataLibrary() {
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [project, setProject] = useState('');
-  const [projects, setProjects] = useState<string[]>([]);
+  const [allProjects, setAllProjects] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // On mount: fetch all files once to build the stable projects dropdown
+  useEffect(() => {
+    api.get('/files', { params: { status: 'published', limit: 1000 } })
+      .then(r => {
+        const unique = [...new Set(r.data.map((f: any) => f.project).filter(Boolean))] as string[];
+        setAllProjects(unique);
+      })
+      .catch(() => {/* silently ignore — projects dropdown just stays empty */});
+  }, []);
 
   const load = () => {
     const params: any = { status: 'published' };
     if (category !== 'All') params.category = category;
     if (search) params.search = search;
     if (project) params.project = project;
+    setLoading(true);
     api.get('/files', { params })
       .then(r => {
         setFiles(r.data);
-        // Derive project list dynamically from results
-        const unique = [...new Set(r.data.map((f: any) => f.project).filter(Boolean))] as string[];
-        setProjects(unique);
       })
-      .catch(() => toast.error('Failed to load test assets'));
+      .catch(() => toast.error('Failed to load test assets'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [category, project]);
@@ -51,6 +61,8 @@ export default function TestDataLibrary() {
       toast.error('Download failed');
     }
   };
+
+  const isFiltered = category !== 'All' || !!project;
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -74,6 +86,7 @@ export default function TestDataLibrary() {
             <div>
               <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{s.count}</div>
               <div className="text-xs text-slate-500 dark:text-slate-400">{s.label}</div>
+              {isFiltered && <div className="text-xs text-slate-400 italic">in current filter</div>}
             </div>
           </div>
         ))}
@@ -81,14 +94,15 @@ export default function TestDataLibrary() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
-        <form onSubmit={e => { e.preventDefault(); load(); }} className="relative">
+        <form onSubmit={e => { e.preventDefault(); load(); }} className="relative flex items-center gap-2">
           <label htmlFor="tdl-search" className="sr-only">Search assets</label>
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input id="tdl-search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search assets…" className="input pl-8 text-sm h-8 w-56" />
+          <button type="submit" className="btn-primary h-8 px-3 text-sm">Search</button>
         </form>
         <select value={project} onChange={e => setProject(e.target.value)} className="input h-8 text-sm w-40">
           <option value="">All Projects</option>
-          {projects.map(p => <option key={p} value={p}>{p}</option>)}
+          {allProjects.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
       </div>
 
@@ -102,7 +116,29 @@ export default function TestDataLibrary() {
       </div>
 
       {/* Grid */}
-      {files.length === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="card p-5 animate-pulse">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-8 h-8 rounded bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded w-1/3" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded w-2/3" />
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between">
+                <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded w-1/4" />
+                <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded w-1/4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : files.length === 0 ? (
         <div className="card p-12 text-center">
           <Database size={40} className="mx-auto mb-3 opacity-30 text-slate-400" />
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No published assets found</p>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Layers, Lock, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
+import { Layers, Lock, Eye, EyeOff, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import api from '../api/client';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
@@ -11,6 +11,7 @@ export default function ResetPassword() {
   const { dark, toggle } = useTheme();
   const token = params.get('token') || '';
 
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const [valid, setValid] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -34,7 +35,7 @@ export default function ResetPassword() {
     try {
       await api.post('/auth/reset-password', { token, newPassword: password });
       setDone(true);
-      setTimeout(() => navigate('/login'), 3000);
+      timerRef.current = setTimeout(() => navigate('/login'), 3000);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Reset failed. Please request a new link.');
     } finally {
@@ -42,7 +43,17 @@ export default function ResetPassword() {
     }
   };
 
-  const strength = password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : /[A-Z]/.test(password) && /[0-9]/.test(password) ? 4 : 3;
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+  const getStrength = (val: string): number => {
+    if (val.length === 0) return 0;
+    if (val.length < 6) return 0;
+    if (val.length < 8) return 1;
+    if (val.length >= 10 && /[A-Z]/.test(val) && /[0-9]/.test(val) && /[!@#$%^&*]/.test(val)) return 4;
+    if (val.length >= 8 && /[A-Z]/.test(val) && /[0-9]/.test(val)) return 3;
+    return 2;
+  };
+  const strength = getStrength(password);
   const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'];
   const strengthColor = ['', 'bg-red-400', 'bg-amber-400', 'bg-[#F59E0B]', 'bg-green-500'];
 
@@ -111,7 +122,7 @@ export default function ResetPassword() {
                   <div className="relative">
                     <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required className="input pl-9 pr-10" placeholder="Minimum 8 characters" />
-                    <button type="button" onClick={() => setShowPw(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <button type="button" onClick={() => setShowPw(s => !s)} aria-label={showPw ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                       {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
@@ -139,7 +150,7 @@ export default function ResetPassword() {
                   </div>
                 </div>
                 <button type="submit" disabled={loading || password !== confirm || password.length < 8} className="btn-primary w-full justify-center py-2.5">
-                  {loading ? <span className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> : 'Reset Password'}
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : 'Reset Password'}
                 </button>
               </form>
             </>

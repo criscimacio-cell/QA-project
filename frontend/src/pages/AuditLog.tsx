@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Download, Filter, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Download, Filter, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 
@@ -21,12 +21,22 @@ const ACTION_STYLES: Record<string, string> = {
 
 const ACTIONS = ['', 'LOGIN', 'LOGOUT', 'UPLOAD', 'DOWNLOAD', 'DELETE', 'APPROVE', 'ARCHIVE', 'USER_CREATE', 'PERMISSION_CHANGE', 'SEARCH'];
 
+/** S2: Sanitize a CSV cell value to prevent CSV injection.
+ *  Prefixes any value starting with =, +, -, or @ with a single quote. */
+function sanitizeCsvField(value: string): string {
+  if (/^[=+\-@]/.test(value)) {
+    return `'${value}`;
+  }
+  return value;
+}
+
 export default function AuditLog() {
   const [logs, setLogs] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [action, setAction] = useState('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -38,16 +48,45 @@ export default function AuditLog() {
 
   useEffect(() => { load(); }, [action, page]);
 
-  const exportCSV = () => {
-    const header = 'Timestamp,User,Role,Action,Entity,Details,IP\n';
-    const rows = logs.map(l => `"${l.created_at}","${l.user_name ?? 'System'}","${l.user_role ?? ''}","${l.action}","${l.entity_type}","${l.details}","${l.ip_address}"`).join('\n');
-    const blob = new Blob([header + rows], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'audit-log.csv'; a.click();
+  // S1: Fetch ALL records (limit=10000) instead of only the current page
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      let allLogs: any[];
+      try {
+        const r = await api.get('/audit', { params: { action: action || undefined, page: 1, limit: 10000 } });
+        allLogs = r.data.logs;
+      } catch {
+        // If the bulk fetch fails, fall back to current page with a warning
+        toast.warning('Export contains current page only. Use filters to narrow results first.');
+        allLogs = logs;
+      }
+
+      const header = 'Timestamp,User,Role,Action,Entity,Details,IP\n';
+      // S2: Sanitize details, user_name, ip_address to prevent CSV injection
+      const rows = allLogs.map(l => {
+        const userName = sanitizeCsvField(String(l.user_name ?? 'System'));
+        const details = sanitizeCsvField(String(l.details ?? ''));
+        const ipAddress = sanitizeCsvField(String(l.ip_address ?? ''));
+        return `"${l.created_at}","${userName}","${l.user_role ?? ''}","${l.action}","${l.entity_type}","${details}","${ipAddress}"`;
+      }).join('\n');
+
+      const blob = new Blob([header + rows], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'audit-log.csv'; a.click();
+      URL.revokeObjectURL(url);
+      // U3: Confirm success
+      toast.success('CSV exported');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const summaryActions = ['UPLOAD', 'DOWNLOAD', 'LOGIN', 'DELETE', 'APPROVE'];
   const summary = summaryActions.map(a => ({ action: a, count: logs.filter(l => l.action === a).length }));
+
+  // U2: Total pages for pagination label
+  const totalPages = Math.ceil(total / 50);
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -56,21 +95,34 @@ export default function AuditLog() {
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Audit Log</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Security and compliance event history</p>
         </div>
-        <button onClick={exportCSV} className="btn-secondary"><Download size={15} />Export CSV</button>
+        {/* U3: Disable and show spinner while exporting */}
+        <button onClick={exportCSV} disabled={exporting} className="btn-secondary">
+          {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+          {exporting ? 'Exporting…' : 'Export CSV'}
+        </button>
       </div>
 
-      {/* Summary */}
+      {/* Summary — U1: Show shimmer skeletons while loading */}
       <div className="grid grid-cols-5 gap-3">
-        {summary.map(s => (
-          <div key={s.action} className="card p-3 text-center">
-            <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{s.count}</div>
-            <div className={`text-xs mt-0.5 font-medium px-2 py-0.5 rounded-full inline-block ${ACTION_STYLES[s.action] || 'bg-slate-100 text-slate-600'}`}>{s.action}</div>
-            <div className="text-[10px] text-slate-400 mt-0.5">on this page</div>
+        {summaryActions.map((sa, i) => (
+          <div key={sa} className="card p-3 text-center">
+            {loading ? (
+              <>
+                <div className="shimmer-bg rounded h-7 w-10 mx-auto mb-1" />
+                <div className="shimmer-bg rounded-full h-4 w-16 mx-auto" />
+              </>
+            ) : (
+              <>
+                <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{summary[i].count}</div>
+                <div className={`text-xs mt-0.5 font-medium px-2 py-0.5 rounded-full inline-block ${ACTION_STYLES[sa] || 'bg-slate-100 text-slate-600'}`}>{sa}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">on this page</div>
+              </>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Filters */}
+      {/* Filters — L4: page resets to 1 when action filter changes */}
       <div className="card p-4 flex gap-3 items-center flex-wrap">
         <Filter size={16} className="text-slate-400" />
         <select value={action} onChange={e => { setAction(e.target.value); setPage(1); }} className="input h-8 text-sm w-44">
@@ -134,11 +186,11 @@ export default function AuditLog() {
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination — U2: Show "Page X of Y" */}
       {total > 50 && (
         <div className="flex gap-2 justify-center">
           <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary text-sm">Previous</button>
-          <span className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">Page {page}</span>
+          <span className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">Page {page} of {totalPages}</span>
           <button disabled={page * 50 >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary text-sm">Next</button>
         </div>
       )}

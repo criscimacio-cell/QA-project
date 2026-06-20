@@ -3,11 +3,15 @@ import { Plus, Edit2, UserCheck, UserX, Loader2, Eye, EyeOff, RefreshCw, Copy, C
 import { toast } from 'sonner';
 import api from '../api/client';
 import Modal from '../components/UI/Modal';
+import ConfirmModal from '../components/UI/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 
+// S1: Use crypto.getRandomValues() instead of Math.random() for cryptographic security
 function generatePassword() {
   const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
-  return Array.from({ length: 14 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const arr = new Uint8Array(14);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => chars[b % chars.length]).join('');
 }
 
 const ROLES = ['admin', 'lead', 'engineer', 'viewer'];
@@ -23,8 +27,19 @@ export default function UserManagement() {
   const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  // L1: State for confirm modal before deactivate/activate
+  const [confirmToggle, setConfirmToggle] = useState<any>(null);
+  const [toggling, setToggling] = useState(false);
 
-  const load = () => api.get('/users').then(r => setUsers(r.data));
+  // L2: Wrap load() in try/catch with error toast
+  const load = async () => {
+    try {
+      const r = await api.get('/users');
+      setUsers(r.data);
+    } catch {
+      toast.error('Failed to load users');
+    }
+  };
   useEffect(() => { load(); }, []);
 
   const validate = () => {
@@ -86,14 +101,25 @@ export default function UserManagement() {
     setShowModal(true);
   };
 
-  const toggleActive = async (u: any) => {
+  // L1: Instead of calling the API directly, show a confirm modal first.
+  // S2: Note — the server must also enforce "cannot deactivate own account" to prevent bypass via direct API calls.
+  const toggleActive = (u: any) => {
     if (u.id === user?.id) { toast.error('You cannot deactivate your own account.'); return; }
+    setConfirmToggle(u);
+  };
+
+  const confirmToggleActive = async () => {
+    if (!confirmToggle) return;
+    setToggling(true);
     try {
-      await api.put(`/users/${u.id}`, { ...u, active: u.active ? 0 : 1 });
-      toast.success(u.active ? 'User deactivated' : 'User activated');
+      await api.put(`/users/${confirmToggle.id}`, { ...confirmToggle, active: confirmToggle.active ? 0 : 1 });
+      toast.success(confirmToggle.active ? 'User deactivated' : 'User activated');
       load();
     } catch {
       toast.error('Failed to update user status');
+    } finally {
+      setToggling(false);
+      setConfirmToggle(null);
     }
   };
 
@@ -177,7 +203,9 @@ export default function UserManagement() {
                 <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50" style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <img src={u.avatar} alt="" className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0" />
+                      {/* U3: Fallback to dicebear avatar on broken image URLs */}
+                      <img src={u.avatar} alt="" className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0"
+                        onError={e => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.email)}`; }} />
                       <div>
                         <div className="font-medium text-slate-900 dark:text-slate-100">{u.name}</div>
                         <div className="text-xs text-slate-400">{u.email}</div>
@@ -213,6 +241,17 @@ export default function UserManagement() {
         </div>
       </div>
 
+      {/* L1: Confirm modal for activate/deactivate */}
+      <ConfirmModal
+        open={!!confirmToggle}
+        onClose={() => setConfirmToggle(null)}
+        onConfirm={confirmToggleActive}
+        title={confirmToggle?.active ? 'Deactivate User' : 'Activate User'}
+        message={`Are you sure you want to ${confirmToggle?.active ? 'deactivate' : 'activate'} ${confirmToggle?.name}?`}
+        confirmLabel={confirmToggle?.active ? 'Deactivate' : 'Activate'}
+        loading={toggling}
+      />
+
       <Modal open={showModal} onClose={closeModal} title={editing ? 'Edit User' : 'Add New User'} size="sm">
         <div className="space-y-4">
           <div>
@@ -225,6 +264,13 @@ export default function UserManagement() {
               <label className="label">Email<span className="text-red-500 ml-0.5">*</span></label>
               <input type="email" value={form.email} onChange={e => { setForm(p => ({ ...p, email: e.target.value })); if (errors.email) setErrors(p => ({ ...p, email: '' })); }} className={`input ${errors.email ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="john@company.com" />
               {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+            </div>
+          )}
+          {/* L4: Show email as read-only when editing */}
+          {editing && (
+            <div>
+              <label className="label">Email</label>
+              <input className="input bg-slate-50 dark:bg-slate-800" value={form.email} disabled readOnly />
             </div>
           )}
           <div>

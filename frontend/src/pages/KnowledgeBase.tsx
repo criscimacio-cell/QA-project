@@ -71,7 +71,7 @@ const CAT_COLORS: Record<string, string> = {
 };
 
 export default function KnowledgeBase() {
-  const { isEngineer, isLead } = useAuth();
+  const { isEngineer, isLead, user } = useAuth();
   const [articles, setArticles] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
   const [category, setCategory] = useState('All');
@@ -87,12 +87,22 @@ export default function KnowledgeBase() {
   const [actionLoading, setActionLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [articleLoading, setArticleLoading] = useState(false);
+  // U1: loading state for skeleton display
+  const [loading, setLoading] = useState(false);
 
-  const load = () => {
+  const load = async (overrideSearch?: string, overrideCategory?: string) => {
     const params: any = {};
-    if (category !== 'All') params.category = category;
-    if (search) params.search = search;
-    api.get('/knowledge', { params }).then(r => setArticles(r.data));
+    const cat = overrideCategory !== undefined ? overrideCategory : category;
+    const q = overrideSearch !== undefined ? overrideSearch : search;
+    if (cat !== 'All') params.category = cat;
+    if (q) params.search = q;
+    setLoading(true);
+    try {
+      const r = await api.get('/knowledge', { params });
+      setArticles(r.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -102,7 +112,11 @@ export default function KnowledgeBase() {
         setKbCategories(names.length > 0 ? names : DEFAULT_CATEGORIES);
       })
       .catch(() => {});
-    api.get('/users').then(r => setUsers(r.data)).catch(() => {});
+    // S3: Only fetch users (PII) for roles that need the @mention feature
+    const role = (user as any)?.role;
+    if (role === 'admin' || role === 'lead' || role === 'engineer') {
+      api.get('/users').then(r => setUsers(r.data)).catch(() => {});
+    }
   }, []);
 
   const insertMention = (username: string) => {
@@ -120,7 +134,11 @@ export default function KnowledgeBase() {
     });
   };
 
-  useEffect(() => { load(); }, [category]);
+  // L1: When category changes, reset search and reload with empty search to avoid silent carry-over
+  useEffect(() => {
+    setSearch('');
+    load('', category);
+  }, [category]);
 
   const openArticle = async (a: any) => {
     setArticleLoading(true);
@@ -147,20 +165,39 @@ export default function KnowledgeBase() {
     return Object.keys(e).length === 0;
   };
 
+  // L2: Save article first; only create category after article succeeds (or roll back on failure)
   const save = async () => {
     if (!validate()) return;
     setSaving(true);
+    let newCategoryCreated: string | null = null;
+    let newCategoryId: number | null = null;
     try {
-      if (form.category && !kbCategories.includes(form.category)) {
-        await api.post('/categories', { name: form.category, type: 'knowledge' });
-        setKbCategories(prev => [...prev, form.category]);
-      }
       if (editing) {
         await api.put(`/knowledge/${editing.id}`, form);
         toast.success('Article updated');
       } else {
-        await api.post('/knowledge', form);
-        toast.success('Article created');
+        // Create category first if needed, but track it so we can roll back
+        if (form.category && !kbCategories.includes(form.category)) {
+          const catRes = await api.post('/categories', { name: form.category, type: 'knowledge' });
+          newCategoryCreated = form.category;
+          newCategoryId = catRes.data?.id ?? null;
+          setKbCategories(prev => [...prev, form.category]);
+        }
+        try {
+          await api.post('/knowledge', form);
+          toast.success('Article created');
+        } catch (articleErr) {
+          // L2: Article POST failed — roll back the newly created category
+          if (newCategoryCreated !== null && newCategoryId !== null) {
+            try {
+              await api.delete(`/categories/${newCategoryId}`);
+            } catch {
+              // best-effort rollback
+            }
+            setKbCategories(prev => prev.filter(c => c !== newCategoryCreated));
+          }
+          throw articleErr;
+        }
       }
       setShowCreate(false); setEditing(null); setErrors({});
       setForm({ title: '', content: '', category: 'Best Practices', tags: '', status: 'draft' });
@@ -192,9 +229,20 @@ export default function KnowledgeBase() {
     setConfirmDelete({ open: true, id, title });
   };
 
-  const startEdit = (a: any) => {
-    setForm({ title: a.title || '', content: a.content || '', category: a.category || 'Best Practices', tags: a.tags || '', status: a.status || 'draft' });
-    setEditing(a); setErrors({}); setShowCreate(true);
+  // L3: Fetch fresh data from API before opening edit form
+  const startEdit = async (a: any) => {
+    try {
+      const r = await api.get(`/knowledge/${a.id}`);
+      const fresh = r.data;
+      setForm({ title: fresh.title || '', content: fresh.content || '', category: fresh.category || 'Best Practices', tags: fresh.tags || '', status: fresh.status || 'draft' });
+      setEditing(fresh);
+    } catch {
+      // Fall back to list-row data if fetch fails
+      setForm({ title: a.title || '', content: a.content || '', category: a.category || 'Best Practices', tags: a.tags || '', status: a.status || 'draft' });
+      setEditing(a);
+    }
+    setErrors({});
+    setShowCreate(true);
   };
 
   return (
@@ -214,10 +262,18 @@ export default function KnowledgeBase() {
       <div className="flex gap-6">
         {/* Sidebar */}
         <div className="w-56 flex-shrink-0 space-y-2">
-          <div className="relative mb-3">
+          <div className="relative mb-1">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} placeholder="Search articles..." className="input pl-8 text-sm h-8 w-full" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && load()}
+              placeholder="Search articles..."
+              className="input pl-8 text-sm h-8 w-full"
+            />
           </div>
+          {/* L1: hint so users know to press Enter */}
+          <p className="text-xs text-slate-400 px-1 mb-2">Press Enter to search</p>
           {['All', ...kbCategories].map(cat => {
             const count = cat === 'All' ? articles.length : articles.filter(a => a.category === cat).length;
             return (
@@ -231,7 +287,29 @@ export default function KnowledgeBase() {
 
         {/* Article List */}
         <div className="flex-1 grid grid-cols-1 gap-3">
-          {articles.length === 0 ? (
+          {/* U1: Show shimmer skeleton cards while loading */}
+          {loading ? (
+            <>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="card p-5 animate-pulse">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                        <div className="h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                      </div>
+                      <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-700 rounded" />
+                      <div className="flex items-center gap-4">
+                        <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800 rounded" />
+                        <div className="h-3 w-24 bg-slate-100 dark:bg-slate-800 rounded" />
+                      </div>
+                    </div>
+                    <div className="h-5 w-5 bg-slate-200 dark:bg-slate-700 rounded flex-shrink-0 mt-1" />
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : articles.length === 0 ? (
             <div className="card p-12 text-center text-slate-400">
               <BookOpen size={40} className="mx-auto mb-3 opacity-30" />
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No articles found</p>

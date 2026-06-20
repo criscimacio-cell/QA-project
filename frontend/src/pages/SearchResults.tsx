@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, FileText, BookOpen, Download, ExternalLink } from 'lucide-react';
+import { Search, FileText, BookOpen, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
@@ -44,7 +44,13 @@ export default function SearchResults() {
     if (!q) return;
     setQuery(q);
     setLoading(true);
-    api.get('/search', { params: { q, type: filter === 'all' ? undefined : filter } }).then(r => setResults(r.data)).finally(() => setLoading(false));
+    api.get('/search', { params: { q, type: filter === 'all' ? undefined : filter } })
+      .then(r => setResults(r.data))
+      .catch(() => {
+        toast.error('Search failed. Please try again.');
+        setResults([]);
+      })
+      .finally(() => setLoading(false));
   }, [q, filter]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -90,7 +96,7 @@ export default function SearchResults() {
           <p className="text-lg font-medium text-slate-600 dark:text-slate-300">Search Qlarity</p>
           <p className="text-sm mt-1 text-slate-400">Search across files, knowledge articles, Jira tickets, tags, and more</p>
           <div className="mt-6 flex flex-wrap gap-2 justify-center">
-            {['CF4 Pemisc', 'ETL Template', 'API Testing', 'RCA Report', 'QA-123'].map(s => (
+            {['test script', 'ETL template', 'automation', 'RCA Report', 'QA-123'].map(s => (
               <button key={s} onClick={() => navigate(`/search?q=${encodeURIComponent(s)}`)} className="text-sm bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/20 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-1.5 rounded-full transition-colors">
                 {s}
               </button>
@@ -102,7 +108,7 @@ export default function SearchResults() {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-2 border-[#F59E0B] border-t-transparent rounded-full" />
+          <Loader2 size={32} className="animate-spin text-blue-500 mx-auto" />
         </div>
       )}
 
@@ -205,7 +211,6 @@ export default function SearchResults() {
                         </div>
                       )}
                     </div>
-                    <ExternalLink size={14} className="text-slate-300 flex-shrink-0 mt-1" />
                   </div>
                 </div>
               ))}

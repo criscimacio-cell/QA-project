@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, RefreshCw, Camera, X, Check, Sun, Moon, Monitor, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, Camera, X, Check, Sun, Moon, Monitor, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -22,6 +22,7 @@ export default function Settings() {
   });
   const [notifSaved, setNotifSaved] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [savingNotif, setSavingNotif] = useState(false);
 
   useEffect(() => {
     if (activeSection !== 'Notifications') return;
@@ -33,6 +34,7 @@ export default function Settings() {
   }, [activeSection]);
 
   const saveNotifPrefs = async () => {
+    setSavingNotif(true);
     try {
       await api.patch('/users/me/preferences', { preferences: { notifications: notifPrefs } });
       setNotifSaved(true);
@@ -40,6 +42,8 @@ export default function Settings() {
       setTimeout(() => setNotifSaved(false), 2000);
     } catch {
       toast.error('Failed to save preferences');
+    } finally {
+      setSavingNotif(false);
     }
   };
 
@@ -62,7 +66,8 @@ export default function Settings() {
   useEffect(() => {
     const sizes: Record<string, string> = { small: '13px', normal: '14px', large: '15px', xlarge: '16px' };
     document.documentElement.style.setProperty('--base-font-size', sizes[fontSize] || '14px');
-  }, []);
+    localStorage.setItem('fontSize', fontSize);
+  }, [fontSize]);
 
   // Avatar state
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -160,6 +165,7 @@ export default function Settings() {
   const [newCatType, setNewCatType] = useState<'file' | 'knowledge'>('file');
   const [catSaving, setCatSaving] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState(false);
 
   const loadCategories = () => {
     setCatLoading(true);
@@ -167,6 +173,12 @@ export default function Settings() {
   };
 
   useEffect(() => { if (activeSection === 'Categories') loadCategories(); }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection !== 'Security') {
+      setPwMsg('');
+    }
+  }, [activeSection]);
 
   const addCategory = async () => {
     if (!newCatName.trim()) return;
@@ -182,13 +194,17 @@ export default function Settings() {
   };
 
   const deleteCategory = async (id: number) => {
+    setDeletingCategory(true);
     try {
       await api.delete(`/categories/${id}`);
       toast.success('Category deleted');
+      setCategoryToDelete(null);
+      loadCategories();
     } catch {
       toast.error('Failed to delete category');
+    } finally {
+      setDeletingCategory(false);
     }
-    loadCategories();
   };
 
   const sections = [
@@ -266,7 +282,7 @@ export default function Settings() {
                       disabled={avatarSaving}
                       className="btn-primary py-1.5 px-3 text-xs flex items-center gap-1.5"
                     >
-                      {avatarSaving ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} />}
+                      {avatarSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                       {avatarSaving ? 'Saving...' : 'Save photo'}
                     </button>
                     <button onClick={cancelAvatar} className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-1.5">
@@ -338,8 +354,8 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Platform Info — shown under Storage section */}
-          {activeSection === 'Storage' && (
+          {/* Platform Info — shown under Storage section, admin only */}
+          {activeSection === 'Storage' && isAdmin && (
             <div className="card p-6">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
                 <SettingsIcon size={18} className="text-[#F59E0B]" /> Platform Information
@@ -390,14 +406,14 @@ export default function Settings() {
                     </select>
                   </div>
                   <button onClick={addCategory} disabled={!newCatName.trim() || catSaving} className="btn-primary h-9">
-                    {catSaving ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
+                    {catSaving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                     Add
                   </button>
                 </div>
               )}
 
               {catLoading ? (
-                <div className="flex justify-center py-8"><RefreshCw size={20} className="animate-spin text-[#F59E0B]" /></div>
+                <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-[#F59E0B]" /></div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {(['file', 'knowledge'] as const).map(type => {
@@ -535,7 +551,7 @@ export default function Settings() {
                 <Bell size={18} className="text-[#F59E0B]" /> Notification Preferences
               </h2>
               {notifLoading ? (
-                <div className="flex justify-center py-6"><RefreshCw size={18} className="animate-spin text-[#F59E0B]" /></div>
+                <div className="flex justify-center py-6"><Loader2 size={18} className="animate-spin text-[#F59E0B]" /></div>
               ) : (
                 <div className="space-y-4">
                   {[
@@ -571,7 +587,10 @@ export default function Settings() {
                     </div>
                   ))}
                   <div className="flex items-center gap-3 pt-2">
-                    <button onClick={saveNotifPrefs} className="btn-primary"><Check size={15} /> Save Preferences</button>
+                    <button onClick={saveNotifPrefs} disabled={savingNotif} className="btn-primary flex items-center gap-1.5">
+                      {savingNotif ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                      {savingNotif ? 'Saving...' : 'Save Preferences'}
+                    </button>
                     {notifSaved && <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">✓ Saved!</span>}
                   </div>
                 </div>
@@ -593,15 +612,15 @@ export default function Settings() {
 
       <ConfirmModal
         open={!!categoryToDelete}
-        onClose={() => setCategoryToDelete(null)}
+        onClose={() => { if (!deletingCategory) setCategoryToDelete(null); }}
         onConfirm={async () => {
-          if (!categoryToDelete) return;
+          if (!categoryToDelete || deletingCategory) return;
           await deleteCategory(categoryToDelete.id);
-          setCategoryToDelete(null);
         }}
         title="Delete Category"
         message={`"${categoryToDelete?.name}" will be permanently deleted. This action cannot be undone.`}
         confirmLabel="Delete"
+        loading={deletingCategory}
       />
     </div>
   );

@@ -224,6 +224,9 @@ router.post('/:id/submit', authenticate, requireRole('admin', 'lead', 'engineer'
 
 router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
   const { status, comments } = req.body;
+  if (comments && typeof comments === 'string' && comments.length > 2000) {
+    res.status(400).json({ error: 'Comment must be 2000 characters or fewer' }); return;
+  }
   const VALID_TRANSITIONS: Record<string, string[]> = {
     draft: ['submitted'], submitted: ['under_review','approved','draft'],
     under_review: ['approved','draft'], approved: ['under_review','draft','published'],

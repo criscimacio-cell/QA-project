@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/client';
 import { SplineScene, type SplineApp } from '../components/ui/splite';
 
 
 /* ─── Post-login morph overlay ─────────────────────────────────────── */
-function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPulse: boolean; fadingOut: boolean }) {
+function MorphOverlay({ grown, ringPulse, fadingOut, loadingText = 'Loading your workspace…' }: { grown: boolean; ringPulse: boolean; fadingOut: boolean; loadingText?: string }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100,
@@ -32,7 +33,7 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
           <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 20, color: '#0f172a', letterSpacing: '0.04em' }}>Qlarity</span>
         </div>
         <div style={{ opacity: grown ? 1 : 0, transform: grown ? 'translateY(0)' : 'translateY(6px)', transition: 'opacity 0.3s ease 0.55s,transform 0.3s ease 0.55s', marginTop: -10 }}>
-          <span style={{ fontSize: 11, color: '#5a8a86', letterSpacing: '0.04em' }}>Loading your workspace…</span>
+          <span style={{ fontSize: 11, color: '#5a8a86', letterSpacing: '0.04em' }}>{loadingText}</span>
         </div>
       </div>
     </div>
@@ -59,6 +60,7 @@ export default function Login() {
   const [ringPulse, setRingPulse]     = useState(false);
   const [morphFading, setMorphFading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
 
   useEffect(() => {
     if (!authLoading && user && !loginSuccess) navigate('/', { replace: true });
@@ -83,9 +85,9 @@ export default function Login() {
     ts.push(setTimeout(() => setMorphGrown(true),     520));
     ts.push(setTimeout(() => setRingPulse(true),     1060));
     ts.push(setTimeout(() => setMorphFading(true),   1800));
-    ts.push(setTimeout(() => navigate('/'), 2100));
+    ts.push(setTimeout(() => navigate(isAdminLogin ? '/backoffice' : '/'), 2100));
     return () => ts.forEach(clearTimeout);
-  }, [loginSuccess, navigate]);
+  }, [loginSuccess, isAdminLogin, navigate]);
 
   /* Animated email placeholder */
   useEffect(() => {
@@ -120,9 +122,16 @@ export default function Login() {
     try {
       await login(email, password, rememberMe, orgSlug.trim() || undefined);
       setLoginSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
-      triggerScratchHead();
+    } catch (orgErr: any) {
+      // Org login failed — try backoffice admin login
+      try {
+        await api.post('/api/backoffice/auth/login', { email, password });
+        setIsAdminLogin(true);
+        setLoginSuccess(true);
+      } catch {
+        setError(orgErr?.response?.data?.error || 'Invalid credentials. Please try again.');
+        triggerScratchHead();
+      }
     } finally {
       setLoading(false);
     }
@@ -152,7 +161,7 @@ export default function Login() {
       }}
     >
       {/* Post-login morph overlay */}
-      {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />}
+      {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} loadingText={isAdminLogin ? 'Loading admin console…' : 'Loading your workspace…'} />}
 
       {/* ── Spline scene — full-bleed background, shifted left ── */}
       <div tabIndex={-1} style={{ position:'fixed', top:0, bottom:0, left:'-20%', right:0, zIndex:0 }}>

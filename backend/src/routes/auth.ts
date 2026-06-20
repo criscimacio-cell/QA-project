@@ -131,13 +131,15 @@ router.post('/change-password', authenticate, async (req: Request, res: Response
 router.post('/forgot-password', async (req: Request, res: Response) => {
   const { email } = req.body;
   if (!email) { res.status(400).json({ error: 'Email is required' }); return; }
-  const [user] = await sql`SELECT * FROM users WHERE email = ${email} AND active = TRUE`;
-  if (!user) { res.json({ message: 'If that email exists, a reset link has been sent.' }); return; }
-  await sql`UPDATE password_reset_tokens SET used = TRUE WHERE user_id = ${user.id}`;
-  const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-  await sql`INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (${user.id}, ${token}, ${expiresAt})`;
-  try { await sendPasswordReset(user.email, user.name, token); } catch (e) { console.error('Email send failed:', e); }
+  try {
+    const [user] = await sql`SELECT * FROM users WHERE email = ${email} AND active = TRUE`;
+    if (!user) { res.json({ message: 'If that email exists, a reset link has been sent.' }); return; }
+    await sql`UPDATE password_reset_tokens SET used = TRUE WHERE user_id = ${user.id}`;
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    await sql`INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (${user.id}, ${token}, ${expiresAt})`;
+    try { await sendPasswordReset(user.email, user.name, token); } catch (e) { console.error('Email send failed:', e); }
+  } catch (e) { console.error('Forgot-password error:', e); }
   res.json({ message: 'If that email exists, a reset link has been sent.' });
 });
 

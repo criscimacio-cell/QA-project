@@ -529,7 +529,7 @@ export default function FileManager() {
                           </button>
                         )}
                         <button onClick={() => downloadFile(f.id, f.original_name)} title="Download" aria-label="Download file" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
-                        {f.status === 'archived' ? (
+                        {f.status === 'archived' && isLead ? (
                           <button onClick={() => doRestore(f.id)} title="Restore" aria-label="Restore file" className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-500"><RotateCcw size={14} /></button>
                         ) : isLead ? (
                           <>
@@ -617,7 +617,7 @@ export default function FileManager() {
                   {isLead && selected.status !== 'published' && selected.status !== 'archived' && (
                     <button onClick={() => setShowApprove(true)} className="btn-primary">Review / Approve</button>
                   )}
-                  {selected.status === 'archived' && (
+                  {selected.status === 'archived' && isLead && (
                     <button onClick={() => { doRestore(selected.id); setSelected(null); }} className="btn-primary">
                       <RotateCcw size={15} /> Restore
                     </button>

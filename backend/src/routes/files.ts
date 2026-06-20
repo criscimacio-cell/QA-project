@@ -141,8 +141,11 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 });
 
 router.get('/:id/versions', authenticate, async (req: Request, res: Response) => {
-  const [file] = await sql`SELECT id FROM files WHERE id = ${req.params.id}`;
+  const [file] = await sql`SELECT id, owner_id, status FROM files WHERE id = ${req.params.id}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== req.user!.userId && !['published','approved'].includes(file.status)) {
+    res.status(403).json({ error: 'Forbidden' }); return;
+  }
   const versions = await sql`SELECT fv.*, u.name as created_by_name FROM file_versions fv LEFT JOIN users u ON fv.created_by = u.id WHERE fv.file_id = ${req.params.id} ORDER BY fv.version DESC`;
   res.json(versions);
 });

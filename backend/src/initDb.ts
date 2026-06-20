@@ -21,6 +21,27 @@ export async function initDb() {
     ON CONFLICT (id) DO NOTHING
   `;
 
+  // ── Platform Admins (separate from org users) ───────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS platform_admins (
+      id            SERIAL PRIMARY KEY,
+      name          TEXT NOT NULL,
+      email         TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      active        BOOLEAN DEFAULT TRUE,
+      last_login    TIMESTAMPTZ,
+      created_at    TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
+  // Seed default platform admin
+  const defaultPlatformAdminPw = bcrypt.hashSync('PlatformAdmin123!', 10);
+  await sql`
+    INSERT INTO platform_admins (name, email, password_hash)
+    VALUES ('Platform Admin', 'platform@qlarity.com', ${defaultPlatformAdminPw})
+    ON CONFLICT (email) DO NOTHING
+  `;
+
   // ── Schema ──────────────────────────────────────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS users (

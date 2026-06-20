@@ -49,6 +49,13 @@ import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
 import Archive from './pages/Archive';
 import Register from './pages/Register';
+import { BackofficeAuthProvider } from './context/BackofficeAuthContext';
+import BackofficeLogin from './pages/backoffice/BackofficeLogin';
+import BackofficeLayout from './pages/backoffice/BackofficeLayout';
+import BackofficeDashboard from './pages/backoffice/BackofficeDashboard';
+import BackofficeOrganizations from './pages/backoffice/BackofficeOrganizations';
+import BackofficeOrgDetail from './pages/backoffice/BackofficeOrgDetail';
+import BackofficeUsers from './pages/backoffice/BackofficeUsers';
 
 function ProtectedRoute({ children, requireAdmin = false, requireLead = false }: { children: React.ReactNode; requireAdmin?: boolean; requireLead?: boolean }) {
   const { user, loading } = useAuth();
@@ -85,6 +92,21 @@ function AppRoutes() {
         <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* Backoffice — completely separate auth context */}
+      <Route path="/backoffice/*" element={
+        <BackofficeAuthProvider>
+          <Routes>
+            <Route path="login" element={<BackofficeLogin />} />
+            <Route element={<BackofficeLayout />}>
+              <Route index element={<BackofficeDashboard />} />
+              <Route path="organizations" element={<BackofficeOrganizations />} />
+              <Route path="organizations/:id" element={<BackofficeOrgDetail />} />
+              <Route path="users" element={<BackofficeUsers />} />
+            </Route>
+          </Routes>
+        </BackofficeAuthProvider>
+      } />
     </Routes>
   );
 }

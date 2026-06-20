@@ -18,6 +18,7 @@ import dashboardRoutes from './routes/dashboard';
 import notifRoutes from './routes/notifications';
 import auditRoutes from './routes/audit';
 import categoryRoutes from './routes/categories';
+import backofficeRoutes from './routes/backoffice';
 // Initialize BullMQ worker by importing the module
 import './queue';
 
@@ -60,6 +61,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/notifications', notifRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/backoffice', backofficeRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

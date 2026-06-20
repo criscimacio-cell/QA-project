@@ -51,7 +51,6 @@ import Archive from './pages/Archive';
 import OrgSettings from './pages/OrgSettings';
 import Register from './pages/Register';
 import { BackofficeAuthProvider } from './context/BackofficeAuthContext';
-import BackofficeLogin from './pages/backoffice/BackofficeLogin';
 import BackofficeLayout from './pages/backoffice/BackofficeLayout';
 import BackofficeDashboard from './pages/backoffice/BackofficeDashboard';
 import BackofficeOrganizations from './pages/backoffice/BackofficeOrganizations';
@@ -99,7 +98,7 @@ function AppRoutes() {
       <Route path="/backoffice/*" element={
         <BackofficeAuthProvider>
           <Routes>
-            <Route path="login" element={<BackofficeLogin />} />
+            <Route path="login" element={<Navigate to="/login" replace />} />
             <Route element={<BackofficeLayout />}>
               <Route index element={<BackofficeDashboard />} />
               <Route path="organizations" element={<BackofficeOrganizations />} />

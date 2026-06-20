@@ -163,6 +163,7 @@ function KpiCard({
             </p>
             {trend !== undefined && (
               <span
+                aria-label={`${trendUp ? 'Up' : 'Down'} ${Math.abs(trend)}%`}
                 className="inline-flex items-center gap-0.5 text-xs font-bold px-2 py-0.5 rounded-full mt-1"
                 style={{
                   background: trendUp ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)',
@@ -211,19 +212,6 @@ function KpiCard({
             </div>
           )}
         </div>
-      </div>
-
-      {/* Bottom progress bar */}
-      <div className="h-[3px] w-full" style={{ background: 'rgba(0,0,0,0.12)' }}>
-        <div
-          className="h-full"
-          style={{
-            width: visible ? '70%' : '0%',
-            background: 'rgba(255,255,255,0.45)',
-            transition: `width 1.4s cubic-bezier(0.4,0,0.2,1) ${delay + 200}ms`,
-            borderRadius: '0 2px 2px 0',
-          }}
-        />
       </div>
     </div>
   );
@@ -316,14 +304,30 @@ export default function Dashboard() {
 
   useEffect(() => {
     api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => setStatsError(true));
-    api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => toast.error('Failed to load activity feed'));
+    if (user?.role === 'admin' || user?.role === 'lead') {
+      api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => toast.error('Failed to load activity feed'));
+    }
   }, []);
+
+  useEffect(() => {
+    if (user?.role !== 'admin' && user?.role !== 'lead') return;
+    const id = setInterval(() => {
+      api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => {});
+    }, 30000);
+    return () => clearInterval(id);
+  }, [user?.role]);
 
   if (statsError) return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
       <AlertCircle size={40} className="text-red-400" />
       <p className="text-slate-600 dark:text-slate-300 font-medium">Failed to load dashboard data</p>
-      <button className="btn-secondary text-sm" onClick={() => { setStatsError(false); api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => setStatsError(true)); }}>Retry</button>
+      <button className="btn-secondary text-sm" onClick={() => {
+        setStatsError(false);
+        api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => setStatsError(true));
+        if (user?.role === 'admin' || user?.role === 'lead') {
+          api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => toast.error('Failed to load activity feed'));
+        }
+      }}>Retry</button>
     </div>
   );
   if (!stats) return <DashboardSkeleton />;
@@ -443,10 +447,11 @@ export default function Dashboard() {
           delay={360}
         />
         <KpiCard
-          icon={TrendingUp} label="Upload Growth" value={`${stats.uploadGrowth ?? 0}`}
+          icon={TrendingUp} label="Upload Growth" value={stats.uploadGrowth ?? 0}
           sub="This week vs last" accent="#14b8a6"
           gradient="linear-gradient(135deg, #14b8a6 0%, #0d9488 60%, #0f766e 100%)"
           sparkData={trendNums} delay={420}
+          trend={stats.uploadGrowth ?? 0} trendLabel="vs last week"
         />
       </div>
 
@@ -464,23 +469,25 @@ export default function Dashboard() {
               Weekly
             </span>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={stats.uploadTrend} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-              <defs>
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={d => d?.slice(-5) || d} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={2} fill="url(#areaGrad)"
-                dot={{ fill: '#f59e0b', r: 3.5, strokeWidth: 2, stroke: 'var(--card)' }}
-                activeDot={{ r: 5, strokeWidth: 2, stroke: 'var(--card)' }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div role="img" aria-label="Upload trend area chart showing files uploaded over last 7 days">
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={stats.uploadTrend} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={d => d?.slice(-5) || d} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltip />} />
+                <Area type="monotone" dataKey="count" stroke="#f59e0b" strokeWidth={2} fill="url(#areaGrad)"
+                  dot={{ fill: '#f59e0b', r: 3.5, strokeWidth: 2, stroke: 'var(--card)' }}
+                  activeDot={{ r: 5, strokeWidth: 2, stroke: 'var(--card)' }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* File Status donut */}
@@ -489,17 +496,19 @@ export default function Dashboard() {
             <h3 className="font-bold text-slate-800 dark:text-white text-sm">File Status</h3>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Distribution breakdown</p>
           </div>
-          <ResponsiveContainer width="100%" height={160}>
-            <PieChart>
-              <Pie data={stats.statusBreakdown} dataKey="count" nameKey="status"
-                cx="50%" cy="50%" outerRadius={68} innerRadius={38} paddingAngle={2} strokeWidth={0}>
-                {stats.statusBreakdown.map((entry: any) => (
-                  <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || '#94a3b8'} />
-                ))}
-              </Pie>
-              <Tooltip content={<ChartTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div role="img" aria-label="File status distribution pie chart">
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart>
+                <Pie data={stats.statusBreakdown} dataKey="count" nameKey="status"
+                  cx="50%" cy="50%" outerRadius={68} innerRadius={38} paddingAngle={2} strokeWidth={0}>
+                  {stats.statusBreakdown.map((entry: any) => (
+                    <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || '#94a3b8'} />
+                  ))}
+                </Pie>
+                <Tooltip content={<ChartTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
           <div className="mt-2 space-y-2">
             {stats.statusBreakdown.map((s: any) => {
               const total = stats.statusBreakdown.reduce((a: number, b: any) => a + b.count, 0) || 1;
@@ -526,21 +535,23 @@ export default function Dashboard() {
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Files per repository</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={stats.repositoryStats} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-              <defs>
-                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" />
-                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.5} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="file_count" fill="url(#barGrad)" radius={[6, 6, 0, 0]} name="Files" maxBarSize={44} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div role="img" aria-label="Repository usage bar chart showing files per repository">
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={stats.repositoryStats} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6366f1" />
+                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.5} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" strokeOpacity={0.5} vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="file_count" fill="url(#barGrad)" radius={[6, 6, 0, 0]} name="Files" maxBarSize={44} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
@@ -592,52 +603,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Bottom Row: Activity + Top Files ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-        {/* Recent Activity */}
-        <div className="card p-5" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.42s' }}>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-slate-800 dark:text-white text-sm">Recent Activity</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Latest team actions</p>
-            </div>
-            <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" style={{ animation: 'pulse-dot 2s ease-in-out infinite' }} />
-              Live
-            </span>
-          </div>
-          <div className="space-y-3">
-            {stats.recentActivity?.slice(0, 8).map((item: any, idx: number) => {
-              const ac = ACTION_COLORS[item.action] || { bg: 'rgba(100,116,139,0.06)', text: '#475569' };
-              return (
-                <div key={item.id} className="flex items-start gap-3"
-                  style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${idx * 0.055}s` }}>
-                  <img
-                    src={item.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.user_id}`}
-                    alt=""
-                    className="w-7 h-7 rounded-full flex-shrink-0 ring-2 ring-white dark:ring-slate-900"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                        {item.user_name || 'System'}
-                      </span>
-                      <span className="text-xs px-1.5 py-0.5 rounded-md font-semibold"
-                        style={{ background: ac.bg, color: ac.text }}>
-                        {item.action}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">{item.details}</p>
-                    <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-0.5">
-                      {new Date(item.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {/* ── Bottom Row: Top Files ── */}
+      <div className="grid grid-cols-1 gap-4">
 
         {/* Top Files */}
         <div className="card p-5" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.46s' }}>
@@ -665,8 +632,8 @@ export default function Dashboard() {
                 return (
                   <div key={i} className="flex items-center gap-3"
                     style={{ animation: `rowStagger 0.28s ease both`, animationDelay: `${i * 60}ms` }}>
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                      style={{ background: RANK_GRADIENTS[i] || 'rgba(100,116,139,0.15)', color: i < 3 ? '#fff' : '#64748b', fontSize: 10 }}>
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: RANK_GRADIENTS[i] || 'rgba(100,116,139,0.15)', color: i < 3 ? '#fff' : '#64748b', fontSize: 10, fontWeight: 700 }}>
                       {i + 1}
                     </div>
                     <div className="flex-1 min-w-0">

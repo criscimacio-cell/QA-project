@@ -24,26 +24,25 @@ export function BackofficeAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/api/backoffice/auth/me')
+    api.get('/backoffice/auth/me')
       .then(res => setAdmin(res.data))
       .catch(() => setAdmin(null))
       .finally(() => setLoading(false));
   }, []);
 
   const login = async (email: string, password: string) => {
-    await api.post('/api/backoffice/auth/login', { email, password });
+    await api.post('/backoffice/auth/login', { email, password });
     try {
-      const res = await api.get('/api/backoffice/auth/me');
+      const res = await api.get('/backoffice/auth/me');
       setAdmin(res.data);
     } catch {
-      // /me failed after successful login — log out server-side to keep state consistent
-      await api.post('/api/backoffice/auth/logout').catch(() => {});
+      await api.post('/backoffice/auth/logout').catch(() => {});
       throw new Error('Session could not be established. Please try again.');
     }
   };
 
   const logout = async () => {
-    await api.post('/api/backoffice/auth/logout');
+    await api.post('/backoffice/auth/logout');
     setAdmin(null);
   };
 

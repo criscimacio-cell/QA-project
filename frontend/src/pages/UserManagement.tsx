@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, UserCheck, UserX, Loader2, Eye, EyeOff, RefreshCw, Copy, Check, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
+import Pagination from '../components/UI/Pagination';
 import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +21,9 @@ const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise:
 export default function UserManagement() {
   const { isAdmin, user } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+  const limit = 20;
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', email: '', role: 'engineer', department: '', active: 1 });
@@ -38,13 +42,15 @@ export default function UserManagement() {
 
   const load = async () => {
     try {
-      const r = await api.get('/users');
-      setUsers(r.data);
+      const r = await api.get('/users', { params: { limit, offset } });
+      const data = r.data;
+      if (Array.isArray(data)) { setUsers(data); setTotal(data.length); }
+      else { setUsers(data.users ?? []); setTotal(data.total ?? 0); }
     } catch {
       toast.error('Failed to load users');
     }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [offset]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -279,6 +285,9 @@ export default function UserManagement() {
             </tbody>
           </table>
         </div>
+      </div>
+      <div className="px-4 pb-4">
+        <Pagination total={total} limit={limit} offset={offset} onPageChange={setOffset} />
       </div>
 
       {/* Confirm deactivate/activate modal */}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../api/client';
+import Pagination from '../../components/UI/Pagination';
 
 interface CrossOrgUser {
   id: string;
@@ -23,13 +24,17 @@ export default function BackofficeUsers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [orgId, setOrgId] = useState('');
+  const [offset, setOffset] = useState(0);
+  const limit = 20;
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const fetchUsers = (s: string, o: string) => {
+  const fetchUsers = (s: string, o: string, off = 0) => {
     setLoading(true);
     const params: Record<string, string> = {};
     if (s) params.search = s;
     if (o) params.org_id = o;
+    params.limit = String(limit);
+    params.offset = String(off);
     api.get('/backoffice/users', { params })
       .then(res => {
         const data = res.data;
@@ -47,7 +52,7 @@ export default function BackofficeUsers() {
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchUsers(search, orgId), 300);
+    debounceRef.current = setTimeout(() => { setOffset(0); fetchUsers(search, orgId, 0); }, 300);
     return () => clearTimeout(debounceRef.current);
   }, [search, orgId]);
 
@@ -138,6 +143,9 @@ export default function BackofficeUsers() {
             </table>
           </div>
         )}
+      </div>
+      <div className="px-4 pb-4 border-t border-gray-200 dark:border-slate-800 pt-3">
+        <Pagination total={total} limit={limit} offset={offset} onPageChange={(off) => { setOffset(off); fetchUsers(search, orgId, off); }} />
       </div>
     </div>
   );

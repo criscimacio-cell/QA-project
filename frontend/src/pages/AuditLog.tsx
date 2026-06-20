@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ShieldCheck, Download, Filter, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
+import Pagination from '../components/UI/Pagination';
 
 const ACTION_STYLES: Record<string, string> = {
   LOGIN: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
@@ -34,19 +35,20 @@ export default function AuditLog() {
   const [logs, setLogs] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [action, setAction] = useState('');
-  const [page, setPage] = useState(1);
+  const [offset, setOffset] = useState(0);
+  const limit = 50;
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const load = () => {
     setLoading(true);
-    api.get('/audit', { params: { action: action || undefined, page, limit: 50 } })
+    api.get('/audit', { params: { action: action || undefined, page: Math.floor(offset/50)+1, limit: 50 } })
       .then(r => { setLogs(r.data.logs); setTotal(r.data.total); })
       .catch(() => toast.error('Failed to load audit logs'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [action, page]);
+  useEffect(() => { load(); }, [action, offset]);
 
   // S1: Fetch ALL records (limit=10000) instead of only the current page
   const exportCSV = async () => {
@@ -85,9 +87,6 @@ export default function AuditLog() {
   const summaryActions = ['UPLOAD', 'DOWNLOAD', 'LOGIN', 'DELETE', 'APPROVE'];
   const summary = summaryActions.map(a => ({ action: a, count: logs.filter(l => l.action === a).length }));
 
-  // U2: Total pages for pagination label
-  const totalPages = Math.ceil(total / 50);
-
   return (
     <div className="space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between">
@@ -125,7 +124,7 @@ export default function AuditLog() {
       {/* Filters — L4: page resets to 1 when action filter changes */}
       <div className="card p-4 flex gap-3 items-center flex-wrap">
         <Filter size={16} className="text-slate-400" />
-        <select value={action} onChange={e => { setAction(e.target.value); setPage(1); }} className="input h-8 text-sm w-44">
+        <select value={action} onChange={e => { setAction(e.target.value); setOffset(0); }} className="input h-8 text-sm w-44">
           <option value="">All Actions</option>
           {ACTIONS.slice(1).map(a => <option key={a}>{a}</option>)}
         </select>
@@ -186,14 +185,7 @@ export default function AuditLog() {
         )}
       </div>
 
-      {/* Pagination — U2: Show "Page X of Y" */}
-      {total > 50 && (
-        <div className="flex gap-2 justify-center">
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary text-sm">Previous</button>
-          <span className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">Page {page} of {totalPages}</span>
-          <button disabled={page * 50 >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary text-sm">Next</button>
-        </div>
-      )}
+      <Pagination total={total} limit={50} offset={offset} onPageChange={setOffset} className="mt-2" />
     </div>
   );
 }

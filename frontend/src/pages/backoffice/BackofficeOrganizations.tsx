@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ChevronDown, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../api/client';
+import Pagination from '../../components/UI/Pagination';
 
 interface Org {
   id: string;
@@ -75,22 +76,28 @@ export default function BackofficeOrganizations() {
   const [search, setSearch] = useState('');
   const [plan, setPlan] = useState('');
   const [status, setStatus] = useState('');
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+  const limit = 20;
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState(emptyForm);
   const [creating, setCreating] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchOrgs = useCallback((s: string, p: string, st: string) => {
+  const fetchOrgs = useCallback((s: string, p: string, st: string, off = 0) => {
     setLoading(true);
     const params: Record<string, string> = {};
     if (s) params.search = s;
     if (p) params.plan = p;
     if (st) params.status = st;
+    params.limit = String(limit);
+    params.offset = String(off);
     api.get('/backoffice/organizations', { params })
       .then(res => {
         const data = res.data;
         setOrgs(Array.isArray(data) ? data : data.orgs ?? []);
+        setTotal(Array.isArray(data) ? data.length : data.total ?? 0);
       })
       .catch(() => toast.error('Failed to load organizations'))
       .finally(() => setLoading(false));
@@ -98,7 +105,7 @@ export default function BackofficeOrganizations() {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchOrgs(search, plan, status), 300);
+    debounceRef.current = setTimeout(() => { setOffset(0); fetchOrgs(search, plan, status, 0); }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [search, plan, status, fetchOrgs]);
 
@@ -296,6 +303,9 @@ export default function BackofficeOrganizations() {
             </table>
           </div>
         )}
+      </div>
+      <div className="px-4 pb-4 border-t border-gray-200 dark:border-slate-800 pt-3">
+        <Pagination total={total} limit={limit} offset={offset} onPageChange={(off) => { setOffset(off); fetchOrgs(search, plan, status, off); }} />
       </div>
     </div>
   );

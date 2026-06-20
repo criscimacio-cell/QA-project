@@ -7,6 +7,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
+import rateLimit from 'express-rate-limit';
 import { initDb } from './initDb';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
@@ -46,10 +47,30 @@ app.use((req, res, next) => {
   next();
 });
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts, please try again later.' },
+});
+
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+app.use(limiter);
+app.use('/api/auth', authLimiter);
+app.use('/api/backoffice/auth', authLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

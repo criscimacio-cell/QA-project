@@ -369,7 +369,7 @@ export default function Settings() {
                 {[
                   ['Platform', 'Qlarity v1.0.0'],
                   ['Environment', 'Production'],
-                  ['Database', 'SQLite (WAL Mode)'],
+                  ['Database', 'PostgreSQL'],
                   ['Authentication', 'JWT (8h sessions)'],
                   ['File Storage', 'Local / Network Drive'],
                   ['Last Updated', new Date().toLocaleDateString()],

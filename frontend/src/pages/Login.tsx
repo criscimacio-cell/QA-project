@@ -290,12 +290,13 @@ export default function Login() {
               </button>
 
               <p style={{ textAlign:'center', fontSize:13, color:'rgba(0,0,0,0.4)', marginTop:2 }}>
-                <Link to="/forgot-password" style={{ color:'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
+                Don't have an account?{' '}
+                <a href="mailto:admin@qa.com" style={{ color:'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.6)'}
                 >
-                  Create Account
-                </Link>
+                  Contact your admin
+                </a>
               </p>
             </form>
           </div>

@@ -24,7 +24,11 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
   const { repository_id, status, project, category, search } = req.query;
   const isLead = ['admin','lead'].includes(req.user!.role);
   const rows = await sql`
-    SELECT f.*, u.name as owner_name, r.name as repository_name
+    SELECT f.id, f.name, f.original_name, f.size, f.mime_type, f.status,
+           f.project, f.module, f.category, f.jira_ticket, f.tags,
+           f.description, f.version, f.created_at, f.updated_at,
+           f.owner_id, f.repository_id,
+           u.name as owner_name, r.name as repository_name
     FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id
     WHERE 1=1
     ${!isLead ? sql`AND (f.owner_id = ${req.user!.userId} OR f.status IN ('published','approved'))` : sql``}
@@ -105,9 +109,24 @@ router.post('/bulk-download', authenticate, async (req: Request, res: Response) 
   await archive.finalize();
 });
 
+router.post('/bulk-submit', authenticate, requireRole('admin', 'lead', 'engineer'), async (req, res) => {
+  const { ids } = req.body as { ids: number[] };
+  if (!ids?.length) { res.status(400).json({ error: 'ids required' }); return; }
+  if (req.user!.role === 'engineer') {
+    await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft' AND owner_id = ${req.user!.userId}`;
+  } else {
+    await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft'`;
+  }
+  res.json({ message: 'Submitted for review' });
+});
+
 router.get('/:id', authenticate, async (req: Request, res: Response) => {
   const [file] = await sql`
-    SELECT f.*, u.name as owner_name, r.name as repository_name
+    SELECT f.id, f.name, f.original_name, f.size, f.mime_type, f.status,
+           f.project, f.module, f.category, f.jira_ticket, f.tags,
+           f.description, f.version, f.created_at, f.updated_at,
+           f.owner_id, f.repository_id,
+           u.name as owner_name, r.name as repository_name
     FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id
     WHERE f.id = ${req.params.id}
   `;

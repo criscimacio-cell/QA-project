@@ -68,6 +68,7 @@ export default function FileManager() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewFile, setPreviewFile] = useState<any>(null);
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Detail modal tabs
   const [detailTab, setDetailTab] = useState<'details' | 'comments' | 'approvals'>('details');
@@ -86,10 +87,12 @@ export default function FileManager() {
 
   useEffect(() => {
     if (!previewFile) { setPreviewBlobUrl(null); return; }
+    setPreviewLoading(true);
     fetch(`/api/files/${previewFile.id}/preview`, { credentials: 'include' })
       .then(r => r.ok ? r.blob() : Promise.reject())
       .then(blob => setPreviewBlobUrl(URL.createObjectURL(blob)))
-      .catch(() => setPreviewBlobUrl(null));
+      .catch(() => setPreviewBlobUrl(null))
+      .finally(() => setPreviewLoading(false));
     return () => { setPreviewBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; }); };
   }, [previewFile?.id]);
 
@@ -119,7 +122,7 @@ export default function FileManager() {
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); load(); };
 
-  const requiresComment = approveStatus === 'rejected' || approveStatus === 'draft';
+  const requiresComment = approveStatus === 'draft';
 
   const doApprove = async () => {
     if (!selected) return;
@@ -157,9 +160,18 @@ export default function FileManager() {
     }
   };
 
+  const [fileDetailLoading, setFileDetailLoading] = useState(false);
+
   const openFile = async (f: any) => {
-    const r = await api.get(`/files/${f.id}`);
-    setSelected(r.data);
+    setFileDetailLoading(true);
+    try {
+      const r = await api.get(`/files/${f.id}`);
+      setSelected(r.data);
+    } catch {
+      toast.error('Failed to load file details');
+    } finally {
+      setFileDetailLoading(false);
+    }
   };
 
   const openPreview = (f: any) => {
@@ -171,11 +183,19 @@ export default function FileManager() {
     f?.mime_type?.startsWith('image/') || f?.mime_type === 'application/pdf';
 
   // Bulk upload handlers
+  const addBulkFiles = (incoming: File[]) => {
+    setBulkFiles(prev => {
+      const existing = new Set(prev.map(f => `${f.name}:${f.size}`));
+      const deduped = incoming.filter(f => !existing.has(`${f.name}:${f.size}`));
+      return [...prev, ...deduped];
+    });
+  };
+
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     const dropped = Array.from(e.dataTransfer.files);
-    setBulkFiles(prev => [...prev, ...dropped]);
+    addBulkFiles(dropped);
   };
 
   const removeFile = (i: number) => setBulkFiles(prev => prev.filter((_, idx) => idx !== i));
@@ -226,6 +246,8 @@ export default function FileManager() {
       const r = await api.post(`/files/${selected.id}/comments`, { comment: newComment });
       setComments(prev => [...prev, r.data]);
       setNewComment('');
+    } catch {
+      setCommentError('Failed to post comment. Please try again.');
     } finally {
       setCommentLoading(false);
     }
@@ -233,15 +255,23 @@ export default function FileManager() {
 
   const deleteComment = async (cid: number) => {
     if (!selected) return;
-    await api.delete(`/files/${selected.id}/comments/${cid}`);
-    setComments(prev => prev.filter(c => c.id !== cid));
+    try {
+      await api.delete(`/files/${selected.id}/comments/${cid}`);
+      setComments(prev => prev.filter(c => c.id !== cid));
+    } catch {
+      toast.error('Failed to delete comment');
+    }
   };
 
   // Approval history handler
   const loadApprovals = async () => {
     if (!selected) return;
-    const r = await api.get(`/files/${selected.id}/approvals`);
-    setApprovalHistory(r.data);
+    try {
+      const r = await api.get(`/files/${selected.id}/approvals`);
+      setApprovalHistory(r.data);
+    } catch {
+      toast.error('Failed to load approval history');
+    }
   };
 
   const handleDetailTabChange = (t: 'details' | 'comments' | 'approvals') => {
@@ -279,20 +309,24 @@ export default function FileManager() {
   };
 
   const doBulkDownload = async () => {
-    const res = await fetch('/api/files/bulk-download', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: Array.from(selectedIds) }),
-    });
-    if (!res.ok) { toast.error('Download failed'); return; }
-    const blob = await res.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `files-${new Date().toISOString().slice(0,10)}.zip`;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(a.href);
-    toast.success('Download started');
+    try {
+      const res = await fetch('/api/files/bulk-download', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (!res.ok) { toast.error('Download failed'); return; }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `files-${new Date().toISOString().slice(0,10)}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+      toast.success('Download started');
+    } catch {
+      toast.error('Download failed');
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -319,19 +353,21 @@ export default function FileManager() {
 
   // Export CSV
   const exportFiles = async () => {
-    const res = await fetch('/api/files/export', { credentials: 'include' });
-    const blob = await res.blob();
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `files-export-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a); a.click(); a.remove();
+    try {
+      const res = await fetch('/api/files/export', { credentials: 'include' });
+      if (!res.ok) { toast.error('Export failed'); return; }
+      const blob = await res.blob();
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = `files-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      toast.error('Export failed');
+    }
   };
 
   const projects = [...new Set(files.map(f => f.project).filter(Boolean))];
   const categories = [...new Set(files.map(f => f.category).filter(Boolean))];
-
-  const previewUrl = previewFile
-    ? `${(api.defaults.baseURL || '/api')}${previewFile.id ? `/files/${previewFile.id}/preview` : ''}`
-    : '';
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -351,9 +387,9 @@ export default function FileManager() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
+      <div role="tablist" className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
         {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>
+          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>
             {t}
           </button>
         ))}
@@ -363,7 +399,7 @@ export default function FileManager() {
       <div className="card p-4 flex flex-wrap gap-3 items-center">
         <Filter size={16} className="text-slate-400" />
         <form onSubmit={handleSearch} className="flex gap-2">
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, tags, Jira…" className="input h-8 text-sm w-64" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, tags, Jira…" aria-label="Search files" className="input h-8 text-sm w-64" />
           <button type="submit" className="btn-primary py-1.5 px-3 text-sm">Search</button>
         </form>
         <select value={project} onChange={e => setProject(e.target.value)} className="input h-8 text-sm w-40">
@@ -384,7 +420,16 @@ export default function FileManager() {
           <div className="flex items-center gap-2 ml-2">
             <button onClick={doBulkDownload} className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"><Download size={13} /> Download as ZIP</button>
             {isEngineer && (
-              <button onClick={() => doBulkAction('submit')} className="btn-secondary text-xs py-1.5 px-3">Submit for Review</button>
+              <button onClick={async () => {
+                try {
+                  await api.post('/files/bulk-submit', { ids: Array.from(selectedIds) });
+                  toast.success(`${selectedIds.size} file${selectedIds.size !== 1 ? 's' : ''} submitted for review`);
+                  setSelectedIds(new Set());
+                  load();
+                } catch {
+                  toast.error('Failed to submit files for review');
+                }
+              }} className="btn-secondary text-xs py-1.5 px-3">Submit for Review</button>
             )}
             {isLead && (
               <button onClick={() => doBulkAction('archive')} className="btn-secondary text-xs py-1.5 px-3">Archive Selected</button>
@@ -393,7 +438,7 @@ export default function FileManager() {
               <button onClick={() => setConfirmDelete({ open: true, id: -1, name: `${selectedIds.size} selected files` })} className="text-xs py-1.5 px-3 rounded-lg font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-colors">Delete Selected</button>
             )}
           </div>
-          <button onClick={() => setSelectedIds(new Set())} className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-colors" title="Clear selection">
+          <button onClick={() => setSelectedIds(new Set())} aria-label="Clear selection" className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-colors" title="Clear selection">
             <X size={14} />
           </button>
         </div>
@@ -426,6 +471,7 @@ export default function FileManager() {
                       type="checkbox"
                       checked={allVisibleSelected}
                       onChange={toggleAll}
+                      aria-label="Select all files"
                       className="rounded border-slate-300 dark:border-slate-600 text-[#F59E0B] focus:ring-[#F59E0B]"
                     />
                   </th>
@@ -443,6 +489,7 @@ export default function FileManager() {
                         checked={selectedIds.has(f.id)}
                         onChange={() => toggleOne(f.id)}
                         onClick={e => e.stopPropagation()}
+                        aria-label={`Select ${f.name}`}
                         className="rounded border-slate-300 dark:border-slate-600 text-[#F59E0B] focus:ring-[#F59E0B]"
                       />
                     </td>
@@ -466,10 +513,12 @@ export default function FileManager() {
                       {f.jira_ticket && <span className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">{f.jira_ticket}</span>}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-400">{formatBytes(f.size)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString('en-CA')}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => openFile(f)} title="Details" aria-label="View file details" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Eye size={14} /></button>
+                        <button onClick={() => openFile(f)} title="Details" aria-label="View file details" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500" disabled={fileDetailLoading}>
+                          {fileDetailLoading ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
+                        </button>
                         {isPreviewable(f) && (
                           <button onClick={() => openPreview(f)} title="Preview" aria-label="Preview file" className="p-1.5 rounded hover:bg-[#F59E0B]/10 text-[#F59E0B]">
                             {f.mime_type?.startsWith('image/') ? <Image size={14} /> : <FileText size={14} />}
@@ -548,7 +597,7 @@ export default function FileManager() {
                         <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
                           <span className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] px-2 py-0.5 rounded font-mono">v{v.version}</span>
                           <span className="text-slate-500">{v.change_log}</span>
-                          <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString()}</span>
+                          <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString('en-CA')}</span>
                           <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version" aria-label={`Download version ${v.version}`}><Download size={12} /></button>
                         </div>
                       ))}
@@ -601,7 +650,7 @@ export default function FileManager() {
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{c.user_name}</span>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-400">{new Date(c.created_at).toLocaleDateString()}</span>
+                              <span className="text-xs text-slate-400">{new Date(c.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}</span>
                               {(c.user_id === user?.id || isAdmin) && (
                                 <button onClick={() => deleteComment(c.id)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors" title="Delete comment">
                                   <Trash2 size={12} />
@@ -662,7 +711,7 @@ export default function FileManager() {
                               <span className="font-semibold text-slate-700 dark:text-slate-200">{a.reviewer_name}</span>
                               <StatusBadge status={a.status} />
                               <span className="ml-auto text-xs text-slate-400 flex items-center gap-1">
-                                <Clock size={10} /> {new Date(a.created_at).toLocaleDateString()}
+                                <Clock size={10} /> {new Date(a.created_at).toLocaleDateString('en-CA')}
                               </span>
                             </div>
                             {a.comments && <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{a.comments}</p>}
@@ -679,7 +728,7 @@ export default function FileManager() {
       )}
 
       {/* Approve Modal */}
-      <Modal open={showApprove} onClose={() => { setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); }} title="Review File" size="sm">
+      <Modal open={showApprove} onClose={() => { setShowApprove(false); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); }} title="Review File" size="sm">
         <div className="space-y-4">
           <div>
             <label className="label">Update Status</label>
@@ -697,14 +746,14 @@ export default function FileManager() {
             {approveError && <p className="text-xs text-red-500 mt-1">{approveError}</p>}
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowApprove(false); setSelected(null); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); }} className="btn-secondary">Cancel</button>
+            <button onClick={() => { setShowApprove(false); setApproveComment(''); setApproveStatus('approved'); setApproveError(''); }} className="btn-secondary">Cancel</button>
             <button onClick={doApprove} className="btn-primary">Update Status</button>
           </div>
         </div>
       </Modal>
 
       {/* Bulk Upload Modal */}
-      <Modal open={showBulkUpload} onClose={() => { setShowBulkUpload(false); setBulkFiles([]); setBulkProgress(''); }} title="Bulk Upload Files" size="md">
+      <Modal open={showBulkUpload} onClose={() => { if (!bulkUploading) { setShowBulkUpload(false); setBulkFiles([]); setBulkProgress(''); } }} title="Bulk Upload Files" size="md">
         <div className="space-y-4">
           <div
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -716,7 +765,7 @@ export default function FileManager() {
             <Upload size={28} className="mx-auto mb-3 text-slate-400" />
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Drop files here or click to browse</p>
             <p className="text-xs text-slate-400 mt-1">Up to 20 files, max 50 MB each</p>
-            <input ref={fileInputRef} type="file" multiple className="hidden" onChange={e => setBulkFiles(prev => [...prev, ...Array.from(e.target.files || [])])} />
+            <input ref={fileInputRef} type="file" multiple className="hidden" onChange={e => addBulkFiles(Array.from(e.target.files || []))} />
           </div>
 
           {bulkFiles.length > 0 && (
@@ -739,7 +788,7 @@ export default function FileManager() {
           )}
 
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowBulkUpload(false); setBulkFiles([]); setBulkProgress(''); }} className="btn-secondary">Cancel</button>
+            <button onClick={() => { if (!bulkUploading) { setShowBulkUpload(false); setBulkFiles([]); setBulkProgress(''); } }} disabled={bulkUploading} className="btn-secondary">Cancel</button>
             <button onClick={doBulkUpload} disabled={!bulkFiles.length || bulkUploading} className="btn-primary">
               {bulkUploading ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> : <Upload size={15} />}
               Upload {bulkFiles.length > 0 ? `${bulkFiles.length} File${bulkFiles.length > 1 ? 's' : ''}` : 'Files'}
@@ -763,18 +812,19 @@ export default function FileManager() {
       {previewFile && (
         <Modal open={showPreview} onClose={() => { setShowPreview(false); setPreviewFile(null); }} title={`Preview: ${previewFile.name || previewFile.original_name}`} size="lg">
           <div className="flex flex-col items-center gap-4">
-            {previewFile.mime_type?.startsWith('image/') && previewBlobUrl ? (
-              <img
-                src={previewBlobUrl}
-                alt={previewFile.name}
-                className="max-w-full max-h-[60vh] rounded-lg object-contain"
-              />
-            ) : previewFile.mime_type === 'application/pdf' && previewBlobUrl ? (
-              <iframe
-                src={previewBlobUrl}
-                className="w-full h-[60vh] rounded-lg border border-slate-200 dark:border-slate-700"
-                title="PDF Preview"
-              />
+            {previewLoading ? (
+              <div className="flex items-center justify-center h-40">
+                <Loader2 size={28} className="animate-spin text-amber-400" />
+              </div>
+            ) : previewFile?.mime_type?.startsWith('image/') && previewBlobUrl ? (
+              <img src={previewBlobUrl} alt={previewFile.name} className="max-w-full max-h-[60vh] rounded-lg object-contain" />
+            ) : previewFile?.mime_type === 'application/pdf' && previewBlobUrl ? (
+              <iframe src={previewBlobUrl} className="w-full h-[60vh] rounded-lg border border-slate-200 dark:border-slate-700" title="PDF Preview" />
+            ) : !previewLoading ? (
+              <div className="flex flex-col items-center justify-center h-40 text-slate-400 gap-2">
+                <FileText size={32} className="opacity-30" />
+                <p className="text-sm">Preview not available</p>
+              </div>
             ) : null}
             <div className="flex gap-2">
               <button onClick={() => downloadFile(previewFile.id, previewFile.original_name)} className="btn-secondary"><Download size={15} /> Download</button>

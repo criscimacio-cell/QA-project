@@ -55,7 +55,7 @@ function signAccess(user: { id: number; email: string; role: string; organizatio
   );
 }
 
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   const ip = getClientIp(req);
   if (!await checkRateLimit(ip)) { res.status(429).json({ error: 'Too many login attempts, try again in 15 minutes' }); return; }
   const { email, password, rememberMe, orgSlug } = req.body;
@@ -73,7 +73,7 @@ router.post('/login', async (req: Request, res: Response) => {
   if (orgSlug) {
     const [org] = await sql`SELECT id FROM organizations WHERE slug = ${orgSlug} AND active = TRUE`;
     if (!org) {
-      await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (0, 'LOGIN_FAIL', 'user', 0, ${`Failed login: unknown org slug "${orgSlug}" for ${email}`}, ${ip})`;
+      await sql`INSERT INTO audit_logs (action, entity_type, entity_id, details, ip_address) VALUES ('LOGIN_FAIL', 'user', 0, ${`Failed login: unknown org slug "${orgSlug}" for ${email}`}, ${ip})`;
       res.status(401).json({ error: 'Invalid credentials' }); return;
     }
     [user] = await sql`SELECT * FROM users WHERE email = ${email} AND organization_id = ${org.id}`;
@@ -86,7 +86,7 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (0, 'LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip})`;
+    await sql`INSERT INTO audit_logs (action, entity_type, entity_id, details, ip_address) VALUES ('LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip})`;
     res.status(401).json({ error: 'Invalid credentials' }); return;
   }
   if (!user.active) {
@@ -109,9 +109,9 @@ router.post('/login', async (req: Request, res: Response) => {
 
   const { password_hash, ...safeUser } = user;
   res.json({ user: safeUser });
-});
+}));
 
-router.post('/refresh', async (req: Request, res: Response) => {
+router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies?.refreshToken;
   if (!token) { res.status(401).json({ error: 'No refresh token' }); return; }
   const [record] = await sql`
@@ -139,7 +139,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
   res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });
   res.cookie('refreshToken', newRefresh, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
   res.json({ ok: true });
-});
+}));
 
 router.get('/me', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const [user] = await sql`

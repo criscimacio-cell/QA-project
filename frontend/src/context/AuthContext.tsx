@@ -11,6 +11,7 @@ interface User {
   organization_id: number;
   org_slug: string;
   org_name: string;
+  org_plan: 'free' | 'pro' | 'enterprise';
 }
 
 interface AuthContextType {

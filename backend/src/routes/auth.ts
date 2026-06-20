@@ -75,10 +75,15 @@ router.post('/login', async (req: Request, res: Response) => {
     }
     [user] = await sql`SELECT * FROM users WHERE email = ${email} AND organization_id = ${org.id}`;
   } else {
-    [user] = await sql`SELECT * FROM users WHERE email = ${email}`;
+    // Always validate org.active even when no slug provided
+    [user] = await sql`
+      SELECT u.* FROM users u
+      JOIN organizations o ON u.organization_id = o.id
+      WHERE u.email = ${email} AND o.active = TRUE
+    `;
   }
 
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+  if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (0, 'LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip}, 1)`;
     res.status(401).json({ error: 'Invalid credentials' }); return;
   }
@@ -110,7 +115,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
   const [record] = await sql`
     SELECT rt.*, u.id as uid, u.email, u.role, u.organization_id, u.active FROM refresh_tokens rt
     JOIN users u ON rt.user_id = u.id
-    WHERE rt.token = ${token} AND rt.revoked = FALSE AND rt.expires_at > NOW() AND u.active = TRUE
+    JOIN organizations o ON u.organization_id = o.id
+    WHERE rt.token = ${token} AND rt.revoked = FALSE AND rt.expires_at > NOW()
+      AND u.active = TRUE AND o.active = TRUE
       AND rt.organization_id = u.organization_id
   `;
   if (!record) { res.status(401).json({ error: 'Invalid or expired refresh token' }); return; }
@@ -135,7 +142,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
 router.get('/me', authenticate, async (req: Request, res: Response) => {
   const [user] = await sql`
     SELECT u.id, u.name, u.email, u.role, u.department, u.avatar, u.active, u.created_at, u.last_login,
-           u.organization_id, o.slug as org_slug, o.name as org_name
+           u.organization_id, o.slug as org_slug, o.name as org_name, o.plan as org_plan
     FROM users u JOIN organizations o ON u.organization_id = o.id
     WHERE u.id = ${req.user!.userId} AND u.organization_id = ${req.user!.organizationId}
   `;

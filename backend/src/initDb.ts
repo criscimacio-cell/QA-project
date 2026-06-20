@@ -5,14 +5,17 @@ export async function initDb() {
   // ── Organizations (must exist before any org-scoped tables) ─────────────
   await sql`
     CREATE TABLE IF NOT EXISTS organizations (
-      id         SERIAL PRIMARY KEY,
-      name       TEXT NOT NULL,
-      slug       TEXT UNIQUE NOT NULL,
-      plan       TEXT NOT NULL DEFAULT 'free',
-      active     BOOLEAN DEFAULT TRUE,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      id          SERIAL PRIMARY KEY,
+      name        TEXT NOT NULL,
+      slug        TEXT UNIQUE NOT NULL,
+      plan        TEXT NOT NULL DEFAULT 'free',
+      active      BOOLEAN DEFAULT TRUE,
+      archived_at TIMESTAMPTZ,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
     )
   `;
+  // Idempotent: add archived_at to existing deployments
+  await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ`;
 
   // Seed default org so existing rows can reference it
   await sql`

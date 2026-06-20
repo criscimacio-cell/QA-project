@@ -155,10 +155,75 @@ router.get('/organizations/:id', authenticatePlatformAdmin, async (req: Request,
   res.json({ ...org, users, stats: stats[0], recentActivity });
 });
 
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,48}[a-z0-9]$|^[a-z0-9]{2}$/;
+
+router.post('/organizations', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+  const { name, slug, plan = 'free', adminName, adminEmail, adminPassword } = req.body;
+  if (!name?.trim() || !slug?.trim()) { res.status(400).json({ error: 'name and slug are required' }); return; }
+  if (!SLUG_RE.test(slug)) { res.status(400).json({ error: 'Invalid slug format' }); return; }
+  const VALID_PLANS = ['free', 'pro', 'enterprise'];
+  if (!VALID_PLANS.includes(plan)) { res.status(400).json({ error: 'Invalid plan' }); return; }
+
+  try {
+    const result = await sql.begin(async tx => {
+      const [existing] = await tx`SELECT id FROM organizations WHERE slug = ${slug.trim().toLowerCase()}`;
+      if (existing) throw new Error('SLUG_TAKEN');
+      const [org] = await tx`INSERT INTO organizations (name, slug, plan) VALUES (${name.trim()}, ${slug.trim().toLowerCase()}, ${plan}) RETURNING id, name, slug, plan`;
+
+      let userId: number | null = null;
+      if (adminName && adminEmail && adminPassword) {
+        if (adminPassword.length < 8) throw new Error('PASSWORD_SHORT');
+        const hash = await bcrypt.hash(adminPassword, 10);
+        const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(adminEmail.trim())}`;
+        const [u] = await tx`INSERT INTO users (name, email, password_hash, role, organization_id, avatar) VALUES (${adminName.trim()}, ${adminEmail.trim().toLowerCase()}, ${hash}, 'admin', ${org.id}, ${avatar}) RETURNING id`;
+        userId = u.id;
+      }
+      return { org, userId };
+    });
+    res.status(201).json({ message: `Organization "${result.org.name}" created`, org: result.org });
+  } catch (err: any) {
+    if (err.message === 'SLUG_TAKEN') { res.status(409).json({ error: 'Slug already taken' }); return; }
+    if (err.message === 'PASSWORD_SHORT') { res.status(400).json({ error: 'Admin password must be at least 8 characters' }); return; }
+    if (err.code === '23505') { res.status(409).json({ error: 'Admin email already exists in this organization' }); return; }
+    console.error('Create org error:', err);
+    res.status(500).json({ error: 'Failed to create organization' });
+  }
+});
+
+router.post('/organizations/:id/users', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+  const { name, email, password, role = 'admin' } = req.body;
+  if (!name?.trim() || !email?.trim() || !password) { res.status(400).json({ error: 'name, email and password are required' }); return; }
+  if (password.length < 8) { res.status(400).json({ error: 'Password must be at least 8 characters' }); return; }
+  const VALID_ROLES = ['admin', 'lead', 'engineer', 'viewer'];
+  if (!VALID_ROLES.includes(role)) { res.status(400).json({ error: 'Invalid role' }); return; }
+  const [org] = await sql`SELECT id FROM organizations WHERE id = ${req.params.id}`;
+  if (!org) { res.status(404).json({ error: 'Organization not found' }); return; }
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email.trim())}`;
+    const [user] = await sql`INSERT INTO users (name, email, password_hash, role, organization_id, avatar) VALUES (${name.trim()}, ${email.trim().toLowerCase()}, ${hash}, ${role}, ${req.params.id}, ${avatar}) RETURNING id, name, email, role`;
+    res.status(201).json({ message: `User "${name}" created in organization`, user });
+  } catch (err: any) {
+    if (err.code === '23505') { res.status(409).json({ error: 'Email already exists in this organization' }); return; }
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+router.delete('/organizations/:id', authenticatePlatformAdmin, async (req: Request, res: Response) => {
+  const [org] = await sql`SELECT id, name FROM organizations WHERE id = ${req.params.id}`;
+  if (!org) { res.status(404).json({ error: 'Not found' }); return; }
+  // Soft-delete: suspend + revoke all sessions
+  await sql`UPDATE organizations SET active = FALSE, archived_at = NOW() WHERE id = ${req.params.id}`;
+  await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE organization_id = ${req.params.id}`;
+  res.json({ message: `Organization "${org.name}" archived and all sessions revoked` });
+});
+
 router.put('/organizations/:id/suspend', authenticatePlatformAdmin, async (req: Request, res: Response) => {
   const [org] = await sql`SELECT id, name FROM organizations WHERE id = ${req.params.id}`;
   if (!org) { res.status(404).json({ error: 'Not found' }); return; }
   await sql`UPDATE organizations SET active = FALSE WHERE id = ${req.params.id}`;
+  // Immediately invalidate all active sessions for this org
+  await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE organization_id = ${req.params.id} AND revoked = FALSE`;
   res.json({ message: `Organization "${org.name}" suspended` });
 });
 

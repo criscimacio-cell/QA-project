@@ -6,6 +6,8 @@ import fs from 'fs';
 import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 
+const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise: Infinity };
+
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 fs.mkdirSync(path.join(UPLOAD_DIR, 'avatars'), { recursive: true });
 
@@ -55,6 +57,15 @@ router.get('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async
 router.post('/', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const { name, email, password, role, department } = req.body;
   const orgId = req.user!.organizationId;
+
+  // Enforce per-plan user limits
+  const [orgRow] = await sql`SELECT plan FROM organizations WHERE id = ${orgId}`;
+  const limit = PLAN_USER_LIMITS[orgRow?.plan] ?? 5;
+  const [{ count }] = await sql`SELECT COUNT(*)::int as count FROM users WHERE organization_id = ${orgId} AND active = TRUE` as any[];
+  if (count >= limit) {
+    res.status(403).json({ error: `User limit reached for your plan (${limit} users on ${orgRow?.plan} plan). Please upgrade to add more users.` }); return;
+  }
+
   const hash = bcrypt.hashSync(password || 'password123', 10);
   const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`;
   try {
@@ -116,8 +127,8 @@ router.put('/me/avatar', authenticate, avatarUpload.single('avatar'), async (req
   res.json({ avatar: avatarUrl });
 });
 
-router.get('/:id/avatar', async (req: Request, res: Response) => {
-  const [user] = await sql`SELECT avatar FROM users WHERE id = ${req.params.id}`;
+router.get('/:id/avatar', authenticate, async (req: Request, res: Response) => {
+  const [user] = await sql`SELECT avatar FROM users WHERE id = ${req.params.id} AND organization_id = ${req.user!.organizationId}`;
   if (!user) { res.status(404).end(); return; }
   const avatarDir = path.join(UPLOAD_DIR, 'avatars');
   if (fs.existsSync(avatarDir)) {

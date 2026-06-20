@@ -7,6 +7,12 @@ const archiver = require('archiver') as (format: string, opts?: object) => impor
 import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { sendApprovalNotification, sendUploadNotification } from '../mailer';
+
+const PLAN_STORAGE_LIMITS: Record<string, number> = {
+  free: 1 * 1024 ** 3,        // 1 GB
+  pro: 50 * 1024 ** 3,        // 50 GB
+  enterprise: Infinity,
+};
 import { notificationQueue } from '../queue';
 
 const router = Router();
@@ -176,6 +182,16 @@ router.post('/upload', authenticate, requireRole('admin', 'lead', 'engineer'), u
   const f = req.file;
   if (!f) { res.status(400).json({ error: 'No file attached' }); return; }
   const name = req.body.name || f.originalname.replace(/\.[^/.]+$/, '');
+
+  // Enforce per-plan storage limits
+  const [orgRow] = await sql`SELECT plan FROM organizations WHERE id = ${orgId}`;
+  const storageLimit = PLAN_STORAGE_LIMITS[orgRow?.plan] ?? PLAN_STORAGE_LIMITS.free;
+  const [{ used }] = await sql`SELECT COALESCE(SUM(size),0)::bigint as used FROM files WHERE organization_id = ${orgId}` as any[];
+  if (Number(used) + f.size > storageLimit) {
+    fs.unlinkSync(path.join(UPLOAD_DIR, f.filename));
+    const limitGB = storageLimit === Infinity ? '∞' : (storageLimit / 1024 ** 3).toFixed(0);
+    res.status(403).json({ error: `Storage limit reached (${limitGB}GB on ${orgRow?.plan} plan). Please upgrade or free up space.` }); return;
+  }
 
   const [existing] = await sql`SELECT * FROM files WHERE name = ${name} AND repository_id = ${repository_id || null} AND status != 'archived' AND organization_id = ${orgId}`;
   let fileId: number;

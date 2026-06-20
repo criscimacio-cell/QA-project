@@ -48,6 +48,7 @@ import AuditLog from './pages/AuditLog';
 import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
 import Archive from './pages/Archive';
+import OrgSettings from './pages/OrgSettings';
 import Register from './pages/Register';
 import { BackofficeAuthProvider } from './context/BackofficeAuthContext';
 import BackofficeLogin from './pages/backoffice/BackofficeLogin';
@@ -90,6 +91,7 @@ function AppRoutes() {
         <Route path="audit" element={<ProtectedRoute requireAdmin><AuditLog /></ProtectedRoute>} />
         <Route path="users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
         <Route path="settings" element={<Settings />} />
+        <Route path="org-settings" element={<ProtectedRoute requireAdmin><OrgSettings /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
 

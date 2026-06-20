@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Building2, Users, FileText, HardDrive, TrendingUp, Calendar } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Building2, Users, FileText, HardDrive, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
 import api from '../../api/client';
 
 interface Stats {
@@ -29,7 +30,7 @@ interface GrowthPoint {
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
+  if (!bytes || bytes === 0) return '0 B';
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
@@ -108,16 +109,21 @@ function GrowthChart({ data }: { data: GrowthPoint[] }) {
 }
 
 export default function BackofficeDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
+    setLoading(true);
+    setError('');
     api.get('/backoffice/stats')
       .then(res => setStats(res.data))
       .catch(() => setError('Failed to load stats'))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { loadStats(); }, [loadStats]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -125,7 +131,15 @@ export default function BackofficeDashboard() {
     </div>
   );
 
-  if (error) return <div className="text-red-400 text-sm">{error}</div>;
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-64 gap-4">
+      <p className="text-red-400 text-sm">{error}</p>
+      <button onClick={loadStats} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm transition-colors">
+        <RefreshCw className="w-4 h-4" /> Retry
+      </button>
+    </div>
+  );
+
   if (!stats) return null;
 
   return (
@@ -136,23 +150,28 @@ export default function BackofficeDashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard label="Total Orgs" value={stats.totalOrgs} icon={Building2} />
-        <StatCard label="Active Orgs" value={stats.activeOrgs} icon={TrendingUp} sub={`${stats.totalOrgs ? Math.round((stats.activeOrgs / stats.totalOrgs) * 100) : 0}% of total`} />
-        <StatCard label="Total Users" value={stats.totalUsers} icon={Users} />
-        <StatCard label="Total Files" value={stats.totalFiles.toLocaleString()} icon={FileText} />
-        <StatCard label="Storage Used" value={formatBytes(stats.totalStorage)} icon={HardDrive} />
-        <StatCard label="Orgs This Month" value={stats.orgsThisMonth} icon={Calendar} />
+        <StatCard label="Total Orgs" value={stats.totalOrgs ?? 0} icon={Building2} />
+        <StatCard label="Active Orgs" value={stats.activeOrgs ?? 0} icon={TrendingUp} sub={`${stats.totalOrgs ? Math.round(((stats.activeOrgs ?? 0) / stats.totalOrgs) * 100) : 0}% of total`} />
+        <StatCard label="Total Users" value={stats.totalUsers ?? 0} icon={Users} />
+        <StatCard label="Total Files" value={(stats.totalFiles ?? 0).toLocaleString()} icon={FileText} />
+        <StatCard label="Storage Used" value={formatBytes(stats.totalStorage ?? 0)} icon={HardDrive} />
+        <StatCard label="Orgs This Month" value={stats.orgsThisMonth ?? 0} icon={Calendar} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-slate-300 mb-4">Org Growth</h2>
-          <GrowthChart data={stats.orgGrowth} />
+          <GrowthChart data={stats.orgGrowth ?? []} />
         </div>
 
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-slate-300 mb-4">Recent Organizations</h2>
-          {stats.recentOrgs?.length === 0 ? (
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-slate-300">Recent Organizations</h2>
+            <button onClick={() => navigate('/backoffice/organizations')} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+              View all →
+            </button>
+          </div>
+          {!stats.recentOrgs?.length ? (
             <div className="text-slate-500 text-sm">No organizations yet</div>
           ) : (
             <div className="overflow-x-auto">
@@ -167,10 +186,10 @@ export default function BackofficeDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {stats.recentOrgs?.map(org => (
-                    <tr key={org.id} className="hover:bg-slate-800/40 transition-colors">
+                  {stats.recentOrgs.map(org => (
+                    <tr key={org.id} className="hover:bg-slate-800/40 transition-colors cursor-pointer" onClick={() => navigate(`/backoffice/organizations/${org.id}`)}>
                       <td className="py-2.5 pr-4">
-                        <div className="font-medium text-slate-200">{org.name}</div>
+                        <div className="font-medium text-slate-200 hover:text-indigo-400 transition-colors">{org.name}</div>
                         <div className="text-xs text-slate-500">{org.slug}</div>
                       </td>
                       <td className="py-2.5 pr-4"><PlanBadge plan={org.plan} /></td>
@@ -180,9 +199,7 @@ export default function BackofficeDashboard() {
                         </span>
                       </td>
                       <td className="py-2.5 pr-4 text-right text-slate-300">{org.user_count}</td>
-                      <td className="py-2.5 text-right text-slate-500 text-xs">
-                        {new Date(org.created_at).toLocaleDateString()}
-                      </td>
+                      <td className="py-2.5 text-right text-slate-500 text-xs">{new Date(org.created_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>

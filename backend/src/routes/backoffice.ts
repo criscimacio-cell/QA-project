@@ -37,21 +37,17 @@ function authenticatePlatformAdmin(req: Request, res: Response, next: NextFuncti
 router.post('/auth/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
   if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }
-
   try {
     const [admin] = await sql`SELECT * FROM platform_admins WHERE email = ${email} AND active = TRUE`;
     if (!admin || !(await bcrypt.compare(password, admin.password_hash))) {
       res.status(401).json({ error: 'Invalid credentials' }); return;
     }
-
     await sql`UPDATE platform_admins SET last_login = NOW() WHERE id = ${admin.id}`;
-
     const token = jwt.sign(
       { type: 'platform_admin', adminId: admin.id, email: admin.email, name: admin.name },
       JWT_SECRET(),
       { expiresIn: '8h', algorithm: 'HS256' }
     );
-
     res.cookie('boAccessToken', token, { ...BO_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });
     res.json({ admin: { id: admin.id, name: admin.name, email: admin.email } });
   } catch (err: any) {
@@ -77,12 +73,12 @@ router.get('/auth/me', authenticatePlatformAdmin, asyncHandler(async (req: Reque
 router.get('/stats', authenticatePlatformAdmin, asyncHandler(async (_req: Request, res: Response) => {
   const [[{ c: totalOrgs }], [{ c: activeOrgs }], [{ c: totalUsers }], [{ c: totalFiles }],
          [{ s: totalStorage }], [{ c: orgsThisMonth }]] = await Promise.all([
-    sql`SELECT COUNT(*)::int as c FROM organizations`,
-    sql`SELECT COUNT(*)::int as c FROM organizations WHERE active = TRUE`,
+    sql`SELECT COUNT(*)::int as c FROM organizations WHERE archived_at IS NULL`,
+    sql`SELECT COUNT(*)::int as c FROM organizations WHERE active = TRUE AND archived_at IS NULL`,
     sql`SELECT COUNT(*)::int as c FROM users WHERE active = TRUE`,
     sql`SELECT COUNT(*)::int as c FROM files WHERE status != 'archived'`,
-    sql`SELECT COALESCE(SUM(size),0)::bigint as s FROM files`,
-    sql`SELECT COUNT(*)::int as c FROM organizations WHERE created_at >= date_trunc('month', NOW())`,
+    sql`SELECT COALESCE(SUM(size),0)::bigint as s FROM files WHERE status != 'archived'`,
+    sql`SELECT COUNT(*)::int as c FROM organizations WHERE created_at >= date_trunc('month', NOW()) AND archived_at IS NULL`,
   ]);
 
   const recentOrgs = await sql`
@@ -90,6 +86,7 @@ router.get('/stats', authenticatePlatformAdmin, asyncHandler(async (_req: Reques
            COUNT(DISTINCT u.id)::int as user_count
     FROM organizations o
     LEFT JOIN users u ON u.organization_id = o.id AND u.active = TRUE
+    WHERE o.archived_at IS NULL
     GROUP BY o.id ORDER BY o.created_at DESC LIMIT 5
   `;
 
@@ -97,7 +94,7 @@ router.get('/stats', authenticatePlatformAdmin, asyncHandler(async (_req: Reques
     SELECT TO_CHAR(date_trunc('month', created_at), 'Mon YY') as month,
            COUNT(*)::int as count
     FROM organizations
-    WHERE created_at >= NOW() - INTERVAL '6 months'
+    WHERE created_at >= NOW() - INTERVAL '6 months' AND archived_at IS NULL
     GROUP BY date_trunc('month', created_at)
     ORDER BY date_trunc('month', created_at) ASC
   `;
@@ -112,9 +109,12 @@ router.get('/stats', authenticatePlatformAdmin, asyncHandler(async (_req: Reques
 // ── Organizations ───────────────────────────────────────────────────────────
 
 router.get('/organizations', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
-  const { search, plan, status } = req.query;
+  const { search, plan, status, limit = '50', offset = '0' } = req.query;
+  const lim = Math.min(parseInt(limit as string) || 50, 200);
+  const off = parseInt(offset as string) || 0;
+
   const orgs = await sql`
-    SELECT o.id, o.name, o.slug, o.plan, o.active, o.created_at,
+    SELECT o.id, o.name, o.slug, o.plan, o.active, o.created_at, o.archived_at,
            COUNT(DISTINCT u.id)::int as user_count,
            COUNT(DISTINCT f.id)::int as file_count,
            COALESCE(SUM(f.size), 0)::bigint as storage_used
@@ -124,11 +124,21 @@ router.get('/organizations', authenticatePlatformAdmin, asyncHandler(async (req:
     WHERE 1=1
     ${search ? sql`AND (o.name ILIKE ${'%' + (search as string) + '%'} OR o.slug ILIKE ${'%' + (search as string) + '%'})` : sql``}
     ${plan ? sql`AND o.plan = ${plan as string}` : sql``}
-    ${status === 'active' ? sql`AND o.active = TRUE` : status === 'suspended' ? sql`AND o.active = FALSE` : sql``}
+    ${status === 'active' ? sql`AND o.active = TRUE AND o.archived_at IS NULL` : status === 'suspended' ? sql`AND o.active = FALSE AND o.archived_at IS NULL` : status === 'archived' ? sql`AND o.archived_at IS NOT NULL` : sql``}
     GROUP BY o.id
     ORDER BY o.created_at DESC
+    LIMIT ${lim} OFFSET ${off}
   `;
-  res.json(orgs);
+
+  const [{ total }] = await sql`
+    SELECT COUNT(*)::int as total FROM organizations o
+    WHERE 1=1
+    ${search ? sql`AND (o.name ILIKE ${'%' + (search as string) + '%'} OR o.slug ILIKE ${'%' + (search as string) + '%'})` : sql``}
+    ${plan ? sql`AND o.plan = ${plan as string}` : sql``}
+    ${status === 'active' ? sql`AND o.active = TRUE AND o.archived_at IS NULL` : status === 'suspended' ? sql`AND o.active = FALSE AND o.archived_at IS NULL` : status === 'archived' ? sql`AND o.archived_at IS NOT NULL` : sql``}
+  ` as any[];
+
+  res.json({ orgs, total, limit: lim, offset: off });
 }));
 
 router.get('/organizations/:id', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
@@ -154,10 +164,10 @@ router.get('/organizations/:id', authenticatePlatformAdmin, asyncHandler(async (
   `;
 
   const recentActivity = await sql`
-    SELECT al.action, al.entity_type, al.details, al.created_at, u.name as user_name
+    SELECT al.id, al.action, al.entity_type, al.details, al.created_at, u.name as user_name
     FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id
     WHERE al.organization_id = ${req.params.id}
-    ORDER BY al.created_at DESC LIMIT 10
+    ORDER BY al.created_at DESC LIMIT 20
   `;
 
   res.json({ ...org, users, stats: stats[0], recentActivity });
@@ -171,6 +181,11 @@ router.post('/organizations', authenticatePlatformAdmin, async (req: Request, re
   if (!SLUG_RE.test(slug)) { res.status(400).json({ error: 'Invalid slug format' }); return; }
   const VALID_PLANS = ['free', 'pro', 'enterprise'];
   if (!VALID_PLANS.includes(plan)) { res.status(400).json({ error: 'Invalid plan' }); return; }
+
+  const hasAdminFields = adminName || adminEmail || adminPassword;
+  if (hasAdminFields && (!adminName?.trim() || !adminEmail?.trim() || !adminPassword)) {
+    res.status(400).json({ error: 'All admin fields (name, email, password) are required together' }); return;
+  }
 
   try {
     const result = await sql.begin(async tx => {
@@ -202,7 +217,7 @@ router.post('/organizations/:id/users', authenticatePlatformAdmin, async (req: R
   const { name, email, password, role = 'admin' } = req.body;
   if (!name?.trim() || !email?.trim() || !password) { res.status(400).json({ error: 'name, email and password are required' }); return; }
   if (password.length < 8) { res.status(400).json({ error: 'Password must be at least 8 characters' }); return; }
-  const VALID_ROLES = ['admin', 'lead', 'engineer', 'viewer'];
+  const VALID_ROLES = ['admin', 'lead', 'engineer', 'viewer', 'member', 'manager'];
   if (!VALID_ROLES.includes(role)) { res.status(400).json({ error: 'Invalid role' }); return; }
   const [org] = await sql`SELECT id FROM organizations WHERE id = ${req.params.id}`;
   if (!org) { res.status(404).json({ error: 'Organization not found' }); return; }
@@ -216,6 +231,13 @@ router.post('/organizations/:id/users', authenticatePlatformAdmin, async (req: R
     res.status(500).json({ error: 'Failed to create user' });
   }
 });
+
+router.put('/organizations/:id/users/:userId/toggle', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
+  const [user] = await sql`SELECT id, active FROM users WHERE id = ${req.params.userId} AND organization_id = ${req.params.id}`;
+  if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  const [updated] = await sql`UPDATE users SET active = ${!user.active} WHERE id = ${user.id} RETURNING id, name, active`;
+  res.json({ message: `User ${updated.active ? 'activated' : 'deactivated'}`, user: updated });
+}));
 
 router.delete('/organizations/:id', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
   const [org] = await sql`SELECT id, name FROM organizations WHERE id = ${req.params.id}`;
@@ -252,7 +274,10 @@ router.put('/organizations/:id/plan', authenticatePlatformAdmin, asyncHandler(as
 // ── Users (cross-org) ───────────────────────────────────────────────────────
 
 router.get('/users', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {
-  const { search, org_id } = req.query;
+  const { search, org_id, limit = '50', offset = '0' } = req.query;
+  const lim = Math.min(parseInt(limit as string) || 50, 200);
+  const off = parseInt(offset as string) || 0;
+
   const users = await sql`
     SELECT u.id, u.name, u.email, u.role, u.active, u.created_at, u.last_login,
            o.id as org_id, o.name as org_name, o.slug as org_slug
@@ -261,12 +286,19 @@ router.get('/users', authenticatePlatformAdmin, asyncHandler(async (req: Request
     ${search ? sql`AND (u.name ILIKE ${'%' + (search as string) + '%'} OR u.email ILIKE ${'%' + (search as string) + '%'})` : sql``}
     ${org_id ? sql`AND u.organization_id = ${org_id as string}` : sql``}
     ORDER BY u.created_at DESC
-    LIMIT 200
+    LIMIT ${lim} OFFSET ${off}
   `;
-  res.json(users);
+
+  const [{ total }] = await sql`
+    SELECT COUNT(*)::int as total FROM users u
+    WHERE 1=1
+    ${search ? sql`AND (u.name ILIKE ${'%' + (search as string) + '%'} OR u.email ILIKE ${'%' + (search as string) + '%'})` : sql``}
+    ${org_id ? sql`AND u.organization_id = ${org_id as string}` : sql``}
+  ` as any[];
+
+  res.json({ users, total, limit: lim, offset: off });
 }));
 
-// Catch unhandled async errors in all routes above
 router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error('[backoffice]', err?.message ?? err);
   res.status(500).json({ error: 'Internal server error' });

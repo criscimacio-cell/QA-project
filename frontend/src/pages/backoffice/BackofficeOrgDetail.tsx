@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../api/client';
 
@@ -37,7 +37,14 @@ interface ActivityItem {
   entity_type: string;
   user_name: string;
   created_at: string;
-  details: Record<string, unknown> | null;
+  details: string | Record<string, unknown> | null;
+}
+
+interface AddUserForm {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
 }
 
 function formatBytes(bytes: number): string {
@@ -76,6 +83,11 @@ export default function BackofficeOrgDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [planOpen, setPlanOpen] = useState(false);
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [addUserForm, setAddUserForm] = useState<AddUserForm>({ name: '', email: '', password: '', role: 'member' });
+  const [addUserLoading, setAddUserLoading] = useState(false);
+  const [togglingUser, setTogglingUser] = useState<string | null>(null);
+  const fetchOrgRef = useRef<() => void>(() => {});
 
   const fetchOrg = () => {
     setLoading(true);
@@ -85,7 +97,8 @@ export default function BackofficeOrgDetail() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchOrg(); }, [id]);
+  fetchOrgRef.current = fetchOrg;
+  useEffect(() => { fetchOrgRef.current(); }, [id]);
 
   const handleSuspend = async () => {
     if (!org) return;
@@ -100,6 +113,39 @@ export default function BackofficeOrgDetail() {
       fetchOrg();
     } catch {
       toast.error('Action failed');
+    }
+  };
+
+  const handleToggleUser = async (userId: string, currentActive: boolean) => {
+    setTogglingUser(userId);
+    try {
+      await api.put(`/backoffice/organizations/${id}/users/${userId}/toggle`);
+      toast.success(currentActive ? 'User deactivated' : 'User activated');
+      fetchOrg();
+    } catch {
+      toast.error('Failed to toggle user status');
+    } finally {
+      setTogglingUser(null);
+    }
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addUserForm.name || !addUserForm.email || !addUserForm.password) {
+      toast.error('Name, email and password are required');
+      return;
+    }
+    setAddUserLoading(true);
+    try {
+      await api.post(`/backoffice/organizations/${id}/users`, addUserForm);
+      toast.success('User added');
+      setAddUserOpen(false);
+      setAddUserForm({ name: '', email: '', password: '', role: 'member' });
+      fetchOrg();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to add user');
+    } finally {
+      setAddUserLoading(false);
     }
   };
 
@@ -127,7 +173,6 @@ export default function BackofficeOrgDetail() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Header */}
       <div className="flex items-start gap-4">
         <button
           onClick={() => navigate('/backoffice/organizations')}
@@ -154,7 +199,6 @@ export default function BackofficeOrgDetail() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={handleSuspend}
@@ -194,7 +238,6 @@ export default function BackofficeOrgDetail() {
         </div>
       </div>
 
-      {/* Stats */}
       {org.stats && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-slate-400 mb-3">Statistics</h2>
@@ -207,9 +250,16 @@ export default function BackofficeOrgDetail() {
         </div>
       )}
 
-      {/* Users */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-slate-400 mb-4">Users ({org.users?.length ?? 0})</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-slate-400">Users ({org.users?.length ?? 0})</h2>
+          <button
+            onClick={() => setAddUserOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+          >
+            <UserPlus className="w-3.5 h-3.5" /> Add User
+          </button>
+        </div>
         {!org.users?.length ? (
           <div className="text-slate-500 text-sm">No users</div>
         ) : (
@@ -222,6 +272,7 @@ export default function BackofficeOrgDetail() {
                   <th className="text-left py-2 pr-4 font-medium">Role</th>
                   <th className="text-left py-2 pr-4 font-medium">Status</th>
                   <th className="text-right py-2 font-medium">Last Login</th>
+                  <th className="text-right py-2 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -242,6 +293,19 @@ export default function BackofficeOrgDetail() {
                     <td className="py-2.5 text-right text-slate-500 text-xs">
                       {user.last_login ? new Date(user.last_login).toLocaleDateString() : '—'}
                     </td>
+                    <td className="py-2.5 text-right">
+                      <button
+                        onClick={() => handleToggleUser(user.id, user.active)}
+                        disabled={togglingUser === user.id}
+                        className={`px-2 py-0.5 rounded text-xs font-medium transition-colors border ${
+                          user.active
+                            ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
+                            : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'
+                        } disabled:opacity-50`}
+                      >
+                        {togglingUser === user.id ? '…' : user.active ? 'Deactivate' : 'Activate'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -250,7 +314,6 @@ export default function BackofficeOrgDetail() {
         )}
       </div>
 
-      {/* Recent activity */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
         <h2 className="text-sm font-semibold text-slate-400 mb-4">Recent Activity</h2>
         {!org.recentActivity?.length ? (
@@ -267,9 +330,9 @@ export default function BackofficeOrgDetail() {
                     <span className="text-xs text-slate-500">{item.entity_type}</span>
                     <span className="text-xs text-slate-400">by <span className="text-slate-300">{item.user_name}</span></span>
                   </div>
-                  {item.details && Object.keys(item.details).length > 0 && (
+                  {item.details && (
                     <div className="mt-1 text-xs text-slate-600 font-mono truncate">
-                      {JSON.stringify(item.details)}
+                      {typeof item.details === 'string' ? item.details : JSON.stringify(item.details)}
                     </div>
                   )}
                 </div>
@@ -281,6 +344,82 @@ export default function BackofficeOrgDetail() {
           </div>
         )}
       </div>
+
+      {addUserOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-slate-800">
+              <h2 className="text-base font-semibold text-white">Add User to {org.name}</h2>
+              <button onClick={() => setAddUserOpen(false)} className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleAddUser} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Name</label>
+                <input
+                  type="text"
+                  required
+                  value={addUserForm.name}
+                  onChange={e => setAddUserForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Full name"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={addUserForm.email}
+                  onChange={e => setAddUserForm(f => ({ ...f, email: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={addUserForm.password}
+                  onChange={e => setAddUserForm(f => ({ ...f, password: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Minimum 8 characters"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Role</label>
+                <select
+                  value={addUserForm.role}
+                  onChange={e => setAddUserForm(f => ({ ...f, role: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setAddUserOpen(false)}
+                  className="px-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800 transition-colors border border-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addUserLoading}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-50"
+                >
+                  {addUserLoading ? 'Adding…' : 'Add User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../api/client';
@@ -16,29 +17,45 @@ interface CrossOrgUser {
 }
 
 export default function BackofficeUsers() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<CrossOrgUser[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [orgId, setOrgId] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const fetchUsers = useCallback(() => {
+  const fetchUsers = (s: string, o: string) => {
     setLoading(true);
     const params: Record<string, string> = {};
-    if (search) params.search = search;
-    if (orgId) params.org_id = orgId;
+    if (s) params.search = s;
+    if (o) params.org_id = o;
     api.get('/backoffice/users', { params })
-      .then(res => setUsers(res.data))
+      .then(res => {
+        const data = res.data;
+        if (Array.isArray(data)) {
+          setUsers(data);
+          setTotal(data.length);
+        } else {
+          setUsers(data.users ?? []);
+          setTotal(data.total ?? 0);
+        }
+      })
       .catch(() => toast.error('Failed to load users'))
       .finally(() => setLoading(false));
-  }, [search, orgId]);
+  };
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchUsers(search, orgId), 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [search, orgId]);
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-white">Users</h1>
-        <p className="text-slate-500 text-sm mt-0.5">Cross-organization user directory — {users.length} user{users.length !== 1 ? 's' : ''}</p>
+        <p className="text-slate-500 text-sm mt-0.5">Cross-organization user directory — {total} user{total !== 1 ? 's' : ''}</p>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -52,13 +69,16 @@ export default function BackofficeUsers() {
             className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
-        <input
-          type="text"
-          placeholder="Filter by Org ID…"
-          value={orgId}
-          onChange={e => setOrgId(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-48"
-        />
+        <div className="flex flex-col gap-0.5">
+          <label className="text-xs text-slate-500 px-1">Filter by Org ID</label>
+          <input
+            type="text"
+            placeholder="Organization ID…"
+            value={orgId}
+            onChange={e => setOrgId(e.target.value)}
+            className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-48"
+          />
+        </div>
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
@@ -93,7 +113,12 @@ export default function BackofficeUsers() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-slate-300">{user.org_name}</div>
+                      <button
+                        onClick={() => navigate(`/backoffice/organizations/${user.org_id}`)}
+                        className="text-slate-300 hover:text-indigo-400 transition-colors text-left"
+                      >
+                        {user.org_name}
+                      </button>
                       <div className="text-xs text-slate-600 font-mono">{user.org_id}</div>
                     </td>
                     <td className="px-4 py-3">

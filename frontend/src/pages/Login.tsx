@@ -1,15 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, CheckCircle2, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { SplineScene, type SplineApp } from '../components/ui/splite';
 
-const DEMO_USERS = [
-  { email: 'admin@qa.com',     role: 'Admin',    color: '#ef4444' },
-  { email: 'lead@qa.com',      role: 'Lead',     color: '#F59E0B' },
-  { email: 'engineer1@qa.com', role: 'Engineer', color: '#3b82f6' },
-  { email: 'viewer@qa.com',    role: 'Viewer',   color: '#64748b' },
-];
 
 /* ─── Post-login morph overlay ─────────────────────────────────────── */
 function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPulse: boolean; fadingOut: boolean }) {
@@ -55,7 +49,6 @@ export default function Login() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
   const [errors, setErrors]     = useState<Record<string, string>>({});
-  const [filledRole, setFilledRole] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -120,14 +113,12 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFilledRole('');
     if (!validate()) return;
     setLoading(true); setError('');
     try {
       await login(email, password, rememberMe);
       setLoginSuccess(true);
     } catch (err: any) {
-      setFilledRole('');
       setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
       triggerScratchHead();
     } finally {
@@ -135,10 +126,6 @@ export default function Login() {
     }
   };
 
-  const quickLogin = (u: typeof DEMO_USERS[0]) => {
-    setEmail(u.email); setPassword('password123'); setFilledRole(u.role);
-    setTimeout(() => formRef.current?.requestSubmit(), 150);
-  };
 
 
   const AMBER = '#F59E0B';
@@ -194,21 +181,7 @@ export default function Login() {
       </div>
 
       <div className="login-demo-panel" style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340, pointerEvents:'auto' }}>
-        <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.12em', color:'rgba(0,0,0,0.4)', marginBottom:8 }}>Demo accounts</p>
-        <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
-          {DEMO_USERS.map(u => (
-            <button key={u.email} type="button" onClick={() => quickLogin(u)}
-              style={{ padding:'5px 13px', borderRadius:999, cursor:'pointer', background:filledRole===u.role?u.color:'rgba(0,0,0,0.07)', border:`1px solid ${filledRole===u.role?u.color:'rgba(0,0,0,0.15)'}`, color:filledRole===u.role?'white':'rgba(0,0,0,0.6)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, transition:'all 0.18s' }}>
-              {filledRole === u.role && <CheckCircle2 size={11} />}
-              {u.role}
-            </button>
-          ))}
-        </div>
-        <div className="demo-section" style={{ marginTop:6 }}>
-          <p style={{ fontSize:11, color:'rgba(0,0,0,0.4)' }}>
-            Password: <span style={{ fontFamily:'monospace', color:'#b45309', fontWeight:700 }}>password123</span>
-          </p>
-        </div>
+        <p style={{ fontSize:11, color:'rgba(0,0,0,0.4)', letterSpacing:'0.01em' }}>Powered by <strong style={{ color:'rgba(0,0,0,0.55)' }}>Stash Ph Pinas Inc.</strong></p>
       </div>
 
       {/* ── Login card — right side, floating over scene ── */}

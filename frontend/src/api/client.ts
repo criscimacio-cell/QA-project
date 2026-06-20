@@ -9,7 +9,8 @@ const api = axios.create({
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    const isAuthEndpoint = err.config?.url?.includes('/auth/login') || err.config?.url?.includes('/auth/refresh') || err.config?.url?.includes('/auth/me');
+    const url = err.config?.url || '';
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/refresh') || url.includes('/auth/me') || url.includes('/users/me');
     if (err.response?.status === 401 && !isAuthEndpoint) {
       window.location.href = '/login';
     }

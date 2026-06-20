@@ -3,6 +3,7 @@ import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, Rotate
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
+import Pagination from '../components/UI/Pagination';
 import StatusBadge from '../components/UI/Badge';
 import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
@@ -45,6 +46,9 @@ const APPROVAL_DOT: Record<string, string> = {
 export default function FileManager() {
   const { user, isLead, isAdmin, isEngineer } = useAuth();
   const [files, setFiles] = useState<any[]>([]);
+  const [fileTotal, setFileTotal] = useState(0);
+  const [fileOffset, setFileOffset] = useState(0);
+  const FILE_LIMIT = 20;
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('All Files');
   const [search, setSearch] = useState('');
@@ -120,10 +124,17 @@ export default function FileManager() {
     if (effectiveSearch) params.search = effectiveSearch;
     if (effectiveProject) params.project = effectiveProject;
     if (effectiveCategory) params.category = effectiveCategory;
-    api.get('/files', { params }).then(r => setFiles(r.data)).catch(() => toast.error('Failed to load files')).finally(() => setLoading(false));
+    const off = overrides && 'offset' in overrides ? overrides.offset : fileOffset;
+    params.limit = FILE_LIMIT;
+    params.offset = off ?? 0;
+    api.get('/files', { params }).then(r => {
+      const data = r.data;
+      if (Array.isArray(data)) { setFiles(data); setFileTotal(data.length); }
+      else { setFiles(data.files ?? []); setFileTotal(data.total ?? 0); }
+    }).catch(() => toast.error('Failed to load files')).finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [tab, project, category]);
+  useEffect(() => { setFileOffset(0); load({ offset: 0 }); }, [tab, project, category]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); load(); };
 
@@ -558,6 +569,14 @@ export default function FileManager() {
             </table>
           </div>
         )}
+        <div className="px-4 pb-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <Pagination
+            total={fileTotal}
+            limit={FILE_LIMIT}
+            offset={fileOffset}
+            onPageChange={off => { setFileOffset(off); load({ offset: off }); }}
+          />
+        </div>
       </div>
 
       {/* File Detail Modal */}

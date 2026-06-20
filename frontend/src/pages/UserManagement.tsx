@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, UserCheck, UserX, Loader2 } from 'lucide-react';
+import { Plus, Edit2, UserCheck, UserX, Loader2, Eye, EyeOff, RefreshCw, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import Modal from '../components/UI/Modal';
 import { useAuth } from '../context/AuthContext';
+
+function generatePassword() {
+  const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
+  return Array.from({ length: 14 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
 
 const ROLES = ['admin', 'lead', 'engineer', 'viewer'];
 
@@ -13,6 +18,9 @@ export default function UserManagement() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', email: '', role: 'engineer', department: '', active: 1 });
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -28,6 +36,10 @@ export default function UserManagement() {
       if (!form.email.trim()) e.email = 'Email is required';
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = 'Enter a valid email address';
       else if (form.email.trim().length > 150) e.email = 'Email must be 150 characters or fewer';
+      if (!password) e.password = 'Password is required';
+      else if (password.length < 8) e.password = 'Password must be at least 8 characters';
+    } else if (password && password.length < 8) {
+      e.password = 'Password must be at least 8 characters';
     }
     if (!form.role) e.role = 'Role is required';
     if (form.department.trim().length > 100) e.department = 'Department must be 100 characters or fewer';
@@ -35,17 +47,28 @@ export default function UserManagement() {
     return Object.keys(e).length === 0;
   };
 
-  const closeModal = () => { setShowModal(false); setEditing(null); setErrors({}); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); };
+  const closeModal = () => {
+    setShowModal(false); setEditing(null); setErrors({});
+    setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 });
+    setPassword(''); setShowPw(false); setCopied(false);
+  };
+
+  const copyPassword = () => {
+    navigator.clipboard.writeText(password).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   const save = async () => {
     if (!validate()) return;
     setSaving(true);
     try {
       if (editing) {
-        await api.put(`/users/${editing.id}`, form);
+        await api.put(`/users/${editing.id}`, { ...form, ...(password ? { password } : {}) });
         toast.success('User updated successfully');
       } else {
-        await api.post('/users', { ...form, password: 'password123' });
+        await api.post('/users', { ...form, password });
         toast.success('User created successfully');
       }
       closeModal(); load();
@@ -57,7 +80,10 @@ export default function UserManagement() {
   };
 
   const startEdit = (u: any) => {
-    setEditing(u); setErrors({}); setForm({ name: u.name || '', email: u.email || '', role: u.role || 'engineer', department: u.department || '', active: u.active }); setShowModal(true);
+    setEditing(u); setErrors({});
+    setForm({ name: u.name || '', email: u.email || '', role: u.role || 'engineer', department: u.department || '', active: u.active });
+    setPassword(''); setShowPw(false); setCopied(false);
+    setShowModal(true);
   };
 
   const toggleActive = async (u: any) => {
@@ -216,6 +242,45 @@ export default function UserManagement() {
             <input value={form.department} onChange={e => { setForm(p => ({ ...p, department: e.target.value })); if (errors.department) setErrors(p => ({ ...p, department: '' })); }} className={`input ${errors.department ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="QA Department" />
             {errors.department && <p className="text-xs text-red-500 mt-1">{errors.department}</p>}
           </div>
+
+          {/* Password — required for create, optional for edit */}
+          <div>
+            <label className="label">
+              {editing ? 'New Password' : 'Password'}
+              {!editing && <span className="text-red-500 ml-0.5">*</span>}
+              {editing && <span className="text-xs font-normal text-slate-400 ml-1">(leave blank to keep current)</span>}
+            </label>
+            <div className="relative">
+              <input
+                type={showPw ? 'text' : 'password'}
+                value={password}
+                onChange={e => { setPassword(e.target.value); if (errors.password) setErrors(p => ({ ...p, password: '' })); }}
+                className={`input pr-24 ${errors.password ? 'border-red-400 focus:ring-red-300' : ''}`}
+                placeholder={editing ? 'Enter new password to change…' : 'Min. 8 characters'}
+                autoComplete="new-password"
+              />
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                <button type="button" tabIndex={-1} onClick={copyPassword} disabled={!password}
+                  className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 disabled:opacity-30"
+                  title="Copy password">
+                  {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                </button>
+                <button type="button" tabIndex={-1}
+                  onClick={() => { const p = generatePassword(); setPassword(p); if (errors.password) setErrors(prev => ({ ...prev, password: '' })); }}
+                  className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400"
+                  title="Generate strong password">
+                  <RefreshCw size={13} />
+                </button>
+                <button type="button" tabIndex={-1} onClick={() => setShowPw(s => !s)}
+                  className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400"
+                  aria-label={showPw ? 'Hide password' : 'Show password'}>
+                  {showPw ? <EyeOff size={13} /> : <Eye size={13} />}
+                </button>
+              </div>
+            </div>
+            {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+          </div>
+
           <div className="flex gap-2 justify-end pt-2">
             <button onClick={closeModal} className="btn-secondary">Cancel</button>
             <button onClick={save} disabled={saving} className="btn-primary">

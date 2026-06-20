@@ -65,10 +65,16 @@ router.post('/', authenticate, requireRole('admin'), async (req: Request, res: R
 const VALID_ROLES = ['admin', 'lead', 'engineer', 'viewer'];
 
 router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
-  const { name, role, department, active } = req.body;
+  const { name, role, department, active, password } = req.body;
   if (parseInt(req.params.id) === req.user!.userId && role !== undefined) { res.status(403).json({ error: 'Cannot change your own role' }); return; }
   if (role && !VALID_ROLES.includes(role)) { res.status(400).json({ error: 'Invalid role' }); return; }
-  await sql`UPDATE users SET name=${name}, role=${role}, department=${department}, active=${active !== undefined ? active : true} WHERE id=${req.params.id}`;
+  if (password) {
+    if (password.length < 8) { res.status(400).json({ error: 'Password must be at least 8 characters' }); return; }
+    const hash = bcrypt.hashSync(password, 10);
+    await sql`UPDATE users SET name=${name}, role=${role}, department=${department}, active=${active !== undefined ? active : true}, password_hash=${hash} WHERE id=${req.params.id}`;
+  } else {
+    await sql`UPDATE users SET name=${name}, role=${role}, department=${department}, active=${active !== undefined ? active : true} WHERE id=${req.params.id}`;
+  }
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'USER_UPDATE', 'user', ${req.params.id}, ${`Updated user id=${req.params.id}`}, ${req.ip || ''})`;
   res.json({ message: 'Updated' });
 });

@@ -36,7 +36,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
   if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }
 
   const [admin] = await sql`SELECT * FROM platform_admins WHERE email = ${email} AND active = TRUE`;
-  if (!admin || !bcrypt.compareSync(password, admin.password_hash)) {
+  if (!admin || !(await bcrypt.compare(password, admin.password_hash))) {
     res.status(401).json({ error: 'Invalid credentials' }); return;
   }
 

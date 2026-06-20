@@ -34,13 +34,16 @@ export async function initDb() {
     )
   `;
 
-  // Seed default platform admin
-  const defaultPlatformAdminPw = bcrypt.hashSync('PlatformAdmin123!', 10);
-  await sql`
-    INSERT INTO platform_admins (name, email, password_hash)
-    VALUES ('Platform Admin', 'platform@qlarity.com', ${defaultPlatformAdminPw})
-    ON CONFLICT (email) DO NOTHING
-  `;
+  // Seed default platform admin only if none exists yet
+  const [existingPlatformAdmin] = await sql`SELECT id FROM platform_admins WHERE email = 'platform@qlarity.com'`;
+  if (!existingPlatformAdmin) {
+    const defaultPlatformAdminPw = await bcrypt.hash('PlatformAdmin123!', 10);
+    await sql`
+      INSERT INTO platform_admins (name, email, password_hash)
+      VALUES ('Platform Admin', 'platform@qlarity.com', ${defaultPlatformAdminPw})
+      ON CONFLICT (email) DO NOTHING
+    `;
+  }
 
   // ── Schema ──────────────────────────────────────────────────────────────
   await sql`

@@ -19,7 +19,7 @@ export default function BackofficeLogin() {
       await login(email, password);
       navigate('/backoffice', { replace: true });
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Invalid credentials');
+      setError(err?.response?.data?.error || err?.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setSubmitting(false);
     }

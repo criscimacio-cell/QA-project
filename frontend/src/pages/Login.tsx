@@ -181,7 +181,7 @@ export default function Login() {
       </div>
 
       <div className="login-demo-panel" style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340, pointerEvents:'auto' }}>
-        <p style={{ fontSize:11, color:'rgba(0,0,0,0.4)', letterSpacing:'0.01em' }}>Powered by <strong style={{ color:'rgba(0,0,0,0.55)' }}>Stash Ph Pinas Inc.</strong></p>
+        <p style={{ fontSize:13, color:'rgba(0,0,0,0.4)', letterSpacing:'0.01em' }}>Powered by <strong style={{ fontSize:14, color:'rgba(0,0,0,0.6)' }}>Stash Ph Pinas Inc.</strong></p>
       </div>
 
       {/* ── Login card — right side, floating over scene ── */}

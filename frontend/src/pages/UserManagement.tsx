@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, UserCheck, UserX, Loader2, Eye, EyeOff, RefreshCw, Copy, Check } from 'lucide-react';
+import { Plus, Edit2, UserCheck, UserX, Loader2, Eye, EyeOff, RefreshCw, Copy, Check, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 
-// S1: Use crypto.getRandomValues() instead of Math.random() for cryptographic security
 function generatePassword() {
   const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
   const arr = new Uint8Array(14);
@@ -27,11 +26,14 @@ export default function UserManagement() {
   const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  // L1: State for confirm modal before deactivate/activate
   const [confirmToggle, setConfirmToggle] = useState<any>(null);
   const [toggling, setToggling] = useState(false);
 
-  // L2: Wrap load() in try/catch with error toast
+  // Success modal state
+  const [successUser, setSuccessUser] = useState<{ name: string; email: string; role: string; password: string } | null>(null);
+  const [successPwCopied, setSuccessPwCopied] = useState(false);
+  const [successPwVisible, setSuccessPwVisible] = useState(false);
+
   const load = async () => {
     try {
       const r = await api.get('/users');
@@ -75,6 +77,14 @@ export default function UserManagement() {
     });
   };
 
+  const copySuccessPassword = () => {
+    if (!successUser) return;
+    navigator.clipboard.writeText(successUser.password).then(() => {
+      setSuccessPwCopied(true);
+      setTimeout(() => setSuccessPwCopied(false), 2000);
+    });
+  };
+
   const save = async () => {
     if (!validate()) return;
     setSaving(true);
@@ -82,11 +92,15 @@ export default function UserManagement() {
       if (editing) {
         await api.put(`/users/${editing.id}`, { ...form, ...(password ? { password } : {}) });
         toast.success('User updated successfully');
+        closeModal();
       } else {
         await api.post('/users', { ...form, password });
-        toast.success('User created successfully');
+        closeModal();
+        setSuccessUser({ name: form.name, email: form.email, role: form.role, password });
+        setSuccessPwCopied(false);
+        setSuccessPwVisible(false);
       }
-      closeModal(); load();
+      load();
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'Failed to save user');
     } finally {
@@ -101,8 +115,6 @@ export default function UserManagement() {
     setShowModal(true);
   };
 
-  // L1: Instead of calling the API directly, show a confirm modal first.
-  // S2: Note — the server must also enforce "cannot deactivate own account" to prevent bypass via direct API calls.
   const toggleActive = (u: any) => {
     if (u.id === user?.id) { toast.error('You cannot deactivate your own account.'); return; }
     setConfirmToggle(u);
@@ -125,6 +137,8 @@ export default function UserManagement() {
 
   const roleCount = (role: string) => users.filter(u => u.role === role).length;
 
+  const roleLabel = (r: string) => r === 'admin' ? 'QA Admin' : r === 'lead' ? 'QA Lead' : r === 'engineer' ? 'QA Engineer' : 'Viewer';
+
   return (
     <div className="space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between">
@@ -144,7 +158,7 @@ export default function UserManagement() {
         {ROLES.map(r => (
           <div key={r} className="card p-4 text-center">
             <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{roleCount(r)}</div>
-            <span className={`badge-${r} mt-1 inline-flex`}>{r === 'admin' ? 'QA Admin' : r === 'lead' ? 'QA Lead' : r === 'engineer' ? 'QA Engineer' : 'Viewer'}</span>
+            <span className={`badge-${r} mt-1 inline-flex`}>{roleLabel(r)}</span>
           </div>
         ))}
       </div>
@@ -203,7 +217,6 @@ export default function UserManagement() {
                 <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50" style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      {/* U3: Fallback to dicebear avatar on broken image URLs */}
                       <img src={u.avatar} alt="" className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0"
                         onError={e => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.email)}`; }} />
                       <div>
@@ -213,17 +226,11 @@ export default function UserManagement() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`badge-${u.role}`}>
-                      {u.role === 'admin' ? 'QA Admin' : u.role === 'lead' ? 'QA Lead' : u.role === 'engineer' ? 'QA Engineer' : 'Viewer'}
-                    </span>
+                    <span className={`badge-${u.role}`}>{roleLabel(u.role)}</span>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{u.department || '—'}</td>
                   <td className="px-4 py-3">
-                    {u.active ? (
-                      <span className="badge-approved">Active</span>
-                    ) : (
-                      <span className="badge-archived">Inactive</span>
-                    )}
+                    {u.active ? <span className="badge-approved">Active</span> : <span className="badge-archived">Inactive</span>}
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-400">{u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
                   <td className="px-4 py-3">
@@ -241,7 +248,7 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {/* L1: Confirm modal for activate/deactivate */}
+      {/* Confirm deactivate/activate modal */}
       <ConfirmModal
         open={!!confirmToggle}
         onClose={() => setConfirmToggle(null)}
@@ -252,6 +259,7 @@ export default function UserManagement() {
         loading={toggling}
       />
 
+      {/* Add / Edit User modal */}
       <Modal open={showModal} onClose={closeModal} title={editing ? 'Edit User' : 'Add New User'} size="sm">
         <div className="space-y-4">
           <div>
@@ -266,7 +274,6 @@ export default function UserManagement() {
               {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
             </div>
           )}
-          {/* L4: Show email as read-only when editing */}
           {editing && (
             <div>
               <label className="label">Email</label>
@@ -288,8 +295,6 @@ export default function UserManagement() {
             <input value={form.department} onChange={e => { setForm(p => ({ ...p, department: e.target.value })); if (errors.department) setErrors(p => ({ ...p, department: '' })); }} className={`input ${errors.department ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="QA Department" />
             {errors.department && <p className="text-xs text-red-500 mt-1">{errors.department}</p>}
           </div>
-
-          {/* Password — required for create, optional for edit */}
           <div>
             <label className="label">
               {editing ? 'New Password' : 'Password'}
@@ -326,7 +331,6 @@ export default function UserManagement() {
             </div>
             {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
           </div>
-
           <div className="flex gap-2 justify-end pt-2">
             <button onClick={closeModal} className="btn-secondary">Cancel</button>
             <button onClick={save} disabled={saving} className="btn-primary">
@@ -335,6 +339,67 @@ export default function UserManagement() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* User created success modal */}
+      <Modal open={!!successUser} onClose={() => setSuccessUser(null)} title="User Created Successfully" size="sm">
+        {successUser && (
+          <div className="space-y-4">
+            {/* Success icon */}
+            <div className="flex flex-col items-center gap-2 py-2">
+              <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                <ShieldCheck size={28} className="text-emerald-500" />
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
+                Share the credentials below with the new user. The password will not be shown again.
+              </p>
+            </div>
+
+            {/* Credentials card */}
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Name</span>
+                <span className="text-slate-800 dark:text-slate-100 font-semibold">{successUser.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Email</span>
+                <span className="text-slate-800 dark:text-slate-100 font-mono text-xs">{successUser.email}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Role</span>
+                <span className={`badge-${successUser.role}`}>{roleLabel(successUser.role)}</span>
+              </div>
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-3">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">Password</span>
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => setSuccessPwVisible(v => !v)}
+                      className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400"
+                      aria-label={successPwVisible ? 'Hide password' : 'Show password'}>
+                      {successPwVisible ? <EyeOff size={13} /> : <Eye size={13} />}
+                    </button>
+                    <button type="button" onClick={copySuccessPassword}
+                      className="flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 text-xs font-medium">
+                      {successPwCopied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                      {successPwCopied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+                <div className="font-mono text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-800 dark:text-slate-100 tracking-wider">
+                  {successPwVisible ? successUser.password : '••••••••••••••'}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+              Make sure to copy the password now — it cannot be retrieved later.
+            </p>
+
+            <div className="flex justify-end pt-1">
+              <button onClick={() => setSuccessUser(null)} className="btn-primary">Done</button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

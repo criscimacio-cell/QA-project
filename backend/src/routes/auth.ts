@@ -56,10 +56,13 @@ router.post('/login', async (req: Request, res: Response) => {
   ` as any[];
   if (emailCount >= 5) { res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again in 15 minutes.' }); return; }
 
-  const [user] = await sql`SELECT * FROM users WHERE email = ${email} AND active = TRUE`;
+  const [user] = await sql`SELECT * FROM users WHERE email = ${email}`;
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (0, 'LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip})`;
     res.status(401).json({ error: 'Invalid credentials' }); return;
+  }
+  if (!user.active) {
+    res.status(403).json({ error: 'Your account has been deactivated. Please contact your administrator.' }); return;
   }
   await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${user.id}, 'LOGIN', 'user', ${user.id}, 'Successful login', ${req.ip || ''})`;

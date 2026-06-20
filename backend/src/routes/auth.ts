@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -7,6 +7,9 @@ import { authenticate, JWT_SECRET } from '../middleware/auth';
 import { sendPasswordReset } from '../mailer';
 
 const router = Router();
+
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -75,7 +78,6 @@ router.post('/login', async (req: Request, res: Response) => {
     }
     [user] = await sql`SELECT * FROM users WHERE email = ${email} AND organization_id = ${org.id}`;
   } else {
-    // Always validate org.active even when no slug provided
     [user] = await sql`
       SELECT u.* FROM users u
       JOIN organizations o ON u.organization_id = o.id
@@ -139,7 +141,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
-router.get('/me', authenticate, async (req: Request, res: Response) => {
+router.get('/me', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const [user] = await sql`
     SELECT u.id, u.name, u.email, u.role, u.department, u.avatar, u.active, u.created_at, u.last_login,
            u.organization_id, o.slug as org_slug, o.name as org_name, o.plan as org_plan
@@ -148,18 +150,18 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
   `;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
   res.json(user);
-});
+}));
 
-router.post('/logout', authenticate, async (req: Request, res: Response) => {
+router.post('/logout', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies?.refreshToken;
   if (token) await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE token = ${token} AND organization_id = ${req.user!.organizationId}`;
   res.clearCookie('accessToken', { path: '/' });
   res.clearCookie('refreshToken', { path: '/api/auth' });
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'LOGOUT', 'user', ${req.user!.userId}, 'User logged out', ${req.ip || ''}, ${req.user!.organizationId})`;
   res.json({ message: 'Logged out' });
-});
+}));
 
-router.post('/change-password', authenticate, async (req: Request, res: Response) => {
+router.post('/change-password', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) { res.status(400).json({ error: 'Both currentPassword and newPassword are required' }); return; }
   if (newPassword.length < 8) { res.status(400).json({ error: 'New password must be at least 8 characters' }); return; }
@@ -168,7 +170,7 @@ router.post('/change-password', authenticate, async (req: Request, res: Response
   await sql`UPDATE users SET password_hash = ${bcrypt.hashSync(newPassword, 10)} WHERE id = ${user.id} AND organization_id = ${req.user!.organizationId}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user.id}, 'PASSWORD_CHANGE', 'user', ${user.id}, 'Password changed', ${req.ip || ''}, ${req.user!.organizationId})`;
   res.json({ message: 'Password changed successfully' });
-});
+}));
 
 router.post('/forgot-password', async (req: Request, res: Response) => {
   const { email, orgSlug } = req.body;
@@ -215,7 +217,6 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
   res.json({ valid: !!record });
 });
 
-// Create a new organization and its first admin user
 router.post('/register', async (req: Request, res: Response) => {
   const { orgName, orgSlug, adminName, adminEmail, adminPassword } = req.body;
 
@@ -267,6 +268,11 @@ router.post('/register', async (req: Request, res: Response) => {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
+});
+
+router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[auth]', err?.message ?? err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 export default router;

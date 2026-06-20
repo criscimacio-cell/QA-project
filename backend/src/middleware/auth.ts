@@ -17,6 +17,11 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   }
   try {
     const payload = jwt.verify(token, JWT_SECRET(), { algorithms: ['HS256'] }) as JwtPayload;
+    if (!payload.organizationId) {
+      // Stale token from before multi-tenancy — force re-login
+      res.status(401).json({ error: 'Session expired, please log in again' });
+      return;
+    }
     req.user = payload;
     next();
   } catch {
@@ -33,4 +38,3 @@ export function requireRole(...roles: string[]) {
     next();
   };
 }
-

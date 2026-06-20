@@ -47,6 +47,7 @@ import ApprovalWorkflow from './pages/ApprovalWorkflow';
 import AuditLog from './pages/AuditLog';
 import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
+import Archive from './pages/Archive';
 
 function ProtectedRoute({ children, requireAdmin = false, requireLead = false }: { children: React.ReactNode; requireAdmin?: boolean; requireLead?: boolean }) {
   const { user, loading } = useAuth();
@@ -79,6 +80,7 @@ function AppRoutes() {
         <Route path="audit" element={<ProtectedRoute requireAdmin><AuditLog /></ProtectedRoute>} />
         <Route path="users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
         <Route path="settings" element={<Settings />} />
+        <Route path="archive" element={<ProtectedRoute requireAdmin><Archive /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FolderOpen, Files, Search, BookOpen,
   Database, GitPullRequest, Users, ShieldCheck, Settings,
-  ChevronLeft, ChevronRight, Layers
+  ChevronLeft, ChevronRight, Layers, Archive
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -79,6 +79,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const adminNav = [
     { to: '/users', icon: Users, label: 'User Management' },
     { to: '/audit', icon: ShieldCheck, label: 'Audit Log' },
+    { to: '/archive', icon: Archive, label: 'Archive' },
   ];
   const settingsNav = [
     { to: '/settings', icon: Settings, label: 'Settings' },

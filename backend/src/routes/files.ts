@@ -57,13 +57,26 @@ router.get('/export', authenticate, requireRole('admin', 'lead'), async (req: Re
   res.send([header, ...rows].join('\n'));
 });
 
-router.post('/bulk-action', authenticate, requireRole('admin', 'lead'), async (req, res) => {
+router.post('/bulk-action', authenticate, requireRole('admin', 'lead', 'engineer'), async (req, res) => {
   const { ids, action } = req.body as { ids: number[]; action: 'archive' | 'delete' | 'submit' };
   if (!ids?.length || !action) { res.status(400).json({ error: 'ids and action required' }); return; }
   if (action === 'delete' && req.user!.role !== 'admin') { res.status(403).json({ error: 'Forbidden: only admins can bulk delete' }); return; }
+  const role = req.user!.role;
+  const userId = req.user!.userId;
   if (action === 'archive') {
-    await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status != 'archived'`;
-    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) SELECT ${req.user!.userId}, 'ARCHIVE', 'file', id, 'Bulk archived', ${req.ip || ''} FROM unnest(${ids}::int[]) AS id`;
+    if (role === 'engineer') {
+      await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status != 'archived' AND owner_id = ${userId}`;
+      await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) SELECT ${userId}, 'ARCHIVE', 'file', id, 'Bulk archived', ${req.ip || ''} FROM files WHERE id = ANY(${ids}::int[]) AND owner_id = ${userId}`;
+    } else {
+      await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status != 'archived'`;
+      await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) SELECT ${userId}, 'ARCHIVE', 'file', id, 'Bulk archived', ${req.ip || ''} FROM unnest(${ids}::int[]) AS id`;
+    }
+  } else if (action === 'submit') {
+    if (role === 'engineer') {
+      await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft' AND owner_id = ${userId}`;
+    } else {
+      await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft'`;
+    }
   } else if (action === 'delete') {
     await sql.begin(async tx => {
       await tx`DELETE FROM file_comments WHERE file_id = ANY(${ids}::int[])`;
@@ -71,8 +84,6 @@ router.post('/bulk-action', authenticate, requireRole('admin', 'lead'), async (r
       await tx`DELETE FROM approvals WHERE file_id = ANY(${ids}::int[])`;
       await tx`DELETE FROM files WHERE id = ANY(${ids}::int[])`;
     });
-  } else if (action === 'submit') {
-    await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft'`;
   }
   res.json({ message: `Bulk ${action} complete`, count: ids.length });
 });
@@ -252,9 +263,10 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
   res.json({ message: 'Status updated' });
 });
 
-router.post('/:id/archive', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
-  const [file] = await sql`SELECT status FROM files WHERE id = ${req.params.id}`;
+router.post('/:id/archive', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+  const [file] = await sql`SELECT status, owner_id FROM files WHERE id = ${req.params.id}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  if (req.user!.role === 'engineer' && file.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
   if (file.status === 'archived') { res.status(400).json({ error: 'File is already archived' }); return; }
   await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id=${req.params.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) VALUES (${req.user!.userId}, 'ARCHIVE', 'file', ${req.params.id}, 'Archived file', ${req.ip || ''})`;

@@ -146,11 +146,12 @@ export default function FileManager() {
   };
 
   const doArchive = async () => {
-    if (!confirmArchive.id) return;
+    const id = confirmArchive.id;
+    if (!id) return;
     setArchiveLoading(true);
     try {
-      await api.post(`/files/${confirmArchive.id}/archive`);
-      setFiles(prev => prev.filter(f => f.id !== confirmArchive.id));
+      await api.post(`/files/${id}/archive`);
+      setFiles(prev => prev.filter(f => f.id !== id));
       setConfirmArchive({ open: false, id: null, name: '' });
       setArchiveSuccess(true);
     } catch {
@@ -831,7 +832,7 @@ export default function FileManager() {
           </p>
         </div>
         <div className="flex flex-col gap-2 pt-1">
-          <button onClick={doArchive} disabled={archiveLoading} className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-60">
+          <button onClick={doArchive} disabled={archiveLoading} className="btn-primary w-full justify-center flex items-center gap-1.5">
             {archiveLoading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Archive size={14} />}
             Archive
           </button>

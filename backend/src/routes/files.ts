@@ -33,7 +33,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     WHERE 1=1
     ${!isLead ? sql`AND (f.owner_id = ${req.user!.userId} OR f.status IN ('published','approved'))` : sql``}
     ${repository_id ? sql`AND f.repository_id = ${repository_id as string}` : sql``}
-    ${status ? sql`AND f.status = ${status as string}` : sql``}
+    ${status ? sql`AND f.status = ${status as string}` : sql`AND f.status != 'archived'`}
     ${project ? sql`AND f.project = ${project as string}` : sql``}
     ${category ? sql`AND f.category = ${category as string}` : sql``}
     ${search ? sql`AND (f.name ILIKE ${'%'+search+'%'} OR f.description ILIKE ${'%'+search+'%'} OR f.tags ILIKE ${'%'+search+'%'} OR f.jira_ticket ILIKE ${'%'+search+'%'})` : sql``}

@@ -823,26 +823,24 @@ export default function FileManager() {
       />
 
       {/* Confirm Archive Modal */}
-      <Modal open={confirmArchive.open} onClose={() => setConfirmArchive({ open: false, id: null, name: '' })} title="Archive File" size="sm">
-        <div className="space-y-5">
-          <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
-            <Archive size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              <strong>"{confirmArchive.name}"</strong> will be moved to the Archive. It will no longer appear in File Manager and can only be restored from the Archive module.
-            </p>
-          </div>
-          <div className="flex justify-end gap-2">
-            <button onClick={() => setConfirmArchive({ open: false, id: null, name: '' })} disabled={archiveLoading} className="btn-secondary">Cancel</button>
-            <button onClick={doArchive} disabled={archiveLoading} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-60">
-              {archiveLoading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Archive size={14} />}
-              Archive
-            </button>
-          </div>
+      <Modal open={confirmArchive.open} onClose={() => setConfirmArchive({ open: false, id: null, name: '' })} title="Archive File" size="md">
+        <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800 mb-5">
+          <Archive size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-700 dark:text-amber-400">
+            <strong>"{confirmArchive.name}"</strong> will be moved to the Archive. It will no longer appear in File Manager and can only be restored from the Archive module.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2">
+          <button onClick={() => setConfirmArchive({ open: false, id: null, name: '' })} disabled={archiveLoading} className="btn-secondary">Cancel</button>
+          <button onClick={doArchive} disabled={archiveLoading} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-60">
+            {archiveLoading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Archive size={14} />}
+            Archive
+          </button>
         </div>
       </Modal>
 
       {/* Archive Success Modal */}
-      <Modal open={archiveSuccess} onClose={() => setArchiveSuccess(false)} title="File Archived" size="sm">
+      <Modal open={archiveSuccess} onClose={() => setArchiveSuccess(false)} title="File Archived" size="md">
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-3 py-4">
             <div className="w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">

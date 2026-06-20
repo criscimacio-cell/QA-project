@@ -172,7 +172,7 @@ export default function Archive() {
       </div>
 
       {/* Confirm Restore Modal */}
-      <Modal open={confirmRestore.open} onClose={() => setConfirmRestore({ open: false, id: null, name: '' })} title="Restore File" size="sm">
+      <Modal open={confirmRestore.open} onClose={() => setConfirmRestore({ open: false, id: null, name: '' })} title="Restore File" size="md">
         <div className="space-y-5">
           <div className="flex items-start gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800">
             <RotateCcw size={18} className="text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -191,7 +191,7 @@ export default function Archive() {
       </Modal>
 
       {/* Restore Success Modal */}
-      <Modal open={restoreSuccess} onClose={() => setRestoreSuccess(false)} title="File Restored" size="sm">
+      <Modal open={restoreSuccess} onClose={() => setRestoreSuccess(false)} title="File Restored" size="md">
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-3 py-4">
             <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">

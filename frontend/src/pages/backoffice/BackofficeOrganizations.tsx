@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronDown, Plus, X } from 'lucide-react';
+import { Search, ChevronDown, Plus, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../api/client';
 import Pagination from '../../components/UI/Pagination';
@@ -83,6 +83,7 @@ export default function BackofficeOrganizations() {
   const [createForm, setCreateForm] = useState(emptyForm);
   const [creating, setCreating] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
+  const [createdOrg, setCreatedOrg] = useState<{ name: string; slug: string; adminEmail?: string; adminPassword?: string } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchOrgs = useCallback((s: string, p: string, st: string, off = 0) => {
@@ -146,10 +147,16 @@ export default function BackofficeOrganizations() {
     try {
       await api.post('/backoffice/organizations', createForm);
       toast.success(`Organization "${createForm.name}" created`);
+      setCreatedOrg({
+        name: createForm.name,
+        slug: createForm.slug,
+        adminEmail: createForm.adminEmail || undefined,
+        adminPassword: createForm.adminPassword || undefined,
+      });
       setShowCreate(false);
       setCreateForm(emptyForm);
       setSlugEdited(false);
-      fetchOrgs(search, plan, status);
+      fetchOrgs(search, plan, status, 0);
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'Failed to create organization');
     } finally {
@@ -218,6 +225,69 @@ export default function BackofficeOrganizations() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {createdOrg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl shadow-2xl w-full max-w-md">
+            <div className="p-5 border-b border-gray-200 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <Check className="w-4 h-4 text-emerald-500" />
+                </div>
+                <h2 className="text-base font-semibold text-slate-800 dark:text-white">Organization Created!</h2>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Name</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">{createdOrg.name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Slug</span>
+                  <span className="font-mono text-slate-600 dark:text-slate-400">{createdOrg.slug}</span>
+                </div>
+                {createdOrg.adminEmail && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Admin Email</span>
+                      <span className="font-mono text-slate-600 dark:text-slate-400">{createdOrg.adminEmail}</span>
+                    </div>
+                    <div className="flex justify-between text-sm items-center">
+                      <span className="text-slate-500">Password</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-slate-600 dark:text-slate-400">{createdOrg.adminPassword}</span>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(createdOrg.adminPassword!); toast.success('Password copied'); }}
+                          className="text-xs text-amber-500 hover:text-amber-400"
+                        >Copy</button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              {createdOrg.adminEmail && (
+                <button
+                  onClick={() => {
+                    const text = `Organization: ${createdOrg.name}\nLogin URL: ${window.location.origin}/login\nEmail: ${createdOrg.adminEmail}\nPassword: ${createdOrg.adminPassword}`;
+                    navigator.clipboard.writeText(text);
+                    toast.success('Credentials copied to clipboard');
+                  }}
+                  className="w-full py-2 rounded-lg text-sm font-medium bg-amber-500 hover:bg-amber-400 text-white transition-colors"
+                >
+                  Copy All Credentials
+                </button>
+              )}
+              <button
+                onClick={() => setCreatedOrg(null)}
+                className="w-full py-2 rounded-lg text-sm text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors border border-gray-200 dark:border-slate-700"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

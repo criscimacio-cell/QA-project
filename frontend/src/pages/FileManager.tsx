@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2 } from 'lucide-react';
+import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
@@ -81,6 +81,8 @@ export default function FileManager() {
   const [commentError, setCommentError] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [approvalHistory, setApprovalHistory] = useState<any[]>([]);
+
+  const [viewMode, setViewMode] = useState<'table' | 'grouped'>('table');
 
   // Bulk select
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -437,6 +439,14 @@ export default function FileManager() {
           {categories.map(c => <option key={c}>{c}</option>)}
         </select>
         <button onClick={() => { setSearch(''); setProject(''); setCategory(''); load({ search: '', project: '', category: '' }); }} className="btn-ghost text-sm py-1.5">Clear</button>
+        <div className="flex items-center gap-1 ml-auto">
+          <button onClick={() => setViewMode('table')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-amber-500/20 text-amber-500' : 'text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'}`}>
+            <List className="w-4 h-4" />
+          </button>
+          <button onClick={() => setViewMode('grouped')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grouped' ? 'bg-amber-500/20 text-amber-500' : 'text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'}`}>
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Bulk action bar */}
@@ -486,6 +496,41 @@ export default function FileManager() {
               description={search ? 'Try a different search term or clear your filters.' : 'Upload your first file to get started.'}
               action={!search ? <button className="btn-primary" onClick={() => setShowBulkUpload(true)}>Upload File</button> : undefined}
             />
+          </div>
+        ) : viewMode === 'grouped' ? (
+          <div className="p-4 space-y-4">
+            {(() => {
+              const groups: Record<string, any[]> = {};
+              files.forEach(f => {
+                const key = f.project || 'No Project';
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(f);
+              });
+              return Object.entries(groups).map(([project, projectFiles]) => (
+                <div key={project}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{project}</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-600">({projectFiles.length})</span>
+                  </div>
+                  <div className="space-y-1">
+                    {projectFiles.map(f => (
+                      <div
+                        key={f.id}
+                        onClick={() => openFile(f)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                      >
+                        <FileIcon mimeType={f.mime_type} name={f.original_name} size={20} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{f.name}</div>
+                          <div className="text-xs text-slate-400">{f.module || f.category || '—'} · v{f.version}</div>
+                        </div>
+                        <StatusBadge status={f.status} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -592,6 +637,26 @@ export default function FileManager() {
                 <StatusBadge status={selected.status} />
               </div>
             </div>
+
+            {/* Preview */}
+            {(selected.mime_type?.startsWith('image/') || selected.mime_type === 'application/pdf') && (
+              <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                {selected.mime_type?.startsWith('image/') ? (
+                  <img
+                    src={`/api/files/${selected.id}/preview`}
+                    alt={selected.name}
+                    className="w-full max-h-80 object-contain"
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                ) : (
+                  <iframe
+                    src={`/api/files/${selected.id}/preview`}
+                    className="w-full h-80"
+                    title={selected.name}
+                  />
+                )}
+              </div>
+            )}
 
             {/* Tabs */}
             <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg w-fit">

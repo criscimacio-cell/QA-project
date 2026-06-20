@@ -377,12 +377,16 @@ export default function FileManager() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage all QA files and assets</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={exportFiles} className="btn-secondary">
-            <Download size={15} /> Export CSV
-          </button>
-          <button onClick={() => setShowBulkUpload(true)} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>
-            <Upload size={15} /> Bulk Upload
-          </button>
+          {isLead && (
+            <button onClick={exportFiles} className="btn-secondary">
+              <Download size={15} /> Export CSV
+            </button>
+          )}
+          {isEngineer && (
+            <button onClick={() => setShowBulkUpload(true)} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>
+              <Upload size={15} /> Bulk Upload
+            </button>
+          )}
         </div>
       </div>
 

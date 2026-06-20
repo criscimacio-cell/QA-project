@@ -66,10 +66,7 @@ router.put('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async
 });
 
 router.delete('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
-  if (req.user!.role === 'engineer') {
-    const [art] = await sql`SELECT author_id FROM knowledge_articles WHERE id = ${req.params.id}`;
-    if (!art || art.author_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
-  }
+  if (req.user!.role === 'engineer') { res.status(403).json({ error: 'Forbidden: engineers cannot delete knowledge articles' }); return; }
   await sql`DELETE FROM knowledge_articles WHERE id = ${req.params.id}`;
   res.json({ message: 'Deleted' });
 });

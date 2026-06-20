@@ -69,7 +69,7 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
   res.json(stats);
 });
 
-router.get('/activity', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.get('/activity', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
   const activity = await sql`
     SELECT al.*, u.name as user_name, u.avatar as user_avatar

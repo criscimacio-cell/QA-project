@@ -304,13 +304,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => setStatsError(true));
-    if (user?.role === 'admin' || user?.role === 'lead') {
+    if (user?.role === 'admin') {
       api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => toast.error('Failed to load activity feed'));
     }
   }, []);
 
   useEffect(() => {
-    if (user?.role !== 'admin' && user?.role !== 'lead') return;
+    if (user?.role !== 'admin') return;
     const id = setInterval(() => {
       api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => {});
     }, 30000);
@@ -324,7 +324,7 @@ export default function Dashboard() {
       <button className="btn-secondary text-sm" onClick={() => {
         setStatsError(false);
         api.get('/dashboard/stats').then(r => setStats(r.data)).catch(() => setStatsError(true));
-        if (user?.role === 'admin' || user?.role === 'lead') {
+        if (user?.role === 'admin') {
           api.get('/dashboard/activity').then(r => setActivityFeed(r.data)).catch(() => toast.error('Failed to load activity feed'));
         }
       }}>Retry</button>

@@ -4,7 +4,7 @@ import { authenticate, requireRole } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.get('/', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const { action, user_id, dateFrom, dateTo, page = '1', limit = '50' } = req.query;
   const limitInt = Math.max(1, Math.min(200, parseInt(limit as string) || 50));
   const offsetInt = Math.max(0, (parseInt(page as string) - 1)) * limitInt;
@@ -33,7 +33,7 @@ router.get('/', authenticate, requireRole('admin', 'lead'), async (req: Request,
   res.json({ logs, total });
 });
 
-router.get('/export', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.get('/export', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const logs = await sql`
     SELECT al.id, u.name as user, al.action, al.entity_type, al.entity_id, al.details, al.ip_address, al.created_at
     FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id

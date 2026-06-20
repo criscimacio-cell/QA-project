@@ -76,8 +76,8 @@ function AppRoutes() {
         <Route path="knowledge" element={<KnowledgeBase />} />
         <Route path="test-data" element={<TestDataLibrary />} />
         <Route path="approvals" element={<ApprovalWorkflow />} />
-        <Route path="audit" element={<ProtectedRoute requireLead><AuditLog /></ProtectedRoute>} />
-        <Route path="users" element={<ProtectedRoute requireLead><UserManagement /></ProtectedRoute>} />
+        <Route path="audit" element={<ProtectedRoute requireAdmin><AuditLog /></ProtectedRoute>} />
+        <Route path="users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
         <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -60,6 +60,7 @@ router.get('/export', authenticate, requireRole('admin', 'lead'), async (req: Re
 router.post('/bulk-action', authenticate, requireRole('admin', 'lead'), async (req, res) => {
   const { ids, action } = req.body as { ids: number[]; action: 'archive' | 'delete' | 'submit' };
   if (!ids?.length || !action) { res.status(400).json({ error: 'ids and action required' }); return; }
+  if (action === 'delete' && req.user!.role !== 'admin') { res.status(403).json({ error: 'Forbidden: only admins can bulk delete' }); return; }
   if (action === 'archive') {
     await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status != 'archived'`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address) SELECT ${req.user!.userId}, 'ARCHIVE', 'file', id, 'Bulk archived', ${req.ip || ''} FROM unnest(${ids}::int[]) AS id`;
@@ -266,7 +267,7 @@ router.post('/:id/restore', authenticate, requireRole('admin', 'lead'), async (r
   res.json({ message: 'Restored to draft' });
 });
 
-router.delete('/:id', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const [file] = await sql`SELECT path FROM files WHERE id = ${req.params.id}`;
   if (file?.path) { const fp = path.join(UPLOAD_DIR, file.path); if (fs.existsSync(fp)) fs.unlinkSync(fp); }
   await sql.begin(async tx => {
@@ -317,6 +318,10 @@ router.get('/:id/versions/:version/download', authenticate, async (req: Request,
   const [file] = await sql`SELECT * FROM files WHERE id = ${req.params.id}`;
   const [ver] = await sql`SELECT * FROM file_versions WHERE file_id = ${req.params.id} AND version = ${req.params.version}`;
   if (!file || !ver) { res.status(404).json({ error: 'Not found' }); return; }
+  const isAdminOrLead = ['admin', 'lead'].includes(req.user!.role);
+  if (!isAdminOrLead && file.status === 'draft' && file.owner_id !== req.user!.userId) {
+    res.status(403).json({ error: 'Forbidden' }); return;
+  }
   const filePath = path.join(UPLOAD_DIR, ver.path);
   if (fs.existsSync(filePath)) {
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.original_name)}"`);
@@ -336,7 +341,7 @@ router.get('/:id/comments', authenticate, async (req, res) => {
   res.json(comments);
 });
 
-router.post('/:id/comments', authenticate, async (req, res) => {
+router.post('/:id/comments', authenticate, requireRole('admin', 'lead', 'engineer'), async (req, res) => {
   const { comment } = req.body;
   if (!comment?.trim()) { res.status(400).json({ error: 'Comment cannot be empty' }); return; }
   const [row] = await sql`

@@ -38,7 +38,7 @@ function formatBytes(bytes: number): string {
 
 function PlanBadge({ plan }: { plan: string }) {
   const styles: Record<string, string> = {
-    free: 'bg-gray-200 dark:bg-slate-700 text-slate-400 dark:text-slate-600 dark:text-slate-300',
+    free: 'bg-gray-200 dark:bg-slate-700 text-slate-400 dark:text-slate-300',
     pro: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
     enterprise: 'bg-violet-600/20 text-violet-400 border border-violet-500/30',
   };
@@ -134,7 +134,7 @@ export default function BackofficeDashboard() {
   if (error) return (
     <div className="flex flex-col items-center justify-center h-64 gap-4">
       <p className="text-red-400 text-sm">{error}</p>
-      <button onClick={loadStats} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:bg-slate-700 text-slate-400 dark:text-slate-600 dark:text-slate-300 text-sm transition-colors">
+      <button onClick={loadStats} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-300 text-sm transition-colors">
         <RefreshCw className="w-4 h-4" /> Retry
       </button>
     </div>
@@ -160,13 +160,13 @@ export default function BackofficeDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-600 dark:text-slate-300 mb-4">Org Growth</h2>
+          <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-300 mb-4">Org Growth</h2>
           <GrowthChart data={stats.orgGrowth ?? []} />
         </div>
 
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-600 dark:text-slate-300">Recent Organizations</h2>
+            <h2 className="text-sm font-semibold text-slate-400 dark:text-slate-300">Recent Organizations</h2>
             <button onClick={() => navigate('/backoffice/organizations')} className="text-xs text-amber-400 hover:text-amber-300 transition-colors">
               View all →
             </button>
@@ -187,7 +187,7 @@ export default function BackofficeDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                   {stats.recentOrgs.map(org => (
-                    <tr key={org.id} className="hover:bg-gray-50 dark:bg-gray-100 dark:bg-slate-800/40 transition-colors cursor-pointer" onClick={() => navigate(`/backoffice/organizations/${org.id}`)}>
+                    <tr key={org.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer" onClick={() => navigate(`/backoffice/organizations/${org.id}`)}>
                       <td className="py-2.5 pr-4">
                         <div className="font-medium text-slate-700 dark:text-slate-200 hover:text-amber-400 transition-colors">{org.name}</div>
                         <div className="text-xs text-slate-400 dark:text-slate-500">{org.slug}</div>
@@ -198,7 +198,7 @@ export default function BackofficeDashboard() {
                           {org.active ? 'Active' : 'Suspended'}
                         </span>
                       </td>
-                      <td className="py-2.5 pr-4 text-right text-slate-400 dark:text-slate-600 dark:text-slate-300">{org.user_count}</td>
+                      <td className="py-2.5 pr-4 text-right text-slate-400 dark:text-slate-300">{org.user_count}</td>
                       <td className="py-2.5 text-right text-slate-400 dark:text-slate-500 text-xs">{new Date(org.created_at).toLocaleDateString()}</td>
                     </tr>
                   ))}

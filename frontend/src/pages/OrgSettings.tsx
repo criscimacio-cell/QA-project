@@ -92,7 +92,7 @@ export default function OrgSettings() {
               {isFinite(limits.users) && (
                 <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${stats.userCount >= limits.users ? 'bg-red-400' : stats.userCount >= limits.users * 0.8 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                    className={`h-full rounded-full ${stats.userCount / limits.users >= 0.9 ? 'bg-red-500' : stats.userCount / limits.users >= 0.7 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                     style={{ width: `${Math.min(100, (stats.userCount / limits.users) * 100)}%` }}
                   />
                 </div>
@@ -109,7 +109,7 @@ export default function OrgSettings() {
               {isFinite(limits.storageBytes) && (
                 <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${stats.storageUsed >= limits.storageBytes ? 'bg-red-400' : stats.storageUsed >= limits.storageBytes * 0.8 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                    className={`h-full rounded-full ${stats.storageUsed / limits.storageBytes >= 0.9 ? 'bg-red-500' : stats.storageUsed / limits.storageBytes >= 0.7 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                     style={{ width: `${Math.min(100, (stats.storageUsed / limits.storageBytes) * 100)}%` }}
                   />
                 </div>

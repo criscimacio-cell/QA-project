@@ -7,261 +7,210 @@ import { MagneticButton } from './ui/MagneticButton';
 const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 
 const FILES = [
-  { name: 'Q4_Finance_Report_v2.pdf',     status: 'approved',  sc: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  { name: 'Employee_Handbook_2025.docx',  status: 'in review', sc: 'bg-amber-50 text-amber-700 border-amber-200' },
-  { name: 'Product_Roadmap_Draft.pptx',   status: 'draft',     sc: 'bg-slate-100 text-slate-500 border-slate-200' },
-  { name: 'Legal_NDA_Template.pdf',       status: 'published', sc: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { name: 'Q4_Finance_Report_v2.pdf',    status: 'approved',  sc: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+  { name: 'Employee_Handbook_2025.docx', status: 'in review', sc: 'text-amber-700 bg-amber-50 border-amber-200' },
+  { name: 'Product_Roadmap_Draft.pptx',  status: 'draft',     sc: 'text-slate-500 bg-slate-100 border-slate-200' },
+  { name: 'Legal_NDA_Template.pdf',      status: 'published', sc: 'text-blue-700 bg-blue-50 border-blue-200' },
 ];
 
 const NAV = ['Dashboard', 'Documents', 'Shared with Me', 'Templates', 'Archive'];
 
 // ─────────────────────────────────────────────────────────────────
-// True 3D laptop side-view component.
-//
-// Scene layout (preserve-3d):
-//   • Base  — laid flat with rotateX(90deg), depth = DEPTH px
-//   • Screen — hinged at rear of base, rotateX = open angle (~-20deg past vertical)
-//   • Whole assembly: rotateY driven by scroll (75° side → 18° front)
+// Laptop mockup — flat construction, perspective tilt via outer transform.
+// Starts at a pronounced side angle, rotates toward viewer on scroll.
 // ─────────────────────────────────────────────────────────────────
-const W = 680;        // laptop width (px)
-const DEPTH = 220;    // base depth front-to-back (px)
-const SCREEN_H = 420; // screen height (px)
-const BASE_T = 14;    // base thickness (px, the visible side strip)
-const OPEN_X = -22;   // screen open angle past vertical (negative = tilted back)
+function LaptopMockup({ scrollYProgress }: { scrollYProgress: ReturnType<typeof useScroll>['scrollYProgress'] }) {
+  const rawRotY  = useTransform(scrollYProgress, [0, 1], [38, 6]);
+  const rawRotX  = useTransform(scrollYProgress, [0, 1], [6, 1]);
+  const rawScale = useTransform(scrollYProgress, [0, 0.5], [0.86, 1]);
+  const opacity  = useTransform(scrollYProgress, [0, 0.25], [0, 1]);
 
-function LaptopScene({ scrollYProgress }: { scrollYProgress: ReturnType<typeof useScroll>['scrollYProgress'] }) {
-  // Scroll: side view → angled front view
-  const rawRotY  = useTransform(scrollYProgress, [0, 1], [72, 16]);
-  const rawScale = useTransform(scrollYProgress, [0, 0.5], [0.82, 1]);
-  const opacity  = useTransform(scrollYProgress, [0, 0.2], [0, 1]);
-
-  const rotateY = useSpring(rawRotY,  { stiffness: 55, damping: 20 });
-  const sc      = useSpring(rawScale, { stiffness: 55, damping: 20 });
+  const rotateY = useSpring(rawRotY,  { stiffness: 60, damping: 22 });
+  const rotateX = useSpring(rawRotX,  { stiffness: 60, damping: 22 });
+  const scale   = useSpring(rawScale, { stiffness: 60, damping: 22 });
 
   return (
     <motion.div
-      style={{ opacity, scale: sc }}
-      className="flex items-center justify-center w-full"
+      style={{ opacity, scale, rotateY, rotateX, transformPerspective: 1400 }}
+      className="w-full max-w-4xl mx-auto select-none"
       aria-hidden="true"
     >
-      {/* Perspective wrapper — sets the 3D stage */}
-      <div style={{ perspective: 1400, perspectiveOrigin: '50% 60%', width: W }}>
-        <motion.div
-          style={{
-            width: W,
-            height: SCREEN_H + BASE_T + 8,
-            rotateY,
-            transformStyle: 'preserve-3d',
-            position: 'relative',
-          }}
-        >
+      {/* ── Screen lid ─────────────────────────────────────────── */}
+      <div className="relative rounded-t-2xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(150deg, #d4d7dc 0%, #a8adb5 50%, #8e9299 100%)',
+          padding: '10px 10px 6px',
+          boxShadow: '0 -2px 0 rgba(255,255,255,0.5) inset, 0 24px 60px rgba(0,0,0,0.22)',
+        }}>
 
-          {/* ── BASE (laid flat via rotateX 90°) ───────────── */}
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: W,
-            height: DEPTH,
-            transformOrigin: 'top center',
-            transform: 'rotateX(90deg)',
-            transformStyle: 'preserve-3d',
-            borderRadius: '0 0 20px 20px',
-            background: 'linear-gradient(180deg, #d1d5db 0%, #b0b5bc 50%, #c4c8ce 100%)',
-          }}>
-            {/* Keyboard rows */}
-            <div style={{ padding: '16px 20px 10px', display: 'grid', gap: 4 }}>
-              {[13, 13, 13, 13].map((cols, row) => (
-                <div key={row} style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 3 }}>
-                  {Array.from({ length: cols }).map((_, i) => (
-                    <div key={i} style={{
-                      height: 20,
-                      borderRadius: 3,
-                      background: 'linear-gradient(to bottom, rgba(255,255,255,0.6), rgba(255,255,255,0.2))',
-                      boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.15)',
-                    }} />
+        {/* Camera notch */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full z-10"
+          style={{ background: '#3a3d42', boxShadow: '0 0 0 1px rgba(0,0,0,0.3)' }} />
+
+        {/* Screen glass — dark bezel */}
+        <div className="rounded-xl overflow-hidden"
+          style={{ background: '#111', padding: '2px', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}>
+          <div className="bg-white rounded-[10px] overflow-hidden" style={{ height: 360 }}>
+
+            {/* Browser chrome */}
+            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-slate-100"
+              style={{ background: '#f8fafc' }}>
+              <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+              <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+              <div className="flex-1 mx-3 h-5 bg-white border border-slate-200 rounded flex items-center px-2 gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                <span className="text-[9px] text-slate-400 font-medium" style={{ fontFamily: 'system-ui' }}>
+                  app.qlarity.io/documents
+                </span>
+              </div>
+            </div>
+
+            {/* App layout */}
+            <div className="flex h-full">
+              {/* Sidebar */}
+              <div className="flex-shrink-0 border-r border-slate-100 flex flex-col gap-0.5"
+                style={{ width: 148, background: '#f8fafc', padding: 8 }}>
+                <div className="flex items-center gap-1.5 px-2 py-1 mb-2">
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center"
+                    style={{ background: '#f59e0b' }}>
+                    <div className="w-2.5 h-2.5 rounded-sm bg-white" />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-800" style={{ fontFamily: 'system-ui' }}>Qlarity</span>
+                </div>
+                {NAV.map((item, i) => (
+                  <div key={item} className="flex items-center gap-2 px-2 rounded-lg"
+                    style={{
+                      padding: '5px 8px',
+                      background: i === 1 ? '#fef3c7' : 'transparent',
+                      fontSize: 9,
+                      fontWeight: i === 1 ? 600 : 400,
+                      color: i === 1 ? '#92400e' : '#64748b',
+                      fontFamily: 'system-ui',
+                    }}>
+                    <div className="rounded-full flex-shrink-0"
+                      style={{ width: 5, height: 5, background: i === 1 ? '#f59e0b' : '#cbd5e1' }} />
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              {/* Main panel */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Topbar */}
+                <div className="flex items-center justify-between border-b border-slate-100"
+                  style={{ padding: '8px 14px', background: '#fff' }}>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#1e293b', fontFamily: 'system-ui' }}>Documents</div>
+                    <div style={{ fontSize: 8, color: '#94a3b8', marginTop: 1, fontFamily: 'system-ui' }}>4 files · updated recently</div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div style={{ height: 18, padding: '0 7px', background: '#f1f5f9', borderRadius: 4, fontSize: 8, color: '#64748b', display: 'flex', alignItems: 'center', fontFamily: 'system-ui' }}>Filter</div>
+                    <div style={{ height: 18, padding: '0 7px', background: '#f59e0b', borderRadius: 4, fontSize: 8, color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', fontFamily: 'system-ui' }}>+ Upload</div>
+                  </div>
+                </div>
+
+                {/* Table header */}
+                <div className="flex items-center border-b border-slate-100 px-3"
+                  style={{ padding: '4px 14px', background: '#fafafa' }}>
+                  <div style={{ flex: 1, fontSize: 7, color: '#94a3b8', fontWeight: 600, fontFamily: 'system-ui', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Name</div>
+                  <div style={{ width: 80, fontSize: 7, color: '#94a3b8', fontWeight: 600, fontFamily: 'system-ui', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Modified</div>
+                  <div style={{ width: 70, fontSize: 7, color: '#94a3b8', fontWeight: 600, fontFamily: 'system-ui', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</div>
+                </div>
+
+                {/* File rows */}
+                <div style={{ flex: 1, overflowY: 'hidden', padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {FILES.map((f, i) => (
+                    <motion.div key={f.name}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.7 + i * 0.1, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      className="flex items-center gap-2.5 rounded-lg cursor-default"
+                      style={{ padding: '6px 10px', background: 'white', border: '1px solid #f1f5f9' }}>
+                      {/* File icon */}
+                      <div className="flex-shrink-0 rounded flex items-center justify-center"
+                        style={{ width: 24, height: 28, background: '#fef3c7', border: '1px solid #fde68a' }}>
+                        <div style={{ width: 12, height: 14, borderRadius: 1, border: '1.5px solid #f59e0b', background: '#fffbeb' }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 9, color: '#334155', fontWeight: 500, fontFamily: 'system-ui', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                      </div>
+                      <div style={{ width: 80, fontSize: 8, color: '#94a3b8', fontFamily: 'system-ui', flexShrink: 0 }}>3h ago</div>
+                      <div className={`${f.sc} border`}
+                        style={{ width: 70, fontSize: 7, padding: '2px 6px', borderRadius: 20, fontFamily: 'system-ui', fontWeight: 600, textAlign: 'center', flexShrink: 0 }}>
+                        {f.status}
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
-              ))}
-              {/* Space bar row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr 1fr', gap: 3, marginTop: 2 }}>
-                <div style={{ height: 20, borderRadius: 3, background: 'rgba(255,255,255,0.4)', boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.15)' }} />
-                <div style={{ height: 20, borderRadius: 3, background: 'linear-gradient(to bottom, rgba(255,255,255,0.6), rgba(255,255,255,0.2))', boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.15)' }} />
-                <div style={{ height: 20, borderRadius: 3, background: 'rgba(255,255,255,0.4)', boxShadow: 'inset 0 -1px 0 rgba(0,0,0,0.15)' }} />
-              </div>
-            </div>
-            {/* Trackpad */}
-            <div style={{
-              margin: '6px auto 0',
-              width: 160,
-              height: 50,
-              borderRadius: 8,
-              background: 'rgba(255,255,255,0.25)',
-              border: '1px solid rgba(255,255,255,0.4)',
-              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
-            }} />
-          </div>
-
-          {/* ── BASE SIDE STRIP (visible from side view) ───── */}
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: W,
-            height: BASE_T,
-            background: 'linear-gradient(to bottom, #9ca3af 0%, #6b7280 100%)',
-            borderRadius: '0 0 14px 14px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
-          }} />
-
-          {/* ── SCREEN LID ──────────────────────────────────── */}
-          <div style={{
-            position: 'absolute',
-            bottom: BASE_T,
-            left: 0,
-            width: W,
-            height: SCREEN_H,
-            transformOrigin: 'bottom center',
-            transform: `rotateX(${OPEN_X}deg)`,
-            transformStyle: 'preserve-3d',
-          }}>
-            {/* Lid outer shell — aluminum */}
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(160deg, #d1d5db 0%, #a8acb3 50%, #9ca3af 100%)',
-              borderRadius: '18px 18px 0 0',
-              boxShadow: '0 -4px 40px rgba(0,0,0,0.18)',
-            }}>
-              {/* Apple-style logo mark */}
-              <div style={{
-                position: 'absolute',
-                top: '50%', left: '50%',
-                transform: 'translate(-50%,-50%)',
-                width: 32, height: 32,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.18)',
-              }} />
-            </div>
-
-            {/* Screen face — front only */}
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              backfaceVisibility: 'hidden',
-              borderRadius: '18px 18px 0 0',
-              overflow: 'hidden',
-            }}>
-              {/* Dark bezel frame */}
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                background: '#1a1a1a',
-                borderRadius: '18px 18px 0 0',
-              }} />
-
-              {/* Camera dot */}
-              <div style={{
-                position: 'absolute',
-                top: 9, left: '50%',
-                transform: 'translateX(-50%)',
-                width: 6, height: 6,
-                borderRadius: '50%',
-                background: '#2d2d2d',
-                border: '1px solid #3a3a3a',
-                zIndex: 10,
-              }} />
-
-              {/* Glass / screen */}
-              <div style={{
-                position: 'absolute',
-                inset: '22px 10px 8px',
-                background: 'white',
-                borderRadius: 10,
-                overflow: 'hidden',
-              }}>
-                {/* App chrome */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f87171' }} />
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24' }} />
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399' }} />
-                  <div style={{ flex: 1, marginLeft: 8, height: 16, background: 'white', border: '1px solid #e2e8f0', borderRadius: 4, display: 'flex', alignItems: 'center', padding: '0 6px' }}>
-                    <span style={{ fontSize: 7, color: '#94a3b8', fontFamily: 'system-ui' }}>app.qlarity.io</span>
-                  </div>
-                </div>
-
-                {/* App layout */}
-                <div style={{ display: 'flex', height: 'calc(100% - 29px)' }}>
-                  {/* Sidebar */}
-                  <div style={{ width: 130, flexShrink: 0, background: '#f8fafc', borderRight: '1px solid #f1f5f9', padding: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px', marginBottom: 4 }}>
-                      <div style={{ width: 14, height: 14, borderRadius: 3, background: '#f59e0b', flexShrink: 0 }} />
-                      <span style={{ fontSize: 8, fontWeight: 700, color: '#1e293b', fontFamily: 'system-ui' }}>Qlarity</span>
-                    </div>
-                    {NAV.map((item, i) => (
-                      <div key={item} style={{
-                        display: 'flex', alignItems: 'center', gap: 4,
-                        padding: '5px 6px', borderRadius: 5,
-                        background: i === 1 ? '#fef3c7' : 'transparent',
-                        fontSize: 7, fontWeight: i === 1 ? 600 : 400,
-                        color: i === 1 ? '#b45309' : '#64748b',
-                        fontFamily: 'system-ui',
-                      }}>
-                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: i === 1 ? '#f59e0b' : '#cbd5e1', flexShrink: 0 }} />
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Main panel */}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                      <div>
-                        <div style={{ fontSize: 9, fontWeight: 600, color: '#1e293b', fontFamily: 'system-ui' }}>Documents</div>
-                        <div style={{ fontSize: 7, color: '#94a3b8', marginTop: 1, fontFamily: 'system-ui' }}>4 files</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        <div style={{ height: 16, padding: '0 6px', background: '#f1f5f9', borderRadius: 4, fontSize: 7, color: '#64748b', display: 'flex', alignItems: 'center', fontFamily: 'system-ui' }}>Filter</div>
-                        <div style={{ height: 16, padding: '0 6px', background: '#f59e0b', borderRadius: 4, fontSize: 7, color: 'white', fontWeight: 600, display: 'flex', alignItems: 'center', fontFamily: 'system-ui' }}>+ Upload</div>
-                      </div>
-                    </div>
-                    <div style={{ flex: 1, padding: 8, display: 'flex', flexDirection: 'column', gap: 5, overflow: 'hidden' }}>
-                      {FILES.map((f, i) => (
-                        <motion.div key={f.name}
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.8 + i * 0.12, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', background: 'white', border: '1px solid #f1f5f9', borderRadius: 6 }}>
-                          <div style={{ width: 18, height: 20, borderRadius: 3, background: '#fef3c7', border: '1px solid #fde68a', flexShrink: 0 }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 7, color: '#334155', fontWeight: 500, fontFamily: 'system-ui', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
-                            <div style={{ fontSize: 6, color: '#94a3b8', marginTop: 1, fontFamily: 'system-ui' }}>Updated 3h ago</div>
-                          </div>
-                          <div style={{ fontSize: 6, padding: '1px 5px', borderRadius: 10, border: '1px solid', flexShrink: 0, fontFamily: 'system-ui' }}
-                            className={f.sc}>{f.status}</div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
-
-          {/* ── DROP SHADOW under laptop ─────────────────────── */}
-          <div style={{
-            position: 'absolute',
-            bottom: -20,
-            left: '10%',
-            width: '80%',
-            height: 30,
-            borderRadius: '50%',
-            background: 'rgba(0,0,0,0.18)',
-            filter: 'blur(16px)',
-            transform: 'translateZ(-60px)',
-          }} />
-        </motion.div>
+        </div>
       </div>
+
+      {/* ── Hinge ────────────────────────────────────────────────── */}
+      <div style={{
+        height: 5,
+        background: 'linear-gradient(to bottom, #6b7280, #9ca3af)',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+      }} />
+
+      {/* ── Keyboard base ────────────────────────────────────────── */}
+      <div className="relative rounded-b-2xl"
+        style={{
+          background: 'linear-gradient(175deg, #c8cdd5 0%, #b0b6bf 40%, #c4c8ce 100%)',
+          padding: '10px 16px 16px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.20), 0 2px 0 rgba(255,255,255,0.4) inset',
+        }}>
+
+        {/* Keyboard rows */}
+        <div style={{ display: 'grid', gap: 3, marginBottom: 8 }}>
+          {[14, 14, 13, 12].map((cols, row) => (
+            <div key={row} style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 2.5 }}>
+              {Array.from({ length: cols }).map((_, i) => (
+                <div key={i} style={{
+                  height: 18,
+                  borderRadius: 3,
+                  background: 'linear-gradient(to bottom, rgba(255,255,255,0.65), rgba(255,255,255,0.25))',
+                  boxShadow: '0 1px 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5)',
+                }} />
+              ))}
+            </div>
+          ))}
+          {/* Space bar */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 4fr 1fr', gap: 2.5 }}>
+            {[3, 3, 3].map((_, i) => (
+              <div key={i} style={{
+                height: 18,
+                borderRadius: 3,
+                background: i === 1
+                  ? 'linear-gradient(to bottom, rgba(255,255,255,0.65), rgba(255,255,255,0.25))'
+                  : 'rgba(255,255,255,0.3)',
+                boxShadow: i === 1 ? '0 1px 0 rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5)' : 'none',
+              }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Trackpad */}
+        <div className="mx-auto" style={{
+          width: 180,
+          height: 52,
+          borderRadius: 8,
+          background: 'rgba(255,255,255,0.22)',
+          border: '1px solid rgba(255,255,255,0.35)',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+        }} />
+      </div>
+
+      {/* Desk reflection */}
+      <div style={{
+        height: 24,
+        marginInline: 16,
+        borderRadius: '0 0 12px 12px',
+        background: 'linear-gradient(to bottom, rgba(100,116,139,0.15), transparent)',
+      }} />
     </motion.div>
   );
 }
@@ -272,7 +221,7 @@ export default function Hero() {
   const laptopRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const { scrollYProgress: laptopScroll } = useScroll({ target: laptopRef, offset: ['start 0.85', 'center 0.35'] });
+  const { scrollYProgress: laptopScroll } = useScroll({ target: laptopRef, offset: ['start 0.9', 'center 0.35'] });
 
   const blobY   = useTransform(scrollYProgress, [0, 1], [0, 100]);
   const blobY2  = useTransform(scrollYProgress, [0, 1], [0, 50]);
@@ -320,7 +269,8 @@ export default function Hero() {
       {/* ── Above-fold text ── */}
       <motion.div style={{ y: textY, opacity: fadeOut }}
         className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-16 px-6">
-        <motion.div variants={stagger(0.09)} initial="hidden" animate="show" className="flex flex-col items-center gap-6 text-center max-w-4xl mx-auto">
+        <motion.div variants={stagger(0.09)} initial="hidden" animate="show"
+          className="flex flex-col items-center gap-6 text-center max-w-4xl mx-auto">
 
           <motion.div variants={blurUp} className="flex flex-wrap justify-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700">
@@ -370,9 +320,9 @@ export default function Hero() {
         </motion.div>
       </motion.div>
 
-      {/* ── 3D laptop side-view ── */}
-      <div ref={laptopRef} className="relative pb-32 pt-8 px-6 overflow-hidden">
-        <LaptopScene scrollYProgress={laptopScroll} />
+      {/* ── Laptop mockup ── */}
+      <div ref={laptopRef} className="relative pb-32 pt-4 px-8">
+        <LaptopMockup scrollYProgress={laptopScroll} />
       </div>
     </section>
   );

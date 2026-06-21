@@ -17,14 +17,14 @@ const FEATURES = [
 // Each card's off-screen origin — positioned around a clock face
 // so they orbit inward from different directions as you scroll
 const ORBIT_ORIGINS = [
-  { x: -700, y: -180, rz: -22 }, // top-left
-  { x:  120, y: -680, rz:  18 }, // top
-  { x:  740, y: -120, rz:  24 }, // top-right
-  { x:  860, y:  160, rz: -18 }, // right
-  { x:  520, y:  560, rz:  20 }, // bottom-right
-  { x: -120, y:  700, rz: -24 }, // bottom
-  { x: -620, y:  420, rz:  22 }, // bottom-left
-  { x: -860, y:   60, rz: -20 }, // left
+  { x: -700, y: -180, rz:  -4 }, // top-left
+  { x:  120, y: -680, rz:   3 }, // top
+  { x:  740, y: -120, rz:   4 }, // top-right
+  { x:  860, y:  160, rz:  -3 }, // right
+  { x:  520, y:  560, rz:   4 }, // bottom-right
+  { x: -120, y:  700, rz:  -4 }, // bottom
+  { x: -620, y:  420, rz:   3 }, // bottom-left
+  { x: -860, y:   60, rz:  -3 }, // left
 ];
 
 const large = FEATURES.filter((f) => f.size === 'large');

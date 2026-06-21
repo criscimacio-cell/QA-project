@@ -73,6 +73,8 @@ const mainNav = [
   },
 ];
 
+const formatRole = (role: string) => role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { user, isLead, isAdmin } = useAuth();
   const { canAccess } = usePermissions();
@@ -271,7 +273,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 className="text-xs font-medium capitalize mt-0.5 truncate"
                 style={{ color: '#FCD34D' }}
               >
-                {user?.role}
+                {formatRole(user?.role || '')}
               </div>
               <div className="mt-1">
                 <OrgSwitcher />

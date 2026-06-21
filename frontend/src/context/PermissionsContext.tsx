@@ -7,10 +7,7 @@ export type ModuleKey = 'dashboard' | 'repositories' | 'files' | 'search' | 'kno
 export type RolePermissions = Record<string, Record<ModuleKey, boolean>>;
 
 const DEFAULT_PERMISSIONS: RolePermissions = {
-  admin:    { dashboard: true, repositories: true, files: true, search: true, knowledge: true, testData: true, approvals: true, archive: true, audit: true, users: true, settings: true, orgSettings: true },
-  lead:     { dashboard: true, repositories: true, files: true, search: true, knowledge: true, testData: true, approvals: true, archive: true, audit: false, users: false, settings: true, orgSettings: false },
-  engineer: { dashboard: true, repositories: true, files: true, search: true, knowledge: true, testData: true, approvals: false, archive: false, audit: false, users: false, settings: true, orgSettings: false },
-  viewer:   { dashboard: true, repositories: true, files: true, search: true, knowledge: true, testData: true, approvals: false, archive: false, audit: false, users: false, settings: true, orgSettings: false },
+  admin: { dashboard: true, repositories: true, files: true, search: true, knowledge: true, testData: true, approvals: true, archive: true, audit: true, users: true, settings: true, orgSettings: true },
 };
 
 interface PermissionsContextType {
@@ -18,6 +15,7 @@ interface PermissionsContextType {
   loading: boolean;
   canAccess: (module: ModuleKey) => boolean;
   refresh: () => Promise<void>;
+  customRoles: string[];
 }
 
 const PermissionsContext = createContext<PermissionsContextType>({
@@ -25,6 +23,7 @@ const PermissionsContext = createContext<PermissionsContextType>({
   loading: false,
   canAccess: () => true,
   refresh: async () => {},
+  customRoles: [],
 });
 
 export function PermissionsProvider({ children }: { children: ReactNode }) {
@@ -51,11 +50,13 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     if (!user) return false;
     const rolePerms = permissions[user.role];
     if (!rolePerms) return false;
-    return rolePerms[module] ?? true;
+    return rolePerms[module] ?? false;
   }, [user, permissions]);
 
+  const customRoles = Object.keys(permissions).filter(r => r !== 'admin');
+
   return (
-    <PermissionsContext.Provider value={{ permissions, loading, canAccess, refresh: fetch }}>
+    <PermissionsContext.Provider value={{ permissions, loading, canAccess, refresh: fetch, customRoles }}>
       {children}
     </PermissionsContext.Provider>
   );

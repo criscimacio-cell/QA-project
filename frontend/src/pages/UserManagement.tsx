@@ -6,6 +6,7 @@ import Pagination from '../components/UI/Pagination';
 import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
+import { usePermissions } from '../context/PermissionsContext';
 
 function generatePassword() {
   const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
@@ -20,6 +21,8 @@ const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise:
 
 export default function UserManagement() {
   const { isAdmin, user } = useAuth();
+  const { customRoles } = usePermissions();
+  const allRoles = ['admin', ...customRoles];
   const [users, setUsers] = useState<any[]>([]);
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
@@ -198,7 +201,7 @@ export default function UserManagement() {
 
       {/* Role summary */}
       <div className="grid grid-cols-4 gap-4">
-        {ROLES.map(r => (
+        {allRoles.map(r => (
           <div key={r} className="card p-4 text-center">
             <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{roleCount(r)}</div>
             <span className={`badge-${r} mt-1 inline-flex`}>{roleLabel(r)}</span>
@@ -340,10 +343,9 @@ export default function UserManagement() {
           <div>
             <label className="label">Role<span className="text-red-500 ml-0.5">*</span></label>
             <select value={form.role} onChange={e => { setForm(p => ({ ...p, role: e.target.value })); if (errors.role) setErrors(p => ({ ...p, role: '' })); }} className={`input ${errors.role ? 'border-red-400 focus:ring-red-300' : ''}`}>
-              <option value="admin">Admin</option>
-              <option value="lead">Lead</option>
-              <option value="engineer">Engineer</option>
-              <option value="viewer">Viewer</option>
+              {allRoles.map(r => (
+                <option key={r} value={r}>{r.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+              ))}
             </select>
             {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role}</p>}
           </div>

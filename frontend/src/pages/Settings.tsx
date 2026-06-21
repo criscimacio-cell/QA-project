@@ -11,9 +11,12 @@ export default function Settings() {
   const { user, isAdmin, refreshUser } = useAuth();
   const { dark, mode: themeMode, setMode: setThemeMode } = useTheme();
   const [activeSection, setActiveSection] = useState('Appearance');
-  const { permissions, refresh: refreshPerms } = usePermissions();
+  const { permissions, refresh: refreshPerms, customRoles } = usePermissions();
   const [rbacConfig, setRbacConfig] = useState<RolePermissions | null>(null);
   const [rbacSaving, setRbacSaving] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [addingRole, setAddingRole] = useState(false);
+  const [deletingRole, setDeletingRole] = useState<string | null>(null);
 
   useEffect(() => {
     if (permissions) setRbacConfig(JSON.parse(JSON.stringify(permissions)));
@@ -212,6 +215,34 @@ export default function Settings() {
       toast.error('Failed to delete category');
     } finally {
       setDeletingCategory(false);
+    }
+  };
+
+  const handleAddRole = async () => {
+    if (!newRoleName.trim()) return;
+    setAddingRole(true);
+    try {
+      await api.post('/org-settings/roles', { name: newRoleName.trim() });
+      await refreshPerms();
+      setNewRoleName('');
+      toast.success(`Role "${newRoleName.trim()}" created`);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || 'Failed to create role');
+    } finally {
+      setAddingRole(false);
+    }
+  };
+
+  const handleDeleteRole = async (roleName: string) => {
+    setDeletingRole(roleName);
+    try {
+      await api.delete(`/org-settings/roles/${roleName}`);
+      await refreshPerms();
+      toast.success(`Role "${roleName}" deleted`);
+    } catch {
+      toast.error('Failed to delete role');
+    } finally {
+      setDeletingRole(null);
     }
   };
 
@@ -632,56 +663,91 @@ export default function Settings() {
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Control which modules each role can access. Admin always has full access.</p>
               </div>
 
+              {/* Add Role */}
+              <div className="flex gap-2 items-center">
+                <input
+                  value={newRoleName}
+                  onChange={e => setNewRoleName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddRole()}
+                  placeholder="New role name (e.g. QA Lead)"
+                  className="input h-8 text-sm w-56"
+                />
+                <button onClick={handleAddRole} disabled={addingRole || !newRoleName.trim()} className="btn-primary text-sm py-1.5">
+                  {addingRole ? 'Adding…' : '+ Add Role'}
+                </button>
+              </div>
+
+              {/* Empty state */}
+              {customRoles.length === 0 && (
+                <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
+                  No custom roles yet. Add a role above to get started.
+                </div>
+              )}
+
               {/* Matrix */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Module</th>
-                      {(['lead', 'engineer', 'viewer'] as const).map(role => (
-                        <th key={role} className="py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-center capitalize">{role}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {([
-                      ['dashboard', 'Dashboard'],
-                      ['repositories', 'Repositories'],
-                      ['files', 'File Manager'],
-                      ['search', 'Search'],
-                      ['knowledge', 'Knowledge Base'],
-                      ['testData', 'Test Data Library'],
-                      ['approvals', 'Approval Workflow'],
-                      ['archive', 'Archive'],
-                      ['audit', 'Audit Log'],
-                      ['users', 'User Management'],
-                      ['orgSettings', 'Organization Settings'],
-                    ] as [ModuleKey, string][]).map(([key, label]) => (
-                      <tr key={key} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                        <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 font-medium">{label}</td>
-                        {(['lead', 'engineer', 'viewer'] as const).map(role => (
-                          <td key={role} className="py-2.5 px-3 text-center">
-                            <button
-                              onClick={() => {
-                                setRbacConfig(prev => {
-                                  if (!prev) return prev;
-                                  const next = JSON.parse(JSON.stringify(prev));
-                                  next[role][key] = !next[role][key];
-                                  return next;
-                                });
-                              }}
-                              className={`w-10 h-6 rounded-full transition-colors relative flex-shrink-0 inline-flex items-center ${rbacConfig[role]?.[key] ? 'bg-amber-500' : 'bg-slate-200 dark:bg-slate-700'}`}
-                              title={rbacConfig[role]?.[key] ? 'Click to revoke' : 'Click to grant'}
-                            >
-                              <span className={`absolute w-5 h-5 bg-white rounded-full shadow transition-transform ${rbacConfig[role]?.[key] ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                            </button>
-                          </td>
+              {customRoles.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Module</th>
+                        {customRoles.map(role => (
+                          <th key={role} className="py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-center">
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="capitalize">{role.replace(/_/g, ' ')}</span>
+                              <button
+                                onClick={() => handleDeleteRole(role)}
+                                disabled={deletingRole === role}
+                                className="text-red-400 hover:text-red-600 text-xs leading-none"
+                                title={`Delete ${role} role`}
+                              >
+                                {deletingRole === role ? '…' : '×'}
+                              </button>
+                            </div>
+                          </th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {([
+                        ['dashboard', 'Dashboard'],
+                        ['repositories', 'Repositories'],
+                        ['files', 'File Manager'],
+                        ['search', 'Search'],
+                        ['knowledge', 'Knowledge Base'],
+                        ['testData', 'Test Data Library'],
+                        ['approvals', 'Approval Workflow'],
+                        ['archive', 'Archive'],
+                        ['audit', 'Audit Log'],
+                        ['users', 'User Management'],
+                        ['orgSettings', 'Organization Settings'],
+                      ] as [ModuleKey, string][]).map(([key, label]) => (
+                        <tr key={key} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 font-medium">{label}</td>
+                          {customRoles.map(role => (
+                            <td key={role} className="py-2.5 px-3 text-center">
+                              <button
+                                onClick={() => {
+                                  setRbacConfig(prev => {
+                                    if (!prev) return prev;
+                                    const next = JSON.parse(JSON.stringify(prev));
+                                    if (!next[role]) next[role] = {};
+                                    next[role][key] = !next[role]?.[key];
+                                    return next;
+                                  });
+                                }}
+                                className={`w-10 h-6 rounded-full transition-colors relative inline-flex items-center ${rbacConfig?.[role]?.[key] ? 'bg-amber-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+                              >
+                                <span className={`absolute w-5 h-5 bg-white rounded-full shadow transition-transform ${rbacConfig?.[role]?.[key] ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                              </button>
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button onClick={() => setRbacConfig(JSON.parse(JSON.stringify(permissions)))} className="btn-ghost text-sm">Reset</button>
@@ -689,7 +755,9 @@ export default function Settings() {
                   onClick={async () => {
                     setRbacSaving(true);
                     try {
-                      await api.put('/org-settings/permissions', { permissions: rbacConfig });
+                      const toSave = { ...rbacConfig };
+                      delete toSave.admin;
+                      await api.put('/org-settings/permissions', { permissions: toSave });
                       await refreshPerms();
                       toast.success('Role permissions saved');
                     } catch {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../api/client';
 import {
   ResponsiveContainer, LineChart, Line, AreaChart, Area,
@@ -23,7 +24,7 @@ function timeAgo(date: string): string {
   return new Date(date).toLocaleDateString();
 }
 
-const ACTIVITY_ICON: Record<string, { icon: any; color: string; bg: string }> = {
+const ACTIVITY_ICON_LIGHT: Record<string, { icon: any; color: string; bg: string }> = {
   UPLOAD:   { icon: UploadCloud, color: '#2563eb', bg: 'rgba(59,130,246,0.1)' },
   APPROVE:  { icon: CheckCircle,  color: '#059669', bg: 'rgba(16,185,129,0.1)' },
   DELETE:   { icon: Trash2,       color: '#dc2626', bg: 'rgba(239,68,68,0.1)' },
@@ -31,6 +32,20 @@ const ACTIVITY_ICON: Record<string, { icon: any; color: string; bg: string }> = 
   DOWNLOAD: { icon: Download,     color: '#d97706', bg: 'rgba(245,158,11,0.1)' },
   ARCHIVE:  { icon: Archive,      color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
 };
+
+const ACTIVITY_ICON_DARK: Record<string, { icon: any; color: string; bg: string }> = {
+  UPLOAD:   { icon: UploadCloud, color: '#60a5fa', bg: 'rgba(59,130,246,0.2)' },
+  APPROVE:  { icon: CheckCircle,  color: '#34d399', bg: 'rgba(16,185,129,0.2)' },
+  DELETE:   { icon: Trash2,       color: '#f87171', bg: 'rgba(239,68,68,0.2)' },
+  VIEW:     { icon: Eye,          color: '#94a3b8', bg: 'rgba(100,116,139,0.18)' },
+  DOWNLOAD: { icon: Download,     color: '#fbbf24', bg: 'rgba(245,158,11,0.2)' },
+  ARCHIVE:  { icon: Archive,      color: '#9ca3af', bg: 'rgba(107,114,128,0.2)' },
+};
+
+function getActivityIcon(action: string, dark: boolean) {
+  const map = dark ? ACTIVITY_ICON_DARK : ACTIVITY_ICON_LIGHT;
+  return map[action] || { icon: Activity, color: dark ? '#94a3b8' : '#475569', bg: dark ? 'rgba(100,116,139,0.18)' : 'rgba(100,116,139,0.08)' };
+}
 
 /* ── Live clock ── */
 function useClock() {
@@ -217,7 +232,7 @@ function KpiCard({
   );
 }
 
-const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
+const ACTION_COLORS_LIGHT: Record<string, { bg: string; text: string }> = {
   LOGIN:    { bg: 'rgba(16,185,129,0.08)', text: '#059669' },
   UPLOAD:   { bg: 'rgba(59,130,246,0.08)', text: '#2563eb' },
   DOWNLOAD: { bg: 'rgba(139,92,246,0.08)', text: '#7c3aed' },
@@ -227,13 +242,32 @@ const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
   SEARCH:   { bg: 'rgba(20,184,166,0.08)', text: '#0d9488' },
 };
 
-const STATUS_COLORS: Record<string, string> = {
+const ACTION_COLORS_DARK: Record<string, { bg: string; text: string }> = {
+  LOGIN:    { bg: 'rgba(16,185,129,0.18)', text: '#34d399' },
+  UPLOAD:   { bg: 'rgba(59,130,246,0.18)', text: '#60a5fa' },
+  DOWNLOAD: { bg: 'rgba(139,92,246,0.18)', text: '#a78bfa' },
+  APPROVE:  { bg: 'rgba(245,158,11,0.18)', text: '#fbbf24' },
+  DELETE:   { bg: 'rgba(239,68,68,0.18)',  text: '#f87171' },
+  VIEW:     { bg: 'rgba(100,116,139,0.15)', text: '#94a3b8' },
+  SEARCH:   { bg: 'rgba(20,184,166,0.18)', text: '#2dd4bf' },
+};
+
+const STATUS_COLORS_LIGHT: Record<string, string> = {
   published:    '#10b981',
   approved:     '#059669',
   submitted:    '#3b82f6',
   under_review: '#f59e0b',
   draft:        '#94a3b8',
   archived:     '#6b7280',
+};
+
+const STATUS_COLORS_DARK: Record<string, string> = {
+  published:    '#34d399',
+  approved:     '#10b981',
+  submitted:    '#60a5fa',
+  under_review: '#fbbf24',
+  draft:        '#cbd5e1',
+  archived:     '#9ca3af',
 };
 
 const RANK_GRADIENTS = [
@@ -291,6 +325,9 @@ function DashboardSkeleton() {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { dark } = useTheme();
+  const STATUS_COLORS = dark ? STATUS_COLORS_DARK : STATUS_COLORS_LIGHT;
+  const ACTION_COLORS = dark ? ACTION_COLORS_DARK : ACTION_COLORS_LIGHT;
   const [stats, setStats] = useState<any>(null);
   const [statsError, setStatsError] = useState(false);
   const [activityFeed, setActivityFeed] = useState<any[]>([]);
@@ -589,7 +626,7 @@ export default function Dashboard() {
           </div>
           <div className="space-y-3">
             {activityFeed.slice(0, 15).map((item: any, idx: number) => {
-              const config = ACTIVITY_ICON[item.action] || { icon: Activity, color: '#475569', bg: 'rgba(100,116,139,0.08)' };
+              const config = getActivityIcon(item.action, dark);
               const IconComp = config.icon;
               const initial = (item.user_name || '?')[0].toUpperCase();
               return (

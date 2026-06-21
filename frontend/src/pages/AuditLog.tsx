@@ -114,7 +114,7 @@ export default function AuditLog() {
               <>
                 <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{summary[i].count}</div>
                 <div className={`text-xs mt-0.5 font-medium px-2 py-0.5 rounded-full inline-block ${ACTION_STYLES[sa] || 'bg-slate-100 text-slate-600'}`}>{sa}</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">this page</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">pg {Math.floor(offset / 50) + 1}</div>
               </>
             )}
           </div>

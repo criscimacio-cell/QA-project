@@ -133,7 +133,7 @@ export default function ResetPassword() {
                           <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= strength ? strengthColor[strength] : 'bg-slate-200 dark:bg-slate-700'}`} />
                         ))}
                       </div>
-                      <p className={`text-xs font-medium ${strength <= 1 ? 'text-red-500' : strength === 2 ? 'text-amber-500' : 'text-[#F59E0B]'}`}>{strengthLabel[strength]}</p>
+                      <p className={`text-xs font-medium ${strength <= 1 ? 'text-red-500' : strength === 2 ? 'text-amber-500' : 'text-amber-600 dark:text-amber-400'}`}>{strengthLabel[strength]}</p>
                     </div>
                   )}
                 </div>
@@ -144,7 +144,7 @@ export default function ResetPassword() {
                     <input type={showPw ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)} required className="input pl-9" placeholder="Re-enter your password" />
                     {confirm.length > 0 && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        {confirm === password ? <CheckCircle2 size={15} className="text-[#F59E0B]" /> : <XCircle size={15} className="text-red-400" />}
+                        {confirm === password ? <CheckCircle2 size={15} className="text-amber-500 dark:text-amber-400" /> : <XCircle size={15} className="text-red-400" />}
                       </div>
                     )}
                   </div>

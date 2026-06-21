@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { FolderOpen, GitPullRequest, Users, History, Lock, ShieldCheck, Search, Layers } from 'lucide-react';
 import { blurUp, stagger, scaleIn } from '../lib/animations';
 
@@ -17,10 +17,16 @@ const large = FEATURES.filter((f) => f.size === 'large');
 const small = FEATURES.filter((f) => f.size === 'small');
 
 function BentoCard({ f, big = false }: { f: typeof FEATURES[number]; big?: boolean }) {
+  const reduce = useReducedMotion();
+  // Gate hover lift on pointer devices only — touch devices fire hover on tap
+  const hoverProps = !reduce
+    ? { whileHover: { transform: 'translateY(-6px)', boxShadow: '0 16px 40px rgba(0,0,0,0.1)', transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } } }
+    : {};
+
   return (
     <motion.div
       variants={big ? scaleIn : blurUp}
-      whileHover={{ y: -6, boxShadow: '0 16px 40px rgba(0,0,0,0.1)', transition: { duration: 0.25 } }}
+      {...hoverProps}
       className="bento-card rounded-2xl p-7 flex flex-col gap-5 cursor-default group relative overflow-hidden"
     >
       <div aria-hidden="true" className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"

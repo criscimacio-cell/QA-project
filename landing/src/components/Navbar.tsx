@@ -75,8 +75,8 @@ export default function Navbar() {
           </a>
           <motion.a
             href="/register"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
+            whileHover={{ transform: 'scale(1.04)' }}
+            whileTap={{ transform: 'scale(0.97)' }}
             className="shimmer-btn text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/25"
           >
             Get Started

@@ -39,11 +39,11 @@ export default function CTA() {
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">
-            <motion.a href="/register" whileHover={{ scale: 1.06, y: -2 }} whileTap={{ scale: 0.96 }}
+            <motion.a href="/register" whileHover={{ transform: 'scale(1.05) translateY(-2px)' }} whileTap={{ transform: 'scale(0.97)' }}
               className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors shadow-lg shadow-amber-200">
               Get Started Free <ArrowRight size={16} />
             </motion.a>
-            <motion.a href="mailto:hello@qlarity.io" whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.96 }}
+            <motion.a href="mailto:hello@qlarity.io" whileHover={{ transform: 'scale(1.03) translateY(-2px)' }} whileTap={{ transform: 'scale(0.97)' }}
               className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-8 py-3.5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md">
               Talk to Sales
             </motion.a>

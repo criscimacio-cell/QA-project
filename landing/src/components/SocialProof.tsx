@@ -56,7 +56,7 @@ export default function SocialProof() {
             <motion.div
               key={p.title}
               variants={blurUp}
-              whileHover={{ y: -5, transition: { duration: 0.22 } }}
+              whileHover={{ transform: 'translateY(-5px)', transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] } }}
               className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow cursor-default group h-full"
             >
               <div className={`w-10 h-10 rounded-xl ${p.bg} border ${p.border} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>

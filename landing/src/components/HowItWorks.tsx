@@ -13,14 +13,13 @@ export default function HowItWorks() {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const lineHeight = useTransform(scrollYProgress, [0.1, 0.75], ['0%', '100%']);
-  const sectionY = useTransform(scrollYProgress, [0, 1], [-20, 20]);
 
   return (
     <section id="how-it-works" aria-labelledby="how-it-works-heading" ref={ref} className="py-32 relative overflow-hidden scroll-mt-20">
       <div aria-hidden="true" className="absolute inset-0 grid-bg opacity-40" />
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#FAFAFA] via-white/50 to-[#FAFAFA]" />
 
-      <motion.div style={{ y: sectionY }} className="relative max-w-4xl mx-auto px-6">
+      <div className="relative max-w-4xl mx-auto px-6">
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="text-center mb-20">
           <motion.div initial={{ opacity: 0, scale: 0.85 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: 0.5 }}
@@ -49,8 +48,8 @@ export default function HowItWorks() {
                 className="flex gap-4 sm:gap-8 items-start"
               >
                 <motion.div
-                  initial={{ scale: 0, rotate: -15 }}
-                  whileInView={{ scale: 1, rotate: 0 }}
+                  initial={{ opacity: 0, transform: 'scale(0.7) rotate(-15deg)' }}
+                  whileInView={{ opacity: 1, transform: 'scale(1) rotate(0deg)' }}
                   viewport={{ once: true, amount: 0.5 }}
                   transition={{ delay: 0.15 + i * 0.1, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
                   aria-hidden="true"
@@ -71,7 +70,7 @@ export default function HowItWorks() {
             ))}
           </div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

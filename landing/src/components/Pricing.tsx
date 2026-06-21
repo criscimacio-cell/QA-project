@@ -70,11 +70,11 @@ export default function Pricing() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, amount: 0.2 }}
-              whileHover={{ y: plan.highlight ? -10 : -5, transition: { duration: 0.25 } }}
+              whileHover={{ transform: plan.highlight ? 'translateY(-10px)' : 'translateY(-5px)', transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
               className={`relative rounded-2xl p-8 flex flex-col gap-6 h-full ${plan.highlight ? 'bg-white border-2 border-amber-400 shadow-xl shadow-amber-100' : 'bg-white border border-slate-200 shadow-sm'}`}
             >
               {plan.badge && (
-                <motion.div initial={{ opacity: 0, y: -8, scale: 0.8 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.4, duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                <motion.div initial={{ opacity: 0, transform: 'translateY(-8px) scale(0.9)' }} whileInView={{ opacity: 1, transform: 'translateY(0px) scale(1)' }} viewport={{ once: true }} transition={{ delay: 0.4, duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
                   className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md shadow-amber-200">
                   {plan.badge}
                 </motion.div>
@@ -90,7 +90,7 @@ export default function Pricing() {
                 <p className="text-slate-500 text-sm mt-2">{plan.desc}</p>
               </div>
 
-              <motion.a href={plan.ctaHref} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              <motion.a href={plan.ctaHref} whileHover={{ transform: 'scale(1.03)' }} whileTap={{ transform: 'scale(0.97)' }}
                 className={`w-full py-3 rounded-xl text-sm font-semibold text-center transition-all duration-200 ${plan.highlight ? 'shimmer-btn bg-amber-500 hover:bg-amber-400 text-white shadow-md shadow-amber-200' : 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700'}`}>
                 {plan.cta}
               </motion.a>

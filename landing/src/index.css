@@ -56,11 +56,14 @@
     border: 1px solid rgba(226,232,240,0.8);
     backdrop-filter: blur(12px);
     box-shadow: 0 1px 12px rgba(0,0,0,0.05);
+    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   }
-  .card-glass:hover {
-    background: rgba(255,255,255,0.95);
-    border-color: rgba(245,158,11,0.3);
-    box-shadow: 0 4px 20px rgba(245,158,11,0.12);
+  @media (hover: hover) and (pointer: fine) {
+    .card-glass:hover {
+      background: rgba(255,255,255,0.95);
+      border-color: rgba(245,158,11,0.3);
+      box-shadow: 0 4px 20px rgba(245,158,11,0.12);
+    }
   }
   .amber-border-glow {
     border: 1px solid rgba(245,158,11,0.35);
@@ -141,12 +144,14 @@
     border: 1px solid rgba(226,232,240,0.9);
     backdrop-filter: blur(12px);
     box-shadow: 0 1px 8px rgba(0,0,0,0.04);
-    transition: all 0.3s ease;
+    /* Specify only the properties that change — never use `all` */
+    transition: box-shadow 0.25s ease, background-color 0.25s ease;
   }
-  .bento-card:hover {
-    background: rgba(255,255,255,1);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-    transform: translateY(-4px);
+  @media (hover: hover) and (pointer: fine) {
+    .bento-card:hover {
+      background: rgba(255,255,255,1);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
   }
 
   /* Pulsing ring */

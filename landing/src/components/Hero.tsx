@@ -1,4 +1,4 @@
-import { motion, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate, useReducedMotion } from 'framer-motion';
 import { useRef, useEffect } from 'react';
 import { ArrowRight, Play, CheckCircle2, Sparkles } from 'lucide-react';
 import { fadeUp, blurUp, stagger } from '../lib/animations';
@@ -7,15 +7,16 @@ import { ContainerScroll } from './ui/container-scroll-animation';
 const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 
 export default function Hero() {
+  const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
 
-  const blobY = useTransform(scrollYProgress, [0, 1], [0, 160]);
-  const blobY2 = useTransform(scrollYProgress, [0, 1], [0, 80]);
-  const textY = useTransform(scrollYProgress, [0, 1], [0, 60]);
-  const fadeOut = useTransform(scrollYProgress, [0, 0.55], [1, 0]);
-  const scaleDown = useTransform(scrollYProgress, [0, 0.6], [1, 0.94]);
+  const blobY = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const blobY2 = useTransform(scrollYProgress, [0, 1], [0, 60]);
+  const textY = useTransform(scrollYProgress, [0, 1], [0, 40]);
+  // Only opacity is GPU-accelerated as a standalone FM prop; scale is not — removed scaleDown
+  const fadeOut = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   const mouseX = useMotionValue(50);
   const mouseY = useMotionValue(50);
@@ -70,16 +71,16 @@ export default function Hero() {
       <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">
         <motion.a
           href="/register"
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.96 }}
+          whileHover={{ transform: 'scale(1.05) translateY(-2px)' }}
+          whileTap={{ transform: 'scale(0.97)' }}
           className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors glow-amber-sm focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
         >
           Start for Free <ArrowRight size={16} />
         </motion.a>
         <motion.a
           href="#how-it-works"
-          whileHover={{ scale: 1.04, y: -2 }}
-          whileTap={{ scale: 0.96 }}
+          whileHover={{ transform: 'scale(1.03) translateY(-2px)' }}
+          whileTap={{ transform: 'scale(0.97)' }}
           className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-8 py-3.5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
         >
           <Play size={14} className="fill-current text-amber-500" />
@@ -114,7 +115,7 @@ export default function Hero() {
           { name: 'Product_Roadmap_Draft.pptx', status: 'draft', color: 'bg-slate-100 text-slate-500 border border-slate-200' },
           { name: 'Legal_NDA_Template.pdf', status: 'published', color: 'bg-blue-50 text-blue-700 border border-blue-200' },
         ].map((file) => (
-          <motion.div key={file.name} whileHover={{ x: 4, transition: { duration: 0.15 } }}
+          <motion.div key={file.name} whileHover={!reduce ? { transform: 'translateX(4px)', transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } } : undefined}
             className="flex items-center gap-3 bg-slate-50 hover:bg-white rounded-xl px-4 py-3 border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all cursor-default">
             <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -156,7 +157,7 @@ export default function Hero() {
         <motion.div className="absolute inset-0" style={{ background: spotlightBg }} />
       </div>
 
-      <motion.div style={{ y: textY, opacity: fadeOut, scale: scaleDown }} className="relative">
+      <motion.div style={{ y: textY, opacity: fadeOut }} className="relative">
         <ContainerScroll titleComponent={titleComponent}>
           {mockContent}
         </ContainerScroll>

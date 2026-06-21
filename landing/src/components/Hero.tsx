@@ -1,133 +1,173 @@
-import { motion, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
-import { useRef, useEffect } from 'react';
-import { ArrowRight, Play, CheckCircle2, Sparkles, FileText, CheckCircle, Clock, Upload, Eye, Send } from 'lucide-react';
+import { motion, useMotionValue, useSpring, animate } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Play, CheckCircle2, Sparkles, FileText, CheckCircle, Clock, AlertCircle, XCircle, FolderOpen, Search, Bell, Users, Filter, Plus } from 'lucide-react';
 import { fadeUp, blurUp, stagger } from '../lib/animations';
 import { MagneticButton } from './ui/MagneticButton';
 
 const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 
-// Live document event feed — realistic DMS activity stream
-const EVENTS = [
-  { icon: CheckCircle, label: 'approved',   color: '#10b981', user: 'Sarah K.',    file: 'Q4_Finance_Report_v2.pdf' },
-  { icon: Send,        label: 'sent for review', color: '#f59e0b', user: 'Mike T.',  file: 'Employee_Handbook_2025.docx' },
-  { icon: Upload,      label: 'uploaded',   color: '#6366f1', user: 'Priya M.',    file: 'Legal_NDA_Template_v3.pdf' },
-  { icon: Eye,         label: 'viewed',     color: '#64748b', user: 'James R.',    file: 'Product_Roadmap_Draft.pptx' },
-  { icon: CheckCircle, label: 'published',  color: '#10b981', user: 'Sarah K.',    file: 'Compliance_Policy_2025.pdf' },
-  { icon: Clock,       label: 'pending review', color: '#f59e0b', user: 'Ana L.', file: 'Sales_Contract_Acme.docx' },
-  { icon: FileText,    label: 'version 4 saved', color: '#6366f1', user: 'Tom B.', file: 'Architecture_Overview.pdf' },
-  { icon: Send,        label: 'sent for review', color: '#f59e0b', user: 'Priya M.', file: 'Brand_Guidelines_v2.pdf' },
-  { icon: CheckCircle, label: 'approved',   color: '#10b981', user: 'James R.',    file: 'Invoice_Oct_2025.xlsx' },
-  { icon: Upload,      label: 'uploaded',   color: '#6366f1', user: 'Ana L.',      file: 'HR_Policy_Update.docx' },
-  { icon: Eye,         label: 'viewed',     color: '#64748b', user: 'Mike T.',     file: 'Onboarding_Checklist.pdf' },
-  { icon: CheckCircle, label: 'published',  color: '#10b981', user: 'Tom B.',      file: 'Release_Notes_v3.2.pdf' },
-  { icon: Clock,       label: 'awaiting signature', color: '#f59e0b', user: 'Sarah K.', file: 'Partnership_Agreement.pdf' },
-  { icon: FileText,    label: 'commented',  color: '#6366f1', user: 'James R.',    file: 'UX_Research_Report.pdf' },
-  { icon: Send,        label: 'escalated',  color: '#ef4444', user: 'Priya M.',    file: 'Budget_Forecast_Q1.xlsx' },
-  { icon: CheckCircle, label: 'approved',   color: '#10b981', user: 'Ana L.',      file: 'Vendor_Contract_Dell.pdf' },
+// ── Chaos side — scattered, overlapping document cards ───────────────────────
+const CHAOS_DOCS = [
+  { name: 'Final_FINAL_v3_REAL.docx', status: 'overdue', color: '#ef4444', icon: XCircle,     rot: -8,  x: '6%',   y: '8%',  z: 6 },
+  { name: 'Contract_draft copy(2).pdf', status: 'lost',  color: '#f97316', icon: AlertCircle, rot: 5,   x: '30%',  y: '4%',  z: 4 },
+  { name: 'Report_FINAL(1).xlsx',       status: 'overdue', color: '#ef4444', icon: XCircle,   rot: -3,  x: '55%',  y: '11%', z: 5 },
+  { name: 'NDA_unsigned????.pdf',       status: 'lost',  color: '#f97316', icon: AlertCircle, rot: 9,   x: '10%',  y: '34%', z: 3 },
+  { name: 'Budget v7 LATEST.xlsx',      status: 'overdue', color: '#ef4444', icon: XCircle,   rot: -6,  x: '38%',  y: '28%', z: 7 },
+  { name: 'Slide_deck_USE THIS.pptx',   status: 'lost',  color: '#f97316', icon: AlertCircle, rot: 4,   x: '62%',  y: '36%', z: 2 },
+  { name: 'Policy_old_2022.pdf',        status: 'overdue', color: '#ef4444', icon: XCircle,   rot: -11, x: '5%',   y: '60%', z: 8 },
+  { name: 'Invoice_Oct_final2.pdf',     status: 'lost',  color: '#f97316', icon: AlertCircle, rot: 7,   x: '42%',  y: '58%', z: 5 },
+  { name: 'Contract_v12_send.docx',     status: 'overdue', color: '#ef4444', icon: XCircle,   rot: -4,  x: '20%',  y: '74%', z: 3 },
+  { name: 'Roadmap_DRAFT_old.pptx',     status: 'lost',  color: '#f97316', icon: AlertCircle, rot: 6,   x: '58%',  y: '70%', z: 6 },
 ];
 
-// Split events into columns with offsets so columns feel independent
-const COL_1 = [...EVENTS.slice(0, 8),  ...EVENTS.slice(0, 8)];
-const COL_2 = [...EVENTS.slice(5, 13), ...EVENTS.slice(5, 13)];
-const COL_3 = [...EVENTS.slice(8, 16), ...EVENTS.slice(8, 16)];
-const COL_4 = [...EVENTS.slice(2, 10), ...EVENTS.slice(2, 10)];
+// ── Clarity side — clean organized grid rows ─────────────────────────────────
+const CLARITY_DOCS = [
+  { name: 'Q4_Finance_Report_v2.pdf',    status: 'Published',  color: '#10b981', icon: CheckCircle },
+  { name: 'Employee_Handbook_2025.docx', status: 'In Review',  color: '#f59e0b', icon: Clock },
+  { name: 'Legal_NDA_Template_v3.pdf',   status: 'Published',  color: '#10b981', icon: CheckCircle },
+  { name: 'Sales_Contract_Acme.docx',    status: 'In Review',  color: '#f59e0b', icon: Clock },
+  { name: 'Brand_Guidelines_v2.pdf',     status: 'Published',  color: '#10b981', icon: CheckCircle },
+  { name: 'Compliance_Policy_2025.pdf',  status: 'Published',  color: '#10b981', icon: CheckCircle },
+];
 
-function EventCard({ e }: { e: typeof EVENTS[number] }) {
-  const Icon = e.icon;
+function ChaosCard({ doc, revealX }: { doc: typeof CHAOS_DOCS[number]; revealX: number }) {
+  const Icon = doc.icon;
+  // Cards on the left disappear as the sweep passes through them
+  const cardCenterX = parseFloat(doc.x) + 18; // approximate center
+  const opacity = revealX > cardCenterX ? 0 : 1;
+
   return (
-    <div className="flex items-start gap-2.5 bg-white/70 backdrop-blur-sm border border-slate-100 rounded-xl px-3 py-2.5 mb-2 shadow-sm"
-      style={{ minWidth: 220 }}>
-      <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-        style={{ background: `${e.color}18` }}>
-        <Icon size={11} style={{ color: e.color }} />
+    <div
+      className="absolute bg-white border-2 rounded-lg px-3 py-2.5 shadow-lg"
+      style={{
+        left: doc.x, top: doc.y,
+        transform: `rotate(${doc.rot}deg)`,
+        zIndex: doc.z,
+        borderColor: doc.color,
+        minWidth: 180, maxWidth: 210,
+        opacity,
+        transition: 'opacity 0.4s ease',
+        willChange: 'opacity',
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <Icon size={12} style={{ color: doc.color, flexShrink: 0 }} />
+        <span className="text-[10px] font-medium text-slate-700 truncate">{doc.name}</span>
       </div>
-      <div className="min-w-0">
-        <div className="text-[10px] font-medium text-slate-700 truncate" style={{ fontFamily: 'system-ui' }}>
-          {e.file}
-        </div>
-        <div className="text-[9px] text-slate-400 mt-0.5" style={{ fontFamily: 'system-ui' }}>
-          <span style={{ color: e.color, fontWeight: 600 }}>{e.label}</span>
-          {' '}by {e.user} · just now
-        </div>
-      </div>
+      <div className="mt-1 text-[9px] font-semibold" style={{ color: doc.color }}>{doc.status.toUpperCase()}</div>
     </div>
   );
 }
 
-function StreamColumn({ events, duration, delay = 0, className = '' }: {
-  events: typeof EVENTS;
-  duration: number;
-  delay?: number;
-  className?: string;
-}) {
+function ClarityPanel({ revealX }: { revealX: number }) {
   return (
-    <div className={`relative overflow-hidden ${className}`} style={{ height: '100%' }}>
-      <motion.div
-        animate={{ y: ['0%', '-50%'] }}
-        transition={{ duration, delay, repeat: Infinity, ease: 'linear', repeatType: 'loop' }}
-        style={{ willChange: 'transform' }}
-      >
-        {events.map((e, i) => <EventCard key={i} e={e} />)}
-      </motion.div>
+    <div className="absolute inset-0 flex flex-col" style={{ clipPath: `inset(0 0 0 ${revealX}%)` }}>
+      {/* App chrome */}
+      <div className="bg-slate-900 px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
+        <div className="flex gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+          <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+          <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+        </div>
+        <div className="flex-1 text-center text-[10px] text-slate-400 font-medium">app.qlarity.io</div>
+        <Bell size={11} className="text-slate-500" />
+      </div>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-36 bg-slate-800 flex-shrink-0 p-3 flex flex-col gap-1">
+          <div className="text-[8px] font-bold text-amber-400 mb-2 uppercase tracking-wider">Qlarity</div>
+          {[
+            { icon: FolderOpen, label: 'Documents', active: true },
+            { icon: Users,      label: 'Team',      active: false },
+            { icon: CheckCircle, label: 'Approvals', active: false },
+            { icon: Search,     label: 'Search',    active: false },
+          ].map(({ icon: Icon, label, active }) => (
+            <div key={label} className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[9px] font-medium ${active ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400'}`}>
+              <Icon size={10} /> {label}
+            </div>
+          ))}
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 bg-slate-50 p-3 flex flex-col gap-2 overflow-hidden">
+          {/* Toolbar */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex-1 bg-white border border-slate-200 rounded-md px-2 py-1 text-[9px] text-slate-400 flex items-center gap-1.5">
+              <Search size={9} /> Search documents…
+            </div>
+            <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-md px-2 py-1 text-[9px] text-slate-500">
+              <Filter size={9} /> Filter
+            </div>
+            <div className="flex items-center gap-1 bg-amber-500 rounded-md px-2 py-1 text-[9px] text-white font-medium">
+              <Plus size={9} /> New
+            </div>
+          </div>
+
+          {/* Document rows */}
+          <div className="flex flex-col gap-1 flex-1">
+            {/* Header */}
+            <div className="grid gap-2 px-2 py-1 text-[8px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-200"
+              style={{ gridTemplateColumns: '1fr 70px 60px' }}>
+              <span>Name</span><span>Status</span><span>Updated</span>
+            </div>
+            {CLARITY_DOCS.map((doc, i) => {
+              const Icon = doc.icon;
+              return (
+                <div
+                  key={doc.name}
+                  className="grid gap-2 px-2 py-1.5 rounded-md bg-white border border-slate-100 items-center hover:border-amber-200 transition-colors"
+                  style={{ gridTemplateColumns: '1fr 70px 60px', opacity: revealX > 0 ? 1 : 0, transition: `opacity 0.3s ease ${i * 0.06}s` }}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <FileText size={10} className="text-slate-400 flex-shrink-0" />
+                    <span className="text-[9px] font-medium text-slate-700 truncate">{doc.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Icon size={9} style={{ color: doc.color }} />
+                    <span className="text-[9px] font-medium" style={{ color: doc.color }}>{doc.status}</span>
+                  </div>
+                  <span className="text-[9px] text-slate-400">2h ago</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function Hero() {
-  const ref = useRef<HTMLElement>(null);
-  const spotlightRef = useRef<HTMLDivElement>(null);
-
-  const mouseX  = useMotionValue(50);
-  const mouseY  = useMotionValue(50);
-  const smoothX = useSpring(mouseX, { stiffness: 50, damping: 18 });
-  const smoothY = useSpring(mouseY, { stiffness: 50, damping: 18 });
-  const spotlightBg = useMotionTemplate`radial-gradient(600px circle at ${smoothX}% ${smoothY}%, rgba(245,158,11,0.07), transparent 65%)`;
+  // revealX: percentage (0–100) of the sweep line's horizontal position
+  const revealProgress = useMotionValue(0);
+  const smoothReveal  = useSpring(revealProgress, { stiffness: 40, damping: 18 });
+  const [revealX, setRevealX] = useState(0);
 
   useEffect(() => {
-    const el = spotlightRef.current;
-    if (!el) return;
-    const handler = (e: MouseEvent) => {
-      const rect = el.getBoundingClientRect();
-      mouseX.set(((e.clientX - rect.left) / rect.width) * 100);
-      mouseY.set(((e.clientY - rect.top) / rect.height) * 100);
+    // Auto-animate: sweep from 0 → 100 over ~3.5 s, pause, then reset and repeat
+    let stopped = false;
+    const run = async () => {
+      while (!stopped) {
+        await new Promise(r => setTimeout(r, 900));
+        await animate(revealProgress, 100, { duration: 3.5, ease: [0.4, 0, 0.2, 1] });
+        await new Promise(r => setTimeout(r, 1800));
+        await animate(revealProgress, 0, { duration: 0.01, ease: 'linear' });
+      }
     };
-    el.addEventListener('mousemove', handler);
-    return () => el.removeEventListener('mousemove', handler);
-  }, [mouseX, mouseY]);
+    run();
+    return () => { stopped = true; };
+  }, [revealProgress]);
+
+  useEffect(() => {
+    return smoothReveal.on('change', v => setRevealX(v));
+  }, [smoothReveal]);
 
   return (
-    <section ref={ref} className="relative overflow-hidden min-h-screen flex items-center">
-
-      {/* ── Live stream background ───────────────────────────── */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        {/* Grid */}
-        <div className="absolute inset-0 grid-bg opacity-40" />
-
-        {/* Event columns — 4 columns, different speeds */}
-        <div className="absolute inset-0 flex gap-3 px-4 pt-16"
-          style={{ opacity: 0.55 }}>
-          <StreamColumn events={COL_1} duration={28} delay={0}   className="flex-1" />
-          <StreamColumn events={COL_2} duration={22} delay={-6}  className="flex-1" />
-          <StreamColumn events={COL_3} duration={32} delay={-12} className="flex-1" />
-          <StreamColumn events={COL_4} duration={26} delay={-4}  className="flex-1 hidden xl:block" />
-        </div>
-
-        {/* Fade overlays — top/bottom gradient so stream fades in/out */}
-        <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#FAFAFA] to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#FAFAFA] to-transparent" />
-
-        {/* Center radial clear zone so text pops against stream */}
-        <div className="absolute inset-0"
-          style={{ background: 'radial-gradient(70% 65% at 50% 50%, rgba(250,250,250,0.96) 0%, rgba(250,250,250,0.7) 55%, transparent 100%)' }} />
-      </div>
-
-      {/* Cursor spotlight */}
-      <div ref={spotlightRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <motion.div className="absolute inset-0" style={{ background: spotlightBg }} />
-      </div>
+    <section className="relative overflow-hidden min-h-screen flex items-center bg-[#FAFAFA]">
 
       {/* ── Hero content ─────────────────────────────────────── */}
-      <div className="relative w-full max-w-5xl mx-auto px-6 py-32 pt-36 flex flex-col items-center gap-7 text-center">
+      <div className="relative w-full max-w-6xl mx-auto px-6 py-32 pt-36 flex flex-col items-center gap-10 text-center">
         <motion.div variants={stagger(0.09)} initial="hidden" animate="show"
           className="flex flex-col items-center gap-6 w-full">
 
@@ -142,15 +182,15 @@ export default function Hero() {
             ))}
           </motion.div>
 
-          <motion.h1 variants={blurUp} aria-label="One place for all your documents."
+          <motion.h1 variants={blurUp} aria-label="Your team's documents, finally under control."
             className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.12]">
-            <span className="text-slate-900">Your team's documents,</span>
+            <span className="text-slate-900">Stop the chaos.</span>
             <br />
-            <span className="text-gradient">finally under control.</span>
+            <span className="text-gradient">Start with clarity.</span>
           </motion.h1>
 
           <motion.p variants={fadeUp} className="max-w-xl text-lg sm:text-xl text-slate-500 leading-relaxed">
-            Qlarity keeps every file, approval, and version in one place — so nothing gets lost in email threads, chat messages, or shared drives.
+            Qlarity replaces scattered files, lost approvals, and version confusion with one clean, organized workspace your whole team can trust.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">
@@ -167,22 +207,95 @@ export default function Hero() {
           <motion.p variants={fadeUp} className="text-xs text-slate-400">
             No credit card required · Free to get started
           </motion.p>
+        </motion.div>
 
-          {/* Live indicator */}
-          <motion.div variants={fadeUp}
-            className="flex items-center gap-2 bg-white/80 backdrop-blur border border-slate-200 rounded-full px-4 py-2 shadow-sm text-xs text-slate-500">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            Live activity from teams using Qlarity right now
+        {/* ── Split mockup ──────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-4xl relative"
+          style={{ perspective: 1000 }}
+        >
+          <motion.div
+            animate={{ rotateX: [2, 0], rotateY: [0, 0] }}
+            transition={{ duration: 0.8, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-2xl"
+            style={{ aspectRatio: '16/9', background: '#f8f8f8', transformStyle: 'flat' }}
+          >
+            {/* ── CHAOS side (left) — pale red wash ── */}
+            <div className="absolute inset-0 bg-red-50/60" />
+
+            {/* Chaos label */}
+            <div
+              className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-red-200 rounded-full px-3 py-1 shadow-sm"
+              style={{ opacity: revealX > 15 ? 0 : 1, transition: 'opacity 0.4s ease' }}
+            >
+              <XCircle size={12} className="text-red-500" />
+              <span className="text-[10px] font-semibold text-red-600">Before Qlarity</span>
+            </div>
+
+            {/* Scattered chaos cards */}
+            {CHAOS_DOCS.map((doc) => (
+              <ChaosCard key={doc.name} doc={doc} revealX={revealX} />
+            ))}
+
+            {/* Email thread indicator (chaos) */}
+            <div
+              className="absolute bottom-4 left-4 z-10 bg-white/90 border border-orange-200 rounded-lg px-3 py-2 shadow-sm"
+              style={{ opacity: revealX > 10 ? 0 : 1, transition: 'opacity 0.3s ease' }}
+            >
+              <div className="text-[9px] font-semibold text-orange-600 mb-0.5">📧 RE: RE: RE: Final version?</div>
+              <div className="text-[8px] text-slate-500">Which file is the latest one??</div>
+            </div>
+
+            {/* ── CLARITY side — revealed by sweep ── */}
+            <ClarityPanel revealX={revealX} />
+
+            {/* Clarity label */}
+            <div
+              className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-emerald-200 rounded-full px-3 py-1 shadow-sm"
+              style={{ opacity: revealX > 85 ? 1 : 0, transition: 'opacity 0.4s ease' }}
+            >
+              <CheckCircle size={12} className="text-emerald-500" />
+              <span className="text-[10px] font-semibold text-emerald-600">With Qlarity</span>
+            </div>
+
+            {/* ── Sweep line ── */}
+            <motion.div
+              className="absolute inset-y-0 z-40 flex items-center"
+              style={{ left: `${revealX}%`, transform: 'translateX(-50%)' }}
+            >
+              {/* Glow line */}
+              <div className="w-0.5 h-full bg-gradient-to-b from-transparent via-amber-400 to-transparent shadow-[0_0_12px_3px_rgba(245,158,11,0.6)]" />
+              {/* Handle knob */}
+              <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 bg-white border-2 border-amber-400 rounded-full shadow-lg flex items-center justify-center">
+                <div className="flex gap-0.5">
+                  <div className="w-0.5 h-3 bg-amber-400 rounded-full" />
+                  <div className="w-0.5 h-3 bg-amber-400 rounded-full" />
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
+
+          {/* Caption */}
+          <div className="mt-4 flex items-center justify-center gap-6 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+              Scattered &amp; untracked
+            </span>
+            <span className="w-4 border-t border-slate-200" />
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+              Organized with Qlarity
+            </span>
+          </div>
         </motion.div>
       </div>
 
       {/* Scroll indicator */}
       <motion.div aria-hidden="true"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.5 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none">
         <span className="text-xs text-slate-400">Scroll to explore</span>
         <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}

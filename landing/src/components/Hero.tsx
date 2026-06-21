@@ -3,12 +3,12 @@ import { useRef, useEffect } from 'react';
 import { ArrowRight, Play, CheckCircle2, Sparkles } from 'lucide-react';
 import { fadeUp, blurUp, stagger } from '../lib/animations';
 
-const BADGES = ['SOC 2 Ready', 'Multi-tenant', 'Role-based Access'];
+const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 
 const FLOAT_CARDS = [
-  { label: 'Files Approved', value: '1,284', color: 'text-emerald-600', dot: 'bg-emerald-500', pos: '-right-4 top-12', delay: 0, dy: -20 },
-  { label: 'Pending Review', value: '23', color: 'text-amber-600', dot: 'bg-amber-500', pos: '-left-8 bottom-16', delay: 0.15, dy: 20 },
-  { label: 'Team Members', value: '47', color: 'text-blue-600', dot: 'bg-blue-500', pos: '-right-2 bottom-8', delay: 0.3, dy: 15 },
+  { label: 'Documents Stored', value: '48,291', color: 'text-emerald-600', dot: 'bg-emerald-500', pos: '-right-4 top-12', delay: 0, dy: -20 },
+  { label: 'Pending Approval', value: '12', color: 'text-amber-600', dot: 'bg-amber-500', pos: '-left-8 bottom-16', delay: 0.15, dy: 20 },
+  { label: 'Active Users', value: '134', color: 'text-blue-600', dot: 'bg-blue-500', pos: '-right-2 bottom-8', delay: 0.3, dy: 15 },
 ];
 
 export default function Hero() {
@@ -16,7 +16,6 @@ export default function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
 
-  // Parallax layers at different speeds
   const blobY = useTransform(scrollYProgress, [0, 1], [0, 160]);
   const blobY2 = useTransform(scrollYProgress, [0, 1], [0, 80]);
   const textY = useTransform(scrollYProgress, [0, 1], [0, 60]);
@@ -24,7 +23,6 @@ export default function Hero() {
   const scaleDown = useTransform(scrollYProgress, [0, 0.6], [1, 0.94]);
   const mockY = useTransform(scrollYProgress, [0, 1], [0, 40]);
 
-  // Cursor spotlight
   const mouseX = useMotionValue(50);
   const mouseY = useMotionValue(50);
   const smoothX = useSpring(mouseX, { stiffness: 50, damping: 18 });
@@ -44,62 +42,36 @@ export default function Hero() {
 
   return (
     <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Grid */}
       <div className="absolute inset-0 grid-bg opacity-60" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#FAFAFA]/20 to-[#FAFAFA]" />
 
-      {/* Parallax blob 1 — fast */}
       <motion.div
         style={{ y: blobY, opacity: fadeOut }}
         className="absolute -top-20 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full pointer-events-none"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.2 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }}
       >
-        <div style={{
-          width: '100%', height: '100%',
-          background: 'radial-gradient(ellipse, rgba(245,158,11,0.11) 0%, rgba(252,211,77,0.06) 45%, transparent 70%)',
-          filter: 'blur(50px)',
-        }} />
+        <div style={{ width: '100%', height: '100%', background: 'radial-gradient(ellipse, rgba(245,158,11,0.11) 0%, rgba(252,211,77,0.06) 45%, transparent 70%)', filter: 'blur(50px)' }} />
       </motion.div>
 
-      {/* Parallax blob 2 — slow */}
       <motion.div
         style={{ y: blobY2, opacity: fadeOut }}
         className="absolute top-32 right-[15%] w-[350px] h-[350px] rounded-full pointer-events-none"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.4, delay: 0.2 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 0.2 }}
       >
-        <div style={{
-          width: '100%', height: '100%',
-          background: 'radial-gradient(circle, rgba(251,191,36,0.09) 0%, transparent 70%)',
-          filter: 'blur(55px)',
-        }} />
+        <div style={{ width: '100%', height: '100%', background: 'radial-gradient(circle, rgba(251,191,36,0.09) 0%, transparent 70%)', filter: 'blur(55px)' }} />
       </motion.div>
 
-      {/* Cursor spotlight */}
       <div ref={containerRef} className="absolute inset-0 pointer-events-none">
-        <motion.div
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(480px circle at ${smoothX.get()}% ${smoothY.get()}%, rgba(245,158,11,0.055), transparent 65%)`,
-          }}
-        />
+        <motion.div className="absolute inset-0" style={{ background: `radial-gradient(480px circle at ${smoothX.get()}% ${smoothY.get()}%, rgba(245,158,11,0.055), transparent 65%)` }} />
       </div>
 
-      {/* Content — also parallax scrolls up */}
-      <motion.div
-        style={{ y: textY, opacity: fadeOut, scale: scaleDown }}
-        className="relative max-w-6xl mx-auto px-6 text-center"
-      >
+      <motion.div style={{ y: textY, opacity: fadeOut, scale: scaleDown }} className="relative max-w-6xl mx-auto px-6 text-center">
         <motion.div variants={stagger(0.09)} initial="hidden" animate="show" className="flex flex-col items-center gap-6">
 
-          {/* Badge row */}
           <motion.div variants={blurUp} className="flex flex-wrap justify-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700">
               <Sparkles size={11} />
-              Now with AI-powered search
+              Smart document intelligence
             </span>
             {BADGES.map((b) => (
               <span key={b} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-500 shadow-sm">
@@ -109,20 +81,17 @@ export default function Hero() {
             ))}
           </motion.div>
 
-          {/* Headline */}
           <motion.h1 variants={blurUp} className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.08]">
-            <span className="text-slate-900">QA Asset Management,</span>
+            <span className="text-slate-900">One place for all</span>
             <br />
-            <span className="text-gradient">Finally Organized.</span>
+            <span className="text-gradient">your documents.</span>
           </motion.h1>
 
-          {/* Subheading */}
           <motion.p variants={fadeUp} className="max-w-2xl text-lg sm:text-xl text-slate-500 leading-relaxed">
-            Qlarity centralizes your QA files, knowledge base, and test data in one platform —
-            with approval workflows, audit trails, and role-based access built in.
+            Qlarity is a modern document management system — store, version, review, and publish
+            files across your organization with approval workflows and audit trails built in.
           </motion.p>
 
-          {/* CTAs */}
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">
             <motion.a href="/register" whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.96 }}
               className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-7 py-3.5 rounded-xl text-sm transition-colors glow-amber-sm">
@@ -135,22 +104,19 @@ export default function Hero() {
             </motion.a>
           </motion.div>
 
-          {/* Social proof */}
           <motion.div variants={fadeUp} className="flex items-center gap-4">
             <div className="flex -space-x-2">
               {['#F59E0B', '#6366F1', '#10B981', '#3B82F6'].map((c, i) => (
-                <div key={i} className="w-7 h-7 rounded-full border-2 border-white shadow-sm flex items-center justify-center text-xs font-bold text-white" style={{ background: c }} />
+                <div key={i} className="w-7 h-7 rounded-full border-2 border-white shadow-sm" style={{ background: c }} />
               ))}
             </div>
             <p className="text-xs text-slate-400">
-              Trusted by <span className="text-slate-700 font-medium">500+ QA teams</span> · No credit card required
+              Trusted by <span className="text-slate-700 font-medium">500+ teams</span> · No credit card required
             </p>
           </motion.div>
 
-          {/* App preview — slower parallax */}
+          {/* App preview */}
           <motion.div variants={fadeUp} style={{ y: mockY }} className="relative mt-8 w-full max-w-4xl">
-
-            {/* Floating stat cards */}
             {FLOAT_CARDS.map((card) => (
               <motion.div
                 key={card.label}
@@ -168,7 +134,6 @@ export default function Hero() {
               </motion.div>
             ))}
 
-            {/* Mock window */}
             <motion.div
               initial={{ opacity: 0, y: 40, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -181,37 +146,37 @@ export default function Hero() {
                 <div className="w-3 h-3 rounded-full bg-yellow-400" />
                 <div className="w-3 h-3 rounded-full bg-green-400" />
                 <div className="flex-1 mx-4 bg-white border border-slate-200 rounded-md h-5 flex items-center px-3 shadow-sm">
-                  <span className="text-slate-400 text-xs">app.qlarity.io/files</span>
+                  <span className="text-slate-400 text-xs">app.qlarity.io/documents</span>
                 </div>
                 <div className="w-16 h-5 bg-amber-50 border border-amber-200 rounded text-amber-600 text-[10px] flex items-center justify-center font-semibold">LIVE</div>
               </div>
 
               <div className="bg-white p-6 min-h-[320px] flex gap-4">
                 <div className="hidden sm:flex flex-col gap-2 w-44 flex-shrink-0">
-                  {['Dashboard', 'Repositories', 'File Manager', 'Knowledge Base', 'Test Data'].map((navItem, i) => (
-                    <div key={navItem} className={`h-8 rounded-lg flex items-center px-3 text-xs ${i === 2 ? 'bg-amber-50 text-amber-700 border border-amber-200 font-medium' : 'bg-slate-50 text-slate-500 border border-transparent'}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${i === 2 ? 'bg-amber-500' : 'bg-slate-300'}`} />
+                  {['Dashboard', 'Documents', 'Shared with Me', 'Templates', 'Archive'].map((navItem, i) => (
+                    <div key={navItem} className={`h-8 rounded-lg flex items-center px-3 text-xs ${i === 1 ? 'bg-amber-50 text-amber-700 border border-amber-200 font-medium' : 'bg-slate-50 text-slate-500 border border-transparent'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${i === 1 ? 'bg-amber-500' : 'bg-slate-300'}`} />
                       {navItem}
                     </div>
                   ))}
                 </div>
                 <div className="flex-1 flex flex-col gap-3">
                   <div className="flex items-center justify-between mb-1">
-                    <div className="h-5 bg-slate-100 rounded w-32" />
+                    <div className="h-5 bg-slate-100 rounded w-28" />
                     <div className="h-7 bg-amber-50 border border-amber-200 rounded-lg w-24" />
                   </div>
                   {[
-                    { name: 'TC_Login_Flow_v3.xlsx', status: 'approved', color: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
-                    { name: 'API_Regression_Suite.json', status: 'under review', color: 'bg-amber-50 text-amber-700 border border-amber-200' },
-                    { name: 'UI_Smoke_Test_Data.csv', status: 'draft', color: 'bg-slate-100 text-slate-500 border border-slate-200' },
-                    { name: 'Performance_Baseline.xlsx', status: 'published', color: 'bg-blue-50 text-blue-700 border border-blue-200' },
+                    { name: 'Q4_Finance_Report_v2.pdf', status: 'approved', color: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+                    { name: 'Employee_Handbook_2025.docx', status: 'in review', color: 'bg-amber-50 text-amber-700 border border-amber-200' },
+                    { name: 'Product_Roadmap_Draft.pptx', status: 'draft', color: 'bg-slate-100 text-slate-500 border border-slate-200' },
+                    { name: 'Legal_NDA_Template.pdf', status: 'published', color: 'bg-blue-50 text-blue-700 border border-blue-200' },
                   ].map((file) => (
                     <motion.div key={file.name} whileHover={{ x: 4, transition: { duration: 0.15 } }}
                       className="flex items-center gap-3 bg-slate-50 hover:bg-white rounded-xl px-4 py-3 border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all cursor-default">
                       <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-slate-700 truncate font-medium">{file.name}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">Modified 2h ago</div>
+                        <div className="text-xs text-slate-400 mt-0.5">Updated 3h ago</div>
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${file.color}`}>{file.status}</span>
                     </motion.div>
@@ -225,7 +190,6 @@ export default function Hero() {
         </motion.div>
       </motion.div>
 
-      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
         style={{ opacity: useTransform(scrollYProgress, [0, 0.08], [1, 0]) }}

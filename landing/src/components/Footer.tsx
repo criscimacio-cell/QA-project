@@ -28,7 +28,7 @@ export default function Footer() {
               <span className="font-bold text-slate-900">Qlarity</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed max-w-[180px]">
-              QA asset management for teams that care about quality.
+              Modern document management for teams that care about control.
             </p>
           </motion.div>
 

@@ -46,7 +46,7 @@ export default function Navbar() {
           </motion.div>
           <span className="font-bold text-slate-900 tracking-tight">Qlarity</span>
           <span className="text-xs text-amber-600 font-medium hidden sm:inline px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200">
-            Asset Platform
+            Document Management
           </span>
         </a>
 

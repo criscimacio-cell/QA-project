@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticate, requireRole } from '../middleware/auth';
+import { authenticate, requireRole, RESERVED_ROLE_NAMES } from '../middleware/auth';
 import sql from '../db';
 
 const router = Router();
@@ -11,9 +11,8 @@ export const ADMIN_PERMISSIONS: Record<string, boolean> = {
   audit: true, users: true, settings: true, orgSettings: true,
 };
 
-// GET /org-settings/permissions
-// Returns: { admin: { all true }, customRole1: { ... }, customRole2: { ... } }
-router.get('/permissions', authenticate, async (req: Request, res: Response) => {
+// GET /org-settings/permissions — admin only
+router.get('/permissions', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [org] = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
   const stored = org?.role_permissions || {};
@@ -54,8 +53,8 @@ router.post('/roles', authenticate, requireRole('admin'), async (req: Request, r
     res.status(400).json({ error: 'Role name is required' }); return;
   }
   const roleName = name.trim().toLowerCase().replace(/\s+/g, '_');
-  if (roleName === 'admin') {
-    res.status(400).json({ error: 'Cannot create a role named admin' }); return;
+  if (RESERVED_ROLE_NAMES.has(roleName)) {
+    res.status(400).json({ error: 'Reserved role name' }); return;
   }
 
   const [org] = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
@@ -86,6 +85,8 @@ router.delete('/roles/:roleName', authenticate, requireRole('admin'), async (req
   const existing = { ...(org?.role_permissions || {}) };
   delete existing[roleName];
   await sql`UPDATE organizations SET role_permissions = ${sql.json(existing)} WHERE id = ${orgId}`;
+  // Reassign users who held the deleted role to 'viewer' so their tokens no longer pass custom-role checks
+  await sql`UPDATE users SET role = 'viewer' WHERE role = ${roleName} AND organization_id = ${orgId}`;
   res.json({ success: true });
 });
 

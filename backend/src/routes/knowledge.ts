@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import sql from '../db';
-import { authenticate, requireRole } from '../middleware/auth';
+import { authenticate, requireRole, requireModule } from '../middleware/auth';
 
 const router = Router();
 
@@ -44,7 +44,7 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
   res.json(article);
 });
 
-router.post('/', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.post('/', authenticate, requireModule('knowledge'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const { title, content, category, tags } = req.body;
   const orgId = req.user!.organizationId;
   const safeContent = (content || '').replace(/<script[\s\S]*?<\/script>/gi, '').replace(/on\w+\s*=/gi, 'data-removed=');
@@ -56,7 +56,7 @@ router.post('/', authenticate, requireRole('admin', 'lead', 'engineer'), async (
   res.json({ id });
 });
 
-router.put('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.put('/:id', authenticate, requireModule('knowledge'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const { title, content, category, tags, status } = req.body;
   const orgId = req.user!.organizationId;
   const [art] = await sql`SELECT author_id, status as current_status FROM knowledge_articles WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
@@ -73,7 +73,7 @@ router.put('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async
   res.json({ message: 'Updated' });
 });
 
-router.delete('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.delete('/:id', authenticate, requireModule('knowledge'), requireRole('admin', 'lead'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   if (req.user!.role === 'engineer') { res.status(403).json({ error: 'Forbidden: engineers cannot delete knowledge articles' }); return; }
   await sql`DELETE FROM knowledge_articles WHERE id = ${req.params.id} AND organization_id = ${orgId}`;

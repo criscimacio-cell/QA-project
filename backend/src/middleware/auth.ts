@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import sql from '../db';
 import { JwtPayload } from '../types';
 
 export const JWT_SECRET = () => {
@@ -29,17 +30,41 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+const HARDCODED_ROLES = ['admin', 'lead', 'engineer', 'viewer'];
+const RESERVED_ROLE_NAMES = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'hasOwnProperty', 'valueOf', 'admin', 'lead', 'engineer', 'viewer']);
+
+export { RESERVED_ROLE_NAMES };
+
 export const requireRole = (...roles: string[]) => (req: Request, res: Response, next: NextFunction): void => {
   const userRole = req.user?.role;
   if (!userRole) { res.status(401).json({ error: 'Unauthorized' }); return; }
-  // Admin always passes
   if (userRole === 'admin') { next(); return; }
-  // If only admin is allowed, deny non-admins
   if (roles.length === 1 && roles[0] === 'admin') { res.status(403).json({ error: 'Forbidden' }); return; }
-  // Hardcoded roles pass if in list
   if (roles.includes(userRole)) { next(); return; }
-  // Custom roles (not in the hardcoded list) pass for non-admin-only routes
-  const hardcodedRoles = ['admin', 'lead', 'engineer', 'viewer'];
-  if (!hardcodedRoles.includes(userRole)) { next(); return; }
+  // Custom roles are denied here — use requireModule for module-gated routes
+  if (!HARDCODED_ROLES.includes(userRole)) { res.status(403).json({ error: 'Forbidden' }); return; }
   res.status(403).json({ error: 'Forbidden' });
+};
+
+// requireModule checks role_permissions JSONB for custom roles, allowing fine-grained access control
+export const requireModule = (module: string) => async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const userRole = req.user?.role;
+  if (!userRole) { res.status(401).json({ error: 'Unauthorized' }); return; }
+  if (userRole === 'admin') { next(); return; }
+
+  if (!HARDCODED_ROLES.includes(userRole)) {
+    // Custom role — consult role_permissions in DB
+    try {
+      const [org] = await sql`SELECT role_permissions FROM organizations WHERE id = ${req.user!.organizationId}`;
+      const perms = org?.role_permissions?.[userRole];
+      if (perms?.[module] === true) { next(); return; }
+      res.status(403).json({ error: 'Forbidden' }); return;
+    } catch {
+      res.status(403).json({ error: 'Forbidden' }); return;
+    }
+  }
+
+  // Hardcoded roles (lead, engineer, viewer) pass if they're in the allowed list
+  // This keeps backward compatibility for routes that haven't migrated to requireModule yet
+  next();
 };

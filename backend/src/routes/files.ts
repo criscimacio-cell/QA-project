@@ -5,7 +5,7 @@ import fs from 'fs';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const archiver = require('archiver') as (format: string, opts?: object) => import('archiver').Archiver;
 import sql from '../db';
-import { authenticate, requireRole } from '../middleware/auth';
+import { authenticate, requireRole, requireModule } from '../middleware/auth';
 import { sendApprovalNotification, sendUploadNotification } from '../mailer';
 
 const PLAN_STORAGE_LIMITS: Record<string, number> = {
@@ -88,6 +88,8 @@ router.get('/search', authenticate, asyncHandler(async (req: Request, res: Respo
   const { q } = req.query;
   if (!q || (q as string).trim().length < 2) { res.json([]); return; }
   const orgId = req.user!.organizationId;
+  const userId = req.user!.userId;
+  const isLead = ['admin', 'lead'].includes(req.user!.role);
   const term = '%' + (q as string).trim() + '%';
   const results = await sql`
     SELECT f.id, f.name, f.original_name, f.status, f.project, f.module, f.version, f.updated_at,
@@ -95,6 +97,7 @@ router.get('/search', authenticate, asyncHandler(async (req: Request, res: Respo
     FROM files f LEFT JOIN users u ON f.owner_id = u.id
     WHERE f.organization_id = ${orgId}
       AND f.status != 'archived'
+      ${!isLead ? sql`AND (f.owner_id = ${userId} OR f.status IN ('published','approved'))` : sql``}
       AND (f.name ILIKE ${term} OR f.original_name ILIKE ${term} OR f.description ILIKE ${term}
            OR f.tags ILIKE ${term} OR f.jira_ticket ILIKE ${term} OR f.project ILIKE ${term})
     ORDER BY f.updated_at DESC
@@ -120,7 +123,7 @@ router.get('/export', authenticate, requireRole('admin', 'lead'), async (req: Re
   res.send([header, ...rows].join('\n'));
 });
 
-router.post('/bulk-action', authenticate, requireRole('admin', 'lead', 'engineer'), async (req, res) => {
+router.post('/bulk-action', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req, res) => {
   const { ids, action } = req.body as { ids: number[]; action: 'archive' | 'delete' | 'submit' };
   if (!ids?.length || !action) { res.status(400).json({ error: 'ids and action required' }); return; }
   if (action === 'delete' && req.user!.role !== 'admin') { res.status(403).json({ error: 'Forbidden: only admins can bulk delete' }); return; }
@@ -153,7 +156,7 @@ router.post('/bulk-action', authenticate, requireRole('admin', 'lead', 'engineer
   res.json({ message: `Bulk ${action} complete`, count: ids.length });
 });
 
-router.post('/bulk-download', authenticate, async (req: Request, res: Response) => {
+router.post('/bulk-download', authenticate, requireModule('files'), async (req: Request, res: Response) => {
   const { ids } = req.body as { ids: number[] };
   if (!ids?.length) { res.status(400).json({ error: 'No file ids provided' }); return; }
   const orgId = req.user!.organizationId;
@@ -187,7 +190,7 @@ router.post('/bulk-download', authenticate, async (req: Request, res: Response) 
   await archive.finalize();
 });
 
-router.post('/bulk-submit', authenticate, requireRole('admin', 'lead', 'engineer'), async (req, res) => {
+router.post('/bulk-submit', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req, res) => {
   const { ids } = req.body as { ids: number[] };
   if (!ids?.length) { res.status(400).json({ error: 'ids required' }); return; }
   const orgId = req.user!.organizationId;
@@ -230,7 +233,7 @@ router.get('/:id/versions', authenticate, async (req: Request, res: Response) =>
   res.json(versions);
 });
 
-router.post('/upload', authenticate, requireRole('admin', 'lead', 'engineer'), upload.single('file'), async (req: Request, res: Response) => {
+router.post('/upload', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), upload.single('file'), async (req: Request, res: Response) => {
   const { repository_id, project, module, category, jira_ticket, tags, description, version, change_log } = req.body;
   const orgId = req.user!.organizationId;
   const f = req.file;
@@ -270,7 +273,7 @@ router.post('/upload', authenticate, requireRole('admin', 'lead', 'engineer'), u
   res.json({ id: fileId, version: newVersion, message: existing ? `New version ${newVersion} created` : 'File uploaded successfully' });
 });
 
-router.post('/bulk-upload', authenticate, requireRole('admin', 'lead', 'engineer'), upload.array('files', 20), async (req: Request, res: Response) => {
+router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), upload.array('files', 20), async (req: Request, res: Response) => {
   const files = req.files as Express.Multer.File[];
   if (!files?.length) { res.status(400).json({ error: 'No files attached' }); return; }
   const { repository_id, project, module, category } = req.body;
@@ -293,7 +296,7 @@ router.post('/bulk-upload', authenticate, requireRole('admin', 'lead', 'engineer
   res.json({ uploaded: results.length, files: results });
 });
 
-router.put('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.put('/:id', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const { name, project, module, category, jira_ticket, tags, description } = req.body;
   const orgId = req.user!.organizationId;
   if (req.user!.role === 'engineer') {
@@ -304,7 +307,7 @@ router.put('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async
   res.json({ message: 'Updated' });
 });
 
-router.post('/:id/submit', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.post('/:id/submit', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   if (req.user!.role === 'engineer') {
     const [file] = await sql`SELECT owner_id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
@@ -366,7 +369,7 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
   res.json({ message: 'Status updated', status: effectiveStatus });
 });
 
-router.post('/:id/archive', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.post('/:id/archive', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [file] = await sql`SELECT status, owner_id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }

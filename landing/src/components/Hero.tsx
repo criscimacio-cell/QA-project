@@ -10,25 +10,22 @@ const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 export default function Hero() {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const spotlightRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
 
   const blobY = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const blobY2 = useTransform(scrollYProgress, [0, 1], [0, 60]);
-  const textY = useTransform(scrollYProgress, [0, 1], [0, 40]);
-  // Only opacity is GPU-accelerated as a standalone FM prop; scale is not — removed scaleDown
-  const fadeOut = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const textY = useTransform(scrollYProgress, [0, 0.3], [0, 30]);
+  const fadeOut = useTransform(scrollYProgress, [0, 0.25], [1, 0]);
 
   const mouseX = useMotionValue(50);
   const mouseY = useMotionValue(50);
   const smoothX = useSpring(mouseX, { stiffness: 50, damping: 18 });
   const smoothY = useSpring(mouseY, { stiffness: 50, damping: 18 });
-
-  // Reactive cursor spotlight using useMotionTemplate so it updates on every frame
   const spotlightBg = useMotionTemplate`radial-gradient(480px circle at ${smoothX}% ${smoothY}%, rgba(245,158,11,0.055), transparent 65%)`;
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = spotlightRef.current;
     if (!el) return;
     const handler = (e: MouseEvent) => {
       const rect = el.getBoundingClientRect();
@@ -38,59 +35,6 @@ export default function Hero() {
     el.addEventListener('mousemove', handler);
     return () => el.removeEventListener('mousemove', handler);
   }, [mouseX, mouseY]);
-
-  const titleComponent = (
-    <motion.div variants={stagger(0.09)} initial="hidden" animate="show" className="flex flex-col items-center gap-6">
-      <motion.div variants={blurUp} className="flex flex-wrap justify-center gap-2">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700">
-          <Sparkles size={11} />
-          Now in early access
-        </span>
-        {BADGES.map((b) => (
-          <span key={b} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-500 shadow-sm">
-            <CheckCircle2 size={11} className="text-amber-500" />
-            {b}
-          </span>
-        ))}
-      </motion.div>
-
-      <motion.h1
-        variants={blurUp}
-        aria-label="One place for all your documents."
-        className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.12]"
-      >
-        <span className="text-slate-900">One place for all</span>
-        <br />
-        <span className="text-gradient">your documents.</span>
-      </motion.h1>
-
-      <motion.p variants={fadeUp} className="max-w-2xl text-lg sm:text-xl text-slate-500 leading-relaxed">
-        Qlarity is a modern document management system — store, version, review, and publish
-        files across your organization with approval workflows and audit trails built in.
-      </motion.p>
-
-      <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">
-        <MagneticButton
-          href="/register"
-          className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors glow-amber-sm focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
-        >
-          Start for Free <ArrowRight size={16} />
-        </MagneticButton>
-        <MagneticButton
-          href="#how-it-works"
-          strength={0.22}
-          className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-8 py-3.5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
-        >
-          <Play size={14} className="fill-current text-amber-500" />
-          See How It Works
-        </MagneticButton>
-      </motion.div>
-
-      <motion.div variants={fadeUp}>
-        <p className="text-xs text-slate-500">No credit card required · Free to get started</p>
-      </motion.div>
-    </motion.div>
-  );
 
   const mockContent = (
     <div aria-hidden="true" className="h-full flex gap-4 p-2">
@@ -128,51 +72,103 @@ export default function Hero() {
   );
 
   return (
-    <section ref={ref} className="relative overflow-hidden min-h-screen pt-20">
-      <div className="absolute inset-0 grid-bg opacity-60" aria-hidden="true" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#FAFAFA]/20 to-[#FAFAFA]" aria-hidden="true" />
+    <section ref={ref} className="relative overflow-hidden">
+      {/* Shared backgrounds */}
+      <div className="absolute inset-0 grid-bg opacity-60 pointer-events-none" aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#FAFAFA]/20 to-[#FAFAFA] pointer-events-none" aria-hidden="true" />
 
-      <motion.div
-        style={{ y: blobY, opacity: fadeOut }}
-        aria-hidden="true"
+      <motion.div style={{ y: blobY }} aria-hidden="true"
         className="absolute -top-20 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full pointer-events-none"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }}
-      >
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }}>
         <div style={{ width: '100%', height: '100%', background: 'radial-gradient(ellipse, rgba(245,158,11,0.11) 0%, rgba(252,211,77,0.06) 45%, transparent 70%)', filter: 'blur(50px)' }} />
       </motion.div>
-
-      <motion.div
-        style={{ y: blobY2, opacity: fadeOut }}
-        aria-hidden="true"
+      <motion.div style={{ y: blobY2 }} aria-hidden="true"
         className="absolute top-32 right-[15%] w-[350px] h-[350px] rounded-full pointer-events-none"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 0.2 }}
-      >
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 0.2 }}>
         <div style={{ width: '100%', height: '100%', background: 'radial-gradient(circle, rgba(251,191,36,0.09) 0%, transparent 70%)', filter: 'blur(55px)' }} />
       </motion.div>
 
-      {/* Cursor spotlight — reactive via useMotionTemplate */}
-      <div ref={containerRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Cursor spotlight */}
+      <div ref={spotlightRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <motion.div className="absolute inset-0" style={{ background: spotlightBg }} />
       </div>
 
-      <motion.div style={{ y: textY, opacity: fadeOut }} className="relative">
-        <ContainerScroll titleComponent={titleComponent}>
-          {mockContent}
-        </ContainerScroll>
-      </motion.div>
-
+      {/* ── Above-fold text block — full viewport height ── */}
       <motion.div
-        aria-hidden="true"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
-        style={{ opacity: useTransform(scrollYProgress, [0, 0.08], [1, 0]) }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
+        style={{ y: textY, opacity: fadeOut }}
+        className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-16 px-6"
       >
-        <span className="text-xs text-slate-400">Scroll to explore</span>
-        <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-5 h-8 rounded-full border border-slate-300 flex items-start justify-center pt-1.5">
-          <div className="w-1 h-2 bg-amber-500/60 rounded-full" />
+        <motion.div variants={stagger(0.09)} initial="hidden" animate="show" className="flex flex-col items-center gap-6 text-center max-w-4xl mx-auto">
+          <motion.div variants={blurUp} className="flex flex-wrap justify-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700">
+              <Sparkles size={11} />
+              Now in early access
+            </span>
+            {BADGES.map((b) => (
+              <span key={b} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-500 shadow-sm">
+                <CheckCircle2 size={11} className="text-amber-500" />
+                {b}
+              </span>
+            ))}
+          </motion.div>
+
+          <motion.h1
+            variants={blurUp}
+            aria-label="One place for all your documents."
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.12]"
+          >
+            <span className="text-slate-900">One place for all</span>
+            <br />
+            <span className="text-gradient">your documents.</span>
+          </motion.h1>
+
+          <motion.p variants={fadeUp} className="max-w-2xl text-lg sm:text-xl text-slate-500 leading-relaxed">
+            Qlarity is a modern document management system — store, version, review, and publish
+            files across your organization with approval workflows and audit trails built in.
+          </motion.p>
+
+          <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">
+            <MagneticButton
+              href="/register"
+              className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors glow-amber-sm focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+            >
+              Start for Free <ArrowRight size={16} />
+            </MagneticButton>
+            <MagneticButton
+              href="#how-it-works"
+              strength={0.22}
+              className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-8 py-3.5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+            >
+              <Play size={14} className="fill-current text-amber-500" />
+              See How It Works
+            </MagneticButton>
+          </motion.div>
+
+          <motion.div variants={fadeUp}>
+            <p className="text-xs text-slate-500">No credit card required · Free to get started</p>
+          </motion.div>
+        </motion.div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          aria-hidden="true"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
+        >
+          <span className="text-xs text-slate-400">Scroll to explore</span>
+          <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-5 h-8 rounded-full border border-slate-300 flex items-start justify-center pt-1.5">
+            <div className="w-1 h-2 bg-amber-500/60 rounded-full" />
+          </motion.div>
         </motion.div>
       </motion.div>
+
+      {/* ── 3D device mockup — scroll-triggered ── */}
+      <div className="relative">
+        <ContainerScroll titleComponent={null}>
+          {mockContent}
+        </ContainerScroll>
+      </div>
     </section>
   );
 }

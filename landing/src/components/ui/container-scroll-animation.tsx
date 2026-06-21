@@ -5,7 +5,7 @@ export function ContainerScroll({
   titleComponent,
   children,
 }: {
-  titleComponent: string | React.ReactNode;
+  titleComponent?: string | React.ReactNode;
   children: React.ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,7 +35,7 @@ export function ContainerScroll({
         className="py-10 md:py-40 w-full relative"
         style={{ perspective: '1000px' }}
       >
-        <Header translate={translate} titleComponent={titleComponent} />
+        {titleComponent && <Header translate={translate} titleComponent={titleComponent} />}
         <Card rotate={rotate} scale={scale}>
           {children}
         </Card>

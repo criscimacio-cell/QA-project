@@ -21,7 +21,7 @@ interface PermissionsContextType {
 const PermissionsContext = createContext<PermissionsContextType>({
   permissions: DEFAULT_PERMISSIONS,
   loading: false,
-  canAccess: () => true,
+  canAccess: () => false,
   refresh: async () => {},
   customRoles: [],
 });

@@ -15,7 +15,6 @@ function generatePassword() {
   return Array.from(arr, b => chars[b % chars.length]).join('');
 }
 
-const ROLES = ['admin', 'lead', 'engineer', 'viewer'];
 
 const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise: Infinity };
 
@@ -29,7 +28,7 @@ export default function UserManagement() {
   const limit = 20;
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ name: '', email: '', role: 'engineer', department: '', active: 1 });
+  const [form, setForm] = useState({ name: '', email: '', role: allRoles[1] ?? allRoles[0] ?? '', department: '', active: 1 });
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -81,7 +80,7 @@ export default function UserManagement() {
 
   const closeModal = () => {
     setShowModal(false); setEditing(null); setErrors({});
-    setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 });
+    setForm({ name: '', email: '', role: allRoles[1] ?? allRoles[0] ?? '', department: '', active: 1 });
     setPassword(''); setShowPw(false); setCopied(false);
   };
 
@@ -156,7 +155,7 @@ export default function UserManagement() {
 
   const roleCount = (role: string) => users.filter(u => u.role === role).length;
 
-  const roleLabel = (r: string) => r === 'admin' ? 'Admin' : r === 'lead' ? 'Lead' : r === 'engineer' ? 'Engineer' : 'Viewer';
+  const roleLabel = (r: string) => r.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   const orgPlan = (user as any)?.org_plan ?? 'free';
   const userLimit = PLAN_USER_LIMITS[orgPlan] ?? 5;
@@ -172,7 +171,7 @@ export default function UserManagement() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Manage team members and access control</p>
         </div>
         {isAdmin && (
-          <button onClick={() => { setEditing(null); setErrors({}); setForm({ name: '', email: '', role: 'engineer', department: '', active: 1 }); setShowModal(true); }} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>
+          <button onClick={() => { setEditing(null); setErrors({}); setForm({ name: '', email: '', role: allRoles[1] ?? allRoles[0] ?? '', department: '', active: 1 }); setShowModal(true); }} className="btn-primary" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>
             <Plus size={16} /> Add User
           </button>
         )}

@@ -32,6 +32,7 @@ export default function UserManagement() {
   const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [confirmToggle, setConfirmToggle] = useState<any>(null);
   const [toggling, setToggling] = useState(false);
 
@@ -41,6 +42,7 @@ export default function UserManagement() {
   const [successPwVisible, setSuccessPwVisible] = useState(false);
 
   const load = async () => {
+    setLoading(true);
     try {
       const r = await api.get('/users', { params: { limit, offset } });
       const data = r.data;
@@ -48,6 +50,8 @@ export default function UserManagement() {
       else { setUsers(data.users ?? []); setTotal(data.total ?? 0); }
     } catch {
       toast.error('Failed to load users');
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => { load(); }, [offset]);
@@ -205,6 +209,13 @@ export default function UserManagement() {
       {/* Permission Matrix */}
       <div className="card p-5">
         <h3 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4">Permission Matrix</h3>
+        {loading ? (
+          <div className="p-4 space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="shimmer-bg rounded-lg h-10" />
+            ))}
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -238,6 +249,7 @@ export default function UserManagement() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* User Table */}
@@ -282,15 +294,13 @@ export default function UserManagement() {
                   </td>
                 </tr>
               ))}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-400 dark:text-slate-500">No users found</td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
       </div>
+      {users.length === 0 && !loading && (
+        <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-sm">No users found</div>
+      )}
       <div className="px-4 pb-4">
         <Pagination total={total} limit={limit} offset={offset} onPageChange={setOffset} />
       </div>

@@ -157,9 +157,9 @@ export default function ApprovalWorkflow() {
 
       {/* Kanban */}
       {loading ? (
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {STAGES.map(s => (
-            <div key={s.key} className="flex-shrink-0 w-64 space-y-3">
+        <div className="grid grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-3">
               <div className="shimmer-bg h-8 rounded-lg" />
               <div className="shimmer-bg h-24 rounded-xl" />
               <div className="shimmer-bg h-24 rounded-xl" />

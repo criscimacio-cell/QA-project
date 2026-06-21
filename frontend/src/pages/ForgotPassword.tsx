@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, Mail, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
+import { Layers, Mail, ArrowLeft, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import api from '../api/client';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
@@ -73,7 +73,8 @@ export default function ForgotPassword() {
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl mb-4 text-sm text-red-600 dark:text-red-400">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm mb-4">
+                  <AlertCircle size={15} className="flex-shrink-0" />
                   {error}
                 </div>
               )}

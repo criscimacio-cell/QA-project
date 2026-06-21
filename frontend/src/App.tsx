@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Component, ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PermissionsProvider } from './context/PermissionsContext';
 
 /* ── Error Boundary ── */
 interface ErrorBoundaryState { hasError: boolean; }
@@ -117,11 +118,13 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <BrowserRouter>
-            <LogoutProvider>
-              <AppRoutes />
-            </LogoutProvider>
-          </BrowserRouter>
+          <PermissionsProvider>
+            <BrowserRouter>
+              <LogoutProvider>
+                <AppRoutes />
+              </LogoutProvider>
+            </BrowserRouter>
+          </PermissionsProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

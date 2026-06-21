@@ -5,11 +5,19 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api/client';
 import ConfirmModal from '../components/UI/ConfirmModal';
+import { usePermissions, RolePermissions, ModuleKey } from '../context/PermissionsContext';
 
 export default function Settings() {
   const { user, isAdmin, refreshUser } = useAuth();
   const { dark, mode: themeMode, setMode: setThemeMode } = useTheme();
   const [activeSection, setActiveSection] = useState('Appearance');
+  const { permissions, refresh: refreshPerms } = usePermissions();
+  const [rbacConfig, setRbacConfig] = useState<RolePermissions | null>(null);
+  const [rbacSaving, setRbacSaving] = useState(false);
+
+  useEffect(() => {
+    if (permissions) setRbacConfig(JSON.parse(JSON.stringify(permissions)));
+  }, [permissions]);
 
   // Notification preferences
   const [notifPrefs, setNotifPrefs] = useState({
@@ -162,7 +170,7 @@ export default function Settings() {
   const [allCategories, setAllCategories] = useState<any[]>([]);
   const [catLoading, setCatLoading] = useState(false);
   const [newCatName, setNewCatName] = useState('');
-  const [newCatType, setNewCatType] = useState<'file' | 'knowledge' | 'user_type'>('file');
+  const [newCatType, setNewCatType] = useState<'file' | 'knowledge'>('file');
   const [catSaving, setCatSaving] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: number; name: string } | null>(null);
   const [deletingCategory, setDeletingCategory] = useState(false);
@@ -214,6 +222,7 @@ export default function Settings() {
     { icon: Database, label: 'Storage' },
     { icon: Tag, label: 'Categories' },
     { icon: Key, label: 'API Access' },
+    ...(isAdmin ? [{ icon: Shield, label: 'Role Permissions' }] : []),
     ...(isAdmin ? [{ icon: Building2, label: 'Organization', href: '/org-settings' }] : []),
   ] as { icon: any; label: string; href?: string }[];
 
@@ -405,10 +414,9 @@ export default function Settings() {
                   </div>
                   <div>
                     <label className="label">Type</label>
-                    <select value={newCatType} onChange={e => setNewCatType(e.target.value as 'file' | 'knowledge' | 'user_type')} className="input">
+                    <select value={newCatType} onChange={e => setNewCatType(e.target.value as 'file' | 'knowledge')} className="input">
                       <option value="file">File</option>
                       <option value="knowledge">Knowledge</option>
-                      <option value="user_type">User Type</option>
                     </select>
                   </div>
                   <button onClick={addCategory} disabled={!newCatName.trim() || catSaving} className="btn-primary h-9">
@@ -422,9 +430,9 @@ export default function Settings() {
                 <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-[#F59E0B]" /></div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  {(['file', 'knowledge', 'user_type'] as const).map(type => {
+                  {(['file', 'knowledge'] as const).map(type => {
                     const cats = allCategories.filter(c => c.type === type);
-                    const label = type === 'file' ? 'File Categories' : type === 'knowledge' ? 'Knowledge Categories' : 'User Types';
+                    const label = type === 'file' ? 'File Categories' : 'Knowledge Categories';
                     return (
                       <div key={type}>
                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -613,6 +621,89 @@ export default function Settings() {
                 <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-2 py-0.5 rounded-full">Coming soon</span>
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">API key management coming soon.</p>
+            </div>
+          )}
+
+          {/* Role Permissions — admin only */}
+          {activeSection === 'Role Permissions' && isAdmin && rbacConfig && (
+            <div className="card p-5 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100">Role Permissions</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Control which modules each role can access. Admin always has full access.</p>
+              </div>
+
+              {/* Matrix */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Module</th>
+                      {(['lead', 'engineer', 'viewer'] as const).map(role => (
+                        <th key={role} className="py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-center capitalize">{role}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {([
+                      ['dashboard', 'Dashboard'],
+                      ['repositories', 'Repositories'],
+                      ['files', 'File Manager'],
+                      ['search', 'Search'],
+                      ['knowledge', 'Knowledge Base'],
+                      ['testData', 'Test Data Library'],
+                      ['approvals', 'Approval Workflow'],
+                      ['archive', 'Archive'],
+                      ['audit', 'Audit Log'],
+                      ['users', 'User Management'],
+                      ['orgSettings', 'Organization Settings'],
+                    ] as [ModuleKey, string][]).map(([key, label]) => (
+                      <tr key={key} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 font-medium">{label}</td>
+                        {(['lead', 'engineer', 'viewer'] as const).map(role => (
+                          <td key={role} className="py-2.5 px-3 text-center">
+                            <button
+                              onClick={() => {
+                                setRbacConfig(prev => {
+                                  if (!prev) return prev;
+                                  const next = JSON.parse(JSON.stringify(prev));
+                                  next[role][key] = !next[role][key];
+                                  return next;
+                                });
+                              }}
+                              className={`w-10 h-6 rounded-full transition-colors relative flex-shrink-0 inline-flex items-center ${rbacConfig[role]?.[key] ? 'bg-amber-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+                              title={rbacConfig[role]?.[key] ? 'Click to revoke' : 'Click to grant'}
+                            >
+                              <span className={`absolute w-5 h-5 bg-white rounded-full shadow transition-transform ${rbacConfig[role]?.[key] ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                            </button>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button onClick={() => setRbacConfig(JSON.parse(JSON.stringify(permissions)))} className="btn-ghost text-sm">Reset</button>
+                <button
+                  onClick={async () => {
+                    setRbacSaving(true);
+                    try {
+                      await api.put('/org-settings/permissions', { permissions: rbacConfig });
+                      await refreshPerms();
+                      toast.success('Role permissions saved');
+                    } catch {
+                      toast.error('Failed to save permissions');
+                    } finally {
+                      setRbacSaving(false);
+                    }
+                  }}
+                  disabled={rbacSaving}
+                  className="btn-primary text-sm"
+                >
+                  {rbacSaving ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
             </div>
           )}
         </div>

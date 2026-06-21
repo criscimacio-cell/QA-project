@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, Layers, Building2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { usePermissions, ModuleKey } from '../../context/PermissionsContext';
 import { useTheme } from '../../context/ThemeContext';
 import clsx from 'clsx';
 import OrgSwitcher from '../UI/OrgSwitcher';
@@ -74,15 +75,33 @@ const mainNav = [
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { user, isLead, isAdmin } = useAuth();
+  const { canAccess } = usePermissions();
+
+  const moduleMap: Record<string, ModuleKey> = {
+    '/': 'dashboard',
+    '/repositories': 'repositories',
+    '/files': 'files',
+    '/search': 'search',
+    '/knowledge': 'knowledge',
+    '/test-data': 'testData',
+  };
   const leadNav = [
     { to: '/approvals', icon: GitPullRequest, label: 'Approval Workflow' },
-  ];
+  ].filter(() => canAccess('approvals'));
   const adminNav = [
     { to: '/users', icon: Users, label: 'User Management' },
     { to: '/org-settings', icon: Building2, label: 'Organization' },
     { to: '/audit', icon: ShieldCheck, label: 'Audit Log' },
     { to: '/archive', icon: Archive, label: 'Archive' },
-  ];
+  ].filter(item => {
+    const adminModuleMap: Record<string, ModuleKey> = {
+      '/users': 'users',
+      '/org-settings': 'orgSettings',
+      '/audit': 'audit',
+      '/archive': 'archive',
+    };
+    return canAccess(adminModuleMap[item.to] ?? 'dashboard');
+  });
   const settingsNav = [
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
@@ -168,7 +187,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               </div>
             )}
             <div className="space-y-0.5">
-              {section.items.map((item, itemIdx) => {
+              {section.items.filter(item => canAccess(moduleMap[item.to] ?? 'dashboard')).map((item, itemIdx) => {
                 const sectionOffset = mainNav.indexOf(section);
                 const globalIdx = mainNav.slice(0, sectionOffset).reduce((acc, s) => acc + s.items.length, 0) + itemIdx;
                 return (

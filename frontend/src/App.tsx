@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Component, ReactNode } from 'react';
+import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PermissionsProvider } from './context/PermissionsContext';
 
@@ -117,6 +118,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
+        <Toaster position="top-right" richColors closeButton />
         <AuthProvider>
           <PermissionsProvider>
             <BrowserRouter>

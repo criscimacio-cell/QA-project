@@ -758,8 +758,8 @@ export default function Settings() {
                       const toSave = { ...rbacConfig };
                       delete toSave.admin;
                       await api.put('/org-settings/permissions', { permissions: toSave });
-                      await refreshPerms();
                       toast.success('Role permissions saved');
+                      await refreshPerms();
                     } catch {
                       toast.error('Failed to save permissions');
                     } finally {

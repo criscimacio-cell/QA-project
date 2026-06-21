@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+    TODO define vocabulary identification
+    PUBLIC ID: -//vendor//vocabulary//EN
+    SYSTEM ID: http://server/path/CF5.dtd
+
+-->
+
+<!--
+    An example how to use this DTD from your XML document:
+
+    <?xml version="1.0"?>
+
+    <!DOCTYPE CF5 SYSTEM "CF5.dtd">
+
+    <CF5>
+    ...
+    </CF5>
+-->
+
+<!---
+Put your DTDDoc comment here. -->
+<!ELEMENT CF5 (DRGCLAIM)>
+<!ATTLIST CF5 pHospitalCode CDATA #REQUIRED
+  >
+
+<!---
+Put your DTDDoc comment here. -->
+<!ELEMENT DRGCLAIM (SECONDARYDIAGS,PROCEDURES)>
+<!ATTLIST DRGCLAIM
+  ClaimNumber CDATA #REQUIRED
+  PrimaryCode CDATA #REQUIRED
+  NewBornAdmWeight CDATA #REQUIRED
+  Remarks CDATA #REQUIRED
+  >
+
+<!---
+Put your DTDDoc comment here. -->
+<!ELEMENT SECONDARYDIAGS (SECONDARYDIAG)*>
+
+<!---
+Put your DTDDoc comment here. -->
+<!ELEMENT SECONDARYDIAG EMPTY>
+<!ATTLIST SECONDARYDIAG
+  SecondaryCode CDATA #REQUIRED
+  Remarks CDATA #REQUIRED
+  >
+
+<!---
+Put your DTDDoc comment here. -->
+<!ELEMENT PROCEDURES (PROCEDURE)*>
+
+<!---
+Put your DTDDoc comment here. -->
+<!ELEMENT PROCEDURE EMPTY>
+<!ATTLIST PROCEDURE
+  RvsCode CDATA #REQUIRED
+  Laterality CDATA #REQUIRED
+  Ext1 CDATA #REQUIRED
+  Ext2 CDATA #REQUIRED
+  Remarks CDATA #REQUIRED>

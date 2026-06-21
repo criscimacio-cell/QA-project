@@ -1,0 +1,394 @@
+--- /mnt/user-data/uploads/core_checker.py	2026-06-17 00:48:09.003715000 +0000
++++ core_checker.py	2026-06-17 01:24:32.975762345 +0000
+@@ -71,16 +71,21 @@
+ # Library loader
+ # ─────────────────────────────────────────────
+ 
+-def load_libraries(libs_dir: str) -> dict:
++def load_libraries(libs_dir: str) -> tuple[dict, list[str]]:
+     """
+-    Returns a dict mapping library name → set of valid string codes.
+-    Codes come from column 0 (ID/Code column) of each Excel file.
++    Returns (libs, missing) where:
++      libs    = dict mapping library name -> set of valid string codes
++                Codes come from column 0 (ID/Code column) of each Excel file.
++      missing = list of expected filenames that were not found in libs_dir.
++                Any attribute whose lib_key is in `missing` was NOT checked
++                against a code list -- its values were accepted unverified.
+     """
+     if not HAS_OPENPYXL:
+         print("WARNING: openpyxl not installed – library lookups skipped.", file=sys.stderr)
+-        return {}
++        return {}, []
+ 
+     libs = {}
++    missing = []
+ 
+     mapping = {
+         # library key           : (filename,             sheet index, col index)
+@@ -115,6 +120,7 @@
+     for lib_key, (filename, sheet_idx, col_idx) in mapping.items():
+         path = os.path.join(libs_dir, filename)
+         if not os.path.isfile(path):
++            missing.append(filename)
+             continue
+         try:
+             wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+@@ -129,9 +135,10 @@
+                     codes.add(str(raw_code).strip())
+             libs[lib_key] = codes
+         except Exception as e:
++            missing.append(filename)
+             print(f"WARNING: Could not load {filename}: {e}", file=sys.stderr)
+ 
+-    return libs
++    return libs, missing
+ 
+ 
+ # ─────────────────────────────────────────────
+@@ -211,8 +218,8 @@
+ 
+     # ── ENLISTMENT ──────────────────────────────────────────────────
+     "ENLISTMENT": [
+-        _r("pHciCaseNo",             30),
+-        _r("pHciTransNo",            30),
++        _r("pHciCaseNo",             21),
++        _r("pHciTransNo",            21),
+         _r("pEffYear",                4),
+         _r("pEnlistStat",             1, {"1","2","3"}),
+         _r("pEnlistDate",            10, date=True),
+@@ -242,8 +249,8 @@
+ 
+     # ── PROFILE ─────────────────────────────────────────────────────
+     "PROFILE": [
+-        _r("pHciTransNo",            30),
+-        _r("pHciCaseNo",             30),
++        _r("pHciTransNo",            21),
++        _r("pHciCaseNo",             21),
+         _r("pProfDate",              10, date=True),
+         _r("pPatientPin",            12),
+         _r("pPatientType",            2, MMDD_VALS),
+@@ -420,8 +427,8 @@
+ 
+     # ── SOAP ─────────────────────────────────────────────────────────
+     "SOAP": [
+-        _r("pHciCaseNo",             30),
+-        _r("pHciTransNo",            30),
++        _r("pHciCaseNo",             21),
++        _r("pHciTransNo",            21),
+         _r("pSoapDate",              10, date=True),
+         _r("pPatientPin",            12),
+         _r("pPatientType",            2, MMDD_VALS),
+@@ -497,9 +504,9 @@
+ 
+     # ── MEDICINE ─────────────────────────────────────────────────────
+     "MEDICINE": [
+-        _r("pHciCaseNo",             30),
+-        _r("pHciTransNo",            30),
+-        _r("pCategory",              50, {"NCD","ANTIBIOTIC","OTHERS","-",""}),
++        _r("pHciCaseNo",             21),
++        _r("pHciTransNo",            21),
++        _r("pCategory",              50),
+         _r("pDrugCode",              30, lib="lib_medicine"),
+         _r("pGenericCode",            5, lib="lib_medicine_generic"),
+         _r("pSaltCode",               5, lib="lib_medicine_salt"),
+@@ -508,7 +515,7 @@
+         _r("pUnitCode",               5, lib="lib_medicine_unit"),
+         _r("pPackageCode",            5, lib="lib_medicine_package"),
+         _r("pOtherMedicine",        500),
+-        _r("pOthMedDrugGrouping",    50),
++        _r("pOthMedDrugGrouping",    50, {"NCD","ANTIBIOTIC","OTHERS"}),
+         _r("pRoute",                500),
+         _r("pQuantity",            None, num=True),
+         _r("pActualUnitPrice",     None, num=True),
+@@ -528,8 +535,8 @@
+ 
+     # ── DIAGNOSTICEXAMRESULT header ──────────────────────────────────
+     "DIAGNOSTICEXAMRESULT": [
+-        _r("pHciCaseNo",             30),
+-        _r("pHciTransNo",            30),
++        _r("pHciCaseNo",             21),
++        _r("pHciTransNo",            21),
+         _r("pPatientPin",            12),
+         _r("pPatientType",            2, MMDD_VALS),
+         _r("pMemPin",                12),
+@@ -620,8 +627,8 @@
+     "SPUTUM": [
+         _r("pReferralFacility",    1000),
+         _r("pLabDate",               10, date=True),
+-        _r("pDataCollection",      None, {"S1","S2","S3",""}),
+-        _r("pFindings",            None, {"P","N",""}),
++        _r("pDataCollection",         1, {"1","2","3","X"}),
++        _r("pFindings",               1, {"1","2"}, num=True),
+         _r("pRemarks",             2000),
+         _r("pNoPlusses",             50),
+         _r("pDateAdded",             10, date=True),
+@@ -690,13 +697,13 @@
+     "FECALYSIS": [
+         _r("pReferralFacility",    1000),
+         _r("pLabDate",               10, date=True),
+-        _r("pColor",                 50),
+-        _r("pConsistency",           50),
++        _r("pColor",                 50, {"1","2","3","4","5","6"}, num=True),
++        _r("pConsistency",           50, {"1","2","3","4","5","6"}, num=True),
+         _r("pRbc",                   50),
+         _r("pWbc",                   50),
+         _r("pOva",                   50),
+         _r("pParasite",              50),
+-        _r("pBlood",                 50),
++        _r("pBlood",                 50, {"P","A"}),
+         _r("pPusCells",              50),
+         _r("pDateAdded",             10, date=True),
+         _r("pStatus",                 1, LAB_STATUS),
+@@ -739,7 +746,7 @@
+     "FOBT": [
+         _r("pReferralFacility",    1000),
+         _r("pLabDate",               10, date=True),
+-        _r("pFindings",            2000),
++        _r("pFindings",               1, {"P","N"}),
+         _r("pDateAdded",             10, date=True),
+         _r("pStatus",                 1, LAB_STATUS),
+         _r("pDiagnosticLabFee",    None, num=True),
+@@ -763,7 +770,7 @@
+     "PPDTest": [
+         _r("pReferralFacility",    1000),
+         _r("pLabDate",               10, date=True),
+-        _r("pFindings",            2000),
++        _r("pFindings",               1, {"P","N"}),
+         _r("pDateAdded",             10, date=True),
+         _r("pStatus",                 1, LAB_STATUS),
+         _r("pDiagnosticLabFee",    None, num=True),
+@@ -798,8 +805,8 @@
+ 
+     # ── DOCUMENT ─────────────────────────────────────────────────────
+     "DOCUMENT": [
+-        _r("pHciCaseNo",             30),
+-        _r("pHciTransNo",            30),
++        _r("pHciCaseNo",             21),
++        _r("pHciTransNo",            21),
+         _r("pPatientPin",            12),
+         _r("pPatientType",            2, MMDD_VALS),
+         _r("pMemPin",                12),
+@@ -880,13 +887,13 @@
+ 
+             # ── numeric check ────────────────────────────────────────
+             if num_flag and val and not is_number(val):
+-                result.add("WARNING", "TYPE",
++                result.add("ERROR", "TYPE",
+                     f"<{tag}> @{attr}='{val}' is not numeric",
+                     line=line, path=path)
+ 
+             # ── field length ─────────────────────────────────────────
+             if max_b and val and not check_length(val, max_b):
+-                result.add("WARNING", "DICT",
++                result.add("ERROR", "DICT",
+                     f"<{tag}> @{attr} value exceeds {max_b}-byte limit "
+                     f"({len(val.encode())} bytes)",
+                     line=line, path=path)
+@@ -1116,6 +1123,197 @@
+ 
+ 
+ # ─────────────────────────────────────────────
++# Primary-key uniqueness
++# ─────────────────────────────────────────────
++
++def check_unique_keys(root: etree._Element, result: Result):
++    """
++    pHciTransNo is documented as PK on ENLISTMENT, PROFILE, and SOAP
++    (each independently -- an ENLISTMENT pHciTransNo and a PROFILE
++    pHciTransNo are different keyspaces, e.g. 'E...' vs 'P...').
++    A duplicate within the same element type in the same document
++    would fail as a unique-constraint violation on ingest, but nothing
++    upstream of this function ever compares records against each other.
++    """
++    for tag in ("ENLISTMENT", "PROFILE", "SOAP"):
++        seen: dict[str, list] = {}
++        for elem in root.iter(tag):
++            key = _get(elem, "pHciTransNo")
++            if key:
++                seen.setdefault(key, []).append(getattr(elem, "sourceline", None))
++
++        for key, lines in seen.items():
++            if len(lines) > 1:
++                result.add("ERROR", "KEYS",
++                    f"<{tag}> @pHciTransNo='{key}' appears {len(lines)} times "
++                    f"in this document (PK must be unique) -- lines: "
++                    f"{', '.join(str(l) for l in lines if l is not None)}")
++
++
++# ─────────────────────────────────────────────
++# Structured-ID format checks
++# ─────────────────────────────────────────────
++# The data dictionary documents an exact composition for these IDs:
++#   pHciTransmittalNumber = R + 9-digit accreditation no. + YYYY + MM + 5-digit series
++#   ENLISTMENT.pHciTransNo = E + ... (same shape, 21 chars total)
++#   PROFILE.pHciTransNo    = P + ... (21 chars total)
++#   SOAP.pHciTransNo       = S + ... (21 chars total)
++#   pHciCaseNo (defined on ENLISTMENT, referenced elsewhere) =
++#       T + 9-digit accreditation no. + YYYY + MM + 4-digit series (20 chars total)
++# Only the prefix letter and digit-count are checked here (not whether the
++# embedded YYYY/MM is plausible) -- that's a more invasive check that would
++# need real submission-date context to avoid false positives.
++
++_ID_TRANSNO_RE = re.compile(r"^[A-Z]\d{20}$")   # prefix + 9+4+2+5 digits
++_ID_CASENO_RE  = re.compile(r"^[A-Z]\d{19}$")   # prefix + 9+4+2+4 digits
++
++def check_id_formats(root: etree._Element, result: Result):
++    transno_rules = [
++        ("PCB",         "pHciTransmittalNumber", "R"),
++        ("ENLISTMENT",  "pHciTransNo",            "E"),
++        ("PROFILE",     "pHciTransNo",            "P"),
++        ("SOAP",        "pHciTransNo",            "S"),
++    ]
++    for tag, attr, prefix in transno_rules:
++        for elem in root.iter(tag):
++            val = _get(elem, attr)
++            if not val:
++                continue
++            if not (val.startswith(prefix) and _ID_TRANSNO_RE.match(val)):
++                result.add("WARNING", "FORMAT",
++                    f"<{tag}> @{attr}='{val}' does not match the documented "
++                    f"format {prefix}+9-digit accreditation no.+YYYY+MM+5-digit "
++                    f"series ({prefix} followed by 20 digits)",
++                    line=getattr(elem, "sourceline", None))
++
++    for tag in ("ENLISTMENT", "PROFILE", "SOAP", "MEDICINE",
++                "DIAGNOSTICEXAMRESULT", "DOCUMENT"):
++        for elem in root.iter(tag):
++            val = _get(elem, "pHciCaseNo")
++            if not val:
++                continue
++            if not (val.startswith("T") and _ID_CASENO_RE.match(val)):
++                result.add("WARNING", "FORMAT",
++                    f"<{tag}> @pHciCaseNo='{val}' does not match the documented "
++                    f"format T+9-digit accreditation no.+YYYY+MM+4-digit series "
++                    f"(T followed by 19 digits)",
++                    line=getattr(elem, "sourceline", None))
++
++
++# ─────────────────────────────────────────────
++# Demographic-conditional rules
++# ─────────────────────────────────────────────
++
++def _age_months(dob_str: str, ref_str: str):
++    """Whole months between two YYYY-MM-DD dates, or None if unparsable."""
++    try:
++        dob = datetime.strptime(dob_str, "%Y-%m-%d")
++        ref = datetime.strptime(ref_str, "%Y-%m-%d")
++    except ValueError:
++        return None
++    months = (ref.year - dob.year) * 12 + (ref.month - dob.month)
++    if ref.day < dob.day:
++        months -= 1
++    return months
++
++
++_PEDIATRIC_PEPERT_FIELDS = ("pLength", "pHeadCirc", "pSkinfoldThickness",
++                            "pWaist", "pHip", "pLimbs", "pMidUpperArmCirc")
++
++
++def check_demographic_rules(root: etree._Element, result: Result):
++    """
++    MENSHIST / PREGHIST are documented 'For Female Patient Only'.
++    Several PEPERT measurements are documented as expected only for
++    patients aged 0-24 months. Neither is enforced anywhere else --
++    this cross-checks them against the linked ENLISTMENT's sex/DOB.
++    Both are WARNING-level: these are plausibility checks, not hard
++    structural rules, and edge cases (e.g. missing/garbled DOB) should
++    not fail a document outright.
++    """
++    enlistment_info = {}
++    for e in root.iter("ENLISTMENT"):
++        case_no = _get(e, "pHciCaseNo")
++        if case_no:
++            enlistment_info[case_no] = {
++                "sex": _get(e, "pPatientSex"),
++                "dob": _get(e, "pPatientDob"),
++            }
++
++    for profile in root.iter("PROFILE"):
++        case_no = _get(profile, "pHciCaseNo")
++        info = enlistment_info.get(case_no)
++        if not info:
++            continue   # already flagged by check_referential_integrity
++
++        if info["sex"] == "M":
++            for fem_tag in ("MENSHIST", "PREGHIST"):
++                fem = profile.find(f".//{fem_tag}")
++                if fem is not None and _get(fem, "pIsApplicable") == "Y":
++                    result.add("WARNING", "DEMO",
++                        f"<{fem_tag}> @pIsApplicable='Y' under PROFILE "
++                        f"pHciCaseNo='{case_no}', but the linked ENLISTMENT "
++                        f"@pPatientSex='M' -- {fem_tag} is documented as "
++                        "female-patient-only",
++                        line=getattr(fem, "sourceline", None))
++
++        prof_date = _get(profile, "pProfDate")
++        if info["dob"] and prof_date:
++            age_m = _age_months(info["dob"], prof_date)
++            if age_m is not None and 0 <= age_m <= 24:
++                pepert = profile.find(".//PEPERT")
++                if pepert is not None and not any(
++                        _get(pepert, f) for f in _PEDIATRIC_PEPERT_FIELDS):
++                    result.add("WARNING", "DEMO",
++                        f"<PROFILE> pHciCaseNo='{case_no}': patient is "
++                        f"{age_m} month(s) old at profiling -- pediatric "
++                        "anthropometric fields (pLength, pHeadCirc, pWaist, "
++                        "pHip, pLimbs, pSkinfoldThickness, pMidUpperArmCirc) "
++                        "are documented as expected for ages 0-24 months "
++                        "but are all blank",
++                        line=getattr(pepert, "sourceline", None))
++
++
++# ─────────────────────────────────────────────
++# Cross-record identity consistency
++# ─────────────────────────────────────────────
++
++def check_identity_consistency(root: etree._Element, result: Result):
++    """
++    check_referential_integrity confirms a pHciCaseNo points at *some*
++    ENLISTMENT. This confirms the patient identity fields on the linked
++    record actually agree with that ENLISTMENT, so a SOAP/MEDICINE/
++    DIAGNOSTICEXAMRESULT/PROFILE record can't reference a valid case
++    number while quietly carrying a different patient's PIN/type.
++    """
++    enrolled = {}
++    for e in root.iter("ENLISTMENT"):
++        case_no = _get(e, "pHciCaseNo")
++        if case_no:
++            enrolled[case_no] = {
++                "pMemPin":      _get(e, "pMemPin"),
++                "pPatientPin":  _get(e, "pPatientPin"),
++                "pPatientType": _get(e, "pPatientType"),
++            }
++
++    for tag in ("PROFILE", "SOAP", "MEDICINE", "DIAGNOSTICEXAMRESULT"):
++        for elem in root.iter(tag):
++            case_no = _get(elem, "pHciCaseNo")
++            ref = enrolled.get(case_no)
++            if not ref:
++                continue   # already flagged by check_referential_integrity
++            line = getattr(elem, "sourceline", None)
++            for attr, expected in ref.items():
++                val = _get(elem, attr)
++                if val and expected and val != expected:
++                    result.add("ERROR", "IDENTITY",
++                        f"<{tag}> @{attr}='{val}' does not match "
++                        f"<ENLISTMENT> @{attr}='{expected}' for the same "
++                        f"pHciCaseNo='{case_no}'",
++                        line=line)
++
++
++# ─────────────────────────────────────────────
+ # Reporting
+ # ─────────────────────────────────────────────
+ 
+@@ -1170,7 +1368,7 @@
+ 
+ def make_arg_parser(description: str) -> argparse.ArgumentParser:
+     script_dir = os.path.dirname(os.path.abspath(__file__))
+-    default_dtd  = os.path.join(script_dir, "KonsultaData_v1.14_1.dtd")
++    default_dtd  = os.path.join(script_dir, "KonsultaData_v1_14_1.dtd")
+     default_libs = os.path.join(script_dir, "LIBRARIES")
+ 
+     p = argparse.ArgumentParser(

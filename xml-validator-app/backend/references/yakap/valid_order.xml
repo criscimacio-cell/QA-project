@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Order id="ORD-00123" status="open">
+    <Customer id="CUST-001">
+        <Name>Alice Smith</Name>
+        <Email>alice@example.com</Email>
+    </Customer>
+    <LineItem sku="WD-10045" quantity="3" price="19.99"/>
+    <LineItem sku="AB-500"   quantity="1" price="5.00"/>
+    <Notes>Please gift-wrap the items.</Notes>
+</Order>

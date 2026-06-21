@@ -1,0 +1,674 @@
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT EPCB (ENLISTMENTS,PROFILING,SOAPS,COURSEWARDS,LABRESULTS,MEDICINES)>
+<!ATTLIST EPCB
+   pUsername CDATA #REQUIRED
+   pPassword CDATA #REQUIRED
+   pHciAccreNo CDATA #REQUIRED
+   pEnlistTotalCnt CDATA #REQUIRED
+   pProfileTotalCnt CDATA #REQUIRED
+   pSoapTotalCnt CDATA #REQUIRED
+   pEmrId CDATA #REQUIRED
+   pCertificationId CDATA #REQUIRED
+   pHciTransmittalNumber CDATA #REQUIRED 
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT ENLISTMENTS (ENLISTMENT)+>
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT ENLISTMENT EMPTY>
+<!ATTLIST ENLISTMENT
+   pEClaimId CDATA #REQUIRED
+   pEClaimsTransmittalId CDATA #REQUIRED
+   pHciCaseNo CDATA #REQUIRED
+   pHciTransNo CDATA #REQUIRED
+   pEffYear CDATA #REQUIRED
+   pEnlistStat CDATA #REQUIRED
+   pEnlistDate CDATA #REQUIRED
+   pPackageType (P|E|A) #REQUIRED
+   pMemPin CDATA #REQUIRED
+   pMemFname CDATA #REQUIRED
+   pMemMname CDATA #REQUIRED
+   pMemLname CDATA #REQUIRED
+   pMemExtname CDATA #REQUIRED
+   pMemDob CDATA #REQUIRED
+   pMemCat CDATA #REQUIRED
+   pMemNcat CDATA #REQUIRED
+   pPatientPin CDATA #REQUIRED
+   pPatientFname CDATA #REQUIRED
+   pPatientMname CDATA #REQUIRED
+   pPatientLname CDATA #REQUIRED
+   pPatientExtname CDATA #REQUIRED
+   pPatientType CDATA #REQUIRED
+   pPatientSex (M|F) #REQUIRED
+   pPatientContactno CDATA #REQUIRED
+   pPatientDob CDATA #REQUIRED
+   pPatientAddbrgy CDATA #REQUIRED
+   pPatientAddmun CDATA #REQUIRED
+   pPatientAddprov CDATA #REQUIRED
+   pPatientAddreg CDATA #REQUIRED
+   pPatientAddzipcode CDATA #REQUIRED
+   pCivilStatus (S|M|W|X|A|U) #REQUIRED
+   pWithConsent (Y|N|X) #REQUIRED
+   pWithLoa (Y|N|X) #REQUIRED
+   pWithDisability (Y|N|X) #REQUIRED
+   pDependentType (S|C|P|X) #REQUIRED
+   pTransDate CDATA #REQUIRED
+   pCreatedBy CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   pAvailFreeService (Y|N|X) #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT PROFILING (PROFILE)+>
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT PROFILE (OINFO,MEDHIST+,MHSPECIFIC+,SURGHIST+,FAMHIST+,FHSPECIFIC+,SOCHIST,IMMUNIZATION+,MENSHIST,PREGHIST,PEPERT,BLOODTYPE,PEGENSURVEY,PEMISC+,PESPECIFIC+,DIAGNOSTIC+,MANAGEMENT+,ADVICE,NCDQANS)>
+<!ATTLIST PROFILE
+   pHciTransNo CDATA #REQUIRED
+   pHciCaseNo CDATA #REQUIRED
+   pPatientPin CDATA #REQUIRED
+   pPatientType CDATA #REQUIRED
+   pMemPin CDATA #REQUIRED
+   pProfDate CDATA #REQUIRED
+   pRemarks CDATA #REQUIRED
+   pEffYear CDATA #REQUIRED
+   pProfileATC CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT OINFO EMPTY>
+<!ATTLIST OINFO
+   pPatientPob CDATA #REQUIRED
+   pPatientAge CDATA #REQUIRED
+   pPatientOccupation CDATA #REQUIRED
+   pPatientEducation CDATA #REQUIRED
+   pPatientReligion CDATA #REQUIRED
+   pPatientMotherMnln CDATA #REQUIRED
+   pPatientMotherMnmi CDATA #REQUIRED
+   pPatientMotherFn CDATA #REQUIRED
+   pPatientMotherExtn CDATA #REQUIRED
+   pPatientMotherBday CDATA #REQUIRED
+   pPatientFatherLn CDATA #REQUIRED
+   pPatientFatherMi CDATA #REQUIRED
+   pPatientFatherFn CDATA #REQUIRED
+   pPatientFatherExtn CDATA #REQUIRED
+   pPatientFatherBday CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT MEDHIST EMPTY>
+<!ATTLIST MEDHIST
+   pMdiseaseCode CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT MHSPECIFIC EMPTY>
+<!ATTLIST MHSPECIFIC
+   pMdiseaseCode CDATA #REQUIRED
+   pSpecificDesc CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT SURGHIST EMPTY>
+<!ATTLIST SURGHIST
+   pSurgDesc CDATA #REQUIRED
+   pSurgDate CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT FAMHIST EMPTY>
+<!ATTLIST FAMHIST
+   pMdiseaseCode CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT FHSPECIFIC EMPTY>
+<!ATTLIST FHSPECIFIC
+   pMdiseaseCode CDATA #REQUIRED
+   pSpecificDesc CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT SOCHIST EMPTY>
+<!ATTLIST SOCHIST
+   pIsSmoker CDATA #REQUIRED
+   pNoCigpk CDATA #REQUIRED
+   pIsAdrinker CDATA #REQUIRED
+   pNoBottles CDATA #REQUIRED
+   pIllDrugUser CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT IMMUNIZATION EMPTY>
+<!ATTLIST IMMUNIZATION
+   pChildImmcode CDATA #REQUIRED
+   pYoungwImmcode CDATA #REQUIRED
+   pPregwImmcode CDATA #REQUIRED
+   pElderlyImmcode CDATA #REQUIRED
+   pOtherImm CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT MENSHIST EMPTY>
+<!ATTLIST MENSHIST
+   pMenarchePeriod CDATA #REQUIRED
+   pLastMensPeriod CDATA #REQUIRED
+   pPeriodDuration CDATA #REQUIRED
+   pMensInterval CDATA #REQUIRED
+   pPadsPerDay CDATA #REQUIRED
+   pOnsetSexIc CDATA #REQUIRED
+   pBirthCtrlMethod CDATA #REQUIRED
+   pIsMenopause CDATA #REQUIRED
+   pMenopauseAge CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT PREGHIST EMPTY>
+<!ATTLIST PREGHIST
+   pPregCnt CDATA #REQUIRED
+   pDeliveryCnt CDATA #REQUIRED
+   pDeliveryTyp CDATA #REQUIRED
+   pFullTermCnt CDATA #REQUIRED
+   pPrematureCnt CDATA #REQUIRED
+   pAbortionCnt CDATA #REQUIRED
+   pLivChildrenCnt CDATA #REQUIRED
+   pWPregIndhyp CDATA #REQUIRED
+   pWFamPlan CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT BLOODTYPE EMPTY>
+<!ATTLIST BLOODTYPE
+   pBloodType CDATA #REQUIRED
+   pBloodRh CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT PEGENSURVEY EMPTY>
+<!ATTLIST PEGENSURVEY
+   pGenSurveyId CDATA #REQUIRED
+   pGenSurveyRem CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT PEMISC EMPTY>
+<!ATTLIST PEMISC
+   pSkinId CDATA #REQUIRED
+   pHeentId CDATA #REQUIRED
+   pChestId CDATA #REQUIRED
+   pHeartId CDATA #REQUIRED
+   pAbdomenId CDATA #REQUIRED
+   pNeuroId CDATA #REQUIRED
+   pGuId CDATA #REQUIRED
+   pRectalId CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT NCDQANS EMPTY>
+<!ATTLIST NCDQANS   
+   pQid1_Yn CDATA #REQUIRED
+   pQid2_Yn CDATA #REQUIRED
+   pQid3_Yn CDATA #REQUIRED
+   pQid4_Yn CDATA #REQUIRED
+   pQid5_Ynx CDATA #REQUIRED
+   pQid6_Yn CDATA #REQUIRED
+   pQid7_Yn CDATA #REQUIRED
+   pQid8_Yn CDATA #REQUIRED
+   pQid9_Yn CDATA #REQUIRED
+   pQid10_Yn CDATA #REQUIRED   
+   pQid11_Yn CDATA #REQUIRED
+   pQid12_Yn CDATA #REQUIRED
+   pQid13_Yn CDATA #REQUIRED
+   pQid14_Yn CDATA #REQUIRED
+   pQid15_Yn CDATA #REQUIRED
+   pQid16_Yn CDATA #REQUIRED
+   pQid17_Abcde CDATA #REQUIRED
+   pQid18_Yn CDATA #REQUIRED
+   pQid19_Yn CDATA #REQUIRED
+   pQid19_Fbsmg CDATA #REQUIRED
+   pQid19_Fbsmmol CDATA #REQUIRED
+   pQid19_Fbsdate CDATA #REQUIRED
+   pQid20_Yn CDATA #REQUIRED
+   pQid20_Choleval CDATA #REQUIRED
+   pQid20_Choledate CDATA #REQUIRED
+   pQid21_Yn CDATA #REQUIRED
+   pQid21_Ketonval CDATA #REQUIRED
+   pQid21_Ketondate CDATA #REQUIRED
+   pQid22_Yn CDATA #REQUIRED
+   pQid22_Proteinval CDATA #REQUIRED
+   pQid22_Proteindate CDATA #REQUIRED
+   pQid23_Yn CDATA #REQUIRED 
+   pQid24_Yn CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT SOAPS (SOAP)+>
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT SOAP (SUBJECTIVE+,PEPERT,PEMISC+,PESPECIFIC+,ICDS+,DIAGNOSTIC+,MANAGEMENT+,ADVICE)>
+<!ATTLIST SOAP
+   pHciTransNo CDATA #REQUIRED
+   pHciCaseNo CDATA #REQUIRED
+   pPatientPin CDATA #REQUIRED
+   pPatientType CDATA #REQUIRED
+   pMemPin CDATA #REQUIRED
+   pSoapDate CDATA #REQUIRED
+   pEffYear CDATA #REQUIRED
+   pSoapATC CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT SUBJECTIVE EMPTY>
+<!ATTLIST SUBJECTIVE
+   pChiefComplaint CDATA #REQUIRED
+   pIllnessHistory CDATA #REQUIRED
+   pOtherComplaint CDATA #REQUIRED
+   pSignsSymptoms CDATA #REQUIRED
+   pPainSite CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT PEPERT EMPTY>
+<!ATTLIST PEPERT
+   pSystolic CDATA #REQUIRED
+   pDiastolic CDATA #REQUIRED
+   pHr CDATA #REQUIRED
+   pRr CDATA #REQUIRED
+   pTemp CDATA #REQUIRED
+   pHeight CDATA #REQUIRED
+   pWeight CDATA #REQUIRED
+   pVision CDATA #REQUIRED
+   pLength CDATA #REQUIRED
+   pHeadCirc CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT PESPECIFIC EMPTY>
+<!ATTLIST PESPECIFIC
+   pSkinRem CDATA #REQUIRED
+   pHeentRem CDATA #REQUIRED
+   pChestRem CDATA #REQUIRED
+   pHeartRem CDATA #REQUIRED
+   pAbdomenRem CDATA #REQUIRED
+   pNeuroRem CDATA #REQUIRED
+   pRectalRem CDATA #REQUIRED
+   pGuRem CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT ICDS EMPTY>
+<!ATTLIST ICDS
+   pIcdCode CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT DIAGNOSTIC EMPTY>
+<!ATTLIST DIAGNOSTIC
+   pDiagnosticId CDATA #REQUIRED
+   pOthRemarks CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT MANAGEMENT EMPTY>
+<!ATTLIST MANAGEMENT
+   pManagementId CDATA #REQUIRED
+   pOthRemarks CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT ADVICE EMPTY>
+<!ATTLIST ADVICE
+   pRemarks CDATA #REQUIRED
+   pReportStatus CDATA #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!-- FOR APPROVAL XML FORMAT -->
+<!-- Put your DTDDoc comment here. -->
+<!ELEMENT MEDICINES (MEDICINE)+>
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT MEDICINE EMPTY>
+<!ATTLIST MEDICINE
+   pHciCaseNo CDATA #REQUIRED
+   pHciTransNo CDATA #REQUIRED
+   pDrugCode CDATA #REQUIRED
+   pGenericName CDATA #REQUIRED	
+   pGenericCode CDATA #REQUIRED
+   pSaltCode CDATA #REQUIRED
+   pStrengthCode CDATA #REQUIRED
+   pFormCode CDATA #REQUIRED
+   pUnitCode CDATA #REQUIRED
+   pPackageCode CDATA #REQUIRED  
+   pRoute CDATA #REQUIRED  
+   pQuantity CDATA #REQUIRED
+   pActualUnitPrice CDATA #REQUIRED
+   pCoPayment CDATA #REQUIRED
+   pTotalAmtPrice CDATA #REQUIRED
+   pInstructionQuantity CDATA #REQUIRED
+   pInstructionStrength CDATA #REQUIRED
+   pInstructionFrequency CDATA #REQUIRED
+   pPrescPhysician CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pModule CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT COURSEWARDS (COURSEWARD)+>
+<!ELEMENT COURSEWARD EMPTY>
+<!ATTLIST COURSEWARD
+   pHciCaseNo CDATA #REQUIRED
+   pHciTransNo CDATA #REQUIRED
+   pDateAction CDATA #REQUIRED
+   pDoctorsAction CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT LABRESULTS (LABRESULT)+>
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT LABRESULT (CBC+,URINALYSIS+,CHESTXRAY+,SPUTUM+,LIPIDPROF+,FBS+,ECG+,FECALYSIS+,PAPSSMEAR+,OGTT+)>
+<!ATTLIST LABRESULT   
+   pHciCaseNo CDATA #REQUIRED
+   pPatientPin CDATA #REQUIRED
+   pPatientType CDATA #REQUIRED
+   pMemPin CDATA #REQUIRED
+   pEffYear CDATA #REQUIRED
+   >
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT CBC EMPTY>
+<!ATTLIST CBC
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pHematocrit CDATA #REQUIRED
+   pHemoglobinG CDATA #REQUIRED
+   pHemoglobinMmol CDATA #REQUIRED
+   pMhcPg CDATA #REQUIRED
+   pMhcFmol CDATA #REQUIRED
+   pMchcGhb CDATA #REQUIRED
+   pMchcMmol CDATA #REQUIRED
+   pMcvUm CDATA #REQUIRED
+   pMcvFl CDATA #REQUIRED
+   pWbc1000 CDATA #REQUIRED
+   pWbc10 CDATA #REQUIRED
+   pMyelocyte CDATA #REQUIRED
+   pNeutrophilsBnd CDATA #REQUIRED
+   pNeutrophilsSeg CDATA #REQUIRED
+   pLymphocytes CDATA #REQUIRED
+   pMonocytes CDATA #REQUIRED
+   pEosinophils CDATA #REQUIRED
+   pBasophils CDATA #REQUIRED
+   pPlatelet CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT URINALYSIS EMPTY>
+<!ATTLIST URINALYSIS
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pGravity CDATA #REQUIRED
+   pAppearance CDATA #REQUIRED
+   pColor CDATA #REQUIRED
+   pGlucose CDATA #REQUIRED
+   pProteins CDATA #REQUIRED
+   pKetones CDATA #REQUIRED
+   pPh CDATA #REQUIRED
+   pRbCells CDATA #REQUIRED
+   pWbCells CDATA #REQUIRED
+   pBacteria CDATA #REQUIRED
+   pCrystals CDATA #REQUIRED
+   pBladderCell CDATA #REQUIRED
+   pSquamousCell CDATA #REQUIRED
+   pTubularCell CDATA #REQUIRED
+   pBroadCasts CDATA #REQUIRED
+   pEpithelialCast CDATA #REQUIRED
+   pGranularCast CDATA #REQUIRED
+   pHyalineCast CDATA #REQUIRED
+   pRbcCast CDATA #REQUIRED
+   pWaxyCast CDATA #REQUIRED
+   pWcCast CDATA #REQUIRED
+   pAlbumin CDATA #REQUIRED
+   pPusCells CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT CHESTXRAY EMPTY>
+<!ATTLIST CHESTXRAY
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pFindings CDATA #REQUIRED
+   pRemarksFindings CDATA #REQUIRED
+   pObservation CDATA #REQUIRED
+   pRemarksObservation CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT SPUTUM EMPTY>
+<!ATTLIST SPUTUM
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pDataCollection (1|2|3|X) #REQUIRED
+   pFindings CDATA #REQUIRED
+   pRemarks CDATA #REQUIRED
+   pNoPlusses CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT LIPIDPROF EMPTY>
+<!ATTLIST LIPIDPROF
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pLdl CDATA #REQUIRED
+   pHdl CDATA #REQUIRED
+   pTotal CDATA #REQUIRED
+   pCholesterol CDATA #REQUIRED
+   pTriglycerides CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT FBS EMPTY>
+<!ATTLIST FBS
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pGlucoseMg CDATA #REQUIRED
+   pGlucoseMmol CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT ECG EMPTY>
+<!ATTLIST ECG
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pFindings CDATA #REQUIRED
+   pRemarks CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT FECALYSIS EMPTY>
+<!ATTLIST FECALYSIS
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pColor CDATA #REQUIRED
+   pConsistency CDATA #REQUIRED
+   pRbc CDATA #REQUIRED
+   pWbc CDATA #REQUIRED
+   pOva CDATA #REQUIRED
+   pParasite CDATA #REQUIRED
+   pBlood CDATA #REQUIRED
+   pOccultBlood CDATA #REQUIRED
+   pPusCells CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT PAPSSMEAR EMPTY>
+<!ATTLIST PAPSSMEAR
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pFindings CDATA #REQUIRED
+   pImpression CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N|W) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT OGTT EMPTY>
+<!ATTLIST OGTT
+   pHciTransNo CDATA #REQUIRED
+   pReferralFacility CDATA #REQUIRED
+   pLabDate CDATA #REQUIRED
+   pExamFastingMg CDATA #REQUIRED
+   pExamFastingMmol CDATA #REQUIRED
+   pExamOgttOneHrMg CDATA #REQUIRED
+   pExamOgttOneHrMmol CDATA #REQUIRED
+   pExamOgttTwoHrMg CDATA #REQUIRED
+   pExamOgttTwoHrMmol CDATA #REQUIRED
+   pDateAdded CDATA #REQUIRED
+   pIsApplicable (Y|N|W) #REQUIRED
+   pModule CDATA #REQUIRED
+   pDiagnosticLabFee CDATA #REQUIRED
+   pCoPay CDATA #REQUIRED
+   pReportStatus (U|V|F) #REQUIRED
+   pDeficiencyRemarks CDATA #REQUIRED
+   >   
+ 
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   

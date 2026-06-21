@@ -1,0 +1,20 @@
+<!-- Sample DTD for an Order document -->
+<!ELEMENT Order (Customer, LineItem+, Notes?)>
+<!ATTLIST Order
+    id      CDATA #REQUIRED
+    status  (open|closed|pending) #REQUIRED>
+
+<!ELEMENT Customer (Name, Email)>
+<!ATTLIST Customer
+    id  CDATA #REQUIRED>
+
+<!ELEMENT Name (#PCDATA)>
+<!ELEMENT Email (#PCDATA)>
+
+<!ELEMENT LineItem EMPTY>
+<!ATTLIST LineItem
+    sku      CDATA #REQUIRED
+    quantity CDATA #REQUIRED
+    price    CDATA #REQUIRED>
+
+<!ELEMENT Notes (#PCDATA)>

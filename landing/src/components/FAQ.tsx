@@ -14,7 +14,7 @@ const FAQS = [
   },
   {
     q: 'How does version control work?',
-    a: 'Every time a file is edited or replaced, Qlarity saves the previous version automatically. You can browse the full history, compare versions side-by-side, and restore any past version in one click — nothing is ever permanently lost.',
+    a: 'Every time a file is edited or replaced, Qlarity saves the previous version automatically. You can browse the full change history and restore any past version in one click — nothing is ever permanently lost. Business and Enterprise plans include unlimited version history.',
   },
   {
     q: 'What file types does Qlarity support?',
@@ -26,7 +26,7 @@ const FAQS = [
   },
   {
     q: 'Is there a free plan?',
-    a: 'Yes — Qlarity is free forever for small teams. The free plan includes up to 5 users, unlimited documents, core approval workflows, and full version history. Paid plans unlock larger teams, advanced permissions, SSO, and priority support.',
+    a: 'Yes — Qlarity is free forever for small teams. The free plan includes up to 5 users, 10 GB storage, unlimited documents, basic approval workflows, and 30-day version history. Paid plans unlock unlimited users, unlimited version history, advanced permissions, SSO, and priority support.',
   },
   {
     q: 'Is my data secure?',

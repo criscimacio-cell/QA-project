@@ -17,6 +17,7 @@ export default function Navbar() {
 
   return (
     <motion.nav
+      aria-label="Main navigation"
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -26,9 +27,9 @@ export default function Navbar() {
           : 'bg-transparent'
       }`}
     >
-      {/* Scrolled border with gradient */}
       {scrolled && (
         <div
+          aria-hidden="true"
           className="absolute bottom-0 inset-x-0 h-px"
           style={{ background: 'linear-gradient(to right, transparent, rgba(245,158,11,0.4), rgba(139,92,246,0.2), transparent)' }}
         />
@@ -36,7 +37,7 @@ export default function Navbar() {
 
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-2.5 group">
+        <a href="/" aria-label="Qlarity — home" className="flex items-center gap-2.5 group">
           <motion.div
             whileHover={{ rotate: 15, scale: 1.1 }}
             transition={{ duration: 0.3 }}
@@ -45,7 +46,7 @@ export default function Navbar() {
             <Layers size={16} className="text-amber-500" />
           </motion.div>
           <span className="font-bold text-slate-900 tracking-tight">Qlarity</span>
-          <span className="text-xs text-amber-600 font-medium hidden sm:inline px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200">
+          <span aria-hidden="true" className="text-xs text-amber-600 font-medium hidden sm:inline px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200">
             Document Management
           </span>
         </a>
@@ -59,7 +60,7 @@ export default function Navbar() {
               className="relative px-4 py-2 rounded-lg text-sm text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 group"
             >
               {l.label}
-              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-0 h-px bg-amber-500/70 group-hover:w-4 transition-all duration-300" />
+              <span aria-hidden="true" className="absolute bottom-1 left-1/2 -translate-x-1/2 w-0 h-px bg-amber-500/70 group-hover:w-full transition-all duration-300" />
             </a>
           ))}
         </div>
@@ -76,7 +77,7 @@ export default function Navbar() {
             href="/register"
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            className="shimmer-btn text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/25"
+            className="shimmer-btn text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white px-4 py-2 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/25"
           >
             Get Started
           </motion.a>
@@ -85,6 +86,9 @@ export default function Navbar() {
         {/* Mobile menu toggle */}
         <button
           onClick={() => setOpen(!open)}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
+          aria-controls="mobile-menu"
           className="md:hidden text-slate-500 hover:text-slate-900 transition-colors p-2"
         >
           {open ? <X size={20} /> : <Menu size={20} />}
@@ -93,6 +97,8 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       <motion.div
+        id="mobile-menu"
+        aria-hidden={!open}
         initial={false}
         animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
@@ -103,6 +109,7 @@ export default function Navbar() {
             <a
               key={l.href}
               href={l.href}
+              tabIndex={open ? 0 : -1}
               onClick={() => setOpen(false)}
               className="px-4 py-3 rounded-lg text-sm text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all"
             >
@@ -110,8 +117,8 @@ export default function Navbar() {
             </a>
           ))}
           <div className="pt-2 flex flex-col gap-2">
-            <a href="/login" className="text-sm text-slate-500 hover:text-slate-900 text-center py-2">Log in</a>
-            <a href="/register" className="text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white py-2.5 rounded-lg text-center transition-all">
+            <a href="/login" tabIndex={open ? 0 : -1} className="text-sm text-slate-500 hover:text-slate-900 text-center py-2">Log in</a>
+            <a href="/register" tabIndex={open ? 0 : -1} className="text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white py-2.5 rounded-xl text-center transition-all">
               Get Started
             </a>
           </div>

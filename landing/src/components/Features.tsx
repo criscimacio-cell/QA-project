@@ -1,5 +1,4 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { motion } from 'framer-motion';
 import { FolderOpen, GitPullRequest, Users, History, Lock, ShieldCheck, Search, Layers } from 'lucide-react';
 import { blurUp, stagger, scaleIn } from '../lib/animations';
 
@@ -24,14 +23,14 @@ function BentoCard({ f, big = false }: { f: typeof FEATURES[number]; big?: boole
       whileHover={{ y: -6, boxShadow: '0 16px 40px rgba(0,0,0,0.1)', transition: { duration: 0.25 } }}
       className="bento-card rounded-2xl p-7 flex flex-col gap-5 cursor-default group relative overflow-hidden"
     >
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+      <div aria-hidden="true" className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
         style={{ background: `radial-gradient(350px circle at 30% 40%, ${f.glow}, transparent 70%)` }} />
       <div className={`relative z-10 ${big ? 'w-12 h-12' : 'w-10 h-10'} rounded-xl ${f.bg} border ${f.border} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
         <f.icon size={big ? 22 : 18} className={f.color} />
       </div>
       <div className="relative z-10">
         <h3 className={`font-semibold text-slate-800 mb-2 ${big ? 'text-base' : 'text-sm'}`}>{f.title}</h3>
-        <p className={`text-slate-500 leading-relaxed ${big ? 'text-sm' : 'text-xs'}`}>{f.desc}</p>
+        <p className="text-slate-500 leading-relaxed text-sm">{f.desc}</p>
       </div>
       {big && f.tags && (
         <div className="relative z-10 mt-auto pt-2 flex flex-wrap gap-2">
@@ -45,27 +44,30 @@ function BentoCard({ f, big = false }: { f: typeof FEATURES[number]; big?: boole
 }
 
 export default function Features() {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
-  const headerY = useTransform(scrollYProgress, [0, 0.4], [40, 0]);
-  const headerOpacity = useTransform(scrollYProgress, [0, 0.25], [0, 1]);
-
   return (
-    <section id="features" ref={ref} className="py-32 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FAFAFA] via-white/60 to-[#FAFAFA]" />
+    <section id="features" aria-labelledby="features-heading" className="py-32 relative overflow-hidden scroll-mt-20">
+      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#FAFAFA] via-white/60 to-[#FAFAFA]" />
 
       <div className="relative max-w-6xl mx-auto px-6">
-        <motion.div style={{ y: headerY, opacity: headerOpacity }} className="text-center mb-16">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: 0.5 }}
+        <motion.div
+          variants={stagger(0.08)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.3 }}
+          className="text-center mb-16"
+        >
+          <motion.div variants={blurUp}
             className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-1.5 text-xs font-medium text-amber-700 mb-4">
             Everything you need
           </motion.div>
-          <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
-            className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight mb-4">
+          <motion.h2
+            id="features-heading"
+            variants={blurUp}
+            className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight mb-4"
+          >
             Built for document-driven teams
           </motion.h2>
-          <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-            className="text-slate-500 text-lg max-w-xl mx-auto">
+          <motion.p variants={blurUp} className="text-slate-500 text-lg max-w-xl mx-auto">
             Every feature works together seamlessly — from upload to approval to publish, with full traceability.
           </motion.p>
         </motion.div>

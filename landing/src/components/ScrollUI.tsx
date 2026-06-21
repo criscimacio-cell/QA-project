@@ -8,6 +8,7 @@ export function ScrollProgressBar() {
 
   return (
     <motion.div
+      aria-hidden="true"
       style={{ scaleX, transformOrigin: '0%' }}
       className="fixed top-0 left-0 right-0 h-[3px] z-[9999] bg-gradient-to-r from-amber-400 via-amber-500 to-amber-300"
     />
@@ -33,7 +34,8 @@ export function ScrollToTop() {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-8 right-8 z-50 w-10 h-10 rounded-full bg-amber-500 hover:bg-amber-400 text-white shadow-lg shadow-amber-200 flex items-center justify-center transition-colors"
+          aria-label="Scroll to top"
+          className="fixed bottom-8 right-8 z-[60] w-10 h-10 rounded-full bg-amber-500 hover:bg-amber-400 text-white shadow-lg shadow-amber-200 flex items-center justify-center transition-colors"
         >
           <ArrowUp size={18} />
         </motion.button>

@@ -11,7 +11,7 @@ import { ScrollProgressBar, ScrollToTop } from './components/ScrollUI';
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-slate-900">
+    <div className="min-h-screen">
       <ScrollProgressBar />
       <ScrollToTop />
       <Navbar />

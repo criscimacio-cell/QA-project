@@ -14,6 +14,13 @@
       radial-gradient(ellipse at 50% 50%, rgba(245,158,11,0.03) 0%, transparent 70%);
   }
   #root { min-height: 100svh; }
+
+  /* Global focus ring — covers all interactive elements */
+  *:focus-visible {
+    outline: 2px solid #F59E0B;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
 @layer utilities {
@@ -28,12 +35,15 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    /* Fallback color for browsers that don't support background-clip:text */
+    color: #D97706;
   }
   .text-gradient-dark {
     background: linear-gradient(180deg, #0f172a 0%, #334155 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    color: #0f172a;
   }
   .grid-bg {
     background-image:
@@ -60,6 +70,7 @@
   /* Gradient animated border */
   .gradient-border {
     position: relative;
+    isolation: isolate;
     background: rgba(255,255,255,0.8);
     border-radius: 1rem;
   }
@@ -70,8 +81,12 @@
     border-radius: inherit;
     background: linear-gradient(135deg, rgba(245,158,11,0.5), rgba(139,92,246,0.3), rgba(59,130,246,0.3), rgba(245,158,11,0.5));
     background-size: 300% 300%;
-    animation: border-spin 6s linear infinite;
     z-index: -1;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .gradient-border::before {
+      animation: border-spin 6s linear infinite;
+    }
   }
   @keyframes border-spin {
     0% { background-position: 0% 50%; }
@@ -93,7 +108,11 @@
     height: 200%;
     background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
     transform: skewX(-20deg);
-    animation: shimmer 3s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .shimmer-btn::after {
+      animation: shimmer 3s ease-in-out infinite;
+    }
   }
   @keyframes shimmer {
     0% { left: -75%; }
@@ -104,9 +123,13 @@
   .marquee-track {
     display: flex;
     width: max-content;
-    animation: marquee 35s linear infinite;
   }
   .marquee-track:hover { animation-play-state: paused; }
+  @media (prefers-reduced-motion: no-preference) {
+    .marquee-track {
+      animation: marquee 35s linear infinite;
+    }
+  }
   @keyframes marquee {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
@@ -132,7 +155,12 @@
     50% { opacity: 0.15; transform: scale(1.08); }
   }
   .ring-pulse {
-    animation: ring-pulse 3s ease-in-out infinite;
+    animation: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ring-pulse {
+      animation: ring-pulse 3s ease-in-out infinite;
+    }
   }
 
   /* Section divider */

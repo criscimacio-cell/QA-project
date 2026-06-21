@@ -10,13 +10,13 @@ export default function CTA() {
   const bgY = useTransform(scrollYProgress, [0, 1], [-15, 15]);
 
   return (
-    <section ref={ref} className="py-24 relative overflow-hidden bg-white">
-      <div className="absolute inset-0 grid-bg opacity-40" />
-      <motion.div style={{ y: bgY }} className="absolute inset-0 pointer-events-none">
+    <section ref={ref} aria-labelledby="cta-heading" className="py-32 relative overflow-hidden bg-white">
+      <div aria-hidden="true" className="absolute inset-0 grid-bg opacity-40" />
+      <motion.div style={{ y: bgY }} aria-hidden="true" className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(245,158,11,0.07) 0%, transparent 70%)' }} />
       </motion.div>
 
-      <motion.div style={{ scale: ringScale }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none">
+      <motion.div aria-hidden="true" style={{ scale: ringScale }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] md:w-[600px] md:h-[600px] rounded-full pointer-events-none">
         <div className="ring-pulse absolute inset-0 rounded-full border border-amber-300/40" />
         <div className="ring-pulse absolute inset-12 rounded-full border border-amber-200/30" style={{ animationDelay: '1s' }} />
         <div className="ring-pulse absolute inset-24 rounded-full border border-amber-300/35" style={{ animationDelay: '2s' }} />
@@ -29,9 +29,8 @@ export default function CTA() {
             Free forever for small teams
           </motion.div>
 
-          <motion.h2 variants={blurUp} className="text-4xl sm:text-5xl font-bold tracking-tight">
-            <span className="text-slate-900">Stop managing documents</span>
-            <br />
+          <motion.h2 id="cta-heading" variants={blurUp} className="text-4xl sm:text-5xl font-bold tracking-tight">
+            <span className="text-slate-900">Stop managing documents</span>{' '}
             <span className="text-gradient">in the wrong place.</span>
           </motion.h2>
 
@@ -51,12 +50,11 @@ export default function CTA() {
           </motion.div>
 
           <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-6 pt-2">
-            {['No credit card', 'Free forever for small teams', 'Cancel anytime'].map((item, i) => (
-              <motion.span key={item} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5 + i * 0.1, duration: 0.4 }}
-                className="flex items-center gap-1.5 text-xs text-slate-400">
-                <span className="w-1 h-1 rounded-full bg-amber-400 inline-block" />
+            {['No credit card', 'Free forever for small teams', 'Cancel anytime'].map((item) => (
+              <span key={item} className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span aria-hidden="true" className="w-1 h-1 rounded-full bg-amber-400 inline-block" />
                 {item}
-              </motion.span>
+              </span>
             ))}
           </motion.div>
         </motion.div>

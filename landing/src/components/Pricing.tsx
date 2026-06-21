@@ -16,7 +16,7 @@ const PLANS = [
   },
   {
     name: 'Enterprise', price: 'Custom', period: 'contact us', desc: 'For large organizations with compliance and security needs.',
-    cta: 'Contact Sales', ctaHref: 'mailto:sales@qlarity.io', highlight: false,
+    cta: 'Contact Sales', ctaHref: 'mailto:hello@qlarity.io', highlight: false,
     features: ['Everything in Business', 'Unlimited storage', 'SSO / SAML', 'Dedicated infrastructure', 'SLA guarantee', 'Custom retention policies', 'Onboarding & training', 'Security review'],
   },
 ];
@@ -26,14 +26,23 @@ const cardVariants = {
   show: (i: number) => ({ opacity: 1, y: 0, scale: 1, transition: { duration: 0.65, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] as const } }),
 };
 
+const featureStagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.04, delayChildren: 0.3 } },
+};
+const featureItem = {
+  hidden: { opacity: 0, x: -12 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.4 } },
+};
+
 export default function Pricing() {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const bgY = useTransform(scrollYProgress, [0, 1], [-20, 20]);
 
   return (
-    <section id="pricing" ref={ref} className="py-32 relative overflow-hidden">
-      <motion.div style={{ y: bgY }} className="absolute inset-0 pointer-events-none">
+    <section id="pricing" aria-labelledby="pricing-heading" ref={ref} className="py-32 relative overflow-hidden scroll-mt-20">
+      <motion.div style={{ y: bgY }} aria-hidden="true" className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-b from-[#FAFAFA] via-white/60 to-[#FAFAFA]" />
       </motion.div>
 
@@ -43,7 +52,7 @@ export default function Pricing() {
             <Zap size={12} className="fill-violet-500 text-violet-500" />
             Simple pricing
           </motion.div>
-          <motion.h2 variants={blurUp} className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight mb-4">
+          <motion.h2 id="pricing-heading" variants={blurUp} className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight mb-4">
             Plans for every team
           </motion.h2>
           <motion.p variants={fadeUp} className="text-slate-500 text-lg max-w-xl mx-auto">
@@ -51,7 +60,8 @@ export default function Pricing() {
           </motion.p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        {/* Stack on tablet (md), 3-col only at lg */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {PLANS.map((plan, i) => (
             <motion.div
               key={plan.name}
@@ -61,7 +71,7 @@ export default function Pricing() {
               whileInView="show"
               viewport={{ once: true, amount: 0.2 }}
               whileHover={{ y: plan.highlight ? -10 : -5, transition: { duration: 0.25 } }}
-              className={`relative rounded-2xl p-8 flex flex-col gap-6 ${plan.highlight ? 'bg-white border-2 border-amber-400 shadow-xl shadow-amber-100' : 'bg-white border border-slate-200 shadow-sm'}`}
+              className={`relative rounded-2xl p-8 flex flex-col gap-6 h-full ${plan.highlight ? 'bg-white border-2 border-amber-400 shadow-xl shadow-amber-100' : 'bg-white border border-slate-200 shadow-sm'}`}
             >
               {plan.badge && (
                 <motion.div initial={{ opacity: 0, y: -8, scale: 0.8 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.4, duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
@@ -71,29 +81,35 @@ export default function Pricing() {
               )}
 
               <div>
-                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">{plan.name}</h3>
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{plan.name}</h3>
                 <div className="flex items-end gap-1 mb-1">
                   <span className={`text-4xl font-bold ${plan.highlight ? 'text-gradient' : 'text-slate-900'}`}>{plan.price}</span>
-                  {plan.price !== 'Custom' && <span className="text-slate-400 text-sm mb-1">/ {plan.period}</span>}
+                  {plan.price !== 'Custom' && <span className="text-slate-500 text-sm mb-1">/ {plan.period}</span>}
                 </div>
-                {plan.price === 'Custom' && <span className="text-slate-400 text-sm">{plan.period}</span>}
+                {plan.price === 'Custom' && <span className="text-slate-500 text-sm">{plan.period}</span>}
                 <p className="text-slate-500 text-sm mt-2">{plan.desc}</p>
               </div>
 
               <motion.a href={plan.ctaHref} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                className={`w-full py-2.5 rounded-xl text-sm font-semibold text-center transition-all duration-200 ${plan.highlight ? 'shimmer-btn bg-amber-500 hover:bg-amber-400 text-white shadow-md shadow-amber-200' : 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700'}`}>
+                className={`w-full py-3 rounded-xl text-sm font-semibold text-center transition-all duration-200 ${plan.highlight ? 'shimmer-btn bg-amber-500 hover:bg-amber-400 text-white shadow-md shadow-amber-200' : 'bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700'}`}>
                 {plan.cta}
               </motion.a>
 
-              <ul className="flex flex-col gap-2.5">
-                {plan.features.map((f, fi) => (
-                  <motion.li key={f} initial={{ opacity: 0, x: -12 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 + fi * 0.04, duration: 0.4 }}
+              <motion.ul
+                variants={featureStagger}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true }}
+                className="flex flex-col gap-2.5"
+              >
+                {plan.features.map((f) => (
+                  <motion.li key={f} variants={featureItem}
                     className="flex items-start gap-2.5 text-sm text-slate-600">
                     <CheckCircle2 size={15} className={`flex-shrink-0 mt-0.5 ${plan.highlight ? 'text-amber-500' : 'text-slate-400'}`} />
                     {f}
                   </motion.li>
                 ))}
-              </ul>
+              </motion.ul>
             </motion.div>
           ))}
         </div>

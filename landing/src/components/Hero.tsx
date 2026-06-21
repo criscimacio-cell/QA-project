@@ -1,4 +1,4 @@
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
 import { useRef, useEffect } from 'react';
 import { ArrowRight, Play, CheckCircle2, Sparkles } from 'lucide-react';
 import { fadeUp, blurUp, stagger } from '../lib/animations';
@@ -21,6 +21,9 @@ export default function Hero() {
   const mouseY = useMotionValue(50);
   const smoothX = useSpring(mouseX, { stiffness: 50, damping: 18 });
   const smoothY = useSpring(mouseY, { stiffness: 50, damping: 18 });
+
+  // Reactive cursor spotlight using useMotionTemplate so it updates on every frame
+  const spotlightBg = useMotionTemplate`radial-gradient(480px circle at ${smoothX}% ${smoothY}%, rgba(245,158,11,0.055), transparent 65%)`;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -49,7 +52,11 @@ export default function Hero() {
         ))}
       </motion.div>
 
-      <motion.h1 variants={blurUp} className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.08]">
+      <motion.h1
+        variants={blurUp}
+        aria-label="One place for all your documents."
+        className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.12]"
+      >
         <span className="text-slate-900">One place for all</span>
         <br />
         <span className="text-gradient">your documents.</span>
@@ -61,25 +68,33 @@ export default function Hero() {
       </motion.p>
 
       <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">
-        <motion.a href="/register" whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.96 }}
-          className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-7 py-3.5 rounded-xl text-sm transition-colors glow-amber-sm">
+        <motion.a
+          href="/register"
+          whileHover={{ scale: 1.05, y: -2 }}
+          whileTap={{ scale: 0.96 }}
+          className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors glow-amber-sm focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+        >
           Start for Free <ArrowRight size={16} />
         </motion.a>
-        <motion.a href="#how-it-works" whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.96 }}
-          className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-7 py-3.5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md">
+        <motion.a
+          href="#how-it-works"
+          whileHover={{ scale: 1.04, y: -2 }}
+          whileTap={{ scale: 0.96 }}
+          className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-8 py-3.5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+        >
           <Play size={14} className="fill-current text-amber-500" />
           See How It Works
         </motion.a>
       </motion.div>
 
       <motion.div variants={fadeUp}>
-        <p className="text-xs text-slate-400">No credit card required · Free to get started</p>
+        <p className="text-xs text-slate-500">No credit card required · Free to get started</p>
       </motion.div>
     </motion.div>
   );
 
   const mockContent = (
-    <div className="h-full flex gap-4 p-2">
+    <div aria-hidden="true" className="h-full flex gap-4 p-2">
       <div className="hidden sm:flex flex-col gap-2 w-44 flex-shrink-0">
         {['Dashboard', 'Documents', 'Shared with Me', 'Templates', 'Archive'].map((navItem, i) => (
           <div key={navItem} className={`h-8 rounded-lg flex items-center px-3 text-xs ${i === 1 ? 'bg-amber-50 text-amber-700 border border-amber-200 font-medium' : 'bg-slate-50 text-slate-500 border border-transparent'}`}>
@@ -114,12 +129,13 @@ export default function Hero() {
   );
 
   return (
-    <section ref={ref} className="relative overflow-hidden pt-20">
-      <div className="absolute inset-0 grid-bg opacity-60" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#FAFAFA]/20 to-[#FAFAFA]" />
+    <section ref={ref} className="relative overflow-hidden min-h-screen pt-20">
+      <div className="absolute inset-0 grid-bg opacity-60" aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#FAFAFA]/20 to-[#FAFAFA]" aria-hidden="true" />
 
       <motion.div
         style={{ y: blobY, opacity: fadeOut }}
+        aria-hidden="true"
         className="absolute -top-20 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full pointer-events-none"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }}
       >
@@ -128,14 +144,16 @@ export default function Hero() {
 
       <motion.div
         style={{ y: blobY2, opacity: fadeOut }}
+        aria-hidden="true"
         className="absolute top-32 right-[15%] w-[350px] h-[350px] rounded-full pointer-events-none"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 0.2 }}
       >
         <div style={{ width: '100%', height: '100%', background: 'radial-gradient(circle, rgba(251,191,36,0.09) 0%, transparent 70%)', filter: 'blur(55px)' }} />
       </motion.div>
 
-      <div ref={containerRef} className="absolute inset-0 pointer-events-none">
-        <motion.div className="absolute inset-0" style={{ background: `radial-gradient(480px circle at ${smoothX.get()}% ${smoothY.get()}%, rgba(245,158,11,0.055), transparent 65%)` }} />
+      {/* Cursor spotlight — reactive via useMotionTemplate */}
+      <div ref={containerRef} className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <motion.div className="absolute inset-0" style={{ background: spotlightBg }} />
       </div>
 
       <motion.div style={{ y: textY, opacity: fadeOut, scale: scaleDown }} className="relative">
@@ -145,9 +163,10 @@ export default function Hero() {
       </motion.div>
 
       <motion.div
+        aria-hidden="true"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
         style={{ opacity: useTransform(scrollYProgress, [0, 0.08], [1, 0]) }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
       >
         <span className="text-xs text-slate-400">Scroll to explore</span>
         <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}

@@ -5,11 +5,6 @@ import { fadeUp, blurUp, stagger } from '../lib/animations';
 
 const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 
-const FLOAT_CARDS = [
-  { label: 'Documents Stored', value: '48,291', color: 'text-emerald-600', dot: 'bg-emerald-500', pos: '-right-4 top-12', delay: 0, dy: -20 },
-  { label: 'Pending Approval', value: '12', color: 'text-amber-600', dot: 'bg-amber-500', pos: '-left-8 bottom-16', delay: 0.15, dy: 20 },
-  { label: 'Active Users', value: '134', color: 'text-blue-600', dot: 'bg-blue-500', pos: '-right-2 bottom-8', delay: 0.3, dy: 15 },
-];
 
 export default function Hero() {
   const ref = useRef<HTMLElement>(null);
@@ -21,7 +16,7 @@ export default function Hero() {
   const textY = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const fadeOut = useTransform(scrollYProgress, [0, 0.55], [1, 0]);
   const scaleDown = useTransform(scrollYProgress, [0, 0.6], [1, 0.94]);
-  const mockY = useTransform(scrollYProgress, [0, 1], [0, 40]);
+  const mockY = useTransform(scrollYProgress, [0, 1], [0, 30]);
 
   const mouseX = useMotionValue(50);
   const mouseY = useMotionValue(50);
@@ -71,7 +66,7 @@ export default function Hero() {
           <motion.div variants={blurUp} className="flex flex-wrap justify-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700">
               <Sparkles size={11} />
-              Smart document intelligence
+              Now in early access
             </span>
             {BADGES.map((b) => (
               <span key={b} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-500 shadow-sm">
@@ -104,35 +99,12 @@ export default function Hero() {
             </motion.a>
           </motion.div>
 
-          <motion.div variants={fadeUp} className="flex items-center gap-4">
-            <div className="flex -space-x-2">
-              {['#F59E0B', '#6366F1', '#10B981', '#3B82F6'].map((c, i) => (
-                <div key={i} className="w-7 h-7 rounded-full border-2 border-white shadow-sm" style={{ background: c }} />
-              ))}
-            </div>
-            <p className="text-xs text-slate-400">
-              Trusted by <span className="text-slate-700 font-medium">500+ teams</span> · No credit card required
-            </p>
+          <motion.div variants={fadeUp}>
+            <p className="text-xs text-slate-400">No credit card required · Free to get started</p>
           </motion.div>
 
           {/* App preview */}
           <motion.div variants={fadeUp} style={{ y: mockY }} className="relative mt-8 w-full max-w-4xl">
-            {FLOAT_CARDS.map((card) => (
-              <motion.div
-                key={card.label}
-                initial={{ opacity: 0, y: card.dy, scale: 0.85 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 0.9 + card.delay, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                whileHover={{ y: -6, scale: 1.04, transition: { duration: 0.2 } }}
-                className={`absolute ${card.pos} z-10 bg-white border border-slate-200 shadow-lg rounded-xl px-4 py-3 hidden lg:flex flex-col gap-0.5 cursor-default`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-1.5 h-1.5 rounded-full ${card.dot} animate-pulse`} />
-                  <span className="text-xs text-slate-500">{card.label}</span>
-                </div>
-                <span className={`text-xl font-bold ${card.color}`}>{card.value}</span>
-              </motion.div>
-            ))}
 
             <motion.div
               initial={{ opacity: 0, y: 40, scale: 0.96 }}

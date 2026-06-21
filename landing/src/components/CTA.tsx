@@ -36,7 +36,7 @@ export default function CTA() {
           </motion.h2>
 
           <motion.p variants={fadeUp} className="text-slate-500 text-lg max-w-lg">
-            Join hundreds of teams already using Qlarity to store, approve, and control their documents — in one place.
+            Be among the first to bring real order to your documents — one place to store, review, and publish everything your team works on.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">

@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react';
 import { ArrowRight, Play, CheckCircle2, Sparkles } from 'lucide-react';
 import { fadeUp, blurUp, stagger } from '../lib/animations';
 import { ContainerScroll } from './ui/container-scroll-animation';
+import { MagneticButton } from './ui/MagneticButton';
 
 const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 
@@ -69,23 +70,20 @@ export default function Hero() {
       </motion.p>
 
       <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">
-        <motion.a
+        <MagneticButton
           href="/register"
-          whileHover={{ transform: 'scale(1.05) translateY(-2px)' }}
-          whileTap={{ transform: 'scale(0.97)' }}
           className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors glow-amber-sm focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
         >
           Start for Free <ArrowRight size={16} />
-        </motion.a>
-        <motion.a
+        </MagneticButton>
+        <MagneticButton
           href="#how-it-works"
-          whileHover={{ transform: 'scale(1.03) translateY(-2px)' }}
-          whileTap={{ transform: 'scale(0.97)' }}
+          strength={0.22}
           className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-8 py-3.5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
         >
           <Play size={14} className="fill-current text-amber-500" />
           See How It Works
-        </motion.a>
+        </MagneticButton>
       </motion.div>
 
       <motion.div variants={fadeUp}>

@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useRef } from 'react';
 import { FolderOpen, GitPullRequest, Users, History, Lock, ShieldCheck, Search, Layers } from 'lucide-react';
 import { blurUp, stagger, scaleIn } from '../lib/animations';
 
@@ -18,28 +19,57 @@ const small = FEATURES.filter((f) => f.size === 'small');
 
 function BentoCard({ f, big = false }: { f: typeof FEATURES[number]; big?: boolean }) {
   const reduce = useReducedMotion();
-  // Gate hover lift on pointer devices only — touch devices fire hover on tap
-  const hoverProps = !reduce
-    ? { whileHover: { transform: 'translateY(-6px)', boxShadow: '0 16px 40px rgba(0,0,0,0.1)', transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } } }
-    : {};
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const rawX = useMotionValue(0);
+  const rawY = useMotionValue(0);
+  const rotateX = useSpring(useTransform(rawY, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20, mass: 0.6 });
+  const rotateY = useSpring(useTransform(rawX, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20, mass: 0.6 });
+  const glowX = useTransform(rawX, [-0.5, 0.5], [20, 80]);
+  const glowY = useTransform(rawY, [-0.5, 0.5], [20, 80]);
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (reduce) return;
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    rawX.set((e.clientX - rect.left) / rect.width - 0.5);
+    rawY.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+
+  const onMouseLeave = () => {
+    rawX.set(0);
+    rawY.set(0);
+  };
 
   return (
     <motion.div
+      ref={cardRef}
       variants={big ? scaleIn : blurUp}
-      {...hoverProps}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      style={reduce ? {} : { rotateX, rotateY, transformStyle: 'preserve-3d', transformPerspective: 800 }}
       className="bento-card rounded-2xl p-7 flex flex-col gap-5 cursor-default group relative overflow-hidden"
     >
-      <div aria-hidden="true" className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
-        style={{ background: `radial-gradient(350px circle at 30% 40%, ${f.glow}, transparent 70%)` }} />
-      <div className={`relative z-10 ${big ? 'w-12 h-12' : 'w-10 h-10'} rounded-xl ${f.bg} border ${f.border} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+      {/* Dynamic glow follows cursor position */}
+      <motion.div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+        style={reduce ? { background: `radial-gradient(350px circle at 30% 40%, ${f.glow}, transparent 70%)` } : {
+          background: `radial-gradient(300px circle at ${glowX.get()}% ${glowY.get()}%, ${f.glow}, transparent 70%)`,
+        }}
+      />
+      <div
+        className={`relative z-10 ${big ? 'w-12 h-12' : 'w-10 h-10'} rounded-xl ${f.bg} border ${f.border} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+        style={reduce ? {} : { transform: 'translateZ(16px)' }}
+      >
         <f.icon size={big ? 22 : 18} className={f.color} />
       </div>
-      <div className="relative z-10">
+      <div className="relative z-10" style={reduce ? {} : { transform: 'translateZ(8px)' }}>
         <h3 className={`font-semibold text-slate-800 mb-2 ${big ? 'text-base' : 'text-sm'}`}>{f.title}</h3>
         <p className="text-slate-500 leading-relaxed text-sm">{f.desc}</p>
       </div>
       {big && f.tags && (
-        <div className="relative z-10 mt-auto pt-2 flex flex-wrap gap-2">
+        <div className="relative z-10 mt-auto pt-2 flex flex-wrap gap-2" style={reduce ? {} : { transform: 'translateZ(4px)' }}>
           {f.tags.map((tag) => (
             <span key={tag} className={`text-xs px-2.5 py-1 rounded-full ${f.bg} border ${f.border} ${f.color} font-medium`}>{tag}</span>
           ))}

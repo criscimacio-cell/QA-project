@@ -2,6 +2,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { ArrowRight, Zap } from 'lucide-react';
 import { blurUp, fadeUp, stagger } from '../lib/animations';
+import { MagneticButton } from './ui/MagneticButton';
 
 export default function CTA() {
   const ref = useRef(null);
@@ -39,14 +40,14 @@ export default function CTA() {
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3 justify-center">
-            <motion.a href="/register" whileHover={{ transform: 'scale(1.05) translateY(-2px)' }} whileTap={{ transform: 'scale(0.97)' }}
+            <MagneticButton href="/register"
               className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors shadow-lg shadow-amber-200">
               Get Started Free <ArrowRight size={16} />
-            </motion.a>
-            <motion.a href="mailto:hello@qlarity.io" whileHover={{ transform: 'scale(1.03) translateY(-2px)' }} whileTap={{ transform: 'scale(0.97)' }}
+            </MagneticButton>
+            <MagneticButton href="mailto:hello@qlarity.io" strength={0.22}
               className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-8 py-3.5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md">
               Talk to Sales
-            </motion.a>
+            </MagneticButton>
           </motion.div>
 
           <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-6 pt-2">

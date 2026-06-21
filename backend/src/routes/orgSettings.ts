@@ -4,50 +4,88 @@ import sql from '../db';
 
 const router = Router();
 
-// Default permissions — what each role can see by default
-export const DEFAULT_PERMISSIONS: Record<string, Record<string, boolean>> = {
-  admin:    { dashboard: true, repositories: true, files: true, search: true, knowledge: true, testData: true, approvals: true, archive: true, audit: true, users: true, settings: true, orgSettings: true },
-  lead:     { dashboard: true, repositories: true, files: true, search: true, knowledge: true, testData: true, approvals: true, archive: true, audit: false, users: false, settings: true, orgSettings: false },
-  engineer: { dashboard: true, repositories: true, files: true, search: true, knowledge: true, testData: true, approvals: false, archive: false, audit: false, users: false, settings: true, orgSettings: false },
-  viewer:   { dashboard: true, repositories: true, files: true, search: true, knowledge: true, testData: true, approvals: false, archive: false, audit: false, users: false, settings: true, orgSettings: false },
+// Admin always has full access to everything - this never changes
+export const ADMIN_PERMISSIONS: Record<string, boolean> = {
+  dashboard: true, repositories: true, files: true, search: true,
+  knowledge: true, testData: true, approvals: true, archive: true,
+  audit: true, users: true, settings: true, orgSettings: true,
 };
 
-// GET /org-settings/permissions — returns merged (default + custom) permissions
+// GET /org-settings/permissions
+// Returns: { admin: { all true }, customRole1: { ... }, customRole2: { ... } }
 router.get('/permissions', authenticate, async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [org] = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
-  const custom = org?.role_permissions || {};
-
-  // Merge custom over defaults per role
-  const merged: Record<string, Record<string, boolean>> = {};
-  for (const role of ['admin', 'lead', 'engineer', 'viewer']) {
-    merged[role] = { ...DEFAULT_PERMISSIONS[role], ...(custom[role] || {}) };
-  }
-  res.json(merged);
+  const stored = org?.role_permissions || {};
+  // Always include admin as non-configurable full access
+  res.json({ admin: ADMIN_PERMISSIONS, ...stored });
 });
 
-// PUT /org-settings/permissions — admin only, save custom permissions
+// PUT /org-settings/permissions — save permissions for existing custom roles (admin only)
 router.put('/permissions', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const { permissions } = req.body;
+  const validModules = ['dashboard','repositories','files','search','knowledge','testData','approvals','archive','audit','users','settings','orgSettings'];
 
-  // Validate structure
-  const validModules = ['dashboard', 'repositories', 'files', 'search', 'knowledge', 'testData', 'approvals', 'archive', 'audit', 'users', 'settings', 'orgSettings'];
-  const validRoles = ['lead', 'engineer', 'viewer']; // admin always has full access, never configurable
+  // Build cleaned config — never allow modifying admin
+  const current = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
+  const existing = current[0]?.role_permissions || {};
 
   const cleaned: Record<string, Record<string, boolean>> = {};
-  for (const role of validRoles) {
-    if (permissions[role]) {
-      cleaned[role] = {};
-      for (const mod of validModules) {
-        if (typeof permissions[role][mod] === 'boolean') {
-          cleaned[role][mod] = permissions[role][mod];
-        }
-      }
+  // Preserve all existing custom role names
+  const roleNames = Object.keys({ ...existing, ...permissions }).filter(r => r !== 'admin');
+  for (const role of roleNames) {
+    const perms = permissions[role] ?? existing[role] ?? {};
+    cleaned[role] = {};
+    for (const mod of validModules) {
+      cleaned[role][mod] = typeof perms[mod] === 'boolean' ? perms[mod] : false;
     }
   }
 
   await sql`UPDATE organizations SET role_permissions = ${sql.json(cleaned)} WHERE id = ${orgId}`;
+  res.json({ success: true });
+});
+
+// POST /org-settings/roles — create a new custom role
+router.post('/roles', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const { name } = req.body;
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    res.status(400).json({ error: 'Role name is required' }); return;
+  }
+  const roleName = name.trim().toLowerCase().replace(/\s+/g, '_');
+  if (roleName === 'admin') {
+    res.status(400).json({ error: 'Cannot create a role named admin' }); return;
+  }
+
+  const [org] = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
+  const existing = org?.role_permissions || {};
+  if (existing[roleName]) {
+    res.status(409).json({ error: 'Role already exists' }); return;
+  }
+
+  // New role starts with all modules off (admin configures what it can see)
+  const validModules = ['dashboard','repositories','files','search','knowledge','testData','approvals','archive','audit','users','settings','orgSettings'];
+  const newRolePerms: Record<string, boolean> = {};
+  for (const mod of validModules) newRolePerms[mod] = false;
+
+  const updated = { ...existing, [roleName]: newRolePerms };
+  await sql`UPDATE organizations SET role_permissions = ${sql.json(updated)} WHERE id = ${orgId}`;
+  res.json({ role: roleName, permissions: newRolePerms });
+});
+
+// DELETE /org-settings/roles/:roleName — delete a custom role
+router.delete('/roles/:roleName', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const { roleName } = req.params;
+  if (roleName === 'admin') {
+    res.status(400).json({ error: 'Cannot delete admin role' }); return;
+  }
+
+  const [org] = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
+  const existing = { ...(org?.role_permissions || {}) };
+  delete existing[roleName];
+  await sql`UPDATE organizations SET role_permissions = ${sql.json(existing)} WHERE id = ${orgId}`;
   res.json({ success: true });
 });
 

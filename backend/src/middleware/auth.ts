@@ -29,12 +29,17 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export function requireRole(...roles: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      res.status(403).json({ error: 'Insufficient permissions' });
-      return;
-    }
-    next();
-  };
-}
+export const requireRole = (...roles: string[]) => (req: Request, res: Response, next: NextFunction): void => {
+  const userRole = req.user?.role;
+  if (!userRole) { res.status(401).json({ error: 'Unauthorized' }); return; }
+  // Admin always passes
+  if (userRole === 'admin') { next(); return; }
+  // If only admin is allowed, deny non-admins
+  if (roles.length === 1 && roles[0] === 'admin') { res.status(403).json({ error: 'Forbidden' }); return; }
+  // Hardcoded roles pass if in list
+  if (roles.includes(userRole)) { next(); return; }
+  // Custom roles (not in the hardcoded list) pass for non-admin-only routes
+  const hardcodedRoles = ['admin', 'lead', 'engineer', 'viewer'];
+  if (!hardcodedRoles.includes(userRole)) { next(); return; }
+  res.status(403).json({ error: 'Forbidden' });
+};

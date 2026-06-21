@@ -20,9 +20,10 @@ const STACK_CONFIG = [
   { startX: '0%',   startRY: -18, startRZ:  3, startZ: 30,  delay: 0.18 }, // card 3 — far right, spreads rightward
 ];
 
-// Final x offsets as multiples of (card width + gap) relative to stacked center
-// On a 4-col grid the cards need to travel: -1.5, -0.5, +0.5, +1.5 column widths
-const LAND_X = ['-162%', '-54%', '54%', '162%'];
+// Start x: cards compressed inward toward center (as fractions of card width)
+// End x: 0 = each card's natural grid position
+// Outer cards travel more, inner cards travel less — like a deck spreading open
+const START_X = ['110%', '36%', '-36%', '-110%'];
 
 function PillarCard({
   p,
@@ -40,7 +41,7 @@ function PillarCard({
   const s0 = cfg.delay;
   const s1 = s0 + 0.55;
 
-  const rawX  = useTransform(scrollProgress, [s0, s1], ['0%', LAND_X[index]]);
+  const rawX  = useTransform(scrollProgress, [s0, s1], [START_X[index], '0%']);
   const rawRY = useTransform(scrollProgress, [s0, s1], [cfg.startRY, 0]);
   const rawRZ = useTransform(scrollProgress, [s0, s1], [cfg.startRZ, 0]);
   const rawZ  = useTransform(scrollProgress, [s0, Math.min(s0 + 0.2, s1)], [cfg.startZ, 0]);

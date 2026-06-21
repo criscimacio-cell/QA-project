@@ -8,6 +8,8 @@ const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 
 // Each floating card: position (% from center), depth layer, content
 // Palette: amber (brand) · emerald (approved/published) · slate (neutral)
+// y values kept in -28..+40 range so cards stay in the lower 2/3 of the hero
+// and never crowd the navbar. x spread keeps them on the sides, away from copy.
 const FLOAT_CARDS = [
   {
     file: 'Q4_Finance_Report_v2.pdf',
@@ -17,7 +19,7 @@ const FLOAT_CARDS = [
     bg: 'rgba(16,185,129,0.08)',
     border: 'rgba(16,185,129,0.22)',
     avatar: 'SK',
-    x: -38, y: -22,
+    x: -38, y: -10,
     depth: 1.6,
     rot: -6,
     delay: 0,
@@ -30,7 +32,7 @@ const FLOAT_CARDS = [
     bg: 'rgba(245,158,11,0.09)',
     border: 'rgba(245,158,11,0.28)',
     avatar: 'PM',
-    x: 36, y: -28,
+    x: 36, y: -18,
     depth: 1.2,
     rot: 5,
     delay: 0.05,
@@ -43,7 +45,7 @@ const FLOAT_CARDS = [
     bg: 'rgba(180,83,9,0.07)',
     border: 'rgba(180,83,9,0.20)',
     avatar: 'MT',
-    x: -44, y: 24,
+    x: -42, y: 26,
     depth: 0.8,
     rot: 4,
     delay: 0.1,
@@ -56,7 +58,7 @@ const FLOAT_CARDS = [
     bg: 'rgba(16,185,129,0.08)',
     border: 'rgba(16,185,129,0.22)',
     avatar: 'AL',
-    x: 40, y: 22,
+    x: 40, y: 24,
     depth: 1.4,
     rot: -4,
     delay: 0.08,
@@ -69,7 +71,7 @@ const FLOAT_CARDS = [
     bg: 'rgba(245,158,11,0.09)',
     border: 'rgba(245,158,11,0.25)',
     avatar: 'JR',
-    x: -14, y: -44,
+    x: -16, y: -28,
     depth: 0.6,
     rot: 2,
     delay: 0.12,
@@ -82,7 +84,7 @@ const FLOAT_CARDS = [
     bg: 'rgba(16,185,129,0.08)',
     border: 'rgba(16,185,129,0.25)',
     avatar: 'TB',
-    x: 18, y: 44,
+    x: 20, y: 38,
     depth: 1.0,
     rot: -3,
     delay: 0.06,
@@ -95,7 +97,7 @@ const FLOAT_CARDS = [
     bg: 'rgba(245,158,11,0.09)',
     border: 'rgba(245,158,11,0.28)',
     avatar: 'PM',
-    x: -26, y: 46,
+    x: -28, y: 40,
     depth: 1.8,
     rot: 7,
     delay: 0.14,
@@ -108,7 +110,7 @@ const FLOAT_CARDS = [
     bg: 'rgba(245,158,11,0.09)',
     border: 'rgba(245,158,11,0.25)',
     avatar: 'SK',
-    x: 46, y: -6,
+    x: 44, y: 4,
     depth: 0.7,
     rot: -5,
     delay: 0.09,
@@ -155,7 +157,7 @@ export default function Hero() {
         style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 48%, rgba(245,158,11,0.06) 0%, transparent 70%)' }} />
 
       {/* ── Floating card field ─────────────────────────────────── */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ opacity: 0.72 }}>
         {FLOAT_CARDS.map((card, i) => {
           // Scale parallax offset by depth — deeper = more pixels
           return (
@@ -170,9 +172,11 @@ export default function Hero() {
         })}
       </div>
 
-      {/* Vignette edges so cards fade near boundary */}
+      {/* Vignette — strong top fade keeps cards away from the navbar */}
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 75% 75% at 50% 50%, transparent 40%, rgba(250,250,250,0.85) 80%, rgba(250,250,250,1) 100%)' }} />
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-40 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, rgba(250,250,250,1) 0%, rgba(250,250,250,0.85) 60%, transparent 100%)' }} />
 
       {/* ── Hero text ──────────────────────────────────────────── */}
       <div className="relative w-full max-w-4xl mx-auto px-6 py-32 pt-36 flex flex-col items-center gap-7 text-center z-10">

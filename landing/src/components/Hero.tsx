@@ -1,20 +1,39 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
-import { ArrowRight, Play, CheckCircle2 } from 'lucide-react';
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
+import { useRef, useEffect } from 'react';
+import { ArrowRight, Play, CheckCircle2, Sparkles } from 'lucide-react';
 
 const BADGES = ['SOC 2 Ready', 'Multi-tenant', 'Role-based Access'];
 
 const FLOAT_CARDS = [
-  { label: 'Files Approved', value: '1,284', color: 'text-emerald-400', dot: 'bg-emerald-400', x: '-right-4 top-12', delay: 0 },
-  { label: 'Pending Review', value: '23', color: 'text-amber-400', dot: 'bg-amber-400', x: '-left-8 bottom-16', delay: 0.15 },
-  { label: 'Team Members', value: '47', color: 'text-blue-400', dot: 'bg-blue-400', x: '-right-2 bottom-8', delay: 0.3 },
+  { label: 'Files Approved', value: '1,284', color: 'text-emerald-400', dot: 'bg-emerald-400', pos: '-right-4 top-12', delay: 0 },
+  { label: 'Pending Review', value: '23', color: 'text-amber-400', dot: 'bg-amber-400', pos: '-left-8 bottom-16', delay: 0.15 },
+  { label: 'Team Members', value: '47', color: 'text-blue-400', dot: 'bg-blue-400', pos: '-right-2 bottom-8', delay: 0.3 },
 ];
 
 export default function Hero() {
-  const ref = useRef(null);
+  const ref = useRef<HTMLElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const y = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
+  // Spotlight follow cursor
+  const mouseX = useMotionValue(50);
+  const mouseY = useMotionValue(50);
+  const smoothX = useSpring(mouseX, { stiffness: 60, damping: 20 });
+  const smoothY = useSpring(mouseY, { stiffness: 60, damping: 20 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      mouseX.set(((e.clientX - rect.left) / rect.width) * 100);
+      mouseY.set(((e.clientY - rect.top) / rect.height) * 100);
+    };
+    el.addEventListener('mousemove', handler);
+    return () => el.removeEventListener('mousemove', handler);
+  }, [mouseX, mouseY]);
 
   const container = {
     hidden: {},
@@ -26,7 +45,7 @@ export default function Hero() {
   };
 
   return (
-    <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 noise">
       {/* Background layers */}
       <div className="absolute inset-0 grid-bg" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/50 to-slate-950" />
@@ -35,20 +54,49 @@ export default function Hero() {
       <motion.div
         style={{
           y, opacity,
-          background: 'radial-gradient(circle, rgba(245,158,11,0.12) 0%, rgba(245,158,11,0.04) 40%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(245,158,11,0.14) 0%, rgba(245,158,11,0.05) 40%, transparent 70%)',
         }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full"
       />
+
+      {/* Rotating beam */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+        style={{ y, opacity }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] pointer-events-none"
+      >
+        <div
+          className="w-full h-full rounded-full"
+          style={{
+            background: 'conic-gradient(from 0deg, transparent 0deg, rgba(245,158,11,0.08) 30deg, transparent 60deg)',
+          }}
+        />
+      </motion.div>
+
+      {/* Spotlight follow */}
+      <div ref={containerRef} className="absolute inset-0 pointer-events-none">
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(600px circle at ${smoothX.get()}% ${smoothY.get()}%, rgba(245,158,11,0.06), transparent 60%)`,
+          }}
+        />
+      </div>
 
       <div className="relative max-w-6xl mx-auto px-6 text-center">
         <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col items-center gap-6">
 
           {/* Badge row */}
           <motion.div variants={item} className="flex flex-wrap justify-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 border border-amber-500/25 text-amber-400">
+              <Sparkles size={11} />
+              Now with AI-powered search
+            </span>
             {BADGES.map((b) => (
               <span
                 key={b}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/5 border border-white/10 text-slate-400"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/5 border border-white/10 text-slate-400"
               >
                 <CheckCircle2 size={11} className="text-amber-400" />
                 {b}
@@ -59,7 +107,7 @@ export default function Hero() {
           {/* Headline */}
           <motion.h1
             variants={item}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]"
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.08]"
           >
             <span className="text-gradient-white">QA Asset Management,</span>
             <br />
@@ -81,7 +129,7 @@ export default function Hero() {
               href="/register"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-6 py-3 rounded-xl text-sm transition-colors duration-200 glow-amber-sm"
+              className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-7 py-3.5 rounded-xl text-sm transition-colors duration-200 glow-amber-sm"
             >
               Start for Free
               <ArrowRight size={16} />
@@ -90,17 +138,28 @@ export default function Hero() {
               href="#how-it-works"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-2 bg-white/6 hover:bg-white/10 border border-white/12 text-white font-medium px-6 py-3 rounded-xl text-sm transition-all duration-200"
+              className="inline-flex items-center gap-2 bg-white/6 hover:bg-white/10 border border-white/12 text-white font-medium px-7 py-3.5 rounded-xl text-sm transition-all duration-200"
             >
               <Play size={14} className="fill-current" />
               See How It Works
             </motion.a>
           </motion.div>
 
-          {/* Social proof */}
-          <motion.p variants={item} className="text-xs text-slate-500">
-            No credit card required · Free forever for small teams
-          </motion.p>
+          {/* Social proof micro */}
+          <motion.div variants={item} className="flex items-center gap-4">
+            <div className="flex -space-x-2">
+              {['#F59E0B', '#6366F1', '#10B981', '#3B82F6'].map((c, i) => (
+                <div
+                  key={i}
+                  className="w-7 h-7 rounded-full border-2 border-slate-950 flex items-center justify-center text-xs font-bold text-white"
+                  style={{ background: c }}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-slate-500">
+              Trusted by <span className="text-slate-300 font-medium">500+ QA teams</span> · No credit card required
+            </p>
+          </motion.div>
 
           {/* App preview */}
           <motion.div
@@ -111,10 +170,11 @@ export default function Hero() {
             {FLOAT_CARDS.map((card) => (
               <motion.div
                 key={card.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ delay: 0.8 + card.delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className={`absolute ${card.x} z-10 card-glass rounded-xl px-4 py-3 hidden lg:flex flex-col gap-0.5`}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                className={`absolute ${card.pos} z-10 card-glass rounded-xl px-4 py-3 hidden lg:flex flex-col gap-0.5 cursor-default`}
               >
                 <div className="flex items-center gap-1.5">
                   <div className={`w-1.5 h-1.5 rounded-full ${card.dot} animate-pulse`} />
@@ -138,21 +198,24 @@ export default function Hero() {
                 <div className="flex-1 mx-4 bg-slate-800 rounded-md h-5 flex items-center px-3">
                   <span className="text-slate-500 text-xs">app.qlarity.io/files</span>
                 </div>
+                <div className="w-16 h-5 bg-amber-500/20 border border-amber-500/30 rounded text-amber-400 text-[10px] flex items-center justify-center font-medium">
+                  LIVE
+                </div>
               </div>
 
               {/* Mock UI */}
               <div className="bg-slate-900/80 p-6 min-h-[320px] flex gap-4">
                 {/* Sidebar stub */}
                 <div className="hidden sm:flex flex-col gap-2 w-44 flex-shrink-0">
-                  {['Dashboard', 'Repositories', 'File Manager', 'Knowledge Base', 'Test Data'].map((item, i) => (
+                  {['Dashboard', 'Repositories', 'File Manager', 'Knowledge Base', 'Test Data'].map((navItem, i) => (
                     <div
-                      key={item}
+                      key={navItem}
                       className={`h-8 rounded-lg flex items-center px-3 text-xs ${
                         i === 2 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-white/3 text-slate-500'
                       }`}
                     >
                       <div className={`w-1.5 h-1.5 rounded-full mr-2 ${i === 2 ? 'bg-amber-400' : 'bg-slate-600'}`} />
-                      {item}
+                      {navItem}
                     </div>
                   ))}
                 </div>
@@ -169,14 +232,18 @@ export default function Hero() {
                     { name: 'UI_Smoke_Test_Data.csv', status: 'draft', color: 'bg-slate-500/20 text-slate-400' },
                     { name: 'Performance_Baseline.xlsx', status: 'published', color: 'bg-blue-500/20 text-blue-400' },
                   ].map((file) => (
-                    <div key={file.name} className="flex items-center gap-3 bg-white/3 rounded-xl px-4 py-3 border border-white/5">
+                    <motion.div
+                      key={file.name}
+                      whileHover={{ x: 3, transition: { duration: 0.2 } }}
+                      className="flex items-center gap-3 bg-white/3 hover:bg-white/6 rounded-xl px-4 py-3 border border-white/5 hover:border-white/10 transition-colors cursor-default"
+                    >
                       <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/20 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-slate-300 truncate">{file.name}</div>
                         <div className="text-xs text-slate-600 mt-0.5">Modified 2h ago</div>
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${file.color}`}>{file.status}</span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>

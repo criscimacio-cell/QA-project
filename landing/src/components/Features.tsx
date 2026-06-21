@@ -135,7 +135,7 @@ export default function Features() {
   // finish landing by the time section center hits 35% from top.
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ['start 0.85', 'end 0.4'],
+    offset: ['start 1.0', 'start 0.15'],
   });
 
   return (

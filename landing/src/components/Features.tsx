@@ -1,4 +1,4 @@
-import { motion, useReducedMotion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useReducedMotion, useMotionValue, useSpring, useTransform, useScroll, MotionValue } from 'framer-motion';
 import { useRef } from 'react';
 import { FolderOpen, GitPullRequest, Users, History, Lock, ShieldCheck, Search, Layers } from 'lucide-react';
 import { blurUp, stagger } from '../lib/animations';
@@ -14,73 +14,91 @@ const FEATURES = [
   { icon: Layers, title: 'Templates', desc: 'Build reusable document templates for contracts, reports, and forms. Standardize structure across your team.', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200', glow: 'rgba(249,115,22,0.1)', size: 'small' },
 ];
 
-// Fan angles — alternating left/right, fanning wider as index increases
-// Gives the "cards dealt from a deck" spread effect
-const DEAL_ANGLES = [
-  -7, 7,        // large cards (slight)
-  -11, 13,      // first two small
-  -9, 15,       // next two
-  -13, 10,      // last two
+// Each card's off-screen origin — positioned around a clock face
+// so they orbit inward from different directions as you scroll
+const ORBIT_ORIGINS = [
+  { x: -700, y: -180, rz: -22 }, // top-left
+  { x:  120, y: -680, rz:  18 }, // top
+  { x:  740, y: -120, rz:  24 }, // top-right
+  { x:  860, y:  160, rz: -18 }, // right
+  { x:  520, y:  560, rz:  20 }, // bottom-right
+  { x: -120, y:  700, rz: -24 }, // bottom
+  { x: -620, y:  420, rz:  22 }, // bottom-left
+  { x: -860, y:   60, rz: -20 }, // left
 ];
 
 const large = FEATURES.filter((f) => f.size === 'large');
 const small = FEATURES.filter((f) => f.size === 'small');
 
-function BentoCard({ f, big = false, index = 0 }: { f: typeof FEATURES[number]; big?: boolean; index?: number }) {
+function BentoCard({
+  f,
+  big = false,
+  index = 0,
+  scrollYProgress,
+}: {
+  f: typeof FEATURES[number];
+  big?: boolean;
+  index?: number;
+  scrollYProgress: MotionValue<number>;
+}) {
   const reduce = useReducedMotion();
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // 3D tilt on hover
-  const rawX = useMotionValue(0);
-  const rawY = useMotionValue(0);
-  const rotateX = useSpring(useTransform(rawY, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20, mass: 0.6 });
-  const rotateY = useSpring(useTransform(rawX, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20, mass: 0.6 });
+  // ── Scroll-driven orbit path ──────────────────────────────────────────────
+  // Each card gets its own staggered window within the section's scroll range.
+  // Cards arrive one-by-one, spiralling in from their origin point.
+  const origin = ORBIT_ORIGINS[index % ORBIT_ORIGINS.length];
+  const s0 = index * 0.08;           // when this card starts moving
+  const s1 = s0 + 0.38;              // when it lands in place
+
+  const rawX     = useTransform(scrollYProgress, [s0, s1], [origin.x, 0]);
+  const rawY     = useTransform(scrollYProgress, [s0, s1], [origin.y, 0]);
+  const rawRZ    = useTransform(scrollYProgress, [s0, s1], [origin.rz, 0]);
+  const rawScale = useTransform(scrollYProgress, [s0, s0 + 0.28], [0.55, 1]);
+  const opacity  = useTransform(scrollYProgress, [s0, s0 + 0.14], [0, 1]);
+
+  // Springs add momentum so the cards feel like they have physical weight
+  const x     = useSpring(rawX,     { stiffness: 90, damping: 18, mass: 1 });
+  const y     = useSpring(rawY,     { stiffness: 90, damping: 18, mass: 1 });
+  const rz    = useSpring(rawRZ,    { stiffness: 90, damping: 18, mass: 1 });
+  const scale = useSpring(rawScale, { stiffness: 90, damping: 18, mass: 1 });
+
+  // ── 3D tilt on hover (separate rotateX/Y axes, stacks on top of orbit) ──
+  const tiltRawX = useMotionValue(0);
+  const tiltRawY = useMotionValue(0);
+  const rotateX  = useSpring(useTransform(tiltRawY, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20, mass: 0.6 });
+  const rotateY  = useSpring(useTransform(tiltRawX, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20, mass: 0.6 });
 
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (reduce) return;
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
-    rawX.set((e.clientX - rect.left) / rect.width - 0.5);
-    rawY.set((e.clientY - rect.top) / rect.height - 0.5);
+    tiltRawX.set((e.clientX - rect.left) / rect.width - 0.5);
+    tiltRawY.set((e.clientY - rect.top) / rect.height - 0.5);
   };
 
   const onMouseLeave = () => {
-    rawX.set(0);
-    rawY.set(0);
+    tiltRawX.set(0);
+    tiltRawY.set(0);
   };
-
-  const dealAngle = DEAL_ANGLES[index] ?? 0;
 
   return (
     <motion.div
       ref={cardRef}
-      // Deal-in entry: start fanned/rotated, settle into place
-      initial={reduce ? { opacity: 0 } : {
-        opacity: 0,
-        rotateZ: dealAngle,
-        y: 70 + index * 4,
-        scale: 0.88,
-      }}
-      whileInView={reduce ? { opacity: 1 } : {
-        opacity: 1,
-        rotateZ: 0,
-        y: 0,
-        scale: 1,
-      }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{
-        duration: 0.7,
-        delay: index * 0.06,
-        ease: [0.16, 1, 0.3, 1],
-        rotateZ: { duration: 0.75, ease: [0.34, 1.2, 0.64, 1] }, // slight overshoot on rotation
-      }}
-      // 3D hover tilt (separate axes from deal rotateZ)
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
-      style={reduce ? {} : { rotateX, rotateY, transformStyle: 'preserve-3d', transformPerspective: 900 }}
+      style={reduce ? {} : {
+        x, y,
+        rotateZ: rz,
+        scale,
+        opacity,
+        rotateX,
+        rotateY,
+        transformStyle: 'preserve-3d',
+        transformPerspective: 900,
+      }}
       className="bento-card rounded-2xl p-7 flex flex-col gap-5 cursor-default group relative overflow-hidden"
     >
-      {/* Glow on hover */}
       <div
         aria-hidden="true"
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
@@ -111,8 +129,22 @@ function BentoCard({ f, big = false, index = 0 }: { f: typeof FEATURES[number]; 
 }
 
 export default function Features() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  // Scroll range: cards start animating when section enters 85% of viewport,
+  // finish landing by the time section center hits 35% from top.
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start 0.85', 'end 0.4'],
+  });
+
   return (
-    <section id="features" aria-labelledby="features-heading" className="py-32 relative overflow-hidden scroll-mt-20">
+    <section
+      ref={sectionRef}
+      id="features"
+      aria-labelledby="features-heading"
+      className="py-32 relative overflow-visible scroll-mt-20"
+    >
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#FAFAFA] via-white/60 to-[#FAFAFA]" />
 
       <div className="relative max-w-6xl mx-auto px-6">
@@ -141,12 +173,18 @@ export default function Features() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {large.map((f, i) => <BentoCard key={f.title} f={f} big index={i} />)}
+            {large.map((f, i) => (
+              <BentoCard key={f.title} f={f} big index={i} scrollYProgress={scrollYProgress} />
+            ))}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-            {small.slice(0, 2).map((f, i) => <BentoCard key={f.title} f={f} index={large.length + i} />)}
+            {small.slice(0, 2).map((f, i) => (
+              <BentoCard key={f.title} f={f} index={large.length + i} scrollYProgress={scrollYProgress} />
+            ))}
           </div>
-          {small.slice(2).map((f, i) => <BentoCard key={f.title} f={f} index={large.length + 2 + i} />)}
+          {small.slice(2).map((f, i) => (
+            <BentoCard key={f.title} f={f} index={large.length + 2 + i} scrollYProgress={scrollYProgress} />
+          ))}
         </div>
       </div>
     </section>

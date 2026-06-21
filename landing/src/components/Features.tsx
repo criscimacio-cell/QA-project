@@ -48,8 +48,8 @@ function BentoCard({
   // Each card gets its own staggered window within the section's scroll range.
   // Cards arrive one-by-one, spiralling in from their origin point.
   const origin = ORBIT_ORIGINS[index % ORBIT_ORIGINS.length];
-  const s0 = index * 0.1;            // when this card starts moving (wider stagger across scroll)
-  const s1 = s0 + 0.28;             // when it lands in place
+  const s0 = index * 0.07;           // stagger per card
+  const s1 = s0 + 0.22;             // each card's flight duration
 
   const rawX     = useTransform(scrollYProgress, [s0, s1], [origin.x, 0]);
   const rawY     = useTransform(scrollYProgress, [s0, s1], [origin.y, 0]);

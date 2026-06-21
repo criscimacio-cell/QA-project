@@ -206,9 +206,6 @@ export default function UserManagement() {
       <div className="card p-5">
         <h3 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4">Permission Matrix</h3>
         <div className="overflow-x-auto">
-          {users.length === 0 && !saving ? (
-            <div className="text-center py-6 text-slate-400 dark:text-slate-500 text-sm">No users found</div>
-          ) : null}
           <table className="w-full text-sm">
             <thead>
               <tr>
@@ -285,6 +282,11 @@ export default function UserManagement() {
                   </td>
                 </tr>
               ))}
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-400 dark:text-slate-500">No users found</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

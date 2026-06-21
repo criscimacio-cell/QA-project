@@ -55,7 +55,7 @@ export default function ResetPassword() {
   };
   const strength = getStrength(password);
   const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-  const strengthColor = ['', 'bg-red-400 dark:bg-red-500', 'bg-amber-400 dark:bg-amber-500', 'bg-[#F59E0B]', 'bg-green-500 dark:bg-green-400'];
+  const strengthColor = ['', 'bg-red-400 dark:bg-red-500', 'bg-amber-400 dark:bg-amber-500', 'bg-amber-500 dark:bg-amber-400', 'bg-green-500 dark:bg-green-400'];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">

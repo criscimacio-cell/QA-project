@@ -361,5 +361,7 @@ export async function initDb() {
     console.log('Knowledge base articles seeded.');
   }
 
+  await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS role_permissions JSONB DEFAULT NULL`;
+
   console.log('Database initialization complete.');
 }

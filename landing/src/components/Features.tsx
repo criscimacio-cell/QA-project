@@ -1,32 +1,40 @@
 import { motion, useReducedMotion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { FolderOpen, GitPullRequest, Users, History, Lock, ShieldCheck, Search, Layers } from 'lucide-react';
-import { blurUp, stagger, scaleIn } from '../lib/animations';
+import { blurUp, stagger } from '../lib/animations';
 
 const FEATURES = [
-  { icon: FolderOpen, title: 'Centralized Storage', desc: 'One secure home for every document across your organization — PDFs, Word files, spreadsheets, and more. Organized by folder, tag, and department.', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', glow: 'rgba(245,158,11,0.08)', size: 'large', tags: ['Any File Type', 'Folder Structure', 'Department Views'] },
-  { icon: GitPullRequest, title: 'Approval Workflows', desc: 'Route documents through customizable multi-step review chains. Set required approvers, deadlines, and automatic escalations.', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', glow: 'rgba(59,130,246,0.08)', size: 'large', tags: ['Multi-step Reviews', 'Auto Escalation', 'Email Alerts'] },
-  { icon: History, title: 'Version Control', desc: 'Every edit is tracked. Restore any previous version instantly with a full change history and side-by-side comparison.', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-200', glow: 'rgba(139,92,246,0.06)', size: 'small' },
-  { icon: Users, title: 'Team Collaboration', desc: 'Comment, annotate, and tag teammates directly on documents. Resolve threads and keep discussions in context.', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', glow: 'rgba(16,185,129,0.06)', size: 'small' },
-  { icon: Lock, title: 'Granular Permissions', desc: 'Control exactly who can view, edit, share, or approve each document. Down to individual file level.', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200', glow: 'rgba(239,68,68,0.06)', size: 'small' },
-  { icon: ShieldCheck, title: 'Audit Trail', desc: 'Immutable log of every open, edit, share, and approval action — timestamped and exportable for compliance.', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200', glow: 'rgba(6,182,212,0.06)', size: 'small' },
-  { icon: Search, title: 'Full-Text Search', desc: 'Search inside document contents, not just filenames. Find what you need in seconds across thousands of files.', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', glow: 'rgba(234,179,8,0.06)', size: 'small' },
-  { icon: Layers, title: 'Templates', desc: 'Build reusable document templates for contracts, reports, and forms. Standardize structure across your team.', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200', glow: 'rgba(249,115,22,0.06)', size: 'small' },
+  { icon: FolderOpen, title: 'Centralized Storage', desc: 'One secure home for every document across your organization — PDFs, Word files, spreadsheets, and more. Organized by folder, tag, and department.', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', glow: 'rgba(245,158,11,0.12)', size: 'large', tags: ['Any File Type', 'Folder Structure', 'Department Views'] },
+  { icon: GitPullRequest, title: 'Approval Workflows', desc: 'Route documents through customizable multi-step review chains. Set required approvers, deadlines, and automatic escalations.', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', glow: 'rgba(59,130,246,0.12)', size: 'large', tags: ['Multi-step Reviews', 'Auto Escalation', 'Email Alerts'] },
+  { icon: History, title: 'Version Control', desc: 'Every edit is tracked. Restore any previous version instantly with a full change history and side-by-side comparison.', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-200', glow: 'rgba(139,92,246,0.1)', size: 'small' },
+  { icon: Users, title: 'Team Collaboration', desc: 'Comment, annotate, and tag teammates directly on documents. Resolve threads and keep discussions in context.', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', glow: 'rgba(16,185,129,0.1)', size: 'small' },
+  { icon: Lock, title: 'Granular Permissions', desc: 'Control exactly who can view, edit, share, or approve each document. Down to individual file level.', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200', glow: 'rgba(239,68,68,0.1)', size: 'small' },
+  { icon: ShieldCheck, title: 'Audit Trail', desc: 'Immutable log of every open, edit, share, and approval action — timestamped and exportable for compliance.', color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200', glow: 'rgba(6,182,212,0.1)', size: 'small' },
+  { icon: Search, title: 'Full-Text Search', desc: 'Search inside document contents, not just filenames. Find what you need in seconds across thousands of files.', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200', glow: 'rgba(234,179,8,0.1)', size: 'small' },
+  { icon: Layers, title: 'Templates', desc: 'Build reusable document templates for contracts, reports, and forms. Standardize structure across your team.', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200', glow: 'rgba(249,115,22,0.1)', size: 'small' },
+];
+
+// Fan angles — alternating left/right, fanning wider as index increases
+// Gives the "cards dealt from a deck" spread effect
+const DEAL_ANGLES = [
+  -7, 7,        // large cards (slight)
+  -11, 13,      // first two small
+  -9, 15,       // next two
+  -13, 10,      // last two
 ];
 
 const large = FEATURES.filter((f) => f.size === 'large');
 const small = FEATURES.filter((f) => f.size === 'small');
 
-function BentoCard({ f, big = false }: { f: typeof FEATURES[number]; big?: boolean }) {
+function BentoCard({ f, big = false, index = 0 }: { f: typeof FEATURES[number]; big?: boolean; index?: number }) {
   const reduce = useReducedMotion();
   const cardRef = useRef<HTMLDivElement>(null);
 
+  // 3D tilt on hover
   const rawX = useMotionValue(0);
   const rawY = useMotionValue(0);
   const rotateX = useSpring(useTransform(rawY, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20, mass: 0.6 });
   const rotateY = useSpring(useTransform(rawX, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20, mass: 0.6 });
-  const glowX = useTransform(rawX, [-0.5, 0.5], [20, 80]);
-  const glowY = useTransform(rawY, [-0.5, 0.5], [20, 80]);
 
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (reduce) return;
@@ -41,33 +49,56 @@ function BentoCard({ f, big = false }: { f: typeof FEATURES[number]; big?: boole
     rawY.set(0);
   };
 
+  const dealAngle = DEAL_ANGLES[index] ?? 0;
+
   return (
     <motion.div
       ref={cardRef}
-      variants={big ? scaleIn : blurUp}
+      // Deal-in entry: start fanned/rotated, settle into place
+      initial={reduce ? { opacity: 0 } : {
+        opacity: 0,
+        rotateZ: dealAngle,
+        y: 70 + index * 4,
+        scale: 0.88,
+      }}
+      whileInView={reduce ? { opacity: 1 } : {
+        opacity: 1,
+        rotateZ: 0,
+        y: 0,
+        scale: 1,
+      }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{
+        duration: 0.7,
+        delay: index * 0.06,
+        ease: [0.16, 1, 0.3, 1],
+        rotateZ: { duration: 0.75, ease: [0.34, 1.2, 0.64, 1] }, // slight overshoot on rotation
+      }}
+      // 3D hover tilt (separate axes from deal rotateZ)
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
-      style={reduce ? {} : { rotateX, rotateY, transformStyle: 'preserve-3d', transformPerspective: 800 }}
+      style={reduce ? {} : { rotateX, rotateY, transformStyle: 'preserve-3d', transformPerspective: 900 }}
       className="bento-card rounded-2xl p-7 flex flex-col gap-5 cursor-default group relative overflow-hidden"
     >
-      {/* Dynamic glow follows cursor position */}
-      <motion.div
+      {/* Glow on hover */}
+      <div
         aria-hidden="true"
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
-        style={reduce ? { background: `radial-gradient(350px circle at 30% 40%, ${f.glow}, transparent 70%)` } : {
-          background: `radial-gradient(300px circle at ${glowX.get()}% ${glowY.get()}%, ${f.glow}, transparent 70%)`,
-        }}
+        style={{ background: `radial-gradient(300px circle at 35% 40%, ${f.glow}, transparent 70%)` }}
       />
+
       <div
         className={`relative z-10 ${big ? 'w-12 h-12' : 'w-10 h-10'} rounded-xl ${f.bg} border ${f.border} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
         style={reduce ? {} : { transform: 'translateZ(16px)' }}
       >
         <f.icon size={big ? 22 : 18} className={f.color} />
       </div>
+
       <div className="relative z-10" style={reduce ? {} : { transform: 'translateZ(8px)' }}>
         <h3 className={`font-semibold text-slate-800 mb-2 ${big ? 'text-base' : 'text-sm'}`}>{f.title}</h3>
         <p className="text-slate-500 leading-relaxed text-sm">{f.desc}</p>
       </div>
+
       {big && f.tags && (
         <div className="relative z-10 mt-auto pt-2 flex flex-wrap gap-2" style={reduce ? {} : { transform: 'translateZ(4px)' }}>
           {f.tags.map((tag) => (
@@ -108,16 +139,15 @@ export default function Features() {
           </motion.p>
         </motion.div>
 
-        <motion.div variants={stagger(0.07)} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {large.map((f) => <BentoCard key={f.title} f={f} big />)}
+            {large.map((f, i) => <BentoCard key={f.title} f={f} big index={i} />)}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-            {small.slice(0, 2).map((f) => <BentoCard key={f.title} f={f} />)}
+            {small.slice(0, 2).map((f, i) => <BentoCard key={f.title} f={f} index={large.length + i} />)}
           </div>
-          {small.slice(2).map((f) => <BentoCard key={f.title} f={f} />)}
-        </motion.div>
+          {small.slice(2).map((f, i) => <BentoCard key={f.title} f={f} index={large.length + 2 + i} />)}
+        </div>
       </div>
     </section>
   );

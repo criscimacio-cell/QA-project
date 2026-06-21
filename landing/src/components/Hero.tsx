@@ -1,12 +1,13 @@
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { useEffect, useRef } from 'react';
-import { ArrowRight, Play, CheckCircle2, Sparkles, FileText, CheckCircle, Clock, Eye, Upload, AlertCircle, Globe } from 'lucide-react';
+import { ArrowRight, Play, CheckCircle2, Sparkles, FileText, CheckCircle, Clock, Eye, Upload, Globe } from 'lucide-react';
 import { fadeUp, blurUp, stagger } from '../lib/animations';
 import { MagneticButton } from './ui/MagneticButton';
 
 const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 
 // Each floating card: position (% from center), depth layer, content
+// Palette: amber (brand) · emerald (approved/published) · slate (neutral)
 const FLOAT_CARDS = [
   {
     file: 'Q4_Finance_Report_v2.pdf',
@@ -14,10 +15,10 @@ const FLOAT_CARDS = [
     icon: CheckCircle,
     color: '#10b981',
     bg: 'rgba(16,185,129,0.08)',
-    border: 'rgba(16,185,129,0.25)',
+    border: 'rgba(16,185,129,0.22)',
     avatar: 'SK',
-    x: -38, y: -22,   // % offset from center
-    depth: 1.6,        // parallax multiplier — higher = closer/more movement
+    x: -38, y: -22,
+    depth: 1.6,
     rot: -6,
     delay: 0,
   },
@@ -25,9 +26,9 @@ const FLOAT_CARDS = [
     file: 'Legal_NDA_Template_v3.pdf',
     status: 'In Review',
     icon: Eye,
-    color: '#f59e0b',
-    bg: 'rgba(245,158,11,0.08)',
-    border: 'rgba(245,158,11,0.25)',
+    color: '#d97706',
+    bg: 'rgba(245,158,11,0.09)',
+    border: 'rgba(245,158,11,0.28)',
     avatar: 'PM',
     x: 36, y: -28,
     depth: 1.2,
@@ -38,9 +39,9 @@ const FLOAT_CARDS = [
     file: 'Employee_Handbook_2025.docx',
     status: 'Pending',
     icon: Clock,
-    color: '#6366f1',
-    bg: 'rgba(99,102,241,0.08)',
-    border: 'rgba(99,102,241,0.25)',
+    color: '#b45309',
+    bg: 'rgba(180,83,9,0.07)',
+    border: 'rgba(180,83,9,0.20)',
     avatar: 'MT',
     x: -44, y: 24,
     depth: 0.8,
@@ -51,9 +52,9 @@ const FLOAT_CARDS = [
     file: 'Brand_Guidelines_v2.pdf',
     status: 'Published',
     icon: Globe,
-    color: '#8b5cf6',
-    bg: 'rgba(139,92,246,0.08)',
-    border: 'rgba(139,92,246,0.25)',
+    color: '#10b981',
+    bg: 'rgba(16,185,129,0.08)',
+    border: 'rgba(16,185,129,0.22)',
     avatar: 'AL',
     x: 40, y: 22,
     depth: 1.4,
@@ -64,9 +65,9 @@ const FLOAT_CARDS = [
     file: 'Sales_Contract_Acme.docx',
     status: 'Uploaded',
     icon: Upload,
-    color: '#0ea5e9',
-    bg: 'rgba(14,165,233,0.08)',
-    border: 'rgba(14,165,233,0.25)',
+    color: '#f59e0b',
+    bg: 'rgba(245,158,11,0.09)',
+    border: 'rgba(245,158,11,0.25)',
     avatar: 'JR',
     x: -14, y: -44,
     depth: 0.6,
@@ -88,11 +89,11 @@ const FLOAT_CARDS = [
   },
   {
     file: 'Budget_Forecast_Q1.xlsx',
-    status: 'Needs action',
-    icon: AlertCircle,
-    color: '#ef4444',
-    bg: 'rgba(239,68,68,0.08)',
-    border: 'rgba(239,68,68,0.25)',
+    status: 'Awaiting review',
+    icon: Clock,
+    color: '#d97706',
+    bg: 'rgba(245,158,11,0.09)',
+    border: 'rgba(245,158,11,0.28)',
     avatar: 'PM',
     x: -26, y: 46,
     depth: 1.8,
@@ -104,7 +105,7 @@ const FLOAT_CARDS = [
     status: 'In Review',
     icon: Eye,
     color: '#f59e0b',
-    bg: 'rgba(245,158,11,0.08)',
+    bg: 'rgba(245,158,11,0.09)',
     border: 'rgba(245,158,11,0.25)',
     avatar: 'SK',
     x: 46, y: -6,

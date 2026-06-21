@@ -277,7 +277,7 @@ export default function KnowledgeBase() {
           {['All', ...kbCategories].map(cat => {
             const count = cat === 'All' ? articles.length : articles.filter(a => a.category === cat).length;
             return (
-              <button key={cat} onClick={() => setCategory(cat)} className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${category === cat ? 'bg-[#FCD34D]/30 dark:bg-emerald-900/20 text-[#F59E0B] dark:text-[#FCD34D] font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+              <button key={cat} onClick={() => setCategory(cat)} className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${category === cat ? 'bg-amber-200/30 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                 <span>{cat}</span>
                 <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full px-2">{count}</span>
               </button>
@@ -325,14 +325,14 @@ export default function KnowledgeBase() {
                     )}
                     <StatusBadge status={a.status} />
                   </div>
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-[#F59E0B] dark:group-hover:text-[#FCD34D] transition-colors">{a.title}</h3>
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{a.title}</h3>
                   <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
                     <span className="flex items-center gap-1"><User size={11} />{a.author_name}</span>
                     <span className="flex items-center gap-1"><Clock size={11} />{new Date(a.updated_at).toLocaleDateString()}</span>
                     {a.tags && <span className="flex items-center gap-1"><Tag size={11} />{a.tags.split(',').slice(0, 3).join(', ')}</span>}
                   </div>
                 </div>
-                {articleLoading ? <Loader2 size={18} className="text-amber-400 animate-spin flex-shrink-0 mt-1" /> : <ChevronRight size={18} className="text-slate-300 group-hover:text-[#FCD34D] flex-shrink-0 mt-1 transition-colors" />}
+                {articleLoading ? <Loader2 size={18} className="text-amber-400 animate-spin flex-shrink-0 mt-1" /> : <ChevronRight size={18} className="text-slate-300 group-hover:text-amber-400 dark:group-hover:text-amber-300 flex-shrink-0 mt-1 transition-colors" />}
               </div>
             </div>
           ))}

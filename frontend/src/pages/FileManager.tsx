@@ -440,10 +440,10 @@ export default function FileManager() {
         </select>
         <button onClick={() => { setSearch(''); setProject(''); setCategory(''); load({ search: '', project: '', category: '' }); }} className="btn-ghost text-sm py-1.5">Clear</button>
         <div className="flex items-center gap-1 ml-auto">
-          <button onClick={() => setViewMode('table')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-amber-500/20 text-amber-500' : 'text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'}`}>
+          <button onClick={() => setViewMode('table')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-amber-500 text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
             <List className="w-4 h-4" />
           </button>
-          <button onClick={() => setViewMode('grouped')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grouped' ? 'bg-amber-500/20 text-amber-500' : 'text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'}`}>
+          <button onClick={() => setViewMode('grouped')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grouped' ? 'bg-amber-500 text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
             <LayoutGrid className="w-4 h-4" />
           </button>
         </div>
@@ -451,8 +451,8 @@ export default function FileManager() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-          <span className="text-sm font-semibold text-[#F59E0B]">{selectedIds.size} file{selectedIds.size !== 1 ? 's' : ''} selected</span>
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+          <span className="text-sm font-semibold text-amber-500">{selectedIds.size} file{selectedIds.size !== 1 ? 's' : ''} selected</span>
           <div className="flex items-center gap-2 ml-2">
             <button onClick={doBulkDownload} className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"><Download size={13} /> Download as ZIP</button>
             {isEngineer && (
@@ -543,7 +543,7 @@ export default function FileManager() {
                       checked={allVisibleSelected}
                       onChange={toggleAll}
                       aria-label="Select all files"
-                      className="rounded border-slate-300 dark:border-slate-600 text-[#F59E0B] focus:ring-[#F59E0B]"
+                      className="rounded border-slate-300 dark:border-slate-600 text-amber-500 focus:ring-amber-500"
                     />
                   </th>
                   {['File', 'Project / Module', 'Version', 'Status', 'Owner', 'Jira', 'Size', 'Updated', 'Actions'].map(h => (
@@ -553,7 +553,7 @@ export default function FileManager() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {files.map((f, index) => (
-                  <tr key={f.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${selectedIds.has(f.id) ? 'bg-[#F59E0B]/5' : ''}`} style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
+                  <tr key={f.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${selectedIds.has(f.id) ? 'bg-amber-500/5' : ''}`} style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
                     <td className="px-4 py-3 w-10">
                       <input
                         type="checkbox"
@@ -561,7 +561,7 @@ export default function FileManager() {
                         onChange={() => toggleOne(f.id)}
                         onClick={e => e.stopPropagation()}
                         aria-label={`Select ${f.name}`}
-                        className="rounded border-slate-300 dark:border-slate-600 text-[#F59E0B] focus:ring-[#F59E0B]"
+                        className="rounded border-slate-300 dark:border-slate-600 text-amber-500 focus:ring-amber-500"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -591,14 +591,14 @@ export default function FileManager() {
                           {fileDetailLoading ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
                         </button>
                         {isPreviewable(f) && (
-                          <button onClick={() => openPreview(f)} title="Preview" aria-label="Preview file" className="p-1.5 rounded hover:bg-[#F59E0B]/10 text-[#F59E0B]">
+                          <button onClick={() => openPreview(f)} title="Preview" aria-label="Preview file" className="p-1.5 rounded hover:bg-amber-500/10 text-amber-500">
                             {f.mime_type?.startsWith('image/') ? <Image size={14} /> : <FileText size={14} />}
                           </button>
                         )}
                         <button onClick={() => downloadFile(f.id, f.original_name)} title="Download" aria-label="Download file" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
                         {isLead ? (
                           <>
-                            <button onClick={() => { setSelected(f); setShowApprove(true); }} title="Review" aria-label="Review file" className="p-1.5 rounded hover:bg-[#F59E0B]/10 text-[#F59E0B]">
+                            <button onClick={() => { setSelected(f); setShowApprove(true); }} title="Review" aria-label="Review file" className="p-1.5 rounded hover:bg-amber-500/10 text-amber-500">
                               <GitBranch size={14} />
                             </button>
                             <button onClick={() => setConfirmArchive({ open: true, id: f.id, name: f.name })} title="Archive" aria-label="Archive file" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400"><Archive size={14} /></button>
@@ -694,7 +694,7 @@ export default function FileManager() {
                     <div className="space-y-2">
                       {selected.versions.map((v: any) => (
                         <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
-                          <span className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] px-2 py-0.5 rounded font-mono">v{v.version}</span>
+                          <span className="text-xs bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded font-mono">v{v.version}</span>
                           <span className="text-slate-500">{v.change_log}</span>
                           <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString('en-CA')}</span>
                           <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version" aria-label={`Download version ${v.version}`}><Download size={12} /></button>
@@ -741,7 +741,7 @@ export default function FileManager() {
                         {c.user_avatar ? (
                           <img src={c.user_avatar} alt="" className="w-8 h-8 rounded-full flex-shrink-0 object-cover" />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-[#F59E0B]/20 text-[#F59E0B] flex items-center justify-center text-xs font-bold flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
                             {(c.user_name || '?')[0].toUpperCase()}
                           </div>
                         )}
@@ -859,7 +859,7 @@ export default function FileManager() {
             onDragLeave={() => setDragOver(false)}
             onDrop={onDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver ? 'border-[#F59E0B] bg-[#F59E0B]/5' : 'border-slate-200 dark:border-slate-700 hover:border-[#F59E0B]/50'}`}
+            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver ? 'border-amber-500 bg-amber-500/5' : 'border-slate-200 dark:border-slate-700 hover:border-amber-500/50'}`}
           >
             <Upload size={28} className="mx-auto mb-3 text-slate-400" />
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Drop files here or click to browse</p>
@@ -881,7 +881,7 @@ export default function FileManager() {
           )}
 
           {bulkProgress && (
-            <p className={`text-sm text-center font-medium ${bulkProgress.includes('complete') ? 'text-[#F59E0B]' : bulkProgress.includes('fail') ? 'text-red-500' : 'text-slate-600 dark:text-slate-400'}`}>
+            <p className={`text-sm text-center font-medium ${bulkProgress.includes('complete') ? 'text-amber-500' : bulkProgress.includes('fail') ? 'text-red-500' : 'text-slate-600 dark:text-slate-400'}`}>
               {bulkProgress}
             </p>
           )}

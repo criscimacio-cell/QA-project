@@ -10,7 +10,7 @@ const STAGES = [
   { key: 'draft', label: 'Draft', icon: FileText, color: 'border-slate-300 dark:border-slate-600', headerColor: 'bg-slate-100 dark:bg-slate-800', textColor: 'text-slate-600 dark:text-slate-400' },
   { key: 'submitted', label: 'Submitted', icon: ArrowRight, color: 'border-blue-300 dark:border-blue-700', headerColor: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400' },
   { key: 'under_review', label: 'Under Review', icon: Clock, color: 'border-amber-300 dark:border-amber-700', headerColor: 'bg-amber-50 dark:bg-amber-900/20', textColor: 'text-amber-600 dark:text-amber-400' },
-  { key: 'approved', label: 'Approved', icon: CheckCircle, color: 'border-emerald-300 dark:border-emerald-700', headerColor: 'bg-[#FCD34D]/20 dark:bg-emerald-900/20', textColor: 'text-[#F59E0B] dark:text-[#FCD34D]' },
+  { key: 'approved', label: 'Approved', icon: CheckCircle, color: 'border-emerald-300 dark:border-emerald-700', headerColor: 'bg-amber-100/60 dark:bg-emerald-900/20', textColor: 'text-amber-600 dark:text-amber-300' },
   { key: 'published', label: 'Published', icon: CheckCircle, color: 'border-emerald-300 dark:border-emerald-700', headerColor: 'bg-emerald-50 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400' },
 ];
 
@@ -137,7 +137,7 @@ export default function ApprovalWorkflow() {
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Approval Workflow</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
           Manage file review and publication pipeline
-          <span className="hidden sm:inline"> · <span className="text-[#F59E0B] font-medium">Drag cards between columns to move files</span></span>
+          <span className="hidden sm:inline"> · <span className="text-amber-500 font-medium">Drag cards between columns to move files</span></span>
         </p>
       </div>
 
@@ -176,7 +176,7 @@ export default function ApprovalWorkflow() {
                 aria-label={`${stage.label} column`}
                 className={`flex-shrink-0 w-64 border-2 rounded-xl overflow-hidden transition-all duration-150 ${
                   isOver
-                    ? stage.color + ' ring-2 ring-offset-1 ring-[#F59E0B] scale-[1.01]'
+                    ? stage.color + ' ring-2 ring-offset-1 ring-amber-500 scale-[1.01]'
                     : stage.color
                 }`}
                 onDragOver={e => handleDragOver(e, stage.key)}
@@ -208,7 +208,7 @@ export default function ApprovalWorkflow() {
                 >
                   {/* Drop hint */}
                   {isOver && draggingId !== null && !stageFiles.some(f => f.id === draggingId) && (
-                    <div className="border-2 border-dashed border-teal-400 rounded-xl h-16 flex items-center justify-center text-xs text-[#F59E0B] font-medium animate-pulse">
+                    <div className="border-2 border-dashed border-teal-400 rounded-xl h-16 flex items-center justify-center text-xs text-amber-500 font-medium animate-pulse">
                       Drop here → {stage.label}
                     </div>
                   )}
@@ -231,7 +231,7 @@ export default function ApprovalWorkflow() {
                         draggingId === f.id
                           ? 'opacity-40 scale-95 bg-slate-100 dark:bg-slate-700'
                           : droppingId === f.id
-                          ? 'opacity-60 ring-2 ring-[#F59E0B] bg-slate-50 dark:bg-slate-800'
+                          ? 'opacity-60 ring-2 ring-amber-500 bg-slate-50 dark:bg-slate-800'
                           : 'bg-slate-50 dark:bg-slate-800 hover:shadow-md hover:scale-[1.01]'
                       }`}
                       style={{

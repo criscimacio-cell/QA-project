@@ -234,10 +234,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ))}
 
         {/* Approval Workflow — Lead + Admin only */}
-        {isLead && renderNavSection('Workflow', leadNav, mainNav.reduce((a, s) => a + s.items.length, 0), collapsed)}
+        {isLead && leadNav.length > 0 && renderNavSection('Workflow', leadNav, mainNav.reduce((a, s) => a + s.items.length, 0), collapsed)}
 
         {/* Admin section — Admin only */}
-        {isAdmin && renderNavSection('Admin', adminNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length, collapsed)}
+        {isAdmin && adminNav.length > 0 && renderNavSection('Admin', adminNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length, collapsed)}
 
         {/* Settings — all roles */}
         {renderNavSection('Account', settingsNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length + adminNav.length, collapsed)}

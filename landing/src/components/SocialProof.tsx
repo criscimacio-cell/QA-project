@@ -6,7 +6,7 @@ const STATS = [
   { value: 10000, suffix: '+', label: 'Assets managed' },
   { value: 500, suffix: '+', label: 'QA teams' },
   { value: 99.9, suffix: '%', label: 'Uptime SLA', decimals: 1 },
-  { value: 200, prefix: '< ', suffix: 'ms', label: 'Avg response time' },
+  { value: 200, prefix: '< ', suffix: 'ms', label: 'Avg response time' },
 ];
 
 const TESTIMONIALS = [
@@ -98,20 +98,20 @@ function StatItem({ stat, index }: { stat: typeof STATS[number]; index: number }
 
 function TestimonialCard({ t }: { t: typeof TESTIMONIALS[number] }) {
   return (
-    <div className="flex-shrink-0 w-80 card-glass rounded-2xl p-6 flex flex-col gap-4 mx-3 cursor-default">
+    <div className="flex-shrink-0 w-80 bg-white border border-slate-200 shadow-sm hover:shadow-md rounded-2xl p-6 flex flex-col gap-4 mx-3 cursor-default transition-shadow duration-300">
       <div className="flex gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star key={i} size={12} className="text-amber-400 fill-amber-400" />
         ))}
       </div>
-      <p className="text-sm text-slate-400 leading-relaxed flex-1">"{t.quote}"</p>
+      <p className="text-sm text-slate-600 leading-relaxed flex-1">"{t.quote}"</p>
       <div className="flex items-center gap-3">
         <div className={`w-8 h-8 rounded-full ${t.color} flex items-center justify-center text-xs font-bold text-white flex-shrink-0`}>
           {t.avatar}
         </div>
         <div>
-          <div className="text-sm font-medium text-white">{t.name}</div>
-          <div className="text-xs text-slate-500">{t.role}</div>
+          <div className="text-sm font-medium text-slate-800">{t.name}</div>
+          <div className="text-xs text-slate-400">{t.role}</div>
         </div>
       </div>
     </div>
@@ -122,10 +122,10 @@ export default function SocialProof() {
   const doubled = [...TESTIMONIALS, ...TESTIMONIALS];
 
   return (
-    <section className="py-24 relative overflow-hidden">
+    <section className="py-24 relative overflow-hidden bg-white">
       {/* Fade edges */}
-      <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, #020617, transparent)' }} />
-      <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, #020617, transparent)' }} />
+      <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, #ffffff, transparent)' }} />
+      <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, #ffffff, transparent)' }} />
 
       <div className="max-w-6xl mx-auto px-6">
         {/* Stats */}
@@ -141,18 +141,18 @@ export default function SocialProof() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 text-xs font-medium text-emerald-400 mb-4">
-            <Star size={12} className="fill-emerald-400" />
+          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full px-4 py-1.5 text-xs font-medium text-emerald-700 mb-4">
+            <Star size={12} className="fill-emerald-500 text-emerald-500" />
             5.0 average rating
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gradient-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
             Loved by QA teams
           </h2>
         </motion.div>
       </div>
 
       {/* Marquee */}
-      <div className="overflow-hidden">
+      <div className="overflow-hidden pb-4">
         <div className="marquee-track">
           {doubled.map((t, i) => (
             <TestimonialCard key={i} t={t} />

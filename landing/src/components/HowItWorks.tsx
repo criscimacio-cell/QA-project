@@ -8,30 +8,30 @@ const STEPS = [
     icon: Upload,
     title: 'Upload & Organize',
     desc: 'Drag and drop QA assets into versioned repositories. Tag with project, Jira ticket, module, and category.',
-    color: 'text-amber-400',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/25',
-    glow: 'shadow-amber-500/20',
+    color: 'text-amber-600',
+    bg: 'bg-amber-50',
+    border: 'border-amber-200',
+    shadow: 'shadow-amber-100',
   },
   {
     step: '02',
     icon: GitPullRequest,
     title: 'Submit for Review',
     desc: 'Trigger multi-step approval chains. Leads and admins review, comment, and approve — all in one place.',
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/25',
-    glow: 'shadow-blue-500/20',
+    color: 'text-blue-600',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    shadow: 'shadow-blue-100',
   },
   {
     step: '03',
     icon: CheckCircle2,
     title: 'Publish & Audit',
     desc: 'Approved files go live for the team. Every action is logged with timestamps and user attribution.',
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/25',
-    glow: 'shadow-emerald-500/20',
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200',
+    shadow: 'shadow-emerald-100',
   },
 ];
 
@@ -42,7 +42,8 @@ export default function HowItWorks() {
 
   return (
     <section id="how-it-works" ref={ref} className="py-32 relative overflow-hidden">
-      <div className="absolute inset-0 grid-bg opacity-50" />
+      <div className="absolute inset-0 grid-bg opacity-40" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FAFAFA] via-white/50 to-[#FAFAFA]" />
 
       <div className="relative max-w-4xl mx-auto px-6">
         <motion.div
@@ -52,10 +53,10 @@ export default function HowItWorks() {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="text-center mb-20"
         >
-          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-1.5 text-xs font-medium text-blue-400 mb-4">
+          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 text-xs font-medium text-blue-600 mb-4">
             Simple workflow
           </div>
-          <h2 className="text-4xl sm:text-5xl font-bold text-gradient-white tracking-tight mb-4">
+          <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight mb-4">
             From draft to published
             <br />in three steps
           </h2>
@@ -64,10 +65,13 @@ export default function HowItWorks() {
         {/* Steps with animated connector line */}
         <div className="relative">
           {/* Vertical line (desktop) */}
-          <div className="absolute left-[28px] top-0 bottom-0 w-px bg-white/6 hidden sm:block" />
+          <div className="absolute left-[28px] top-0 bottom-0 w-px bg-slate-200 hidden sm:block" />
           <motion.div
-            className="absolute left-[28px] top-0 w-px bg-gradient-to-b from-amber-400 via-blue-400 to-emerald-400 hidden sm:block origin-top"
-            style={{ height: lineHeight }}
+            className="absolute left-[28px] top-0 w-px hidden sm:block origin-top"
+            style={{
+              height: lineHeight,
+              background: 'linear-gradient(to bottom, #F59E0B, #3B82F6, #10B981)',
+            }}
           />
 
           <div className="flex flex-col gap-12">
@@ -84,7 +88,7 @@ export default function HowItWorks() {
                 <motion.div
                   whileHover={{ scale: 1.1 }}
                   transition={{ duration: 0.3 }}
-                  className={`relative z-10 w-14 h-14 rounded-2xl ${s.bg} border ${s.border} flex items-center justify-center flex-shrink-0 shadow-xl ${s.glow}`}
+                  className={`relative z-10 w-14 h-14 rounded-2xl ${s.bg} border ${s.border} flex items-center justify-center flex-shrink-0 shadow-lg ${s.shadow}`}
                 >
                   <s.icon size={22} className={s.color} />
                 </motion.div>
@@ -92,10 +96,10 @@ export default function HowItWorks() {
                 {/* Content */}
                 <div className="pt-1 flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xs font-mono text-slate-600">{s.step}</span>
-                    <h3 className="text-lg font-semibold text-white">{s.title}</h3>
+                    <span className="text-xs font-mono text-slate-400">{s.step}</span>
+                    <h3 className="text-lg font-semibold text-slate-800">{s.title}</h3>
                   </div>
-                  <p className="text-slate-400 text-sm leading-relaxed max-w-md">{s.desc}</p>
+                  <p className="text-slate-500 text-sm leading-relaxed max-w-md">{s.desc}</p>
                 </div>
               </motion.div>
             ))}

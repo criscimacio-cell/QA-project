@@ -28,8 +28,8 @@ export default function Archive() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await api.get('/files', { params: { status: 'archived' } });
-      setFiles(r.data);
+      const r = await api.get('/files', { params: { status: 'archived', limit: 1000 } });
+      setFiles(Array.isArray(r.data) ? r.data : (r.data.files ?? []));
     } catch {
       toast.error('Failed to load archived files');
     } finally {

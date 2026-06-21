@@ -39,7 +39,7 @@ export default function TestDataLibrary() {
     setLoading(true);
     api.get('/files', { params })
       .then(r => {
-        setFiles(r.data);
+        setFiles(Array.isArray(r.data) ? r.data : (r.data.files ?? []));
       })
       .catch(() => toast.error('Failed to load test assets'))
       .finally(() => setLoading(false));

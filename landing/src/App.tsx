@@ -5,6 +5,7 @@ import Features from './components/Features';
 import HowItWorks from './components/HowItWorks';
 import SocialProof from './components/SocialProof';
 import Pricing from './components/Pricing';
+import FAQ from './components/FAQ';
 import CTA from './components/CTA';
 import Footer from './components/Footer';
 import { ScrollProgressBar, ScrollToTop } from './components/ScrollUI';
@@ -21,6 +22,7 @@ export default function App() {
         <HowItWorks />
         <SocialProof />
         <Pricing />
+        <FAQ />
         <CTA />
       </main>
       <Footer />

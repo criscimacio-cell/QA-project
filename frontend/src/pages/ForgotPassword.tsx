@@ -83,7 +83,7 @@ export default function ForgotPassword() {
                   <label className="label">Email address</label>
                   <div className="relative">
                     <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input type="email" value={email} onChange={e => { setEmail(e.target.value); if (error) setError(''); }} className={`input pl-9 ${error ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="you@company.com" />
+                    <input type="email" value={email} onChange={e => { setEmail(e.target.value); if (error) setError(''); }} className={`input pl-9 ${error ? 'border-red-400 dark:border-red-500 focus:ring-red-300 dark:focus:ring-red-700' : ''}`} placeholder="you@company.com" />
                   </div>
                 </div>
                 <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5">

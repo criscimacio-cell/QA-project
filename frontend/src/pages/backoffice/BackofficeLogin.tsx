@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useBackofficeAuth } from '../../context/BackofficeAuthContext';
 import { SplineScene, type SplineApp } from '../../components/ui/splite';
+import { useTheme } from '../../context/ThemeContext';
 
 /* ─── Post-login morph overlay ─────────────────────────────────────── */
-function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPulse: boolean; fadingOut: boolean }) {
+function MorphOverlay({ grown, ringPulse, fadingOut, dark }: { grown: boolean; ringPulse: boolean; fadingOut: boolean; dark?: boolean }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      background: '#FAFAFA',
+      background: dark ? '#0f172a' : '#FAFAFA',
       opacity: fadingOut ? 0 : 1,
       transition: fadingOut ? 'opacity 0.45s ease' : 'none',
       pointerEvents: fadingOut ? 'none' : 'all',
@@ -28,7 +29,7 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
           </svg>
         </div>
         <div style={{ overflow: 'hidden', opacity: grown ? 1 : 0, maxHeight: grown ? 40 : 0, transition: 'opacity 0.35s ease 0.3s,max-height 0.35s ease 0.3s' }}>
-          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 20, color: '#0f172a', letterSpacing: '0.04em' }}>Qlarity</span>
+          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 20, color: dark ? '#f1f5f9' : '#0f172a', letterSpacing: '0.04em' }}>Qlarity</span>
         </div>
         <div style={{ opacity: grown ? 1 : 0, transform: grown ? 'translateY(0)' : 'translateY(6px)', transition: 'opacity 0.3s ease 0.55s,transform 0.3s ease 0.55s', marginTop: -10 }}>
           <span style={{ fontSize: 11, color: '#5a8a86', letterSpacing: '0.04em' }}>Loading admin console…</span>
@@ -41,6 +42,7 @@ function MorphOverlay({ grown, ringPulse, fadingOut }: { grown: boolean; ringPul
 export default function BackofficeLogin() {
   const { login, isAuthenticated, loading: authLoading } = useBackofficeAuth();
   const navigate = useNavigate();
+  const { dark } = useTheme();
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -126,7 +128,7 @@ export default function BackofficeLogin() {
   const AMBER = '#F59E0B';
 
   if (authLoading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: dark ? '#0f172a' : '#f0f0f0' }}>
       <div style={{ width: 36, height: 36, border: '3px solid rgba(245,158,11,0.2)', borderTopColor: '#F59E0B', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
@@ -137,14 +139,14 @@ export default function BackofficeLogin() {
       className="login-root"
       style={{
         minHeight: '100vh', position: 'relative', overflow: 'hidden',
-        background: '#f0f0f0',
+        background: dark ? '#0f172a' : '#f0f0f0',
         fontFamily: "'DM Sans', sans-serif",
         ...(phase === 'slideOut'
           ? { opacity: 0, transition: 'opacity 0.45s ease' }
           : { animation: 'fadeIn 0.35s ease both' }),
       }}
     >
-      {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} />}
+      {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} dark={dark} />}
 
       {/* Spline background */}
       <div tabIndex={-1} style={{ position: 'fixed', top: 0, bottom: 0, left: '-20%', right: 0, zIndex: 0 }}>
@@ -165,16 +167,16 @@ export default function BackofficeLogin() {
                 <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
               </svg>
             </div>
-            <span className="brand-title" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 18, color: '#1a1a1a', letterSpacing: '0.04em' }}>Qlarity</span>
+            <span className="brand-title" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 18, color: dark ? '#f1f5f9' : '#1a1a1a', letterSpacing: '0.04em' }}>Qlarity</span>
           </div>
-          <h1 className="brand-title" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 32, fontWeight: 800, color: '#1a1a1a', lineHeight: 1.2, marginBottom: 8 }}>
+          <h1 className="brand-title" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 32, fontWeight: 800, color: dark ? '#f1f5f9' : '#1a1a1a', lineHeight: 1.2, marginBottom: 8 }}>
             Platform Admin
           </h1>
-          <p className="brand-tagline" style={{ fontSize: 15, color: 'rgba(0,0,0,0.5)' }}>Manage all organizations from one place.</p>
+          <p className="brand-tagline" style={{ fontSize: 15, color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>Manage all organizations from one place.</p>
         </div>
 
         <div className="login-demo-panel" style={{ position: 'absolute', left: '5%', bottom: '6%', maxWidth: 340, pointerEvents: 'auto' }}>
-          <p style={{ fontSize: 13, color: 'rgba(0,0,0,0.4)', letterSpacing: '0.01em' }}>Powered by <strong style={{ fontSize: 14, color: 'rgba(0,0,0,0.6)' }}>Stash Ph Pinas Inc.</strong></p>
+          <p style={{ fontSize: 13, color: dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', letterSpacing: '0.01em' }}>Powered by <strong style={{ fontSize: 14, color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }}>Stash Ph Pinas Inc.</strong></p>
         </div>
 
         {/* Login card */}
@@ -189,12 +191,12 @@ export default function BackofficeLogin() {
             <div style={{ position: 'absolute', inset: -24, borderRadius: 28, background: 'radial-gradient(ellipse at center, rgba(245,158,11,0.13) 0%, rgba(180,83,9,0.07) 50%, transparent 75%)', filter: 'blur(16px)', pointerEvents: 'none', zIndex: 0 }} />
 
             {/* Glass card */}
-            <div className="login-card" style={{ position: 'relative', zIndex: 1, background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(32px) saturate(180%)', WebkitBackdropFilter: 'blur(32px) saturate(180%)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 16, padding: '40px 40px 36px', boxShadow: '0 40px 100px rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.08)' }}>
+            <div className="login-card" style={{ position: 'relative', zIndex: 1, background: dark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.82)', backdropFilter: 'blur(32px) saturate(180%)', WebkitBackdropFilter: 'blur(32px) saturate(180%)', border: dark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.18)', borderRadius: 16, padding: '40px 40px 36px', boxShadow: '0 40px 100px rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.08)' }}>
 
               {/* Header */}
               <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                <h2 className="login-title" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 22, color: '#1a1a1a', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Admin Login</h2>
-                <p className="login-subtitle" style={{ fontSize: 13, color: 'rgba(0,0,0,0.45)', letterSpacing: '0.01em' }}>Platform Administrator Access</p>
+                <h2 className="login-title" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 22, color: dark ? '#f1f5f9' : '#1a1a1a', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Admin Login</h2>
+                <p className="login-subtitle" style={{ fontSize: 13, color: dark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', letterSpacing: '0.01em' }}>Platform Administrator Access</p>
                 <div style={{ width: 36, height: 2, borderRadius: 2, background: 'linear-gradient(90deg,#F59E0B,#FCD34D)', margin: '10px auto 0' }} />
               </div>
 
@@ -208,9 +210,9 @@ export default function BackofficeLogin() {
                     aria-label="Email address"
                     autoComplete="email"
                     className="login-input"
-                    style={{ width: '100%', paddingLeft: 40, paddingRight: 16, height: 50, borderRadius: 10, border: `1px solid ${errors.email ? 'rgba(239,68,68,0.5)' : 'rgba(0,0,0,0.12)'}`, background: errors.email ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontSize: 14, color: '#1a1a1a', outline: 'none', transition: 'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing: 'border-box' }}
-                    onFocus={e => { e.target.style.borderColor = AMBER; e.target.style.background = 'rgba(255,255,255,0.65)'; e.target.style.boxShadow = `0 0 0 3px rgba(245,158,11,0.2)`; }}
-                    onBlur={e => { e.target.style.borderColor = errors.email ? 'rgba(239,68,68,0.5)' : 'rgba(0,0,0,0.12)'; e.target.style.background = errors.email ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.45)'; e.target.style.boxShadow = 'none'; }}
+                    style={{ width: '100%', paddingLeft: 40, paddingRight: 16, height: 50, borderRadius: 10, border: `1px solid ${errors.email ? 'rgba(239,68,68,0.5)' : dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`, background: errors.email ? 'rgba(239,68,68,0.06)' : dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontSize: 14, color: dark ? '#f1f5f9' : '#1a1a1a', outline: 'none', transition: 'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing: 'border-box' }}
+                    onFocus={e => { e.target.style.borderColor = AMBER; e.target.style.background = dark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.65)'; e.target.style.boxShadow = `0 0 0 3px rgba(245,158,11,0.2)`; }}
+                    onBlur={e => { e.target.style.borderColor = errors.email ? 'rgba(239,68,68,0.5)' : dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'; e.target.style.background = errors.email ? 'rgba(239,68,68,0.06)' : dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)'; e.target.style.boxShadow = 'none'; }}
                   />
                   {errors.email && <p role="alert" style={{ fontSize: 12, color: '#dc2626', marginTop: 4, paddingLeft: 4 }}>{errors.email}</p>}
                 </div>
@@ -224,14 +226,14 @@ export default function BackofficeLogin() {
                     aria-label="Password"
                     autoComplete="current-password"
                     className="login-input"
-                    style={{ width: '100%', paddingLeft: 40, paddingRight: 44, height: 50, borderRadius: 10, border: `1px solid ${errors.password ? 'rgba(239,68,68,0.5)' : 'rgba(0,0,0,0.12)'}`, background: errors.password ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontSize: 14, color: '#1a1a1a', outline: 'none', transition: 'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing: 'border-box' }}
-                    onFocus={e => { e.target.style.borderColor = AMBER; e.target.style.background = 'rgba(255,255,255,0.65)'; e.target.style.boxShadow = `0 0 0 3px rgba(245,158,11,0.2)`; }}
-                    onBlur={e => { e.target.style.borderColor = errors.password ? 'rgba(239,68,68,0.5)' : 'rgba(0,0,0,0.12)'; e.target.style.background = errors.password ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.45)'; e.target.style.boxShadow = 'none'; }}
+                    style={{ width: '100%', paddingLeft: 40, paddingRight: 44, height: 50, borderRadius: 10, border: `1px solid ${errors.password ? 'rgba(239,68,68,0.5)' : dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`, background: errors.password ? 'rgba(239,68,68,0.06)' : dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontSize: 14, color: dark ? '#f1f5f9' : '#1a1a1a', outline: 'none', transition: 'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing: 'border-box' }}
+                    onFocus={e => { e.target.style.borderColor = AMBER; e.target.style.background = dark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.65)'; e.target.style.boxShadow = `0 0 0 3px rgba(245,158,11,0.2)`; }}
+                    onBlur={e => { e.target.style.borderColor = errors.password ? 'rgba(239,68,68,0.5)' : dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'; e.target.style.background = errors.password ? 'rgba(239,68,68,0.06)' : dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)'; e.target.style.boxShadow = 'none'; }}
                   />
                   <button type="button" tabIndex={-1} onClick={() => setShowPw(s => !s)} aria-label={showPw ? 'Hide password' : 'Show password'}
-                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(0,0,0,0.35)', display: 'flex', padding: 4, transition: 'color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.7)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.35)'}
+                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)', display: 'flex', padding: 4, transition: 'color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'}
                   >
                     {showPw ? <EyeOff size={15}/> : <Eye size={15}/>}
                   </button>
@@ -258,7 +260,7 @@ export default function BackofficeLogin() {
                   }
                 </button>
 
-                <p className="login-footer-text" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(0,0,0,0.35)', marginTop: 4 }}>
+                <p className="login-footer-text" style={{ textAlign: 'center', fontSize: 12, color: dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)', marginTop: 4 }}>
                   Internal use only — authorized personnel only
                 </p>
               </form>

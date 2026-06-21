@@ -4,15 +4,16 @@ import { Eye, EyeOff, Mail, Lock, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import { SplineScene, type SplineApp } from '../components/ui/splite';
+import { useTheme } from '../context/ThemeContext';
 
 
 /* ─── Post-login morph overlay ─────────────────────────────────────── */
-function MorphOverlay({ grown, ringPulse, fadingOut, loadingText = 'Loading your workspace…' }: { grown: boolean; ringPulse: boolean; fadingOut: boolean; loadingText?: string }) {
+function MorphOverlay({ grown, ringPulse, fadingOut, loadingText = 'Loading your workspace…', dark }: { grown: boolean; ringPulse: boolean; fadingOut: boolean; loadingText?: string; dark?: boolean }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      background: '#FAFAFA',
+      background: dark ? '#0f172a' : '#FAFAFA',
       opacity: fadingOut ? 0 : 1,
       transition: fadingOut ? 'opacity 0.45s ease' : 'none',
       pointerEvents: fadingOut ? 'none' : 'all',
@@ -30,7 +31,7 @@ function MorphOverlay({ grown, ringPulse, fadingOut, loadingText = 'Loading your
           </svg>
         </div>
         <div style={{ overflow: 'hidden', opacity: grown ? 1 : 0, maxHeight: grown ? 40 : 0, transition: 'opacity 0.35s ease 0.3s,max-height 0.35s ease 0.3s' }}>
-          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 20, color: '#0f172a', letterSpacing: '0.04em' }}>Qlarity</span>
+          <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 20, color: dark ? '#f1f5f9' : '#0f172a', letterSpacing: '0.04em' }}>Qlarity</span>
         </div>
         <div style={{ opacity: grown ? 1 : 0, transform: grown ? 'translateY(0)' : 'translateY(6px)', transition: 'opacity 0.3s ease 0.55s,transform 0.3s ease 0.55s', marginTop: -10 }}>
           <span style={{ fontSize: 11, color: '#5a8a86', letterSpacing: '0.04em' }}>{loadingText}</span>
@@ -44,6 +45,7 @@ export default function Login() {
   const { login, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { dark } = useTheme();
 
   const [orgSlug, setOrgSlug]   = useState(searchParams.get('slug') ?? '');
   const [email, setEmail]       = useState('');
@@ -142,7 +144,7 @@ export default function Login() {
   const AMBER = '#F59E0B';
 
   if (authLoading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: dark ? '#0f172a' : '#f0f0f0' }}>
       <div style={{ width: 36, height: 36, border: '3px solid rgba(245,158,11,0.2)', borderTopColor: '#F59E0B', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
@@ -153,7 +155,7 @@ export default function Login() {
       className="login-root"
       style={{
         minHeight: '100vh', position: 'relative', overflow: 'hidden',
-        background: '#f0f0f0',
+        background: dark ? '#0f172a' : '#f0f0f0',
         fontFamily: "'DM Sans', sans-serif",
         ...(phase === 'slideOut'
           ? { opacity: 0, transition: 'opacity 0.45s ease' }
@@ -161,7 +163,7 @@ export default function Login() {
       }}
     >
       {/* Post-login morph overlay */}
-      {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} loadingText={isAdminLogin ? 'Loading admin console…' : 'Loading your workspace…'} />}
+      {phase === 'morph' && <MorphOverlay grown={morphGrown} ringPulse={ringPulse} fadingOut={morphFading} loadingText={isAdminLogin ? 'Loading admin console…' : 'Loading your workspace…'} dark={dark} />}
 
       {/* ── Spline scene — full-bleed background, shifted left ── */}
       <div tabIndex={-1} style={{ position:'fixed', top:0, bottom:0, left:'-20%', right:0, zIndex:0 }}>
@@ -183,16 +185,16 @@ export default function Login() {
               <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
             </svg>
           </div>
-          <span className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:18, color:'#1a1a1a', letterSpacing:'0.04em' }}>Qlarity</span>
+          <span className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:18, color: dark ? '#f1f5f9' : '#1a1a1a', letterSpacing:'0.04em' }}>Qlarity</span>
         </div>
-        <h1 className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:32, fontWeight:800, color:'#1a1a1a', lineHeight:1.2, marginBottom:8 }}>
+        <h1 className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:32, fontWeight:800, color: dark ? '#f1f5f9' : '#1a1a1a', lineHeight:1.2, marginBottom:8 }}>
           Asset Platform
         </h1>
-        <p className="brand-tagline" style={{ fontSize:15, color:'rgba(0,0,0,0.5)' }}>Clarity in every decision.</p>
+        <p className="brand-tagline" style={{ fontSize:15, color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>Clarity in every decision.</p>
       </div>
 
       <div className="login-demo-panel" style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340, pointerEvents:'auto' }}>
-        <p style={{ fontSize:13, color:'rgba(0,0,0,0.4)', letterSpacing:'0.01em' }}>Powered by <strong style={{ fontSize:14, color:'rgba(0,0,0,0.6)' }}>Stash Ph Pinas Inc.</strong></p>
+        <p style={{ fontSize:13, color: dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', letterSpacing:'0.01em' }}>Powered by <strong style={{ fontSize:14, color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }}>Stash Ph Pinas Inc.</strong></p>
       </div>
 
       {/* ── Login card — right side, floating over scene ── */}
@@ -207,12 +209,12 @@ export default function Login() {
           <div style={{ position:'absolute', inset:-24, borderRadius:28, background:'radial-gradient(ellipse at center, rgba(245,158,11,0.13) 0%, rgba(180,83,9,0.07) 50%, transparent 75%)', filter:'blur(16px)', pointerEvents:'none', zIndex:0 }} />
 
           {/* Card — glass morphism */}
-          <div className="login-card" style={{ position:'relative', zIndex:1, background:'rgba(255,255,255,0.82)', backdropFilter:'blur(32px) saturate(180%)', WebkitBackdropFilter:'blur(32px) saturate(180%)', border:'1px solid rgba(255,255,255,0.18)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 40px 100px rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.08)' }}>
+          <div className="login-card" style={{ position:'relative', zIndex:1, background: dark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.82)', backdropFilter:'blur(32px) saturate(180%)', WebkitBackdropFilter:'blur(32px) saturate(180%)', border: dark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.18)', borderRadius:16, padding:'40px 40px 36px', boxShadow:'0 40px 100px rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.08)' }}>
 
             {/* Header */}
             <div style={{ textAlign:'center', marginBottom:32 }}>
-              <h2 className="login-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:22, color:'#1a1a1a', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>User Login</h2>
-              <p className="login-subtitle" style={{ fontSize:13, color:'rgba(0,0,0,0.45)', letterSpacing:'0.01em' }}>Welcome to Qlarity</p>
+              <h2 className="login-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:22, color: dark ? '#f1f5f9' : '#1a1a1a', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>User Login</h2>
+              <p className="login-subtitle" style={{ fontSize:13, color: dark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', letterSpacing:'0.01em' }}>Welcome to Qlarity</p>
               <div style={{ width:36, height:2, borderRadius:2, background:'linear-gradient(90deg,#F59E0B,#FCD34D)', margin:'10px auto 0' }} />
             </div>
 
@@ -228,12 +230,12 @@ export default function Login() {
                     aria-label="Organization ID"
                     autoComplete="organization"
                     className="login-input"
-                    style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:'1px solid rgba(0,0,0,0.12)', background:'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
-                    onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
-                    onBlur={e => { e.target.style.borderColor='rgba(0,0,0,0.12)'; e.target.style.background='rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
+                    style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border: dark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.12)', background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color: dark ? '#f1f5f9' : '#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
+                    onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background= dark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
+                    onBlur={e => { e.target.style.borderColor= dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'; e.target.style.background= dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
                   />
                 </div>
-                <p style={{ fontSize:11, color:'rgba(0,0,0,0.38)', marginTop:4, paddingLeft:2 }}>
+                <p style={{ fontSize:11, color: dark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)', marginTop:4, paddingLeft:2 }}>
                   Your workspace ID — provided when your organization was created. Optional if you're the only org.
                 </p>
               </div>
@@ -247,9 +249,9 @@ export default function Login() {
                   aria-label="Email address"
                   autoComplete="email"
                   className="login-input"
-                  style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:`1px solid ${errors.email?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'}`, background:errors.email?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
-                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
-                  onBlur={e => { e.target.style.borderColor=errors.email?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'; e.target.style.background=errors.email?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
+                  style={{ width:'100%', paddingLeft:40, paddingRight:16, height:50, borderRadius:10, border:`1px solid ${errors.email?'rgba(239,68,68,0.5)': dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`, background:errors.email?'rgba(239,68,68,0.06)': dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color: dark ? '#f1f5f9' : '#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
+                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background= dark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
+                  onBlur={e => { e.target.style.borderColor=errors.email?'rgba(239,68,68,0.5)': dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'; e.target.style.background=errors.email?'rgba(239,68,68,0.06)': dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
                 />
                 {errors.email && <p role="alert" style={{ fontSize:12, color:'#dc2626', marginTop:4, paddingLeft:4 }}>{errors.email}</p>}
               </div>
@@ -263,14 +265,14 @@ export default function Login() {
                   aria-label="Password"
                   autoComplete="current-password"
                   className="login-input"
-                  style={{ width:'100%', paddingLeft:40, paddingRight:44, height:50, borderRadius:10, border:`1px solid ${errors.password?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'}`, background:errors.password?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color:'#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
-                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background='rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
-                  onBlur={e => { e.target.style.borderColor=errors.password?'rgba(239,68,68,0.5)':'rgba(0,0,0,0.12)'; e.target.style.background=errors.password?'rgba(239,68,68,0.06)':'rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
+                  style={{ width:'100%', paddingLeft:40, paddingRight:44, height:50, borderRadius:10, border:`1px solid ${errors.password?'rgba(239,68,68,0.5)': dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`, background:errors.password?'rgba(239,68,68,0.06)': dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', fontSize:14, color: dark ? '#f1f5f9' : '#1a1a1a', outline:'none', transition:'border-color 0.2s,box-shadow 0.2s,background 0.2s', boxSizing:'border-box' }}
+                  onFocus={e => { e.target.style.borderColor=AMBER; e.target.style.background= dark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.65)'; e.target.style.boxShadow=`0 0 0 3px rgba(245,158,11,0.2)`; }}
+                  onBlur={e => { e.target.style.borderColor=errors.password?'rgba(239,68,68,0.5)': dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'; e.target.style.background=errors.password?'rgba(239,68,68,0.06)': dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.45)'; e.target.style.boxShadow='none'; }}
                 />
                 <button type="button" tabIndex={-1} onClick={() => setShowPw(s=>!s)} aria-label={showPw?'Hide password':'Show password'}
-                  style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'rgba(0,0,0,0.35)', display:'flex', padding:4, transition:'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.7)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.35)'}
+                  style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color: dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)', display:'flex', padding:4, transition:'color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color= dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color= dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'}
                 >
                   {showPw ? <EyeOff size={15}/> : <Eye size={15}/>}
                 </button>
@@ -279,13 +281,13 @@ export default function Login() {
 
               {/* Remember + forgot */}
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'2px 2px 0' }}>
-                <label className="login-label" style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', fontSize:13, color:'rgba(0,0,0,0.5)' }}>
+                <label className="login-label" style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', fontSize:13, color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
                   <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={{ accentColor:AMBER, width:14, height:14 }} />
                   Remember me
                 </label>
-                <Link to="/forgot-password" style={{ fontSize:13, color:'rgba(0,0,0,0.5)', textDecoration:'none', transition:'color 0.15s' }}
+                <Link to="/forgot-password" style={{ fontSize:13, color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', textDecoration:'none', transition:'color 0.15s' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.5)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color= dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'}
                 >
                   Forgot password?
                 </Link>
@@ -311,11 +313,11 @@ export default function Login() {
                 }
               </button>
 
-              <p className="login-footer-text" style={{ textAlign:'center', fontSize:13, color:'rgba(0,0,0,0.4)', marginTop:2 }}>
+              <p className="login-footer-text" style={{ textAlign:'center', fontSize:13, color: dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', marginTop:2 }}>
                 New organization?{' '}
-                <Link to="/register" className="login-footer-link" style={{ color:'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
+                <Link to="/register" className="login-footer-link" style={{ color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color='rgba(0,0,0,0.6)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color= dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
                 >
                   Create an account
                 </Link>

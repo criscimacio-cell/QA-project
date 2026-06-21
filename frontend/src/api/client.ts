@@ -40,7 +40,9 @@ api.interceptors.response.use(
     const isAuthEndpoint =
       url.includes('/auth/login') ||
       url.includes('/auth/refresh') ||
-      url.includes('/backoffice/auth/login');
+      url.includes('/auth/me') ||
+      url.includes('/backoffice/auth/login') ||
+      url.includes('/backoffice/auth/me');
 
     if (err.response?.status === 401 && !original._retry && !isAuthEndpoint) {
       // If a refresh is already in flight, queue this request
@@ -61,8 +63,10 @@ api.interceptors.response.use(
         return api(original);
       } catch (refreshErr) {
         processQueue(refreshErr);
-        // Clear any local auth state and redirect to login
-        window.location.href = '/login';
+        // Clear any local auth state and redirect to login (only if not already there)
+        if (!window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

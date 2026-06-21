@@ -607,9 +607,10 @@ export default function Settings() {
 
           {/* API Access — placeholder */}
           {activeSection === 'API Access' && (
-            <div className="card p-6">
+            <div className="card p-6 opacity-60">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
                 <Key size={18} className="text-[#F59E0B]" /> API Access
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-2 py-0.5 rounded-full">Coming soon</span>
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">API key management coming soon.</p>
             </div>

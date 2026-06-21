@@ -82,7 +82,7 @@ function TreeNode({
       <div
         className={`group flex items-center gap-1.5 py-1.5 pr-2 rounded-lg cursor-pointer text-sm transition-all select-none ${
           isSelected
-            ? 'bg-[#F59E0B]/10 text-[#F59E0B] dark:bg-[#F59E0B]/15'
+            ? 'bg-amber-500/10 text-amber-500 dark:bg-amber-500/15'
             : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
         }`}
         style={{ paddingLeft: `${8 + level * 16}px` }}
@@ -412,8 +412,8 @@ export default function Repositories() {
 
           {/* View toggle */}
           <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-            <button onClick={() => setView('list')} aria-label="List view" aria-pressed={view === 'list'} className={`p-1.5 transition-colors ${view === 'list' ? 'bg-[#F59E0B] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><List size={14} /></button>
-            <button onClick={() => setView('grid')} aria-label="Grid view" aria-pressed={view === 'grid'} className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-[#F59E0B] text-white' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={14} /></button>
+            <button onClick={() => setView('list')} aria-label="List view" aria-pressed={view === 'list'} className={`p-1.5 transition-colors ${view === 'list' ? 'bg-amber-500 text-white rounded-lg' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}><List size={14} /></button>
+            <button onClick={() => setView('grid')} aria-label="Grid view" aria-pressed={view === 'grid'} className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-amber-500 text-white rounded-lg' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}><LayoutGrid size={14} /></button>
           </div>
 
           {selected && isLead && (

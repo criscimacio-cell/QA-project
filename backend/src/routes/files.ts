@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction, RequestHandler } from 'express
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import * as Diff from 'diff';
 import { encryptFile, decryptFileToBuffer, withDecryptedFile } from '../fileEncryption';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const archiver = require('archiver') as (format: string, opts?: object) => import('archiver').Archiver;
@@ -37,7 +38,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: MAX_FILE_SIZE } });
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
-  const { repository_id, status, project, category, search, limit = '20', offset = '0' } = req.query;
+  const { repository_id, status, project, category, search, folder_id, limit = '20', offset = '0' } = req.query;
   const lim = Math.min(parseInt(limit as string) || 20, 200);
   const off = parseInt(offset as string) || 0;
   const orgId = req.user!.organizationId;
@@ -46,16 +47,17 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     SELECT f.id, f.name, f.original_name, f.size, f.mime_type, f.status,
            f.project, f.module, f.category, f.jira_ticket, f.tags,
            f.description, f.version, f.created_at, f.updated_at,
-           f.owner_id, f.repository_id,
+           f.owner_id, f.repository_id, f.folder_id,
            f.checked_out_by, f.checked_out_at, co.name as checked_out_by_name,
-           u.name as owner_name, r.name as repository_name
-    FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id LEFT JOIN users co ON co.id = f.checked_out_by
+           u.name as owner_name, r.name as repository_name, ff.name as folder_name
+    FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id LEFT JOIN users co ON co.id = f.checked_out_by LEFT JOIN file_folders ff ON f.folder_id = ff.id
     WHERE f.organization_id = ${orgId}
     ${!isLead ? sql`AND (f.owner_id = ${req.user!.userId} OR f.status IN ('published','approved'))` : sql``}
     ${repository_id ? sql`AND f.repository_id = ${repository_id as string}` : sql``}
     ${status ? sql`AND f.status = ${status as string}` : sql`AND f.status != 'archived'`}
     ${project ? sql`AND f.project = ${project as string}` : sql``}
     ${category ? sql`AND f.category = ${category as string}` : sql``}
+    ${folder_id === 'root' ? sql`AND f.folder_id IS NULL` : folder_id ? sql`AND f.folder_id = ${folder_id as string}` : sql``}
     ${search ? sql`AND (
       f.name ILIKE ${'%'+search+'%'} OR
       f.original_name ILIKE ${'%'+search+'%'} OR
@@ -77,6 +79,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     ${status ? sql`AND f.status = ${status as string}` : sql`AND f.status != 'archived'`}
     ${project ? sql`AND f.project = ${project as string}` : sql``}
     ${category ? sql`AND f.category = ${category as string}` : sql``}
+    ${folder_id === 'root' ? sql`AND f.folder_id IS NULL` : folder_id ? sql`AND f.folder_id = ${folder_id as string}` : sql``}
     ${search ? sql`AND (
       f.name ILIKE ${'%'+search+'%'} OR
       f.original_name ILIKE ${'%'+search+'%'} OR
@@ -299,7 +302,7 @@ router.get('/:id/versions', authenticate, async (req: Request, res: Response) =>
 });
 
 router.post('/upload', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), upload.single('file'), async (req: Request, res: Response) => {
-  const { repository_id, project, module, category, jira_ticket, tags, description, version, change_log } = req.body;
+  const { repository_id, folder_id, project, module, category, jira_ticket, tags, description, version, change_log } = req.body;
   const orgId = req.user!.organizationId;
   const f = req.file;
   if (!f) { res.status(400).json({ error: 'No file attached' }); return; }
@@ -333,8 +336,8 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
   } else {
     newVersion = parseInt(version) || 1;
     const [{ id }] = await sql`
-      INSERT INTO files (name, original_name, path, size, mime_type, repository_id, owner_id, version, status, project, module, category, jira_ticket, tags, description, organization_id)
-      VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id || null}, ${req.user!.userId}, ${newVersion}, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${jira_ticket || ''}, ${tags || ''}, ${description || ''}, ${orgId})
+      INSERT INTO files (name, original_name, path, size, mime_type, repository_id, folder_id, owner_id, version, status, project, module, category, jira_ticket, tags, description, organization_id)
+      VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id || null}, ${folder_id || null}, ${req.user!.userId}, ${newVersion}, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${jira_ticket || ''}, ${tags || ''}, ${description || ''}, ${orgId})
       RETURNING id
     `;
     fileId = id;
@@ -576,15 +579,35 @@ router.post('/:id/comments', authenticate, requireRole('admin', 'lead', 'enginee
   const { comment } = req.body;
   const orgId = req.user!.organizationId;
   if (!comment?.trim()) { res.status(400).json({ error: 'Comment cannot be empty' }); return; }
-  const [file] = await sql`SELECT id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  const [file] = await sql`SELECT id, name FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
   const [row] = await sql`
     INSERT INTO file_comments (file_id, user_id, comment, organization_id)
     VALUES (${req.params.id}, ${req.user!.userId}, ${comment.trim()}, ${orgId})
     RETURNING id, created_at
   `;
-  const [user] = await sql`SELECT name, avatar FROM users WHERE id = ${req.user!.userId} AND organization_id = ${orgId}`;
-  res.json({ ...row, user_name: user.name, user_avatar: user.avatar, comment: comment.trim(), user_id: req.user!.userId, file_id: parseInt(req.params.id) });
+  const [poster] = await sql`SELECT name, avatar FROM users WHERE id = ${req.user!.userId} AND organization_id = ${orgId}`;
+
+  // Parse @mentions and notify mentioned users
+  const mentionMatches = comment.match(/@([\w.\- ]+?)(?=\s|$|@)/g) ?? [];
+  if (mentionMatches.length) {
+    const names = mentionMatches.map((m: string) => m.slice(1).trim()).filter(Boolean);
+    if (names.length) {
+      const mentioned = await sql`SELECT id, name FROM users WHERE name = ANY(${names}::text[]) AND organization_id = ${orgId} AND active = TRUE`;
+      for (const mu of mentioned as any[]) {
+        if (mu.id === req.user!.userId) continue;
+        await notificationQueue.add('notify', {
+          userId: mu.id,
+          type: 'mention',
+          title: 'You were mentioned',
+          message: `${poster?.name || 'Someone'} mentioned you in a comment on "${file.name}"`,
+          organizationId: orgId,
+        });
+      }
+    }
+  }
+
+  res.json({ ...row, user_name: poster.name, user_avatar: poster.avatar, comment: comment.trim(), user_id: req.user!.userId, file_id: parseInt(req.params.id) });
 });
 
 router.delete('/:id/comments/:cid', authenticate, async (req, res) => {
@@ -608,6 +631,51 @@ router.get('/:id/approvals', authenticate, async (req, res) => {
   `;
   res.json(history);
 });
+
+// GET /api/files/:id/versions/diff?from=1&to=2
+router.get('/:id/versions/diff', authenticate, asyncHandler(async (req: Request, res: Response) => {
+  const { from, to } = req.query;
+  const orgId = req.user!.organizationId;
+  if (!from || !to || from === to) { res.status(400).json({ error: 'Provide distinct from and to version numbers' }); return; }
+
+  const [file] = await sql`SELECT id, owner_id, status, original_name FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== req.user!.userId && !['published','approved'].includes(file.status)) {
+    res.status(403).json({ error: 'Forbidden' }); return;
+  }
+
+  const versions = await sql`SELECT version, path FROM file_versions WHERE file_id = ${req.params.id} AND version IN (${Number(from)}, ${Number(to)}) AND organization_id = ${orgId}`;
+  if (versions.length < 2) { res.status(404).json({ error: 'One or both versions not found' }); return; }
+
+  const verMap = Object.fromEntries((versions as any[]).map((v: any) => [v.version, v.path]));
+  const pathA = path.join(UPLOAD_DIR, verMap[Number(from)]);
+  const pathB = path.join(UPLOAD_DIR, verMap[Number(to)]);
+
+  if (!fs.existsSync(pathA) || !fs.existsSync(pathB)) { res.status(404).json({ error: 'Version file(s) not found on disk' }); return; }
+
+  const bufA = decryptFileToBuffer(pathA);
+  const bufB = decryptFileToBuffer(pathB);
+
+  // Size gate: refuse diffs > 2MB
+  if (bufA.length > 2 * 1024 * 1024 || bufB.length > 2 * 1024 * 1024) {
+    res.json({ diffable: false, reason: 'too_large' }); return;
+  }
+
+  // Binary detection: check first 512 bytes for non-text chars
+  const sample = bufA.subarray(0, 512);
+  const isBinary = sample.some((b: number) => b === 0 || (b > 127 && b < 160));
+  if (isBinary) { res.json({ diffable: false, reason: 'binary' }); return; }
+
+  const textA = bufA.toString('utf8');
+  const textB = bufB.toString('utf8');
+  const patch = Diff.createTwoFilesPatch(
+    `v${from}/${file.original_name}`,
+    `v${to}/${file.original_name}`,
+    textA, textB, '', '', { context: 3 }
+  );
+
+  res.json({ diffable: true, from: Number(from), to: Number(to), patch });
+}));
 
 router.use((err: any, _req: Request, res: Response, next: Function) => {
   if (err?.code === 'LIMIT_FILE_SIZE') { res.status(400).json({ error: 'File too large (max 50 MB)' }); return; }

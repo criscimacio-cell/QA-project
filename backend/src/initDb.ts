@@ -363,5 +363,45 @@ export async function initDb() {
 
   await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS role_permissions JSONB DEFAULT NULL`;
 
+  // ── Folder hierarchy ─────────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS file_folders (
+      id              SERIAL PRIMARY KEY,
+      name            TEXT NOT NULL,
+      parent_id       INTEGER REFERENCES file_folders(id) ON DELETE CASCADE,
+      organization_id INTEGER NOT NULL REFERENCES organizations(id),
+      created_by      INTEGER REFERENCES users(id),
+      created_at      TIMESTAMPTZ DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_file_folders_org    ON file_folders(organization_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_file_folders_parent ON file_folders(parent_id)`;
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS folder_id INTEGER REFERENCES file_folders(id) ON DELETE SET NULL`;
+
+  // ── File templates ────────────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS file_templates (
+      id              SERIAL PRIMARY KEY,
+      name            TEXT NOT NULL,
+      description     TEXT DEFAULT '',
+      source_file_id  INTEGER REFERENCES files(id) ON DELETE SET NULL,
+      path            TEXT NOT NULL,
+      mime_type       TEXT DEFAULT '',
+      size            BIGINT DEFAULT 0,
+      category        TEXT DEFAULT '',
+      tags            TEXT DEFAULT '',
+      created_by      INTEGER REFERENCES users(id),
+      organization_id INTEGER NOT NULL REFERENCES organizations(id),
+      created_at      TIMESTAMPTZ DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_file_templates_org ON file_templates(organization_id)`;
+
+  // Ensure templates directory exists
+  const { mkdirSync } = await import('fs');
+  mkdirSync(process.env.UPLOAD_DIR ? `${process.env.UPLOAD_DIR}/templates` : './uploads/templates', { recursive: true });
+
   console.log('Database initialization complete.');
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List, Lock, Unlock } from 'lucide-react';
+import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List, Lock, Unlock, GitCompare, BookTemplate } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
@@ -8,6 +8,9 @@ import StatusBadge from '../components/UI/Badge';
 import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
 import EmptyState from '../components/UI/EmptyState';
+import FolderTree, { FolderItem } from '../components/UI/FolderTree';
+import DiffViewer from '../components/UI/DiffViewer';
+import MentionInput from '../components/UI/MentionInput';
 import { useAuth } from '../context/AuthContext';
 
 async function downloadFile(fileId: number, filename: string, versionPath?: string) {
@@ -96,6 +99,21 @@ export default function FileManager() {
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [archiveSuccess, setArchiveSuccess] = useState(false);
 
+  // Folder state
+  const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [activeFolderId, setActiveFolderId] = useState<number | null | 'root'>(null);
+
+  // Diff modal state
+  const [diffModal, setDiffModal] = useState<{ open: boolean; fileId: number | null; from: number; to: number }>({ open: false, fileId: null, from: 0, to: 0 });
+  const [diffResult, setDiffResult] = useState<{ diffable: boolean; patch?: string; reason?: string } | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
+
+  // Template modal state
+  const [templateModal, setTemplateModal] = useState<{ open: boolean; fileId: number | null; fileName: string }>({ open: false, fileId: null, fileName: '' });
+  const [templateName, setTemplateName] = useState('');
+  const [templateDesc, setTemplateDesc] = useState('');
+  const [templateLoading, setTemplateLoading] = useState(false);
+
   useEffect(() => {
     if (!previewFile) { setPreviewBlobUrl(null); return; }
     setPreviewLoading(true);
@@ -116,16 +134,21 @@ export default function FileManager() {
     setCommentError('');
   }, [selected?.id]);
 
-  const load = (overrides?: { search?: string; project?: string; category?: string; offset?: number }) => {
+  const loadFolders = () => api.get('/folders').then(r => setFolders(r.data)).catch(() => {});
+  useEffect(() => { loadFolders(); }, []);
+
+  const load = (overrides?: { search?: string; project?: string; category?: string; offset?: number; folderId?: number | null | 'root' }) => {
     setLoading(true);
     const params: any = {};
     if (TAB_STATUS[tab]) params.status = TAB_STATUS[tab];
     const effectiveSearch = overrides && 'search' in overrides ? overrides.search : search;
     const effectiveProject = overrides && 'project' in overrides ? overrides.project : project;
     const effectiveCategory = overrides && 'category' in overrides ? overrides.category : category;
+    const effectiveFolderId = overrides && 'folderId' in overrides ? overrides.folderId : activeFolderId;
     if (effectiveSearch) params.search = effectiveSearch;
     if (effectiveProject) params.project = effectiveProject;
     if (effectiveCategory) params.category = effectiveCategory;
+    if (!effectiveSearch && effectiveFolderId !== null) params.folder_id = effectiveFolderId === 'root' ? 'root' : effectiveFolderId;
     const off = overrides && 'offset' in overrides ? overrides.offset : fileOffset;
     params.limit = FILE_LIMIT;
     params.offset = off ?? 0;
@@ -137,6 +160,12 @@ export default function FileManager() {
   };
 
   useEffect(() => { setFileOffset(0); load({ offset: 0 }); }, [tab, project, category]);
+
+  const handleFolderSelect = (id: number | null | 'root') => {
+    setActiveFolderId(id);
+    setFileOffset(0);
+    load({ offset: 0, folderId: id });
+  };
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); load(); };
 
@@ -410,6 +439,36 @@ export default function FileManager() {
     }
   };
 
+  const openDiff = async (fileId: number, fromVer: number, toVer: number) => {
+    setDiffModal({ open: true, fileId, from: fromVer, to: toVer });
+    setDiffResult(null);
+    setDiffLoading(true);
+    try {
+      const r = await api.get(`/files/${fileId}/versions/diff?from=${fromVer}&to=${toVer}`);
+      setDiffResult(r.data);
+    } catch { toast.error('Failed to load diff'); setDiffModal(s => ({ ...s, open: false })); }
+    finally { setDiffLoading(false); }
+  };
+
+  const saveAsTemplate = async () => {
+    if (!templateModal.fileId || !templateName.trim()) return;
+    setTemplateLoading(true);
+    try {
+      await api.post('/templates', { file_id: templateModal.fileId, name: templateName.trim(), description: templateDesc.trim() });
+      toast.success('Template saved!');
+      setTemplateModal({ open: false, fileId: null, fileName: '' });
+      setTemplateName(''); setTemplateDesc('');
+    } catch (e: any) { toast.error(e.response?.data?.error || 'Failed to save template'); }
+    finally { setTemplateLoading(false); }
+  };
+
+  const renderComment = (text: string) =>
+    text.split(/(@[\w.\- ]+)/g).map((part, i) =>
+      part.startsWith('@')
+        ? <span key={i} className="text-amber-600 dark:text-amber-400 font-semibold">{part}</span>
+        : part
+    );
+
   const projects = [...new Set(files.map(f => f.project).filter(Boolean))];
   const categories = [...new Set(files.map(f => f.category).filter(Boolean))];
 
@@ -500,8 +559,22 @@ export default function FileManager() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="card overflow-hidden">
+      {/* Folder + Table layout */}
+      <div className="flex gap-4">
+        {/* Folder sidebar */}
+        <div className="card w-52 shrink-0 overflow-hidden" style={{ maxHeight: 600 }}>
+          <FolderTree
+            folders={folders}
+            activeFolderId={activeFolderId}
+            onSelect={handleFolderSelect}
+            onFoldersChange={loadFolders}
+            canWrite={isEngineer}
+            canDelete={isLead}
+          />
+        </div>
+
+        {/* Table */}
+        <div className="card overflow-hidden flex-1">
         {loading ? (
           <div className="p-4 space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -673,7 +746,8 @@ export default function FileManager() {
             onPageChange={off => { setFileOffset(off); load({ offset: off }); }}
           />
         </div>
-      </div>
+        </div>{/* end table card */}
+      </div>{/* end folder+table layout */}
 
       {/* File Detail Modal */}
       {selected && !showApprove && (
@@ -749,6 +823,7 @@ export default function FileManager() {
                           <span className="text-slate-500">{v.change_log}</span>
                           <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString('en-CA')}</span>
                           <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version" aria-label={`Download version ${v.version}`}><Download size={12} /></button>
+                          {v.version > 1 && <button onClick={() => openDiff(selected.id, v.version - 1, v.version)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title={`Diff v${v.version-1} → v${v.version}`}><GitCompare size={12} /></button>}
                         </div>
                       ))}
                     </div>
@@ -760,6 +835,9 @@ export default function FileManager() {
                     <button onClick={() => { setSelected(null); openPreview(selected); }} className="btn-secondary"><Eye size={15} /> Preview</button>
                   )}
                   <button onClick={() => downloadFile(selected.id, selected.original_name)} className="btn-secondary"><Download size={15} /> Download</button>
+                  {isEngineer && (
+                    <button onClick={() => { setTemplateModal({ open: true, fileId: selected.id, fileName: selected.name }); setTemplateName(selected.name); }} className="btn-secondary"><BookTemplate size={15} /> Save as Template</button>
+                  )}
                   {isLead && selected.status !== 'published' && selected.status !== 'archived' && (
                     <button onClick={() => setShowApprove(true)} className="btn-primary">Review / Approve</button>
                   )}
@@ -808,21 +886,23 @@ export default function FileManager() {
                               )}
                             </div>
                           </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{c.comment}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{renderComment(c.comment)}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex gap-2">
-                    <input
+                  <div className="flex gap-2 items-end">
+                    <MentionInput
                       value={newComment}
-                      onChange={e => { setNewComment(e.target.value.slice(0, 500)); if (commentError) setCommentError(''); }}
+                      onChange={v => { setNewComment(v.slice(0, 500)); if (commentError) setCommentError(''); }}
                       onKeyDown={e => e.key === 'Enter' && !e.shiftKey && postComment()}
-                      placeholder="Add a comment…"
-                      className={`input flex-1 text-sm ${commentError ? 'border-red-400 focus:ring-red-300' : ''}`}
+                      placeholder="Add a comment… use @name to mention"
                       maxLength={500}
+                      rows={2}
+                      disabled={commentLoading}
+                      className={`input flex-1 text-sm resize-none ${commentError ? 'border-red-400 focus:ring-red-300' : ''}`}
                     />
                     <button onClick={postComment} disabled={commentLoading} className="btn-primary px-4">Post</button>
                   </div>
@@ -1017,6 +1097,41 @@ export default function FileManager() {
           </div>
         </Modal>
       )}
+
+      {/* Diff Modal */}
+      <Modal open={diffModal.open} onClose={() => setDiffModal(s => ({ ...s, open: false }))} title={`Version Diff: v${diffModal.from} → v${diffModal.to}`} size="xl">
+        <div className="space-y-3">
+          {diffLoading && <div className="flex items-center justify-center py-8"><Loader2 size={24} className="animate-spin text-amber-500" /></div>}
+          {!diffLoading && diffResult && (
+            diffResult.diffable
+              ? <DiffViewer patch={diffResult.patch!} />
+              : <div className="flex flex-col items-center gap-2 py-8 text-slate-400">
+                  <GitCompare size={32} className="opacity-30" />
+                  <p className="text-sm">{diffResult.reason === 'binary' ? 'Binary file — download both versions to compare.' : diffResult.reason === 'too_large' ? 'File too large to diff (> 2 MB).' : 'Cannot diff this file.'}</p>
+                </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Save as Template Modal */}
+      <Modal open={templateModal.open} onClose={() => setTemplateModal(s => ({ ...s, open: false }))} title="Save as Template">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Template Name</label>
+            <input value={templateName} onChange={e => setTemplateName(e.target.value)} className="input w-full" placeholder="e.g. Standard Test Case Template" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Description (optional)</label>
+            <textarea value={templateDesc} onChange={e => setTemplateDesc(e.target.value)} className="input w-full resize-none" rows={2} placeholder="What is this template for?" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setTemplateModal(s => ({ ...s, open: false }))} className="btn-secondary">Cancel</button>
+            <button onClick={saveAsTemplate} disabled={!templateName.trim() || templateLoading} className="btn-primary">
+              {templateLoading ? <Loader2 size={14} className="animate-spin" /> : <BookTemplate size={14} />} Save Template
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

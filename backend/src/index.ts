@@ -23,6 +23,8 @@ import auditRoutes from './routes/audit';
 import categoryRoutes from './routes/categories';
 import backofficeRoutes from './routes/backoffice';
 import orgSettingsRoutes from './routes/orgSettings';
+import folderRoutes from './routes/folders';
+import templateRoutes from './routes/templates';
 // Initialize BullMQ worker by importing the module
 import './queue';
 
@@ -87,6 +89,8 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/backoffice', backofficeRoutes);
 app.use('/api/org-settings', orgSettingsRoutes);
+app.use('/api/folders', folderRoutes);
+app.use('/api/templates', templateRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

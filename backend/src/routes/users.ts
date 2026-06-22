@@ -178,4 +178,17 @@ router.use((err: any, _req: Request, res: Response, next: Function) => {
   next(err);
 });
 
+// GET /api/users/mention-search?q=term — autocomplete for @mentions
+router.get('/mention-search', authenticate, async (req: Request, res: Response) => {
+  const { q } = req.query;
+  if (!q || (q as string).trim().length < 1) { res.json([]); return; }
+  const orgId = req.user!.organizationId;
+  const users = await sql`
+    SELECT id, name, avatar FROM users
+    WHERE organization_id = ${orgId} AND active = TRUE AND name ILIKE ${'%' + (q as string).trim() + '%'}
+    LIMIT 10
+  `;
+  res.json(users);
+});
+
 export default router;

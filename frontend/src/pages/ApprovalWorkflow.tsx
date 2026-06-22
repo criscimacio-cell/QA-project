@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, Clock, FileText, ArrowRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import Pagination from '../components/UI/Pagination';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import Modal from '../components/UI/Modal';
 import { useAuth } from '../context/AuthContext';
+
+const PAGE_SIZE = 10;
 
 const STAGES = [
   { key: 'draft', label: 'Draft', icon: FileText, color: 'border-slate-300 dark:border-slate-600', headerColor: 'bg-slate-100 dark:bg-slate-800', textColor: 'text-slate-600 dark:text-slate-400' },
@@ -26,6 +29,9 @@ export default function ApprovalWorkflow() {
   const [approveLoading, setApproveLoading] = useState(false);
   const [movingId, setMovingId] = useState<number | null>(null);
   const [droppingId, setDroppingId] = useState<number | null>(null);
+
+  // Per-column pagination offsets
+  const [colOffsets, setColOffsets] = useState<Record<string, number>>({});
 
   // Drag state
   const [draggingId, setDraggingId] = useState<number | null>(null);
@@ -170,6 +176,8 @@ export default function ApprovalWorkflow() {
         <div className="flex gap-4 overflow-x-auto pb-4">
           {STAGES.map(stage => {
             const stageFiles = getFilesForStage(stage.key);
+            const colOffset = colOffsets[stage.key] || 0;
+            const pagedFiles = stageFiles.slice(colOffset, colOffset + PAGE_SIZE);
             const isOver = dragOverStage === stage.key;
             const isDragSource = draggingId !== null && stageFiles.some(f => f.id === draggingId);
 
@@ -223,7 +231,7 @@ export default function ApprovalWorkflow() {
                         <span className="text-teal-400 font-medium">Drop here</span>
                       ) : 'No files'}
                     </div>
-                  ) : stageFiles.map((f, cardIdx) => (
+                  ) : pagedFiles.map((f, cardIdx) => (
                     <div
                       key={f.id}
                       role="article"
@@ -301,6 +309,16 @@ export default function ApprovalWorkflow() {
                     </div>
                   ))}
                 </div>
+                {stageFiles.length > PAGE_SIZE && (
+                  <div className="px-2 py-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                    <Pagination
+                      total={stageFiles.length}
+                      limit={PAGE_SIZE}
+                      offset={colOffset}
+                      onPageChange={newOffset => setColOffsets(prev => ({ ...prev, [stage.key]: newOffset }))}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}

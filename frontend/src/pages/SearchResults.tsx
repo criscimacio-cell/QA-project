@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, FileText, BookOpen, Download, Loader2 } from 'lucide-react';
+import Pagination from '../components/UI/Pagination';
+
+const PAGE_SIZE = 10;
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
@@ -39,10 +42,14 @@ export default function SearchResults() {
   const [results, setResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [filesOffset, setFilesOffset] = useState(0);
+  const [knowledgeOffset, setKnowledgeOffset] = useState(0);
 
   useEffect(() => {
     if (!q) return;
     setQuery(q);
+    setFilesOffset(0);
+    setKnowledgeOffset(0);
     setLoading(true);
     api.get('/search', { params: { q, type: filter === 'all' ? undefined : filter } })
       .then(r => setResults(r.data))
@@ -82,7 +89,7 @@ export default function SearchResults() {
             { id: 'files', label: `Files (${results.files?.length || 0})` },
             { id: 'knowledge', label: `Knowledge (${results.knowledge?.length || 0})` },
           ].map(f => (
-            <button key={f.id} onClick={() => setFilter(f.id)} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === f.id ? 'bg-[#F59E0B] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}>
+            <button key={f.id} onClick={() => { setFilter(f.id); setFilesOffset(0); setKnowledgeOffset(0); }} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === f.id ? 'bg-[#F59E0B] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}>
               {f.label}
             </button>
           ))}
@@ -132,7 +139,7 @@ export default function SearchResults() {
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
                 <FileText size={18} className="text-[#F59E0B]" /> Files
               </h2>
-              {results.files.map((f: any) => (
+              {results.files.slice(filesOffset, filesOffset + PAGE_SIZE).map((f: any) => (
                 <div key={f.id} className="card p-4 hover:shadow-md hover:border-teal-200 dark:hover:border-teal-800 transition-all">
                   <div className="flex items-start gap-4">
                     <FileIcon mimeType={f.mime_type} name={f.original_name} size={28} />
@@ -183,6 +190,7 @@ export default function SearchResults() {
                   </div>
                 </div>
               ))}
+              <Pagination total={results.files.length} limit={PAGE_SIZE} offset={filesOffset} onPageChange={setFilesOffset} />
             </div>
           )}
 
@@ -192,7 +200,7 @@ export default function SearchResults() {
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
                 <BookOpen size={18} className="text-amber-500" /> Knowledge Articles
               </h2>
-              {results.knowledge.map((a: any) => (
+              {results.knowledge.slice(knowledgeOffset, knowledgeOffset + PAGE_SIZE).map((a: any) => (
                 <div key={a.id} className="card p-4 hover:shadow-md hover:border-amber-200 dark:hover:border-amber-800 transition-all">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
@@ -214,6 +222,7 @@ export default function SearchResults() {
                   </div>
                 </div>
               ))}
+              <Pagination total={results.knowledge.length} limit={PAGE_SIZE} offset={knowledgeOffset} onPageChange={setKnowledgeOffset} />
             </div>
           )}
         </>

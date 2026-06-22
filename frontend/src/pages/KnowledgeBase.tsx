@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Plus, Search, Tag, Clock, User, ChevronRight, Edit2, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { BookOpen, Plus, Search, Tag, Clock, User, ChevronRight, Edit2, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import StatusBadge from '../components/UI/Badge';
 import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
+import Pagination from '../components/UI/Pagination';
+
+const PAGE_SIZE = 10;
 
 const DEFAULT_CATEGORIES = ['Troubleshooting', 'RCA', 'Testing Standards', 'Best Practices', 'Onboarding', 'Process Documentation'];
 
@@ -89,6 +92,7 @@ export default function KnowledgeBase() {
   const [articleLoading, setArticleLoading] = useState(false);
   // U1: loading state for skeleton display
   const [loading, setLoading] = useState(false);
+  const [pageOffset, setPageOffset] = useState(0);
 
   const load = async (overrideSearch?: string, overrideCategory?: string) => {
     const params: any = {};
@@ -137,6 +141,7 @@ export default function KnowledgeBase() {
   // L1: When category changes, reset search and reload with empty search to avoid silent carry-over
   useEffect(() => {
     setSearch('');
+    setPageOffset(0);
     load('', category);
   }, [category]);
 
@@ -267,7 +272,7 @@ export default function KnowledgeBase() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && load()}
+              onKeyDown={e => { if (e.key === 'Enter') { setPageOffset(0); load(); } }}
               placeholder="Search articles..."
               className="input pl-8 text-sm h-8 w-full"
             />
@@ -286,10 +291,10 @@ export default function KnowledgeBase() {
         </div>
 
         {/* Article List */}
-        <div className="flex-1 grid grid-cols-1 gap-3">
+        <div className="flex-1 space-y-3">
           {/* U1: Show shimmer skeleton cards while loading */}
           {loading ? (
-            <>
+            <div className="grid grid-cols-1 gap-3">
               {[1, 2, 3].map(i => (
                 <div key={i} className="card p-5 animate-pulse">
                   <div className="flex items-start justify-between gap-3">
@@ -308,34 +313,41 @@ export default function KnowledgeBase() {
                   </div>
                 </div>
               ))}
-            </>
+            </div>
           ) : articles.length === 0 ? (
             <div className="card p-12 text-center text-slate-400">
               <BookOpen size={40} className="mx-auto mb-3 opacity-30" />
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No articles found</p>
               <p className="text-xs mt-1 text-slate-400">Try a different category or search term</p>
             </div>
-          ) : articles.map(a => (
-            <div key={a.id} onClick={() => !articleLoading && openArticle(a)} className={`card p-5 cursor-pointer hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group ${articleLoading ? 'opacity-60 pointer-events-none' : ''}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    {a.category && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${CAT_COLORS[a.category] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>{a.category}</span>
-                    )}
-                    <StatusBadge status={a.status} />
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3">
+                {articles.slice(pageOffset, pageOffset + PAGE_SIZE).map(a => (
+                  <div key={a.id} onClick={() => !articleLoading && openArticle(a)} className={`card p-5 cursor-pointer hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group ${articleLoading ? 'opacity-60 pointer-events-none' : ''}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          {a.category && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${CAT_COLORS[a.category] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>{a.category}</span>
+                          )}
+                          <StatusBadge status={a.status} />
+                        </div>
+                        <h3 className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{a.title}</h3>
+                        <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+                          <span className="flex items-center gap-1"><User size={11} />{a.author_name}</span>
+                          <span className="flex items-center gap-1"><Clock size={11} />{new Date(a.updated_at).toLocaleDateString()}</span>
+                          {a.tags && <span className="flex items-center gap-1"><Tag size={11} />{a.tags.split(',').slice(0, 3).join(', ')}</span>}
+                        </div>
+                      </div>
+                      {articleLoading ? <Loader2 size={18} className="text-amber-400 animate-spin flex-shrink-0 mt-1" /> : <ChevronRight size={18} className="text-slate-300 group-hover:text-amber-400 dark:group-hover:text-amber-300 flex-shrink-0 mt-1 transition-colors" />}
+                    </div>
                   </div>
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{a.title}</h3>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
-                    <span className="flex items-center gap-1"><User size={11} />{a.author_name}</span>
-                    <span className="flex items-center gap-1"><Clock size={11} />{new Date(a.updated_at).toLocaleDateString()}</span>
-                    {a.tags && <span className="flex items-center gap-1"><Tag size={11} />{a.tags.split(',').slice(0, 3).join(', ')}</span>}
-                  </div>
-                </div>
-                {articleLoading ? <Loader2 size={18} className="text-amber-400 animate-spin flex-shrink-0 mt-1" /> : <ChevronRight size={18} className="text-slate-300 group-hover:text-amber-400 dark:group-hover:text-amber-300 flex-shrink-0 mt-1 transition-colors" />}
+                ))}
               </div>
-            </div>
-          ))}
+              <Pagination total={articles.length} limit={PAGE_SIZE} offset={pageOffset} onPageChange={setPageOffset} />
+            </>
+          )}
         </div>
       </div>
 

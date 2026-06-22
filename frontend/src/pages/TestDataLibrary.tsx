@@ -4,8 +4,10 @@ import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
+import Pagination from '../components/UI/Pagination';
 
 const CATEGORIES = ['All', 'Test Cases', 'Test Data', 'Test Scripts', 'Template', 'Evidence', 'RCA', 'Bug Report', 'Performance'];
+const PAGE_SIZE = 10;
 
 function formatBytes(b: number) {
   if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
@@ -15,6 +17,8 @@ function formatBytes(b: number) {
 
 export default function TestDataLibrary() {
   const [files, setFiles] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [project, setProject] = useState('');
@@ -23,29 +27,55 @@ export default function TestDataLibrary() {
 
   // On mount: fetch all files once to build the stable projects dropdown
   useEffect(() => {
-    api.get('/files', { params: { status: 'published', limit: 1000 } })
+    api.get('/files', { params: { status: 'published', limit: 200 } })
       .then(r => {
-        const unique = [...new Set(r.data.map((f: any) => f.project).filter(Boolean))] as string[];
+        const rows = Array.isArray(r.data) ? r.data : (r.data.files ?? []);
+        const unique = [...new Set(rows.map((f: any) => f.project).filter(Boolean))] as string[];
         setAllProjects(unique);
       })
       .catch(() => {/* silently ignore — projects dropdown just stays empty */});
   }, []);
 
-  const load = () => {
-    const params: any = { status: 'published' };
-    if (category !== 'All') params.category = category;
-    if (search) params.search = search;
-    if (project) params.project = project;
+  const load = (currentOffset: number, currentCategory: string, currentSearch: string, currentProject: string) => {
+    const params: any = { status: 'published', limit: PAGE_SIZE, offset: currentOffset };
+    if (currentCategory !== 'All') params.category = currentCategory;
+    if (currentSearch) params.search = currentSearch;
+    if (currentProject) params.project = currentProject;
     setLoading(true);
     api.get('/files', { params })
       .then(r => {
-        setFiles(Array.isArray(r.data) ? r.data : (r.data.files ?? []));
+        const data = Array.isArray(r.data) ? { files: r.data, total: r.data.length } : r.data;
+        setFiles(data.files ?? []);
+        setTotal(data.total ?? 0);
       })
       .catch(() => toast.error('Failed to load test assets'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [category, project]);
+  useEffect(() => {
+    setOffset(0);
+    load(0, category, search, project);
+  }, [category, project]);
+
+  const handleSearch = () => {
+    setOffset(0);
+    load(0, category, search, project);
+  };
+
+  const handlePageChange = (newOffset: number) => {
+    setOffset(newOffset);
+    load(newOffset, category, search, project);
+  };
+
+  const handleCategoryChange = (cat: string) => {
+    setCategory(cat);
+    setOffset(0);
+  };
+
+  const handleProjectChange = (proj: string) => {
+    setProject(proj);
+    setOffset(0);
+  };
 
   const handleDownload = async (f: any) => {
     try {
@@ -94,13 +124,13 @@ export default function TestDataLibrary() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
-        <form onSubmit={e => { e.preventDefault(); load(); }} className="relative flex items-center gap-2">
+        <form onSubmit={e => { e.preventDefault(); handleSearch(); }} className="relative flex items-center gap-2">
           <label htmlFor="tdl-search" className="sr-only">Search assets</label>
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input id="tdl-search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search assets…" className="input pl-8 text-sm h-8 w-56" />
           <button type="submit" className="btn-primary h-8 px-3 text-sm">Search</button>
         </form>
-        <select value={project} onChange={e => setProject(e.target.value)} className="input h-8 text-sm w-40">
+        <select value={project} onChange={e => handleProjectChange(e.target.value)} className="input h-8 text-sm w-40">
           <option value="">All Projects</option>
           {allProjects.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
@@ -109,7 +139,7 @@ export default function TestDataLibrary() {
       {/* Category pills */}
       <div className="flex gap-2 flex-wrap">
         {CATEGORIES.map(cat => (
-          <button key={cat} onClick={() => setCategory(cat)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${category === cat ? 'bg-[#F59E0B] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+          <button key={cat} onClick={() => handleCategoryChange(cat)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${category === cat ? 'bg-[#F59E0B] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
             {cat}
           </button>
         ))}
@@ -145,56 +175,59 @@ export default function TestDataLibrary() {
           <p className="text-xs mt-1 text-slate-400">Assets must be in "Published" status to appear here</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {files.map(f => (
-            <div key={f.id} className="card p-5 hover:shadow-lg hover:border-teal-200 dark:hover:border-teal-800 transition-all group">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  <FileIcon mimeType={f.mime_type} name={f.original_name} size={30} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate group-hover:text-teal-600 dark:group-hover:text-teal-400" title={f.name}>{f.name}</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">{formatBytes(f.size)}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <StatusBadge status={f.status} />
-                  {f.category && <span className="badge bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">{f.category}</span>}
-                </div>
-
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-medium text-slate-700 dark:text-slate-300">{f.project}</span>
-                  {f.module && <> · {f.module}</>}
-                </div>
-
-                {f.jira_ticket && (
-                  <span className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">{f.jira_ticket}</span>
-                )}
-
-                {f.tags && (
-                  <div className="flex gap-1 flex-wrap">
-                    {f.tags.split(',').slice(0, 3).map((t: string) => t.trim()).filter(Boolean).map((t: string) => (
-                      <span key={t} className="text-xs bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">#{t}</span>
-                    ))}
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {files.map(f => (
+              <div key={f.id} className="card p-5 hover:shadow-lg hover:border-teal-200 dark:hover:border-teal-800 transition-all group">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <FileIcon mimeType={f.mime_type} name={f.original_name} size={30} />
                   </div>
-                )}
-              </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate group-hover:text-teal-600 dark:group-hover:text-teal-400" title={f.name}>{f.name}</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">{formatBytes(f.size)}</p>
+                  </div>
+                </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span className="text-xs text-slate-400">v{f.version} · {f.owner_name?.split(' ')[0]}</span>
-                <button
-                  onClick={() => handleDownload(f)}
-                  aria-label={`Download ${f.name}`}
-                  className="flex items-center gap-1 text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 font-medium"
-                >
-                  <Download size={13} /> Download
-                </button>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <StatusBadge status={f.status} />
+                    {f.category && <span className="badge bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">{f.category}</span>}
+                  </div>
+
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{f.project}</span>
+                    {f.module && <> · {f.module}</>}
+                  </div>
+
+                  {f.jira_ticket && (
+                    <span className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">{f.jira_ticket}</span>
+                  )}
+
+                  {f.tags && (
+                    <div className="flex gap-1 flex-wrap">
+                      {f.tags.split(',').slice(0, 3).map((t: string) => t.trim()).filter(Boolean).map((t: string) => (
+                        <span key={t} className="text-xs bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">#{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">v{f.version} · {f.owner_name?.split(' ')[0]}</span>
+                  <button
+                    onClick={() => handleDownload(f)}
+                    aria-label={`Download ${f.name}`}
+                    className="flex items-center gap-1 text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 font-medium"
+                  >
+                    <Download size={13} /> Download
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          <Pagination total={total} limit={PAGE_SIZE} offset={offset} onPageChange={handlePageChange} className="mt-2" />
+        </>
       )}
     </div>
   );

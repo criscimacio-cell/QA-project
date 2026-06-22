@@ -6,6 +6,9 @@ import FileIcon from '../components/UI/FileIcon';
 import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
 import EmptyState from '../components/UI/EmptyState';
+import Pagination from '../components/UI/Pagination';
+
+const PAGE_SIZE = 10;
 
 function formatBytes(b: number) {
   if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
@@ -15,6 +18,8 @@ function formatBytes(b: number) {
 
 export default function Archive() {
   const [files, setFiles] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
@@ -25,11 +30,20 @@ export default function Archive() {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [restoreSuccess, setRestoreSuccess] = useState(false);
 
-  const load = async () => {
+  const load = async (currentOffset: number, currentSearch: string) => {
     setLoading(true);
     try {
-      const r = await api.get('/files', { params: { status: 'archived', limit: 1000 } });
-      setFiles(Array.isArray(r.data) ? r.data : (r.data.files ?? []));
+      const r = await api.get('/files', {
+        params: {
+          status: 'archived',
+          limit: PAGE_SIZE,
+          offset: currentOffset,
+          search: currentSearch || undefined,
+        },
+      });
+      const data = Array.isArray(r.data) ? { files: r.data, total: r.data.length } : r.data;
+      setFiles(data.files ?? []);
+      setTotal(data.total ?? 0);
     } catch {
       toast.error('Failed to load archived files');
     } finally {
@@ -37,16 +51,27 @@ export default function Archive() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(0, ''); }, []);
+
+  const handleSearch = (newSearch: string) => {
+    setSearch(newSearch);
+    setOffset(0);
+    load(0, newSearch);
+  };
+
+  const handlePageChange = (newOffset: number) => {
+    setOffset(newOffset);
+    load(newOffset, search);
+  };
 
   const doRestore = async () => {
     if (!confirmRestore.id) return;
     setRestoreLoading(true);
     try {
       await api.post(`/files/${confirmRestore.id}/restore`);
-      setFiles(prev => prev.filter(f => f.id !== confirmRestore.id));
       setConfirmRestore({ open: false, id: null, name: '' });
       setRestoreSuccess(true);
+      load(offset, search);
     } catch {
       toast.error('Failed to restore file');
     } finally {
@@ -60,21 +85,14 @@ export default function Archive() {
     try {
       await api.delete(`/files/${confirmDelete.id}`);
       toast.success('File permanently deleted');
-      setFiles(prev => prev.filter(f => f.id !== confirmDelete.id));
       setConfirmDelete({ open: false, id: null, name: '' });
+      load(offset, search);
     } catch {
       toast.error('Failed to delete file');
     } finally {
       setDeleteLoading(false);
     }
   };
-
-  const filtered = files.filter(f =>
-    !search ||
-    f.name.toLowerCase().includes(search.toLowerCase()) ||
-    f.original_name.toLowerCase().includes(search.toLowerCase()) ||
-    (f.owner_name || '').toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -85,21 +103,21 @@ export default function Archive() {
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">
           <ArchiveIcon size={15} className="text-slate-400" />
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{files.length} archived</span>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{total} archived</span>
         </div>
       </div>
 
       <div className="card p-4 flex items-center gap-3">
         <input
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => handleSearch(e.target.value)}
           placeholder="Search by name, original file, or owner…"
           className="input h-8 text-sm w-72"
         />
         {search && (
-          <button onClick={() => setSearch('')} className="btn-ghost text-sm py-1.5">Clear</button>
+          <button onClick={() => handleSearch('')} className="btn-ghost text-sm py-1.5">Clear</button>
         )}
-        <span className="ml-auto text-xs text-slate-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+        <span className="ml-auto text-xs text-slate-400">{total} result{total !== 1 ? 's' : ''}</span>
       </div>
 
       <div className="card overflow-hidden">
@@ -109,7 +127,7 @@ export default function Archive() {
               <div key={i} className="shimmer-bg rounded-lg" style={{ height: 48, marginBottom: 8 }} />
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : files.length === 0 ? (
           <div className="p-8">
             <EmptyState
               icon={<Files size={28} className="text-slate-400" />}
@@ -128,7 +146,7 @@ export default function Archive() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filtered.map((f, index) => (
+                {files.map((f, index) => (
                   <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50" style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s` }}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 max-w-[220px]">
@@ -167,6 +185,9 @@ export default function Archive() {
                 ))}
               </tbody>
             </table>
+            <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800">
+              <Pagination total={total} limit={PAGE_SIZE} offset={offset} onPageChange={handlePageChange} />
+            </div>
           </div>
         )}
       </div>

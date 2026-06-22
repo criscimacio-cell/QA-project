@@ -116,7 +116,7 @@ export default function FileManager() {
     setCommentError('');
   }, [selected?.id]);
 
-  const load = (overrides?: { search?: string; project?: string; category?: string }) => {
+  const load = (overrides?: { search?: string; project?: string; category?: string; offset?: number }) => {
     setLoading(true);
     const params: any = {};
     if (TAB_STATUS[tab]) params.status = TAB_STATUS[tab];

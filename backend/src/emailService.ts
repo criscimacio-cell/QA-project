@@ -10,14 +10,19 @@
  *   All template functions below stay exactly the same.
  */
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM = process.env.EMAIL_FROM || 'Qlarity <onboarding@resend.dev>';
-const APP_URL = process.env.APP_URL || 'http://localhost:5173';
+// Env vars are read lazily at call time (NOT at module load). This is required
+// because route modules — which transitively import this file — may be loaded
+// before dotenv.config() runs (ESM import hoisting under tsx/esbuild). Reading
+// at call time guarantees dotenv has already populated process.env.
+const appUrl = () => process.env.APP_URL || 'http://localhost:5173';
 
 // ─── Base send ────────────────────────────────────────────────────────────────
 
 async function sendEmail(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM || 'Qlarity <onboarding@resend.dev>';
+
+  if (!apiKey) {
     console.log(`\n📧 [EMAIL — no RESEND_API_KEY]\nTo: ${to}\nSubject: ${subject}\n`);
     return;
   }
@@ -25,10 +30,10 @@ async function sendEmail(to: string, subject: string, html: string) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: FROM, to, subject, html }),
+    body: JSON.stringify({ from, to, subject, html }),
   });
 
   if (!res.ok) {
@@ -103,7 +108,7 @@ export async function sendWelcomeEmail(to: string, name: string, orgName: string
     <p style="color:#475569;line-height:1.6">
       You can now upload files, collaborate on test data, and track approvals all in one place.
     </p>
-    ${button(`${APP_URL}/dashboard`, 'Go to Dashboard')}
+    ${button(`${appUrl()}/dashboard`, 'Go to Dashboard')}
     <p style="color:#94a3b8;font-size:13px">
       If you weren't expecting this invite, you can safely ignore this email.
     </p>
@@ -136,7 +141,7 @@ export async function sendFileSubmittedEmail(
     <p style="color:#475569;line-height:1.6">
       Please review and approve or return it to draft.
     </p>
-    ${button(`${APP_URL}/files/${fileId}`, 'Review File')}
+    ${button(`${appUrl()}/files/${fileId}`, 'Review File')}
   `);
   await sendEmail(to, `Review requested: "${fileName}" — Qlarity`, html);
 }
@@ -162,7 +167,7 @@ export async function sendFileApprovedEmail(
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:16px 0">
       <p style="margin:0;font-weight:600;color:#166534;font-size:15px">📄 ${fileName}</p>
     </div>
-    ${button(`${APP_URL}/files/${fileId}`, 'View File')}
+    ${button(`${appUrl()}/files/${fileId}`, 'View File')}
   `);
   await sendEmail(to, `Approved: "${fileName}" — Qlarity`, html);
 }
@@ -197,7 +202,7 @@ export async function sendFileRejectedEmail(
     <p style="color:#475569;line-height:1.6">
       Please make the necessary changes and resubmit when ready.
     </p>
-    ${button(`${APP_URL}/files/${fileId}`, 'Edit File')}
+    ${button(`${appUrl()}/files/${fileId}`, 'Edit File')}
   `);
   await sendEmail(to, `Revision needed: "${fileName}" — Qlarity`, html);
 }
@@ -222,7 +227,7 @@ export async function sendFilePublishedEmail(
     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin:16px 0">
       <p style="margin:0;font-weight:600;color:#1e3a8a;font-size:15px">📄 ${fileName}</p>
     </div>
-    ${button(`${APP_URL}/files/${fileId}`, 'View Published File')}
+    ${button(`${appUrl()}/files/${fileId}`, 'View Published File')}
   `);
   await sendEmail(to, `Published: "${fileName}" — Qlarity`, html);
 }
@@ -258,7 +263,7 @@ export async function sendRoleChangedEmail(
     <p style="color:#475569;line-height:1.6">
       Your permissions may have changed. Log in to see what you can access.
     </p>
-    ${button(`${APP_URL}/dashboard`, 'Go to Dashboard')}
+    ${button(`${appUrl()}/dashboard`, 'Go to Dashboard')}
   `);
   await sendEmail(to, `Your Qlarity role changed to ${newRole}`, html);
 }
@@ -268,7 +273,7 @@ export async function sendRoleChangedEmail(
 // NOTE: mailer.ts already handles this — wire up later when migrating fully to emailService
 
 export async function sendPasswordResetEmail(to: string, name: string, token: string) {
-  const link = `${APP_URL}/reset-password?token=${token}`;
+  const link = `${appUrl()}/reset-password?token=${token}`;
   const html = layout(`
     <h2 style="margin:0 0 8px;color:#0f172a;font-size:20px">Reset your password</h2>
     <p style="color:#475569;line-height:1.6">Hi ${name},</p>

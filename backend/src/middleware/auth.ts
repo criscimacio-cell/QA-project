@@ -31,9 +31,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 }
 
 const HARDCODED_ROLES = ['admin', 'lead', 'engineer', 'viewer'];
-const RESERVED_ROLE_NAMES = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'hasOwnProperty', 'valueOf', 'admin', 'lead', 'engineer', 'viewer']);
-
-export { RESERVED_ROLE_NAMES };
+export const RESERVED_ROLE_NAMES = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'hasOwnProperty', 'valueOf', 'admin', 'lead', 'engineer', 'viewer']);
 
 export const requireRole = (...roles: string[]) => (req: Request, res: Response, next: NextFunction): void => {
   const userRole = req.user?.role;
@@ -41,12 +39,14 @@ export const requireRole = (...roles: string[]) => (req: Request, res: Response,
   if (userRole === 'admin') { next(); return; }
   if (roles.length === 1 && roles[0] === 'admin') { res.status(403).json({ error: 'Forbidden' }); return; }
   if (roles.includes(userRole)) { next(); return; }
-  // Custom roles are denied here — use requireModule for module-gated routes
-  if (!HARDCODED_ROLES.includes(userRole)) { res.status(403).json({ error: 'Forbidden' }); return; }
+  // Custom role already cleared by requireModule — allow through
+  if (!HARDCODED_ROLES.includes(userRole) && (req as any).__moduleCleared) { next(); return; }
   res.status(403).json({ error: 'Forbidden' });
 };
 
-// requireModule checks role_permissions JSONB for custom roles, allowing fine-grained access control
+// requireModule checks role_permissions JSONB for custom roles.
+// On success it stamps __moduleCleared on the request so a following
+// requireRole call doesn't re-block the custom role.
 export const requireModule = (module: string) => async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const userRole = req.user?.role;
   if (!userRole) { res.status(401).json({ error: 'Unauthorized' }); return; }
@@ -57,14 +57,17 @@ export const requireModule = (module: string) => async (req: Request, res: Respo
     try {
       const [org] = await sql`SELECT role_permissions FROM organizations WHERE id = ${req.user!.organizationId}`;
       const perms = org?.role_permissions?.[userRole];
-      if (perms?.[module] === true) { next(); return; }
+      if (perms?.[module] === true) {
+        (req as any).__moduleCleared = true;
+        next(); return;
+      }
       res.status(403).json({ error: 'Forbidden' }); return;
     } catch {
       res.status(403).json({ error: 'Forbidden' }); return;
     }
   }
 
-  // Hardcoded roles (lead, engineer, viewer) pass if they're in the allowed list
-  // This keeps backward compatibility for routes that haven't migrated to requireModule yet
+  // Hardcoded roles (lead, engineer, viewer) pass module check unconditionally;
+  // requireRole on the same route still gates them by role name.
   next();
 };

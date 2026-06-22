@@ -36,13 +36,13 @@ export default function AuditLog() {
   const [total, setTotal] = useState(0);
   const [action, setAction] = useState('');
   const [offset, setOffset] = useState(0);
-  const limit = 50;
+  const limit = 10;
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const load = () => {
     setLoading(true);
-    api.get('/audit', { params: { action: action || undefined, page: Math.floor(offset/50)+1, limit: 50 } })
+    api.get('/audit', { params: { action: action || undefined, offset, limit } })
       .then(r => { setLogs(r.data.logs); setTotal(r.data.total); })
       .catch(() => toast.error('Failed to load audit logs'))
       .finally(() => setLoading(false));
@@ -56,7 +56,7 @@ export default function AuditLog() {
     try {
       let allLogs: any[];
       try {
-        const r = await api.get('/audit', { params: { action: action || undefined, page: 1, limit: 10000 } });
+        const r = await api.get('/audit', { params: { action: action || undefined, offset: 0, limit: 10000 } });
         allLogs = r.data.logs;
       } catch {
         // If the bulk fetch fails, fall back to current page with a warning
@@ -114,7 +114,7 @@ export default function AuditLog() {
               <>
                 <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{summary[i].count}</div>
                 <div className={`text-xs mt-0.5 font-medium px-2 py-0.5 rounded-full inline-block ${ACTION_STYLES[sa] || 'bg-slate-100 text-slate-600'}`}>{sa}</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">pg {Math.floor(offset / 50) + 1}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">pg {Math.floor(offset / limit) + 1}</div>
               </>
             )}
           </div>

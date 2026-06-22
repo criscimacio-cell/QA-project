@@ -5,10 +5,10 @@ import { authenticate, requireRole } from '../middleware/auth';
 const router = Router();
 
 router.get('/', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
-  const { action, user_id, dateFrom, dateTo, page = '1', limit = '50' } = req.query;
+  const { action, user_id, dateFrom, dateTo, offset = '0', limit = '10' } = req.query;
   const orgId = req.user!.organizationId;
-  const limitInt = Math.max(1, Math.min(200, parseInt(limit as string) || 50));
-  const offsetInt = Math.max(0, (parseInt(page as string) - 1)) * limitInt;
+  const limitInt = Math.max(1, Math.min(10000, parseInt(limit as string) || 10));
+  const offsetInt = Math.max(0, parseInt(offset as string) || 0);
 
   const logs = await sql`
     SELECT al.*, u.name as user_name, u.email as user_email, u.role as user_role

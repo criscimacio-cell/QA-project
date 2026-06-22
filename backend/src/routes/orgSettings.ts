@@ -11,8 +11,8 @@ export const ADMIN_PERMISSIONS: Record<string, boolean> = {
   audit: true, users: true, settings: true, orgSettings: true,
 };
 
-// GET /org-settings/permissions — admin only
-router.get('/permissions', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+// GET /org-settings/permissions — any authenticated user (needed by frontend for sidebar canAccess)
+router.get('/permissions', authenticate, async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [org] = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
   const stored = org?.role_permissions || {};

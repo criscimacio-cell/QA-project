@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
+import { sendRoleChangedEmail } from '../emailService';
 
 const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise: Infinity };
 
@@ -100,6 +101,7 @@ router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res:
   const orgId = req.user!.organizationId;
   if (parseInt(req.params.id) === req.user!.userId && role !== undefined) { res.status(403).json({ error: 'Cannot change your own role' }); return; }
   if (role && !VALID_ROLES.includes(role)) { res.status(400).json({ error: 'Invalid role' }); return; }
+  const [target] = await sql`SELECT email, name, role FROM users WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (password) {
     if (password.length < 8) { res.status(400).json({ error: 'Password must be at least 8 characters' }); return; }
     const hash = bcrypt.hashSync(password, 10);
@@ -108,6 +110,12 @@ router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res:
     await sql`UPDATE users SET name=${name}, role=${role}, department=${department}, active=${active !== undefined ? active : true} WHERE id=${req.params.id} AND organization_id=${orgId}`;
   }
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_UPDATE', 'user', ${req.params.id}, ${`Updated user id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
+  if (role && target && target.role !== role) {
+    try {
+      const [org] = await sql`SELECT name FROM organizations WHERE id = ${orgId}`;
+      await sendRoleChangedEmail(target.email, name || target.name, target.role, role, org?.name || 'your organization');
+    } catch (e) { console.error('Role-change email failed:', e); }
+  }
   res.json({ message: 'Updated' });
 });
 

@@ -6,7 +6,12 @@ import fs from 'fs';
 const archiver = require('archiver') as (format: string, opts?: object) => import('archiver').Archiver;
 import sql from '../db';
 import { authenticate, requireRole, requireModule } from '../middleware/auth';
-import { sendApprovalNotification, sendUploadNotification } from '../mailer';
+import {
+  sendFileSubmittedEmail,
+  sendFileApprovedEmail,
+  sendFileRejectedEmail,
+  sendFilePublishedEmail,
+} from '../emailService';
 
 const PLAN_STORAGE_LIMITS: Record<string, number> = {
   free: 1 * 1024 ** 3,        // 1 GB
@@ -199,6 +204,21 @@ router.post('/bulk-submit', authenticate, requireModule('files'), requireRole('a
   } else {
     await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft' AND organization_id = ${orgId}`;
   }
+  // Notify leads/admins of each file that was just submitted
+  const submitted = await sql`
+    SELECT f.id, f.name, u.name as owner_name
+    FROM files f JOIN users u ON f.owner_id = u.id
+    WHERE f.id = ANY(${ids}::int[]) AND f.status = 'submitted' AND f.organization_id = ${orgId}
+  `;
+  if (submitted.length) {
+    const leads = await sql`SELECT id, name, email FROM users WHERE role IN ('admin','lead') AND active = TRUE AND organization_id = ${orgId}`;
+    for (const f of submitted) {
+      for (const lead of leads) {
+        await notificationQueue.add('notify', { userId: lead.id, type: 'approval', title: 'Review Requested', message: `"${f.name}" submitted for review`, organizationId: orgId });
+        try { await sendFileSubmittedEmail(lead.email, lead.name, f.owner_name, f.name, f.id); } catch {}
+      }
+    }
+  }
   res.json({ message: 'Submitted for review' });
 });
 
@@ -318,7 +338,7 @@ router.post('/:id/submit', authenticate, requireModule('files'), requireRole('ad
   const leads = await sql`SELECT id, name, email FROM users WHERE role IN ('admin','lead') AND active = TRUE AND organization_id = ${orgId}`;
   for (const lead of leads) {
     await notificationQueue.add('notify', { userId: lead.id, type: 'approval', title: 'Review Requested', message: `"${file?.name}" submitted for review`, organizationId: orgId });
-    try { await sendUploadNotification(lead.email, lead.name, file?.owner_name, file?.name); } catch {}
+    try { await sendFileSubmittedEmail(lead.email, lead.name, file?.owner_name, file?.name, Number(req.params.id)); } catch {}
   }
   res.json({ message: 'Submitted for review' });
 });
@@ -363,7 +383,18 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
   const [file] = await sql`SELECT f.name, f.owner_id, u.name as owner_name, u.email as owner_email FROM files f JOIN users u ON f.owner_id = u.id WHERE f.id=${req.params.id} AND f.organization_id=${orgId}`;
   if (file) {
     await notificationQueue.add('notify', { userId: file.owner_id, type: 'approval', title: `File ${effectiveStatus === 'approved' ? 'Approved' : 'Status Updated'}`, message: `Your file "${file.name}" is now: ${effectiveStatus}`, organizationId: orgId });
-    try { await sendApprovalNotification(file.owner_email, file.owner_name, file.name, effectiveStatus); } catch {}
+    try {
+      const [reviewer] = await sql`SELECT name FROM users WHERE id = ${req.user!.userId} AND organization_id = ${orgId}`;
+      const reviewerName = reviewer?.name || 'A reviewer';
+      const fileId = Number(req.params.id);
+      if (effectiveStatus === 'approved') {
+        await sendFileApprovedEmail(file.owner_email, file.owner_name, file.name, fileId, reviewerName);
+      } else if (effectiveStatus === 'published') {
+        await sendFilePublishedEmail(file.owner_email, file.owner_name, file.name, fileId);
+      } else if (effectiveStatus === 'draft') {
+        await sendFileRejectedEmail(file.owner_email, file.owner_name, file.name, fileId, reviewerName, comments);
+      }
+    } catch {}
   }
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'APPROVE', 'file', ${req.params.id}, ${`Changed status to ${effectiveStatus}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Status updated', status: effectiveStatus });

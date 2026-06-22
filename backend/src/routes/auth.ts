@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import sql from '../db';
 import { authenticate, JWT_SECRET } from '../middleware/auth';
-import { sendPasswordReset } from '../mailer';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../emailService';
 
 const router = Router();
 
@@ -190,7 +190,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     await sql`INSERT INTO password_reset_tokens (user_id, token, expires_at, organization_id) VALUES (${user.id}, ${token}, ${expiresAt}, ${user.organization_id})`;
-    try { await sendPasswordReset(user.email, user.name, token); } catch (e) { console.error('Email send failed:', e); }
+    try { await sendPasswordResetEmail(user.email, user.name, token); } catch (e) { console.error('Email send failed:', e); }
   } catch (e) { console.error('Forgot-password error:', e); }
   res.json({ message: 'If that email exists, a reset link has been sent.' });
 });
@@ -256,6 +256,8 @@ router.post('/register', async (req: Request, res: Response) => {
 
       return { orgId: org.id, userId: user.id };
     });
+
+    try { await sendWelcomeEmail(adminEmail.trim().toLowerCase(), adminName.trim(), orgName.trim()); } catch (e) { console.error('Welcome email failed:', e); }
 
     res.status(201).json({ message: 'Organization created successfully. You can now log in.', orgId: result.orgId });
   } catch (err: any) {

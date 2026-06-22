@@ -36,7 +36,7 @@ async function checkRateLimit(ip: string): Promise<boolean> {
       AND action = 'LOGIN_FAIL'
       AND created_at > NOW() - INTERVAL '15 minutes'
   ` as any[];
-  return count < 5;
+  return count < 20;
 }
 
 function getClientIp(req: Request): string {
@@ -67,7 +67,7 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
       AND action = 'LOGIN_FAIL'
       AND created_at > NOW() - INTERVAL '15 minutes'
   ` as any[];
-  if (emailCount >= 5) { res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again in 15 minutes.' }); return; }
+  if (emailCount >= 20) { res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again in 15 minutes.' }); return; }
 
   let user: any;
   if (orgSlug) {

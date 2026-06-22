@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction, RequestHandler } from 'express
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { encryptFile, decryptFileToBuffer, withDecryptedFile } from '../fileEncryption';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const archiver = require('archiver') as (format: string, opts?: object) => import('archiver').Archiver;
 import sql from '../db';
@@ -182,6 +183,7 @@ router.post('/bulk-download', authenticate, requireModule('files'), async (req: 
   archive.pipe(res);
 
   const seen = new Map<string, number>();
+  const decryptJobs: Promise<void>[] = [];
   for (const f of allowed) {
     const filePath = path.join(UPLOAD_DIR, f.path);
     if (!fs.existsSync(filePath)) continue;
@@ -190,8 +192,13 @@ router.post('/bulk-download', authenticate, requireModule('files'), async (req: 
     const count = seen.get(f.original_name) || 0;
     seen.set(f.original_name, count + 1);
     const zipName = count === 0 ? f.original_name : `${base}_(${count})${ext}`;
-    archive.file(filePath, { name: zipName });
+    decryptJobs.push(
+      withDecryptedFile(filePath, async (decPath) => {
+        archive.file(decPath, { name: zipName });
+      })
+    );
   }
+  await Promise.all(decryptJobs);
   await archive.finalize();
 });
 
@@ -288,6 +295,7 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
     fileId = id;
   }
 
+  encryptFile(path.join(UPLOAD_DIR, f.filename));
   await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, ${newVersion}, ${f.filename}, ${f.size}, ${change_log || (existing ? `Version ${newVersion} update` : 'Initial upload')}, ${req.user!.userId}, ${orgId})`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ id: fileId, version: newVersion, message: existing ? `New version ${newVersion} created` : 'File uploaded successfully' });
@@ -309,6 +317,7 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
       VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id as string}, ${req.user!.userId}, 1, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${orgId})
       RETURNING id
     `;
+    encryptFile(path.join(UPLOAD_DIR, f.filename));
     await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, 1, ${f.filename}, ${f.size}, 'Initial upload', ${req.user!.userId}, ${orgId})`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Bulk uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
     results.push({ id: fileId, name, originalName: f.originalname, size: f.size });
@@ -448,7 +457,11 @@ router.get('/:id/download', authenticate, async (req: Request, res: Response) =>
   if (fs.existsSync(filePath)) {
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.original_name)}"`);
     res.setHeader('Content-Type', file.mime_type || 'application/octet-stream');
-    fs.createReadStream(filePath).pipe(res);
+    try {
+      const decrypted = decryptFileToBuffer(filePath);
+      res.setHeader('Content-Length', decrypted.length);
+      res.end(decrypted);
+    } catch { res.status(500).json({ error: 'Failed to decrypt file' }); }
   } else {
     res.status(404).json({ error: 'File not found on disk. This may be a demo record with no physical file.' });
   }
@@ -467,7 +480,11 @@ router.get('/:id/preview', authenticate, async (req: Request, res: Response) => 
     const mime = file.mime_type || 'application/octet-stream';
     res.setHeader('Content-Type', SAFE.has(mime) ? mime : 'application/octet-stream');
     res.setHeader('Content-Disposition', `${SAFE.has(mime) ? 'inline' : 'attachment'}; filename="${encodeURIComponent(file.original_name)}"`);
-    fs.createReadStream(filePath).pipe(res);
+    try {
+      const decrypted = decryptFileToBuffer(filePath);
+      res.setHeader('Content-Length', decrypted.length);
+      res.end(decrypted);
+    } catch { res.status(500).json({ error: 'Failed to decrypt file' }); }
   } else {
     res.status(404).json({ error: 'No preview available for demo records.' });
   }
@@ -485,7 +502,12 @@ router.get('/:id/versions/:version/download', authenticate, async (req: Request,
   const filePath = path.join(UPLOAD_DIR, ver.path);
   if (fs.existsSync(filePath)) {
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.original_name)}"`);
-    fs.createReadStream(filePath).pipe(res);
+    res.setHeader('Content-Type', file.mime_type || 'application/octet-stream');
+    try {
+      const decrypted = decryptFileToBuffer(filePath);
+      res.setHeader('Content-Length', decrypted.length);
+      res.end(decrypted);
+    } catch { res.status(500).json({ error: 'Failed to decrypt file' }); }
   } else {
     res.status(404).json({ error: 'Version file not found on disk.' });
   }

@@ -64,19 +64,27 @@ router.post('/', authenticate, requireRole('admin'), async (req: Request, res: R
   const orgId = req.user!.organizationId;
 
   // Enforce per-plan user limits
-  const [orgRow] = await sql`SELECT plan FROM organizations WHERE id = ${orgId}`;
-  const limit = PLAN_USER_LIMITS[orgRow?.plan] ?? 5;
+  const [orgRow] = await sql`SELECT plan, role_permissions FROM organizations WHERE id = ${orgId}`;
+  const planLimit = PLAN_USER_LIMITS[orgRow?.plan] ?? 5;
   const [{ count }] = await sql`SELECT COUNT(*)::int as count FROM users WHERE organization_id = ${orgId} AND active = TRUE` as any[];
-  if (count >= limit) {
-    res.status(403).json({ error: `User limit reached for your plan (${limit} users on ${orgRow?.plan} plan). Please upgrade to add more users.` }); return;
+  if (count >= planLimit) {
+    res.status(403).json({ error: `User limit reached for your plan (${planLimit} users on ${orgRow?.plan} plan). Please upgrade to add more users.` }); return;
+  }
+
+  // Validate role — must be a hardcoded role or an existing custom role in this org
+  const assignedRole = role || 'viewer';
+  const customRoles = Object.keys(orgRow?.role_permissions || {});
+  const validRoles = [...VALID_ROLES, ...customRoles];
+  if (!validRoles.includes(assignedRole)) {
+    res.status(400).json({ error: `Invalid role: "${assignedRole}"` }); return;
   }
 
   const hash = bcrypt.hashSync(password || 'password123', 10);
   const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`;
   try {
-    const [{ id }] = await sql`INSERT INTO users (name, email, password_hash, role, department, avatar, organization_id) VALUES (${name}, ${email}, ${hash}, ${role || 'viewer'}, ${department || ''}, ${avatar}, ${orgId}) RETURNING id`;
+    const [{ id }] = await sql`INSERT INTO users (name, email, password_hash, role, department, avatar, organization_id) VALUES (${name}, ${email}, ${hash}, ${assignedRole}, ${department || ''}, ${avatar}, ${orgId}) RETURNING id`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_CREATE', 'user', ${id}, ${`Created user: ${email}`}, ${req.ip || ''}, ${orgId})`;
-    res.json({ id, name, email, role });
+    res.json({ id, name, email, role: assignedRole });
   } catch { res.status(400).json({ error: 'Operation failed' }); }
 });
 
@@ -100,7 +108,12 @@ router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res:
   const { name, role, department, active, password } = req.body;
   const orgId = req.user!.organizationId;
   if (parseInt(req.params.id) === req.user!.userId && role !== undefined) { res.status(403).json({ error: 'Cannot change your own role' }); return; }
-  if (role && !VALID_ROLES.includes(role)) { res.status(400).json({ error: 'Invalid role' }); return; }
+  if (role) {
+    const [orgRow] = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
+    const customRoles = Object.keys(orgRow?.role_permissions || {});
+    const validRoles = [...VALID_ROLES, ...customRoles];
+    if (!validRoles.includes(role)) { res.status(400).json({ error: `Invalid role: "${role}"` }); return; }
+  }
   const [target] = await sql`SELECT email, name, role FROM users WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (password) {
     if (password.length < 8) { res.status(400).json({ error: 'Password must be at least 8 characters' }); return; }

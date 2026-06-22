@@ -21,7 +21,7 @@ const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise:
 export default function UserManagement() {
   const { isAdmin, user } = useAuth();
   const { customRoles, permissions } = usePermissions();
-  const allRoles = ['admin', ...customRoles];
+  const allRoles = ['admin', 'lead', 'engineer', 'viewer', ...customRoles];
   const [users, setUsers] = useState<any[]>([]);
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);

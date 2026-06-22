@@ -19,10 +19,11 @@ const PLAN_LIMITS: Record<string, { users: number; usersLabel: string; storageBy
 const VALID_PLANS = Object.keys(PLAN_LIMITS);
 
 export default function OrgSettings() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [stats, setStats] = useState<{ userCount: number; storageUsed: number } | null>(null);
 
   useEffect(() => {
+    refreshUser();
     Promise.all([
       api.get('/users'),
       api.get('/dashboard/stats'),

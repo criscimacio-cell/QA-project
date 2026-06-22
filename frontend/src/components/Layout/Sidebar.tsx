@@ -76,7 +76,7 @@ const mainNav = [
 const formatRole = (role: string) => role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
-  const { user, isLead, isAdmin } = useAuth();
+  const { user } = useAuth();
   const { canAccess } = usePermissions();
 
   const moduleMap: Record<string, ModuleKey> = {
@@ -235,11 +235,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </div>
         ))}
 
-        {/* Approval Workflow — Lead + Admin only */}
-        {isLead && leadNav.length > 0 && renderNavSection('Workflow', leadNav, mainNav.reduce((a, s) => a + s.items.length, 0), collapsed)}
+        {/* Approval Workflow — visible to any role with approvals access */}
+        {leadNav.length > 0 && renderNavSection('Workflow', leadNav, mainNav.reduce((a, s) => a + s.items.length, 0), collapsed)}
 
-        {/* Admin section — Admin only */}
-        {isAdmin && adminNav.length > 0 && renderNavSection('Admin', adminNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length, collapsed)}
+        {/* Admin section — visible to any role with at least one admin module */}
+        {adminNav.length > 0 && renderNavSection('Admin', adminNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length, collapsed)}
 
         {/* Settings — all roles */}
         {renderNavSection('Account', settingsNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length + adminNav.length, collapsed)}

@@ -78,6 +78,7 @@ function useTyping(text: string, speed = 38) {
 /* ── Animated counter hook ── */
 function useCountUp(target: number, duration = 900, active = false) {
   const [value, setValue] = useState(0);
+  if (!isFinite(target)) return target;
   useEffect(() => {
     if (!active || typeof target !== 'number' || isNaN(target)) return;
     let raf: number;
@@ -660,6 +661,13 @@ export default function Dashboard() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {activityFeed.length === 0 && (
+        <div className="card p-8 text-center text-slate-400">
+          <Activity size={32} className="mx-auto mb-2 opacity-30" />
+          <p className="text-sm">No recent activity to display</p>
         </div>
       )}
 

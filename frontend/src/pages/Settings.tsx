@@ -17,6 +17,7 @@ export default function Settings() {
   const [newRoleName, setNewRoleName] = useState('');
   const [addingRole, setAddingRole] = useState(false);
   const [deletingRole, setDeletingRole] = useState<string | null>(null);
+  const [confirmResetRbac, setConfirmResetRbac] = useState(false);
 
   useEffect(() => {
     if (permissions) setRbacConfig(JSON.parse(JSON.stringify(permissions)));
@@ -646,7 +647,7 @@ export default function Settings() {
 
           {/* API Access — placeholder */}
           {activeSection === 'API Access' && (
-            <div className="card p-6 opacity-60">
+            <div className="card p-6 opacity-60 pointer-events-none">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
                 <Key size={18} className="text-[#F59E0B]" /> API Access
                 <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-2 py-0.5 rounded-full">Coming soon</span>
@@ -697,7 +698,7 @@ export default function Settings() {
                               <span className="capitalize">{role.replace(/_/g, ' ')}</span>
                               <button
                                 onClick={() => handleDeleteRole(role)}
-                                disabled={deletingRole === role}
+                                disabled={deletingRole !== null}
                                 className="text-red-400 hover:text-red-600 text-xs leading-none"
                                 title={`Delete ${role} role`}
                               >
@@ -750,7 +751,7 @@ export default function Settings() {
               )}
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button onClick={() => setRbacConfig(JSON.parse(JSON.stringify(permissions)))} className="btn-ghost text-sm">Reset</button>
+                <button onClick={() => setConfirmResetRbac(true)} className="btn-ghost text-sm">Reset</button>
                 <button
                   onClick={async () => {
                     setRbacSaving(true);
@@ -788,6 +789,14 @@ export default function Settings() {
         message={`"${categoryToDelete?.name}" will be permanently deleted. This action cannot be undone.`}
         confirmLabel="Delete"
         loading={deletingCategory}
+      />
+      <ConfirmModal
+        open={confirmResetRbac}
+        onClose={() => setConfirmResetRbac(false)}
+        onConfirm={() => { setRbacConfig(JSON.parse(JSON.stringify(permissions))); setConfirmResetRbac(false); }}
+        title="Reset RBAC to Defaults"
+        message="This will reset all role permissions to factory defaults. Custom roles and their settings will be overwritten. This cannot be undone."
+        confirmLabel="Reset to defaults"
       />
     </div>
   );

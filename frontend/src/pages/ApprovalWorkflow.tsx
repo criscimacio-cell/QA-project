@@ -13,7 +13,7 @@ const STAGES = [
   { key: 'draft', label: 'Draft', icon: FileText, color: 'border-slate-300 dark:border-slate-600', headerColor: 'bg-slate-100 dark:bg-slate-800', textColor: 'text-slate-600 dark:text-slate-400' },
   { key: 'submitted', label: 'Submitted', icon: ArrowRight, color: 'border-blue-300 dark:border-blue-700', headerColor: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400' },
   { key: 'under_review', label: 'Under Review', icon: Clock, color: 'border-amber-300 dark:border-amber-700', headerColor: 'bg-amber-50 dark:bg-amber-900/20', textColor: 'text-amber-600 dark:text-amber-400' },
-  { key: 'approved', label: 'Approved', icon: CheckCircle, color: 'border-emerald-300 dark:border-emerald-700', headerColor: 'bg-amber-100/60 dark:bg-emerald-900/20', textColor: 'text-amber-600 dark:text-amber-300' },
+  { key: 'approved', label: 'Approved', icon: CheckCircle, color: 'border-emerald-300 dark:border-emerald-700', headerColor: 'bg-emerald-100/60 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-300' },
   { key: 'published', label: 'Published', icon: CheckCircle, color: 'border-emerald-300 dark:border-emerald-700', headerColor: 'bg-emerald-50 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400' },
 ];
 
@@ -163,8 +163,8 @@ export default function ApprovalWorkflow() {
 
       {/* Kanban */}
       {loading ? (
-        <div className="grid grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="space-y-3">
               <div className="shimmer-bg h-8 rounded-lg" />
               <div className="shimmer-bg h-24 rounded-xl" />

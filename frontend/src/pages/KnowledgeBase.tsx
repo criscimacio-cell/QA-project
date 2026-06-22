@@ -68,7 +68,7 @@ const CAT_COLORS: Record<string, string> = {
   Troubleshooting: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800',
   RCA: 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-800',
   'Testing Standards': 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-  'Best Practices': 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400 border-primary-200 dark:border-primary-800',
+  'Best Practices': 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 border-purple-200 dark:border-purple-800',
   Onboarding: 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800',
   'Process Documentation': 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border-amber-200 dark:border-amber-800',
 };
@@ -345,7 +345,12 @@ export default function KnowledgeBase() {
                   </div>
                 ))}
               </div>
-              <Pagination total={articles.length} limit={PAGE_SIZE} offset={pageOffset} onPageChange={setPageOffset} />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-400">
+                  Page {Math.floor(pageOffset / PAGE_SIZE) + 1} of {Math.max(1, Math.ceil(articles.length / PAGE_SIZE))}
+                </span>
+                <Pagination total={articles.length} limit={PAGE_SIZE} offset={pageOffset} onPageChange={setPageOffset} />
+              </div>
             </>
           )}
         </div>

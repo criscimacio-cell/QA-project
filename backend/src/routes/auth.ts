@@ -218,7 +218,9 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
 });
 
 router.post('/register', async (req: Request, res: Response) => {
-  const { orgName, orgSlug, adminName, adminEmail, adminPassword } = req.body;
+  const { orgName, orgSlug, plan, adminName, adminEmail, adminPassword } = req.body;
+  const validPlans = ['free', 'pro', 'enterprise'];
+  const orgPlan = validPlans.includes(plan) ? plan : 'free';
 
   if (!orgName?.trim() || !orgSlug?.trim() || !adminName?.trim() || !adminEmail?.trim() || !adminPassword) {
     res.status(400).json({ error: 'All fields are required' }); return;
@@ -239,7 +241,7 @@ router.post('/register', async (req: Request, res: Response) => {
       if (existingSlug) throw new Error('SLUG_TAKEN');
 
       const [org] = await tx`
-        INSERT INTO organizations (name, slug) VALUES (${orgName.trim()}, ${orgSlug.trim().toLowerCase()})
+        INSERT INTO organizations (name, slug, plan) VALUES (${orgName.trim()}, ${orgSlug.trim().toLowerCase()}, ${orgPlan})
         RETURNING id
       `;
 

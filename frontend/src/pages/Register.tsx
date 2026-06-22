@@ -12,6 +12,7 @@ function slugify(str: string) {
 export default function Register() {
   const navigate = useNavigate();
 
+  const [plan, setPlan]             = useState<'free'|'pro'|'enterprise'>('free');
   const [orgName, setOrgName]       = useState('');
   const [orgSlug, setOrgSlug]       = useState('');
   const [slugEdited, setSlugEdited] = useState(false);
@@ -55,7 +56,7 @@ export default function Register() {
     if (!validate()) return;
     setLoading(true); setError('');
     try {
-      await api.post('/auth/register', { orgName: orgName.trim(), orgSlug, adminName: adminName.trim(), adminEmail: adminEmail.trim().toLowerCase(), adminPassword: password });
+      await api.post('/auth/register', { orgName: orgName.trim(), orgSlug, plan, adminName: adminName.trim(), adminEmail: adminEmail.trim().toLowerCase(), adminPassword: password });
       setSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
@@ -137,6 +138,22 @@ export default function Register() {
                   onBlur={e => { e.target.style.borderColor = errors.orgSlug ? 'rgba(239,68,68,0.5)' : 'rgba(0,0,0,0.12)'; e.target.style.boxShadow = 'none'; }}
                 />
                 {errors.orgSlug && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 3 }}>{errors.orgSlug}</p>}
+              </div>
+            </div>
+
+            {/* Plan */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(0,0,0,0.5)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>Plan</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {(['free','pro','enterprise'] as const).map(p => (
+                  <button key={p} type="button" onClick={() => setPlan(p)} style={{
+                    padding: '8px 4px', borderRadius: 8, border: `2px solid ${plan === p ? AMBER : 'rgba(0,0,0,0.1)'}`,
+                    background: plan === p ? 'rgba(245,158,11,0.08)' : 'white',
+                    cursor: 'pointer', fontWeight: plan === p ? 700 : 500,
+                    fontSize: 13, color: plan === p ? '#92400e' : 'rgba(0,0,0,0.55)',
+                    textTransform: 'capitalize', transition: 'all 0.15s',
+                  }}>{p}</button>
+                ))}
               </div>
             </div>
 

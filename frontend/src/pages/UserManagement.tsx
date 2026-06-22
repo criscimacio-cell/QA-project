@@ -6,7 +6,7 @@ import Pagination from '../components/UI/Pagination';
 import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
-import { usePermissions } from '../context/PermissionsContext';
+import { usePermissions, ModuleKey } from '../context/PermissionsContext';
 
 function generatePassword() {
   const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
@@ -20,7 +20,7 @@ const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise:
 
 export default function UserManagement() {
   const { isAdmin, user } = useAuth();
-  const { customRoles } = usePermissions();
+  const { customRoles, permissions } = usePermissions();
   const allRoles = ['admin', ...customRoles];
   const [users, setUsers] = useState<any[]>([]);
   const [offset, setOffset] = useState(0);
@@ -210,7 +210,8 @@ export default function UserManagement() {
 
       {/* Permission Matrix */}
       <div className="card p-5">
-        <h3 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4">Permission Matrix</h3>
+        <h3 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-1">Permission Matrix</h3>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Module access for all roles. Configure custom roles in Settings → Role Permissions.</p>
         {loading ? (
           <div className="p-4 space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -222,30 +223,41 @@ export default function UserManagement() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Permission</th>
-                {['Admin', 'Lead', 'Engineer', 'Viewer'].map(r => <th key={r} className="py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-center">{r}</th>)}
+                <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Module</th>
+                {allRoles.map(r => (
+                  <th key={r} className="py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-center capitalize">
+                    {r.replace(/_/g, ' ')}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {[
-                ['Upload Files', true, true, true, false],
-                ['Download Files', true, true, true, true],
-                ['Edit Own Files', true, true, true, false],
-                ['Delete Files', true, true, false, false],
-                ['Approve / Publish', true, true, false, false],
-                ['Manage Repositories', true, true, false, false],
-                ['View Analytics', true, true, false, false],
-                ['User Management', true, false, false, false],
-                ['Audit Logs', true, true, false, false],
-                ['System Settings', true, false, false, false],
-              ].map(([label, ...perms]) => (
-                <tr key={label as string} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 text-sm font-medium">{label as string}</td>
-                  {(perms as boolean[]).map((p, i) => (
-                    <td key={i} className="py-2.5 px-3 text-center">
-                      {p ? <span className="text-emerald-500 text-lg">✓</span> : <span className="text-slate-300 dark:text-slate-600 text-lg">✗</span>}
-                    </td>
-                  ))}
+              {([
+                ['dashboard',    'Dashboard'],
+                ['repositories', 'Repositories'],
+                ['files',        'File Manager'],
+                ['search',       'Search'],
+                ['knowledge',    'Knowledge Base'],
+                ['testData',     'Test Data Library'],
+                ['approvals',    'Approval Workflow'],
+                ['archive',      'Archive'],
+                ['audit',        'Audit Log'],
+                ['users',        'User Management'],
+                ['orgSettings',  'Org Settings'],
+                ['settings',     'Personal Settings'],
+              ] as [ModuleKey, string][]).map(([key, label]) => (
+                <tr key={key} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 text-sm font-medium">{label}</td>
+                  {allRoles.map(role => {
+                    const granted = permissions[role]?.[key] ?? false;
+                    return (
+                      <td key={role} className="py-2.5 px-3 text-center">
+                        {granted
+                          ? <span className="text-emerald-500 text-lg">✓</span>
+                          : <span className="text-slate-300 dark:text-slate-600 text-lg">✗</span>}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>

@@ -47,8 +47,9 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
            f.project, f.module, f.category, f.jira_ticket, f.tags,
            f.description, f.version, f.created_at, f.updated_at,
            f.owner_id, f.repository_id,
+           f.checked_out_by, f.checked_out_at, co.name as checked_out_by_name,
            u.name as owner_name, r.name as repository_name
-    FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id
+    FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id LEFT JOIN users co ON co.id = f.checked_out_by
     WHERE f.organization_id = ${orgId}
     ${!isLead ? sql`AND (f.owner_id = ${req.user!.userId} OR f.status IN ('published','approved'))` : sql``}
     ${repository_id ? sql`AND f.repository_id = ${repository_id as string}` : sql``}
@@ -229,6 +230,42 @@ router.post('/bulk-submit', authenticate, requireModule('files'), requireRole('a
   res.json({ message: 'Submitted for review' });
 });
 
+// POST /:id/checkout
+router.post('/:id/checkout', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const userId = req.user!.userId;
+  const [file] = await sql`SELECT id, checked_out_by, checked_out_at FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  if (file.checked_out_by && file.checked_out_by !== userId) {
+    const [locker] = await sql`SELECT name FROM users WHERE id = ${file.checked_out_by}`;
+    res.status(409).json({ error: `File is checked out by ${locker?.name || 'another user'} since ${file.checked_out_at}` });
+    return;
+  }
+  if (file.checked_out_by === userId) {
+    res.json({ checkedOutBy: userId, checkedOutAt: file.checked_out_at });
+    return;
+  }
+  const [updated] = await sql`UPDATE files SET checked_out_by=${userId}, checked_out_at=NOW() WHERE id=${req.params.id} AND organization_id=${orgId} RETURNING checked_out_at`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${userId}, 'CHECKOUT', 'file', ${req.params.id}, 'Checked out file', ${req.ip || ''}, ${orgId})`;
+  res.json({ checkedOutBy: userId, checkedOutAt: updated.checked_out_at });
+}));
+
+// POST /:id/checkin
+router.post('/:id/checkin', authenticate, requireModule('files'), asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const userId = req.user!.userId;
+  const role = req.user!.role;
+  const [file] = await sql`SELECT id, checked_out_by FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  if (!file.checked_out_by) { res.json({ message: 'Checked in' }); return; }
+  if (file.checked_out_by !== userId && !['admin', 'lead'].includes(role)) {
+    res.status(403).json({ error: 'File is checked out by another user' }); return;
+  }
+  await sql`UPDATE files SET checked_out_by=NULL, checked_out_at=NULL WHERE id=${req.params.id} AND organization_id=${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${userId}, 'CHECKIN', 'file', ${req.params.id}, 'Checked in file', ${req.ip || ''}, ${orgId})`;
+  res.json({ message: 'Checked in' });
+}));
+
 router.get('/:id', authenticate, async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [file] = await sql`
@@ -236,8 +273,9 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
            f.project, f.module, f.category, f.jira_ticket, f.tags,
            f.description, f.version, f.created_at, f.updated_at,
            f.owner_id, f.repository_id,
+           f.checked_out_by, f.checked_out_at, co.name as checked_out_by_name,
            u.name as owner_name, r.name as repository_name
-    FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id
+    FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id LEFT JOIN users co ON co.id = f.checked_out_by
     WHERE f.id = ${req.params.id} AND f.organization_id = ${orgId}
   `;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
@@ -278,12 +316,19 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
   }
 
   const [existing] = await sql`SELECT * FROM files WHERE name = ${name} AND repository_id = ${repository_id || null} AND status != 'archived' AND organization_id = ${orgId}`;
+
+  // Check-out lock: if file exists and is locked by another user
+  if (existing && existing.checked_out_by && existing.checked_out_by !== req.user!.userId && !['admin', 'lead'].includes(req.user!.role)) {
+    fs.unlinkSync(path.join(UPLOAD_DIR, f.filename));
+    res.status(423).json({ error: 'File is locked by another user. Check it in first.' }); return;
+  }
+
   let fileId: number;
   let newVersion: number;
 
   if (existing) {
     newVersion = existing.version + 1;
-    await sql`UPDATE files SET version=${newVersion}, path=${f.filename}, size=${f.size}, mime_type=${f.mimetype}, jira_ticket=${jira_ticket || existing.jira_ticket}, tags=${tags || existing.tags}, description=${description || existing.description}, status='draft', updated_at=NOW() WHERE id=${existing.id} AND organization_id=${orgId}`;
+    await sql`UPDATE files SET version=${newVersion}, path=${f.filename}, size=${f.size}, mime_type=${f.mimetype}, jira_ticket=${jira_ticket || existing.jira_ticket}, tags=${tags || existing.tags}, description=${description || existing.description}, status='draft', checked_out_by=NULL, checked_out_at=NULL, updated_at=NOW() WHERE id=${existing.id} AND organization_id=${orgId}`;
     fileId = existing.id;
   } else {
     newVersion = parseInt(version) || 1;

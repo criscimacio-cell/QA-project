@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List } from 'lucide-react';
+import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List, Lock, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
@@ -390,6 +390,26 @@ export default function FileManager() {
     }
   };
 
+  const doCheckout = async (fileId: number) => {
+    try {
+      const r = await api.post(`/files/${fileId}/checkout`);
+      setFiles(prev => prev.map(f => f.id === fileId ? { ...f, checked_out_by: user?.id, checked_out_at: r.data.checkedOutAt, checked_out_by_name: user?.name } : f));
+      toast.success('File checked out');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to check out file');
+    }
+  };
+
+  const doCheckin = async (fileId: number) => {
+    try {
+      await api.post(`/files/${fileId}/checkin`);
+      setFiles(prev => prev.map(f => f.id === fileId ? { ...f, checked_out_by: null, checked_out_at: null, checked_out_by_name: null } : f));
+      toast.success('File checked in');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to check in file');
+    }
+  };
+
   const projects = [...new Set(files.map(f => f.project).filter(Boolean))];
   const categories = [...new Set(files.map(f => f.category).filter(Boolean))];
 
@@ -568,8 +588,23 @@ export default function FileManager() {
                       <div className="flex items-center gap-2 max-w-[220px]">
                         <FileIcon mimeType={f.mime_type} name={f.original_name} size={18} />
                         <div className="min-w-0">
-                          <div className="font-medium text-slate-900 dark:text-slate-100 truncate" title={f.name}>{f.name}</div>
-                          <div className="text-xs text-slate-400 truncate" title={f.original_name}>{f.original_name}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-slate-900 dark:text-slate-100 truncate" title={f.name}>{f.name}</span>
+                            {f.checked_out_by && (
+                              <span title={`Checked out by ${f.checked_out_by_name || 'someone'}`}>
+                                <Lock size={12} className={f.checked_out_by === user?.id ? 'text-amber-500' : 'text-red-500'} />
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs truncate" title={f.original_name}>
+                            {f.checked_out_by ? (
+                              <span className={f.checked_out_by === user?.id ? 'text-amber-500' : 'text-red-500'}>
+                                {f.checked_out_by === user?.id ? 'You (editing)' : `Locked by ${f.checked_out_by_name}`}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">{f.original_name}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -596,6 +631,22 @@ export default function FileManager() {
                           </button>
                         )}
                         <button onClick={() => downloadFile(f.id, f.original_name)} title="Download" aria-label="Download file" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
+                        {/* Check-out / Check-in buttons */}
+                        {!f.checked_out_by && (isLead || isEngineer) && (
+                          <button onClick={() => doCheckout(f.id)} title="Check Out" aria-label="Check out file" className="p-1.5 rounded hover:bg-amber-500/10 text-slate-400 hover:text-amber-500">
+                            <Lock size={14} />
+                          </button>
+                        )}
+                        {f.checked_out_by === user?.id && (
+                          <button onClick={() => doCheckin(f.id)} title="Check In" aria-label="Check in file" className="p-1.5 rounded hover:bg-emerald-500/10 text-amber-500 hover:text-emerald-500">
+                            <Unlock size={14} />
+                          </button>
+                        )}
+                        {f.checked_out_by && f.checked_out_by !== user?.id && isLead && (
+                          <button onClick={() => doCheckin(f.id)} title="Force Check In" aria-label="Force check in file" className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400">
+                            <Unlock size={14} />
+                          </button>
+                        )}
                         {isLead ? (
                           <>
                             <button onClick={() => { setSelected(f); setShowApprove(true); }} title="Review" aria-label="Review file" className="p-1.5 rounded hover:bg-amber-500/10 text-amber-500">

@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Bell, Sun, Moon, LogOut, User, ChevronDown, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useNotificationSocket } from '../../hooks/useNotificationSocket';
 import { useLogout } from '../../context/LogoutContext';
 import api from '../../api/client';
 
@@ -28,6 +30,18 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
       setNotifs(r.data.notifications.slice(0, 5));
     }).catch(() => {});
   }, []);
+
+  // Real-time WebSocket notifications
+  const handleWsNotification = useCallback((notification: any) => {
+    setNotifCount(c => c + 1);
+    setNotifs(prev => [notification, ...prev].slice(0, 5));
+    toast(notification.title, {
+      description: notification.message,
+      duration: 5000,
+    });
+  }, []);
+
+  useNotificationSocket(handleWsNotification, !!user);
 
   // Close dropdowns on outside click
   useEffect(() => {

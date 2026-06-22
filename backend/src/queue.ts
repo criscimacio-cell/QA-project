@@ -1,5 +1,6 @@
 import { Queue, Worker } from 'bullmq';
 import sql from './db';
+import { pushToUser } from './wsServer';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const url = new URL(REDIS_URL);
@@ -16,7 +17,9 @@ const worker = new Worker(
   async (job) => {
     const { userId, type, title, message, organizationId } = job.data as { userId: number; type: string; title: string; message: string; organizationId?: number };
     const orgId = organizationId ?? 1;
-    await sql`INSERT INTO notifications (user_id, type, title, message, organization_id) VALUES (${userId}, ${type}, ${title}, ${message}, ${orgId})`;
+    const [saved] = await sql`INSERT INTO notifications (user_id, type, title, message, organization_id) VALUES (${userId}, ${type}, ${title}, ${message}, ${orgId}) RETURNING *`;
+    // Push real-time notification to connected WebSocket clients
+    pushToUser(userId, { type: 'notification', notification: saved });
   },
   { connection, concurrency: 5 },
 );

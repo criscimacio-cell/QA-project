@@ -7,7 +7,9 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
+import http from 'http';
 import rateLimit from 'express-rate-limit';
+import { attachWebSocketServer } from './wsServer';
 import { initDb } from './initDb';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
@@ -95,7 +97,9 @@ if (process.env.NODE_ENV !== 'production') {
 (async () => {
   try {
     await initDb();
-    app.listen(PORT, () => console.log(`Qlarity API running on http://localhost:${PORT}`));
+    const server = http.createServer(app);
+    attachWebSocketServer(server);
+    server.listen(PORT, () => console.log(`Qlarity API running on http://localhost:${PORT}`));
   } catch (err) {
     console.error('Failed to initialize database:', err);
     process.exit(1);

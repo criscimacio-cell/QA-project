@@ -183,9 +183,10 @@ export default function AuditLog() {
             </table>
           </div>
         )}
+        <div className="px-4 pb-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <Pagination total={total} limit={limit} offset={offset} onPageChange={o => { setOffset(o); }} />
+        </div>
       </div>
-
-      <Pagination total={total} limit={50} offset={offset} onPageChange={setOffset} className="mt-2" />
     </div>
   );
 }

@@ -587,7 +587,7 @@ export default function FileManager() {
               icon={<Files size={28} className="text-amber-400" />}
               title={search ? 'No files match your search' : 'No files yet'}
               description={search ? 'Try a different search term or clear your filters.' : 'Upload your first file to get started.'}
-              action={!search ? <button className="btn-primary" onClick={() => setShowBulkUpload(true)}>Upload File</button> : undefined}
+              action={!search && isEngineer ? <button className="btn-primary" onClick={() => setShowBulkUpload(true)}>Upload File</button> : undefined}
             />
           </div>
         ) : viewMode === 'grouped' ? (
@@ -635,7 +635,7 @@ export default function FileManager() {
                       type="checkbox"
                       checked={allVisibleSelected}
                       onChange={toggleAll}
-                      aria-label="Select all files"
+                      aria-label={`Select all ${files.length} files`}
                       className="rounded border-slate-300 dark:border-slate-600 text-amber-500 focus:ring-amber-500"
                     />
                   </th>
@@ -646,7 +646,7 @@ export default function FileManager() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {files.map((f, index) => (
-                  <tr key={f.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${selectedIds.has(f.id) ? 'bg-amber-500/5' : ''}`} style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s`, transition: 'background 0.15s ease' }}>
+                  <tr key={f.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 row-stagger ${selectedIds.has(f.id) ? 'bg-amber-500/5' : ''}`} style={{ '--row-delay': `${index * 0.03}s`, transition: 'background 0.15s ease' } as React.CSSProperties}>
                     <td className="px-4 py-3 w-10">
                       <input
                         type="checkbox"

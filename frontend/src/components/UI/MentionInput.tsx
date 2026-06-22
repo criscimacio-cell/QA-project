@@ -21,6 +21,8 @@ export default function MentionInput({ value, onChange, onKeyDown, placeholder, 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const closeSuggestions = useCallback(() => { setSuggestions([]); setMentionStart(null); setActiveIdx(0); }, []);
 
@@ -41,8 +43,10 @@ export default function MentionInput({ value, onChange, onKeyDown, placeholder, 
         abortRef.current = new AbortController();
         try {
           const res = await api.get(`/users/mention-search?q=${encodeURIComponent(query)}`, { signal: abortRef.current.signal });
-          setSuggestions(res.data);
-          setActiveIdx(0);
+          if (mountedRef.current) {
+            setSuggestions(res.data);
+            setActiveIdx(0);
+          }
         } catch {}
       }, 200);
     } else {

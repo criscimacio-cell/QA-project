@@ -86,6 +86,9 @@ export default function Register() {
           </p>
           <p style={{ fontSize: 13, color: 'rgba(0,0,0,0.4)', marginBottom: 6 }}>Your Organization ID:</p>
           <code style={{ display: 'block', background: '#f8f8f8', border: '1px solid #e5e5e5', borderRadius: 8, padding: '8px 14px', fontSize: 15, fontWeight: 700, color: AMBER, marginBottom: 24 }}>{orgSlug}</code>
+          <p className="text-sm text-slate-500 text-center mt-2">
+            Your organization has been created. Share the workspace URL with your team members so they can log in.
+          </p>
           <button onClick={() => navigate(`/login?slug=${orgSlug}`)} style={{ width: '100%', height: 46, borderRadius: 10, border: 'none', background: `linear-gradient(135deg, ${AMBER}, #D97706)`, color: '#09090B', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
             Go to Login
           </button>

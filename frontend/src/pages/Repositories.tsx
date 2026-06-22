@@ -389,7 +389,7 @@ export default function Repositories() {
                 {i > 0 && <ChevronRight size={12} className="text-slate-300" />}
                 <span
                   className={i === breadcrumb.length - 1
-                    ? 'font-semibold text-slate-900 dark:text-slate-100'
+                    ? 'font-semibold text-slate-500 cursor-default'
                     : 'text-slate-400 hover:text-[#F59E0B] cursor-pointer transition-colors'}
                   onClick={i < breadcrumb.length - 1 ? () => setSelected(b.id) : undefined}
                 >
@@ -416,8 +416,8 @@ export default function Repositories() {
             <button onClick={() => setView('grid')} aria-label="Grid view" aria-pressed={view === 'grid'} className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-amber-500 text-white rounded-lg' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}><LayoutGrid size={14} /></button>
           </div>
 
-          {selected && isLead && (
-            <button onClick={() => openCreate(selected, selectedRepo?.name)} className="btn-secondary text-xs py-1.5 px-3">
+          {isLead && (
+            <button onClick={() => openCreate(selected, selectedRepo?.name)} disabled={!selected} className="btn-secondary text-xs py-1.5 px-3 disabled:opacity-50 disabled:cursor-not-allowed">
               <FolderPlus size={13} /> Sub-folder
             </button>
           )}

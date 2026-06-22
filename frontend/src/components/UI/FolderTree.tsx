@@ -99,9 +99,9 @@ function FolderNode({ node, level, activeFolderId, onSelect, onFoldersChange, ca
               <MoreHorizontal size={12} />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-5 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[120px]">
-                {canWrite && <button onClick={() => { setRenaming(true); setMenuOpen(false); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"><Pencil size={11}/> Rename</button>}
-                {canDelete && <button onClick={() => { handleDelete(); setMenuOpen(false); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600"><Trash2 size={11}/> Delete</button>}
+              <div role="menu" className="absolute right-0 top-5 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[120px]">
+                {canWrite && <button role="menuitem" onClick={() => { setRenaming(true); setMenuOpen(false); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"><Pencil size={11}/> Rename</button>}
+                {canDelete && <button role="menuitem" onClick={() => { handleDelete(); setMenuOpen(false); }} className="flex items-center gap-2 w-full px-3 py-1.5 text-xs hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600"><Trash2 size={11}/> Delete</button>}
               </div>
             )}
           </div>

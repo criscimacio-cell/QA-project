@@ -23,6 +23,7 @@ export default function TestDataLibrary() {
   const [search, setSearch] = useState('');
   const [project, setProject] = useState('');
   const [allProjects, setAllProjects] = useState<string[]>([]);
+  const [allFiles, setAllFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   // On mount: fetch all files once to build the stable projects dropdown
@@ -32,6 +33,7 @@ export default function TestDataLibrary() {
         const rows = Array.isArray(r.data) ? r.data : (r.data.files ?? []);
         const unique = [...new Set(rows.map((f: any) => f.project).filter(Boolean))] as string[];
         setAllProjects(unique);
+        setAllFiles(rows);
       })
       .catch(() => {/* silently ignore — projects dropdown just stays empty */});
   }, []);
@@ -104,10 +106,10 @@ export default function TestDataLibrary() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Test Cases', count: files.filter(f => f.category === 'Test Cases').length, gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)' },
-          { label: 'Templates', count: files.filter(f => f.category === 'Template').length, gradient: 'linear-gradient(135deg,#10b981,#FBBF24)' },
-          { label: 'Test Scripts', count: files.filter(f => f.category === 'Test Scripts').length, gradient: 'linear-gradient(135deg,#FBBF24,#F59E0B)' },
-          { label: 'Test Data', count: files.filter(f => f.category === 'Test Data').length, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)' },
+          { label: 'Test Cases', count: (isFiltered ? files : allFiles).filter(f => f.category === 'Test Cases').length, gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)' },
+          { label: 'Templates', count: (isFiltered ? files : allFiles).filter(f => f.category === 'Template').length, gradient: 'linear-gradient(135deg,#10b981,#FBBF24)' },
+          { label: 'Test Scripts', count: (isFiltered ? files : allFiles).filter(f => f.category === 'Test Scripts').length, gradient: 'linear-gradient(135deg,#FBBF24,#F59E0B)' },
+          { label: 'Test Data', count: (isFiltered ? files : allFiles).filter(f => f.category === 'Test Data').length, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)' },
         ].map(s => (
           <div key={s.label} className="card p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: s.gradient }}>

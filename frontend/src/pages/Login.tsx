@@ -55,6 +55,7 @@ export default function Login() {
   const [error, setError]       = useState('');
   const [errors, setErrors]     = useState<Record<string, string>>({});
   const [rememberMe, setRememberMe] = useState(false);
+  const [splineLoaded, setSplineLoaded] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const [phase, setPhase]             = useState<'idle'|'slideOut'|'morph'>('idle');
@@ -167,11 +168,16 @@ export default function Login() {
 
       {/* ── Spline scene — full-bleed background, shifted left ── */}
       <div tabIndex={-1} style={{ position:'fixed', top:0, bottom:0, left:'-20%', right:0, zIndex:0 }}>
-        <SplineScene
-          scene="https://prod.spline.design/QQ1zXNE5ma-qe0g0/scene.splinecode"
-          className="w-full h-full"
-          onLoad={(app) => { splineRef.current = app; }}
-        />
+        <div className="relative w-full h-full">
+          {!splineLoaded && (
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 animate-pulse rounded-2xl" />
+          )}
+          <SplineScene
+            scene="https://prod.spline.design/QQ1zXNE5ma-qe0g0/scene.splinecode"
+            className="w-full h-full"
+            onLoad={(app) => { splineRef.current = app; setSplineLoaded(true); }}
+          />
+        </div>
       </div>
 
       {/* ── Content layer — pointer-events passthrough so Spline stays interactive ── */}

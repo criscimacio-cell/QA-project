@@ -87,6 +87,7 @@ export default function UserManagement() {
   const copyPassword = () => {
     navigator.clipboard.writeText(password).then(() => {
       setCopied(true);
+      toast.success('Password copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     });
   };
@@ -95,6 +96,7 @@ export default function UserManagement() {
     if (!successUser) return;
     navigator.clipboard.writeText(successUser.password).then(() => {
       setSuccessPwCopied(true);
+      toast.success('Password copied to clipboard');
       setTimeout(() => setSuccessPwCopied(false), 2000);
     });
   };

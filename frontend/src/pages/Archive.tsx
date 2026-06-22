@@ -29,6 +29,8 @@ export default function Archive() {
   const [confirmRestore, setConfirmRestore] = useState<{ open: boolean; id: number | null; name: string }>({ open: false, id: null, name: '' });
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [restoreSuccess, setRestoreSuccess] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const load = async (currentOffset: number, currentSearch: string) => {
     setLoading(true);
@@ -44,6 +46,7 @@ export default function Archive() {
       const data = Array.isArray(r.data) ? { files: r.data, total: r.data.length } : r.data;
       setFiles(data.files ?? []);
       setTotal(data.total ?? 0);
+      setSelectedIds(new Set());
     } catch {
       toast.error('Failed to load archived files');
     } finally {
@@ -94,6 +97,29 @@ export default function Archive() {
     }
   };
 
+  const bulkRestore = async () => {
+    setBulkLoading(true);
+    try {
+      await Promise.all([...selectedIds].map(id => api.post(`/files/${id}/restore`)));
+      toast.success(`Restored ${selectedIds.size} file(s)`);
+      setSelectedIds(new Set());
+      load(offset, search);
+    } catch { toast.error('Some files failed to restore'); }
+    finally { setBulkLoading(false); }
+  };
+
+  const bulkDelete = async () => {
+    if (!confirm(`Permanently delete ${selectedIds.size} file(s)? This cannot be undone.`)) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all([...selectedIds].map(id => api.delete(`/files/${id}`)));
+      toast.success(`Deleted ${selectedIds.size} file(s)`);
+      setSelectedIds(new Set());
+      load(offset, search);
+    } catch { toast.error('Some files failed to delete'); }
+    finally { setBulkLoading(false); }
+  };
+
   return (
     <div className="space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between">
@@ -136,10 +162,37 @@ export default function Archive() {
             />
           </div>
         ) : (
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800">
+              <span className="text-sm font-medium text-amber-700 dark:text-amber-400">{selectedIds.size} selected</span>
+              <button
+                onClick={bulkRestore}
+                disabled={bulkLoading}
+                className="btn-secondary text-xs py-1 px-2 flex items-center gap-1"
+              >
+                <RotateCcw size={12} /> Restore all
+              </button>
+              <button
+                onClick={bulkDelete}
+                disabled={bulkLoading}
+                className="btn-ghost text-xs py-1 px-2 text-red-500 flex items-center gap-1"
+              >
+                <Trash2 size={12} /> Delete all
+              </button>
+              <button onClick={() => setSelectedIds(new Set())} className="ml-auto text-xs text-slate-400 hover:text-slate-600">Clear</button>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800/50">
                 <tr>
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox"
+                      checked={files.length > 0 && selectedIds.size === files.length}
+                      onChange={e => setSelectedIds(e.target.checked ? new Set(files.map(f => f.id)) : new Set())}
+                      className="rounded border-slate-300"
+                    />
+                  </th>
                   {['File', 'Project', 'Category', 'Version', 'Owner', 'Size', 'Archived', 'Actions'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
@@ -148,6 +201,13 @@ export default function Archive() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {files.map((f, index) => (
                   <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50" style={{ animation: 'rowStagger 0.28s ease both', animationDelay: `${index * 0.03}s` }}>
+                    <td className="px-4 py-3 w-10">
+                      <input type="checkbox"
+                        checked={selectedIds.has(f.id)}
+                        onChange={e => setSelectedIds(prev => { const next = new Set(prev); e.target.checked ? next.add(f.id) : next.delete(f.id); return next; })}
+                        className="rounded border-slate-300"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 max-w-[220px]">
                         <FileIcon mimeType={f.mime_type} name={f.original_name} size={18} />

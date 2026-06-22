@@ -1,25 +1,23 @@
 /**
- * AES-256-GCM file encryption at rest.
+ * AES-256-GCM encryption at rest for uploaded files.
  *
- * On-disk format (binary):
- *   [12 bytes IV] [16 bytes GCM auth tag] [N bytes ciphertext]
+ * On-disk format for encrypted files:
+ *   [6 bytes magic "QLENC1"] [12 bytes IV] [16 bytes GCM auth tag] [N bytes ciphertext]
  *
- * Key is read lazily from FILE_ENCRYPTION_KEY env var (64 hex chars = 32 bytes).
- * If the key is not set, files pass through unencrypted and a warning is logged
- * once — so the app still runs in dev without the key configured.
+ * The magic header lets us distinguish encrypted files from legacy plaintext
+ * files uploaded before encryption was enabled — those are served as-is.
  *
- * SWAP GUIDE (future — key rotation):
- *   Add a key version byte at offset 0, keep old keys in a map, decrypt with
- *   the matching key, re-encrypt with the new one during a migration job.
+ * Key: FILE_ENCRYPTION_KEY env var (64 hex chars = 32 bytes).
+ * Without the key, files pass through unencrypted (warned once on startup).
  */
 
 import crypto from 'crypto';
 import fs from 'fs';
-import path from 'path';
 
-const IV_LENGTH = 12;   // GCM recommended
-const TAG_LENGTH = 16;  // GCM auth tag
-const HEADER_LENGTH = IV_LENGTH + TAG_LENGTH; // 28 bytes prepended to every file
+const MAGIC = Buffer.from('QLENC1');  // 6 bytes — marks an encrypted file
+const IV_LENGTH = 12;
+const TAG_LENGTH = 16;
+const HEADER_LENGTH = MAGIC.length + IV_LENGTH + TAG_LENGTH; // 34 bytes
 
 let _warned = false;
 
@@ -32,77 +30,77 @@ function getKey(): Buffer | null {
     }
     return null;
   }
-  if (hex.length !== 64) {
-    throw new Error('FILE_ENCRYPTION_KEY must be 64 hex characters (32 bytes)');
-  }
+  if (hex.length !== 64) throw new Error('FILE_ENCRYPTION_KEY must be 64 hex chars (32 bytes)');
   return Buffer.from(hex, 'hex');
 }
 
+function isEncrypted(data: Buffer): boolean {
+  return data.length >= MAGIC.length && data.subarray(0, MAGIC.length).equals(MAGIC);
+}
+
 /**
- * Encrypts a file in-place (overwrites the plaintext with the encrypted version).
- * Called immediately after multer saves the upload to disk.
+ * Encrypts a file in-place after multer saves it to disk.
+ * No-op if FILE_ENCRYPTION_KEY is not set.
  */
 export function encryptFile(filePath: string): void {
   const key = getKey();
-  if (!key) return; // encryption disabled — passthrough
+  if (!key) return;
 
   const plaintext = fs.readFileSync(filePath);
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-
   const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
   const tag = cipher.getAuthTag();
 
-  // Write: IV | tag | ciphertext
-  fs.writeFileSync(filePath, Buffer.concat([iv, tag, ciphertext]));
+  fs.writeFileSync(filePath, Buffer.concat([MAGIC, iv, tag, ciphertext]));
 }
 
 /**
- * Returns a decrypted Buffer for the given encrypted file path.
- * Used for single-file download and preview.
+ * Returns the plaintext Buffer for a file path.
+ * - Encrypted files (QLENC1 header): decrypted with the key.
+ * - Legacy plaintext files (no header): returned as-is for backward compatibility.
  */
 export function decryptFileToBuffer(filePath: string): Buffer {
   const key = getKey();
-  if (!key) return fs.readFileSync(filePath); // passthrough
-
   const data = fs.readFileSync(filePath);
+
+  if (!isEncrypted(data)) return data; // legacy plaintext — serve directly
+
+  if (!key) {
+    // Key was unset when file was written (shouldn't happen), return raw
+    return data;
+  }
+
   if (data.length < HEADER_LENGTH) throw new Error('Encrypted file too short — may be corrupt');
 
-  const iv = data.subarray(0, IV_LENGTH);
-  const tag = data.subarray(IV_LENGTH, HEADER_LENGTH);
+  const iv = data.subarray(MAGIC.length, MAGIC.length + IV_LENGTH);
+  const tag = data.subarray(MAGIC.length + IV_LENGTH, HEADER_LENGTH);
   const ciphertext = data.subarray(HEADER_LENGTH);
 
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
   decipher.setAuthTag(tag);
-
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
 
 /**
- * Decrypts an encrypted file into a temp file, runs `fn(tempPath)`, then
- * cleans up. Used for bulk-download zip where archiver needs a file path.
+ * Decrypts to a temp file, calls fn(tempPath), then cleans up.
+ * Used for bulk-download where archiver needs a real file path.
+ * Falls back to the original path for legacy plaintext files.
  */
 export async function withDecryptedFile<T>(
-  encryptedPath: string,
+  filePath: string,
   fn: (tempPath: string) => Promise<T>,
 ): Promise<T> {
-  const key = getKey();
-  if (!key) return fn(encryptedPath); // passthrough
+  const data = fs.readFileSync(filePath);
 
-  const tempPath = `${encryptedPath}.tmp_dec`;
+  if (!isEncrypted(data)) return fn(filePath); // legacy — pass original path
+
+  const tempPath = `${filePath}.tmp_dec`;
   try {
-    const plaintext = decryptFileToBuffer(encryptedPath);
+    const plaintext = decryptFileToBuffer(filePath);
     fs.writeFileSync(tempPath, plaintext);
     return await fn(tempPath);
   } finally {
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
   }
-}
-
-/**
- * Generates a secure random FILE_ENCRYPTION_KEY.
- * Run once: node -e "const c=require('crypto');console.log(c.randomBytes(32).toString('hex'))"
- */
-export function generateKey(): string {
-  return crypto.randomBytes(32).toString('hex');
 }

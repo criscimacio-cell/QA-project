@@ -134,91 +134,119 @@ export default function Hero() {
             <Shape key={i} shape={s} bob={FLOAT_BOB[i % FLOAT_BOB.length]} mx={mx} my={my} />
           ))}
 
-          {/* App Mockup — center of the scene */}
-          <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 5 }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85, y: 30 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              rotateX: tiltX,
-              rotateY: tiltY,
-              perspective: 1200,
-            }}
-          >
-            <div
-              className="bg-white rounded-2xl overflow-hidden"
-              style={{
-                width: 300,
-                boxShadow: '0 32px 80px rgba(0,0,0,0.14), 0 8px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06)',
-              }}
+          {/* Laptop Mockup */}
+          <div style={{ position: 'absolute', left: '48%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 5 }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              style={{ rotateX: tiltX, rotateY: tiltY, perspective: 1200 }}
             >
-              {/* App chrome */}
-              <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+              {/* Screen lid */}
+              <div style={{
+                width: 360,
+                background: '#1e293b',
+                borderRadius: '12px 12px 0 0',
+                padding: '10px 10px 0 10px',
+                boxShadow: '0 -4px 24px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.06)',
+              }}>
+                {/* Camera dot */}
+                <div className="flex justify-center mb-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
                 </div>
-                <div className="flex-1 mx-3">
-                  <div className="bg-slate-700 rounded-md px-3 py-1 text-[9px] text-slate-400 text-center">app.qlarity.io/documents</div>
-                </div>
-              </div>
-
-              {/* Sidebar + content */}
-              <div className="flex" style={{ height: 320 }}>
-                {/* Sidebar */}
-                <div className="bg-slate-50 border-r border-slate-100 p-3 flex flex-col gap-2" style={{ width: 72 }}>
-                  <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wide mb-1">Menu</div>
-                  {['Docs', 'Review', 'Team', 'Audit'].map((item, i) => (
-                    <div key={item}
-                      className={`rounded-lg px-2 py-1.5 text-[8px] font-semibold ${i === 0 ? 'bg-amber-100 text-amber-700' : 'text-slate-400'}`}>
-                      {item}
+                {/* Screen bezel + content */}
+                <div style={{
+                  background: '#0f172a',
+                  borderRadius: '6px 6px 0 0',
+                  overflow: 'hidden',
+                  height: 220,
+                }}>
+                  {/* Browser chrome inside screen */}
+                  <div style={{ background: '#1e293b', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#f87171' }} />
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fbbf24' }} />
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80' }} />
                     </div>
-                  ))}
-                </div>
-
-                {/* Main */}
-                <div className="flex-1 p-3 flex flex-col gap-2 bg-white overflow-hidden">
-                  <div className="text-[9px] font-bold text-slate-700 mb-1">Recent Documents</div>
-                  {DOC_ITEMS.map((doc) => {
-                    const Icon = doc.icon;
-                    return (
-                      <div key={doc.file}
-                        className="flex items-center gap-2 rounded-xl p-2 hover:bg-slate-50 border border-slate-100">
-                        <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ background: `${doc.color}15` }}>
-                          <FileText size={10} style={{ color: doc.color }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[8px] font-semibold text-slate-700 truncate">{doc.file}</div>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Icon size={8} style={{ color: doc.color }} />
-                          <span className="text-[7px] font-bold" style={{ color: doc.color }}>{doc.status}</span>
+                    <div style={{ flex: 1, background: '#334155', borderRadius: 4, padding: '2px 8px', fontSize: 7, color: '#94a3b8', textAlign: 'center' }}>
+                      app.qlarity.io/documents
+                    </div>
+                  </div>
+                  {/* App UI inside screen */}
+                  <div style={{ display: 'flex', height: '100%', background: '#fff' }}>
+                    {/* Sidebar */}
+                    <div style={{ width: 64, background: '#f8fafc', borderRight: '1px solid #f1f5f9', padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ fontSize: 6, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Menu</div>
+                      {['Docs', 'Review', 'Team', 'Audit'].map((item, i) => (
+                        <div key={item} style={{ borderRadius: 6, padding: '4px 6px', fontSize: 7, fontWeight: 600, background: i === 0 ? '#fef3c7' : 'transparent', color: i === 0 ? '#d97706' : '#94a3b8' }}>{item}</div>
+                      ))}
+                    </div>
+                    {/* Content */}
+                    <div style={{ flex: 1, padding: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: '#1e293b' }}>Recent Documents</div>
+                      {DOC_ITEMS.map((doc) => {
+                        const Icon = doc.icon;
+                        return (
+                          <div key={doc.file} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#f8fafc', borderRadius: 6, padding: '4px 6px', border: '1px solid #f1f5f9' }}>
+                            <div style={{ width: 16, height: 16, borderRadius: 4, background: `${doc.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <FileText size={8} style={{ color: doc.color }} />
+                            </div>
+                            <div style={{ flex: 1, fontSize: 7, fontWeight: 600, color: '#334155', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{doc.file}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                              <Icon size={7} style={{ color: doc.color }} />
+                              <span style={{ fontSize: 6, fontWeight: 700, color: doc.color }}>{doc.status}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {/* Pipeline */}
+                      <div style={{ marginTop: 'auto', paddingTop: 6, borderTop: '1px solid #f1f5f9' }}>
+                        <div style={{ fontSize: 7, fontWeight: 700, color: '#64748b', marginBottom: 5 }}>Approval Pipeline</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                          {['Upload', 'Review', 'Sign-off', 'Publish'].map((step, i) => (
+                            <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <div style={{ borderRadius: 99, padding: '2px 5px', fontSize: 6, fontWeight: 700, background: i < 2 ? '#f59e0b' : '#f1f5f9', color: i < 2 ? '#fff' : '#94a3b8' }}>{step}</div>
+                              {i < 3 && <div style={{ width: 8, height: 1, background: i < 1 ? '#f59e0b' : '#e2e8f0' }} />}
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    );
-                  })}
-
-                  {/* Approval pipeline */}
-                  <div className="mt-auto pt-2 border-t border-slate-100">
-                    <div className="text-[8px] font-bold text-slate-500 mb-2">Approval Pipeline</div>
-                    <div className="flex items-center gap-1">
-                      {['Upload', 'Review', 'Sign-off', 'Publish'].map((step, i) => (
-                        <div key={step} className="flex items-center gap-1">
-                          <div className={`rounded-full px-1.5 py-0.5 text-[6px] font-bold ${i < 2 ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                            {step}
-                          </div>
-                          {i < 3 && <div className={`w-3 h-px ${i < 1 ? 'bg-amber-400' : 'bg-slate-200'}`} />}
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+
+              {/* Hinge */}
+              <div style={{
+                width: 360,
+                height: 6,
+                background: 'linear-gradient(to bottom, #334155, #1e293b)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              }} />
+
+              {/* Base / keyboard */}
+              <div style={{
+                width: 360,
+                height: 28,
+                background: 'linear-gradient(to bottom, #e2e8f0, #cbd5e1)',
+                borderRadius: '0 0 10px 10px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+              }}>
+                {/* Keyboard rows suggestion */}
+                {[70, 80, 75, 60].map((w, i) => (
+                  <div key={i} style={{ width: `${w * 0.9}px`, height: 4, background: 'rgba(0,0,0,0.08)', borderRadius: 2 }} />
+                ))}
+              </div>
+
+              {/* Trackpad */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
+                <div style={{ width: 80, height: 10, background: '#cbd5e1', borderRadius: 4, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)' }} />
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>

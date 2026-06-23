@@ -30,7 +30,7 @@ export default function App() {
         <SocialProof />
         <Pricing />
         <FAQ />
-        <CTA />
+        <CTA onTalkToSales={() => setSalesOpen(true)} />
       </main>
       <Footer />
     </div>

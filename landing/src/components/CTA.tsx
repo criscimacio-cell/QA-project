@@ -4,7 +4,7 @@ import { ArrowRight, Zap } from 'lucide-react';
 import { blurUp, fadeUp, stagger } from '../lib/animations';
 import { MagneticButton } from './ui/MagneticButton';
 
-export default function CTA() {
+export default function CTA({ onTalkToSales }: { onTalkToSales?: () => void }) {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const ringScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.85, 1, 1.05]);
@@ -44,7 +44,7 @@ export default function CTA() {
               className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors shadow-lg shadow-amber-200">
               Get Started Free <ArrowRight size={16} />
             </MagneticButton>
-            <MagneticButton href="mailto:hello@qlarity.io" strength={0.22}
+            <MagneticButton onClick={onTalkToSales} strength={0.22}
               className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-8 py-3.5 rounded-xl text-sm transition-all shadow-sm hover:shadow-md">
               Talk to Sales
             </MagneticButton>

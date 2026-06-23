@@ -3,7 +3,8 @@ import { useRef } from 'react';
 import type { ReactNode } from 'react';
 
 interface Props {
-  href: string;
+  href?: string;
+  onClick?: () => void;
   className?: string;
   children: ReactNode;
   strength?: number;
@@ -12,7 +13,7 @@ interface Props {
 // Magnetic pull effect — cursor attracts the button toward it.
 // Uses springs so motion has momentum and trails the cursor naturally.
 // Safe per Emil's standards: decorative mouse-tracking = springs are correct here.
-export function MagneticButton({ href, className, children, strength = 0.32 }: Props) {
+export function MagneticButton({ href, onClick, className, children, strength = 0.32 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const rawX = useMotionValue(0);
   const rawY = useMotionValue(0);
@@ -33,14 +34,25 @@ export function MagneticButton({ href, className, children, strength = 0.32 }: P
 
   return (
     <div ref={wrapRef} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} className="inline-block">
-      <motion.a
-        href={href}
-        style={{ x, y }}
-        whileTap={{ transform: 'scale(0.97)' }}
-        className={className}
-      >
-        {children}
-      </motion.a>
+      {onClick ? (
+        <motion.button
+          onClick={onClick}
+          style={{ x, y }}
+          whileTap={{ transform: 'scale(0.97)' }}
+          className={className}
+        >
+          {children}
+        </motion.button>
+      ) : (
+        <motion.a
+          href={href}
+          style={{ x, y }}
+          whileTap={{ transform: 'scale(0.97)' }}
+          className={className}
+        >
+          {children}
+        </motion.a>
+      )}
     </div>
   );
 }

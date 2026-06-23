@@ -116,29 +116,14 @@ export default function Hero() {
   return (
     <section
       ref={heroRef}
-      className="relative overflow-hidden min-h-screen flex items-center"
-      style={{ background: '#070d1a' }}
+      className="relative overflow-hidden min-h-screen flex items-center bg-[#FAFAFA]"
     >
-      {/* Stars / particle field */}
-      <Stars />
+      {/* Grid */}
+      <div aria-hidden="true" className="absolute inset-0 grid-bg opacity-25 pointer-events-none" />
 
-      {/* Subtle grid */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }}
-      />
-
-      {/* Bottom fade to next section */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, #070d1a)' }}
-      />
+      {/* Ambient amber glow left */}
+      <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 55% 65% at 15% 55%, rgba(245,158,11,0.07) 0%, transparent 70%)' }} />
 
       <div className="relative w-full max-w-7xl mx-auto px-8 lg:px-16 py-24 pt-32 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
@@ -150,33 +135,27 @@ export default function Hero() {
           className="flex flex-col gap-7 z-10"
         >
           <motion.div variants={blurUp}>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-amber-500/30 bg-amber-500/10 text-amber-400 uppercase tracking-widest">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-amber-200 bg-amber-50 text-amber-700 uppercase tracking-widest">
               <Sparkles size={10} /> Document Management
             </span>
           </motion.div>
 
           <motion.h1
             variants={blurUp}
-            className="text-5xl sm:text-6xl lg:text-[4rem] font-black tracking-tight leading-[1.06] text-white"
+            className="text-5xl sm:text-6xl lg:text-[4rem] font-black tracking-tight leading-[1.06] text-slate-900"
           >
             One place for<br />
-            <span style={{
-              background: 'linear-gradient(90deg, #f59e0b 0%, #fcd34d 50%, #f97316 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>
-              all your
-            </span><br />
+            <span className="text-gradient">all your</span><br />
             documents.
           </motion.h1>
 
-          <motion.p variants={fadeUp} className="text-lg text-slate-400 leading-relaxed max-w-md">
+          <motion.p variants={fadeUp} className="text-lg text-slate-500 leading-relaxed max-w-md">
             Qlarity keeps every file, approval, and version in one place — so nothing gets lost in email threads or shared drives.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-2">
             {BADGES.map((b) => (
-              <span key={b} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-slate-700 bg-slate-800/60 text-slate-400">
+              <span key={b} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-slate-200 bg-white text-slate-500">
                 <CheckCircle2 size={11} className="text-amber-500" /> {b}
               </span>
             ))}
@@ -185,21 +164,20 @@ export default function Hero() {
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
             <MagneticButton
               href="/register"
-              className="shimmer-btn inline-flex items-center gap-2 font-bold px-8 py-4 rounded-2xl text-sm transition-colors focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
-              style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)', color: '#fff', boxShadow: '0 0 32px rgba(245,158,11,0.45), 0 8px 24px rgba(249,115,22,0.3)' }}
+              className="shimmer-btn inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-8 py-4 rounded-2xl text-sm transition-colors shadow-lg shadow-amber-200/60 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
             >
               Start for Free <ArrowRight size={16} />
             </MagneticButton>
             <MagneticButton
               href="#how-it-works"
               strength={0.22}
-              className="inline-flex items-center gap-2 font-semibold px-8 py-4 rounded-2xl text-sm border border-slate-600 text-slate-300 hover:border-slate-500 hover:text-white transition-all"
+              className="inline-flex items-center gap-2 font-semibold px-8 py-4 rounded-2xl text-sm border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
             >
               <Play size={13} className="text-amber-500 fill-amber-500" /> Watch Demo
             </MagneticButton>
           </motion.div>
 
-          <motion.p variants={fadeUp} className="text-xs text-slate-600">
+          <motion.p variants={fadeUp} className="text-xs text-slate-400">
             No credit card required · Free to get started
           </motion.p>
         </motion.div>
@@ -221,8 +199,7 @@ export default function Hero() {
                 style={{
                   width: r * 2,
                   height: r * 0.82 * 2,
-                  border: '1px solid rgba(245,158,11,0.1)',
-                  boxShadow: `0 0 0 1px rgba(245,158,11,0.04)`,
+                  border: '1px solid rgba(245,158,11,0.18)',
                 }}
               />
             ))}
@@ -263,13 +240,13 @@ export default function Hero() {
         transition={{ delay: 2.5 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
       >
-        <span className="text-xs text-slate-600">Scroll to explore</span>
+        <span className="text-xs text-slate-400">Scroll to explore</span>
         <motion.div
           animate={{ y: [0, 7, 0] }}
           transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-5 h-8 rounded-full border border-slate-700 flex items-start justify-center pt-1.5"
+          className="w-5 h-8 rounded-full border border-slate-300 flex items-start justify-center pt-1.5"
         >
-          <div className="w-1 h-2 bg-amber-500/50 rounded-full" />
+          <div className="w-1 h-2 bg-amber-500/60 rounded-full" />
         </motion.div>
       </motion.div>
     </section>
@@ -312,21 +289,21 @@ function OrbitCard({ card, index }: { card: typeof ORBIT_CARDS[number]; index: n
       <div
         className="flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 select-none"
         style={{
-          background: 'rgba(15, 23, 42, 0.85)',
+          background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(12px)',
-          border: `1px solid ${card.color}40`,
-          boxShadow: `0 0 20px ${card.glow}, 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)`,
+          border: `1px solid ${card.color}30`,
+          boxShadow: `0 4px 24px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04), 0 0 16px ${card.glow}`,
           minWidth: 170,
         }}
       >
         <div
           className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `${card.color}18`, border: `1px solid ${card.color}30` }}
+          style={{ background: `${card.color}15` }}
         >
           <FileText size={12} style={{ color: card.color }} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-semibold text-slate-300 truncate leading-tight">{card.file}</div>
+          <div className="text-[10px] font-semibold text-slate-700 truncate leading-tight">{card.file}</div>
           <div className="flex items-center gap-1 mt-0.5">
             <Icon size={8} style={{ color: card.color }} />
             <span className="text-[9px] font-bold" style={{ color: card.color }}>{card.status}</span>

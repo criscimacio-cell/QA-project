@@ -31,6 +31,7 @@ const CARDS = [
   },
   {
     stage: 'Approved',
+
     file: 'Q4_Finance_Report_v2.pdf',
     owner: 'SK · 2.4 MB',
     icon: CheckCircle,
@@ -45,7 +46,7 @@ const CARDS = [
     exitX: 560,   // flies top-right
     exitY: -480,
     exitRot: 20,
-    exitDelay: 0.06,
+    exitDelay: 0,
   },
   {
     stage: 'In Review',
@@ -63,7 +64,7 @@ const CARDS = [
     exitX: -520,  // flies bottom-left
     exitY: 500,
     exitRot: 15,
-    exitDelay: 0.03,
+    exitDelay: 0,
   },
   {
     stage: 'Uploaded',
@@ -81,7 +82,7 @@ const CARDS = [
     exitX: 480,   // flies bottom-right
     exitY: 460,
     exitRot: -18,
-    exitDelay: 0.09,
+    exitDelay: 0,
   },
 ];
 
@@ -100,15 +101,15 @@ export default function Hero() {
   });
 
   // Whole hero content slides DOWN and shrinks as you scroll past
-  const heroY     = useTransform(scrollYProgress, [0.5, 1], [0, 120]);
-  const heroScale = useTransform(scrollYProgress, [0.5, 1], [1, 0.9]);
-  const heroOp    = useTransform(scrollYProgress, [0.6, 1], [1, 0]);
-  const heroRadius= useTransform(scrollYProgress, [0.5, 1], [0, 28]);
+  const heroY     = useTransform(scrollYProgress, [0.35, 0.7], [0, 120]);
+  const heroScale = useTransform(scrollYProgress, [0.35, 0.7], [1, 0.9]);
+  const heroOp    = useTransform(scrollYProgress, [0.4, 0.7], [1, 0]);
+  const heroRadius= useTransform(scrollYProgress, [0.35, 0.7], [0, 28]);
 
   // Cards fly left in the middle of the scroll
-  const cardExitProgress = useTransform(scrollYProgress, [0.15, 0.55], [0, 1]);
-  const heroTextOpacity  = useTransform(scrollYProgress, [0.0, 0.18], [1, 0]);
-  const heroTextY        = useTransform(scrollYProgress, [0.0, 0.18], [0, -40]);
+  const cardExitProgress = useTransform(scrollYProgress, [0.1, 0.35], [0, 1]);
+  const heroTextOpacity  = useTransform(scrollYProgress, [0.0, 0.12], [1, 0]);
+  const heroTextY        = useTransform(scrollYProgress, [0.0, 0.12], [0, -30]);
 
   useEffect(() => {
     const el = heroRef.current;

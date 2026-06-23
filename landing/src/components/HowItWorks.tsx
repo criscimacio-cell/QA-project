@@ -1,4 +1,4 @@
-import { motion, useScroll, useTransform, useSpring, useMotionValueEvent } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring, useMotionValueEvent, MotionValue } from 'framer-motion';
 import { useRef, useState } from 'react';
 import { TrendingUp, Clock, ShieldCheck, Zap, Users, FileCheck } from 'lucide-react';
 import { blurUp, stagger } from '../lib/animations';
@@ -95,17 +95,29 @@ function AnimatedNumber({ target, suffix, prefix, display, color, isInView }: {
   );
 }
 
-function StatCard({ stat, index, isInView }: {
+function StatCard({ stat, index, isInView, scrollYProgress }: {
   stat: typeof STATS[number];
   index: number;
   isInView: boolean;
+  scrollYProgress: MotionValue<number>;
 }) {
   const Icon = stat.icon;
+  const row = Math.floor(index / 3);       // 0 = top row, 1 = bottom row
+  const fromRight = row === 0;             // top row slides from right, bottom from left
+
+  // Each card has its own scroll window staggered by position
+  const col = index % 3;
+  const s0 = col * 0.06;
+  const s1 = s0 + 0.35;
+
+  const rawX = useTransform(scrollYProgress, [s0, s1], [fromRight ? 120 : -120, 0]);
+  const rawOp = useTransform(scrollYProgress, [s0, s0 + 0.2], [0, 1]);
+  const rawRotY = useTransform(scrollYProgress, [s0, s1], [fromRight ? 25 : -25, 0]);
+  const x = useSpring(rawX, { stiffness: 70, damping: 18, mass: 1 });
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.7, delay: index * 0.09, ease: [0.16, 1, 0.3, 1] }}
+      style={{ x, opacity: rawOp, rotateY: rawRotY, perspective: 800 }}
       className="relative group bg-white rounded-2xl border border-slate-100 p-7 flex flex-col gap-4 shadow-sm hover:shadow-lg transition-shadow overflow-hidden"
     >
       {/* Hover glow */}
@@ -154,11 +166,11 @@ export default function Impact() {
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ['start 0.75', 'start 0.25'],
+    offset: ['start 0.85', 'center 0.4'],
   });
 
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
-    if (v > 0.1) setIsInView(true);
+    if (v > 0.05) setIsInView(true);
   });
 
   // Subtle parallax on the heading
@@ -213,7 +225,7 @@ export default function Impact() {
         {/* Stats grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {STATS.map((stat, i) => (
-            <StatCard key={stat.label} stat={stat} index={i} isInView={isInView} />
+            <StatCard key={stat.label} stat={stat} index={i} isInView={isInView} scrollYProgress={scrollYProgress} />
           ))}
         </div>
 

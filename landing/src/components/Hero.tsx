@@ -218,19 +218,24 @@ function DepthCard({ card, index, mx, my, total, exitProgress }: {
   const isFront = index === total - 1;
   const depth = (total - 1 - index) + 1;
 
-  // Mouse parallax — back cards drift more
+  // Mouse parallax
   const rx = useTransform(my, [-1, 1], [depth * 4, -depth * 4]);
   const ry = useTransform(mx, [-1, 1], [-depth * 7, depth * 7]);
   const px = useTransform(mx, [-1, 1], [-depth * 12, depth * 12]);
   const py = useTransform(my, [-1, 1], [-depth * 7, depth * 7]);
 
-  // Scroll exit — card flies to the left with stagger via exitDelay built into transform range
+  // Scroll exit per card
   const startExit = card.exitDelay;
-  const endExit   = card.exitDelay + 0.55;
+  const endExit   = Math.min(card.exitDelay + 0.55, 1);
   const exitX   = useTransform(exitProgress, [startExit, endExit], [0, card.exitX]);
   const exitY   = useTransform(exitProgress, [startExit, endExit], [0, card.exitY]);
-  const exitOp  = useTransform(exitProgress, [startExit, Math.min(endExit, 0.9)], [1, 0]);
+  const exitOp  = useTransform(exitProgress, [startExit, Math.min(endExit, 0.85)], [1, 0]);
   const exitRot = useTransform(exitProgress, [startExit, endExit], [0, card.exitRot]);
+
+  // Combine mouse parallax + exit into single x/y motion values
+  const totalX = useTransform([px, exitX], ([pxV, exV]) => (pxV as number) + (exV as number) + card.xOffset);
+  const totalY = useTransform([py, exitY], ([pyV, eyV]) => (pyV as number) + (eyV as number) + card.yOffset);
+  const totalRot = useTransform(exitRot, v => v + card.rot);
 
   return (
     <motion.div
@@ -239,20 +244,17 @@ function DepthCard({ card, index, mx, my, total, exitProgress }: {
       transition={{ delay: 0.3 + (total - 1 - index) * 0.12, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
       style={{
         position: 'absolute',
-        x: px,
-        y: py,
+        x: totalX,
+        y: totalY,
         rotateX: rx,
         rotateY: ry,
-        translateX: card.xOffset + exitX.get(),
-        translateY: card.yOffset + exitY.get(),
-        rotate: card.rot,
+        rotate: totalRot,
         opacity: exitOp,
         zIndex: index + 1,
       }}
       whileHover={isFront ? { scale: 1.03, transition: { duration: 0.25 } } : {}}
     >
-      {/* combine exit transforms via a wrapper */}
-      <motion.div style={{ x: exitX, y: exitY, rotate: exitRot }}>
+      <div>
         <div
           className="bg-white rounded-2xl overflow-hidden"
           style={{
@@ -317,7 +319,7 @@ function DepthCard({ card, index, mx, my, total, exitProgress }: {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

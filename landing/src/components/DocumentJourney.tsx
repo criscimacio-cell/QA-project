@@ -173,13 +173,13 @@ export default function DocumentJourney() {
           {/* Full-width container — carousel on left, text overlaps from right */}
           <div className="relative w-full max-w-6xl mx-auto px-6">
 
-            {/* 3D Carousel — left-anchored, takes half the space */}
+            {/* 3D Carousel — left-anchored */}
             <div
               className="absolute left-6"
               style={{
                 top: '50%',
                 transform: 'translateY(-50%)',
-                width: '55%',
+                width: '48%',
                 height: 420,
                 perspective: 1000,
               }}
@@ -211,8 +211,8 @@ export default function DocumentJourney() {
               </motion.div>
             </div>
 
-            {/* Text — sits on the right, overlapping the carousel */}
-            <div className="relative ml-auto w-[52%] flex flex-col gap-6 py-8 pl-8">
+            {/* Text — sits on the right with a clear gap from the carousel */}
+            <div className="relative ml-auto w-[44%] flex flex-col gap-6 py-8 pl-4">
               {/* Frosted backdrop so text stays readable over carousel */}
               <div
                 className="absolute inset-0 rounded-2xl pointer-events-none"

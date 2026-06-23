@@ -24,9 +24,9 @@ const CARDS = [
     yOffset: -48,
     rot: 7,
     // scroll exit: each card flies a different direction
-    exitX: -720,
-    exitY: -60,
-    exitRot: -18,
+    exitX: -600,  // flies top-left
+    exitY: -500,
+    exitRot: -25,
     exitDelay: 0,
   },
   {
@@ -42,10 +42,10 @@ const CARDS = [
     xOffset: 36,
     yOffset: -24,
     rot: 3.5,
-    exitX: -640,
-    exitY: 40,
-    exitRot: -10,
-    exitDelay: 0.04,
+    exitX: 560,   // flies top-right
+    exitY: -480,
+    exitRot: 20,
+    exitDelay: 0.06,
   },
   {
     stage: 'In Review',
@@ -60,10 +60,10 @@ const CARDS = [
     xOffset: 16,
     yOffset: -8,
     rot: 1.5,
-    exitX: -580,
-    exitY: -20,
-    exitRot: -6,
-    exitDelay: 0.08,
+    exitX: -520,  // flies bottom-left
+    exitY: 500,
+    exitRot: 15,
+    exitDelay: 0.03,
   },
   {
     stage: 'Uploaded',
@@ -78,10 +78,10 @@ const CARDS = [
     xOffset: 0,
     yOffset: 0,
     rot: -1,
-    exitX: -520,
-    exitY: 30,
-    exitRot: -4,
-    exitDelay: 0.12,
+    exitX: 480,   // flies bottom-right
+    exitY: 460,
+    exitRot: -18,
+    exitDelay: 0.09,
   },
 ];
 

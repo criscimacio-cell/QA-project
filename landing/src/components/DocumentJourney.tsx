@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform, useSpring, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { useRef, useState } from 'react';
-import { Upload, Eye, CheckCircle2, Globe, FileText, Clock } from 'lucide-react';
+import { Upload, Eye, CheckCircle2, Globe, FileText, Clock, Folder } from 'lucide-react';
 
 const STAGES = [
   {
@@ -47,6 +47,8 @@ const STAGES = [
 
 const N = STAGES.length;
 const RADIUS = 320;
+// First 20% of scroll = folder fly-in transition; remaining 80% = carousel stages
+const INTRO_END = 0.2;
 
 function DocCard({ index }: { index: number }) {
   const s = STAGES[index];
@@ -56,7 +58,6 @@ function DocCard({ index }: { index: number }) {
       className="bg-white rounded-2xl border border-slate-200 overflow-hidden w-72"
       style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08)' }}
     >
-      {/* Chrome */}
       <div className="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center gap-2">
         <div className="flex gap-1.5">
           <div className="w-2 h-2 rounded-full bg-red-400" />
@@ -70,7 +71,6 @@ function DocCard({ index }: { index: number }) {
       </div>
 
       <div className="p-5 flex flex-col gap-4 relative">
-        {/* File header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.light }}>
             <FileText size={16} style={{ color: s.accent }} />
@@ -81,20 +81,17 @@ function DocCard({ index }: { index: number }) {
           </div>
         </div>
 
-        {/* Status */}
         <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold"
           style={{ background: s.light, color: s.statusColor }}>
           <Icon size={12} /> {s.statusLabel}
         </div>
 
-        {/* Doc lines */}
         <div className="flex flex-col gap-2">
           {[100, 80, 92, 68, 86].map((w, i) => (
             <div key={i} className="h-2 rounded-full bg-slate-100" style={{ width: `${w}%` }} />
           ))}
         </div>
 
-        {/* Comments for stage 1+ */}
         {index >= 1 && (
           <div className="border-t border-slate-100 pt-3 flex flex-col gap-2">
             {[
@@ -110,7 +107,6 @@ function DocCard({ index }: { index: number }) {
           </div>
         )}
 
-        {/* Approved stamp for stage 2+ */}
         {index >= 2 && (
           <div className="absolute top-20 right-4 border-2 border-emerald-500 rounded-lg px-3 py-1.5"
             style={{ background: 'rgba(236,253,245,0.95)', transform: 'rotate(-7deg)' }}>
@@ -118,7 +114,6 @@ function DocCard({ index }: { index: number }) {
           </div>
         )}
 
-        {/* Footer avatars */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-100">
           <div className="flex -space-x-2">
             {['SK', 'JR', 'MT'].map((a, i) => (
@@ -144,12 +139,21 @@ export default function DocumentJourney() {
     offset: ['start start', 'end end'],
   });
 
-  // Map scroll 0→1 to rotateY 0 → -(N-1)*90
-  const rawRotY = useTransform(scrollYProgress, [0, 1], [0, -(N - 1) * 90]);
+  // ── Folder intro (0 → INTRO_END) ──────────────────────────────────
+  // Folder starts at hero center-right and flies to carousel position (left)
+  const folderX    = useTransform(scrollYProgress, [0, INTRO_END], ['40%', '-10%']);
+  const folderY    = useTransform(scrollYProgress, [0, INTRO_END], ['-30%', '0%']);
+  const folderScale= useTransform(scrollYProgress, [0, INTRO_END * 0.6, INTRO_END], [0.5, 1.1, 1]);
+  const folderOp   = useTransform(scrollYProgress, [0, INTRO_END * 0.15, INTRO_END * 0.75, INTRO_END], [0, 1, 1, 0]);
+  const folderRot  = useTransform(scrollYProgress, [0, INTRO_END], [12, 0]);
+
+  // ── Carousel (INTRO_END → 1) ───────────────────────────────────────
+  const carouselOp = useTransform(scrollYProgress, [INTRO_END * 0.75, INTRO_END], [0, 1]);
+  const rawRotY    = useTransform(scrollYProgress, [INTRO_END, 1], [0, -(N - 1) * 90]);
   const carouselRotY = useSpring(rawRotY, { stiffness: 55, damping: 22, mass: 1.2 });
 
-  // Track active stage
-  const rawStage = useTransform(scrollYProgress, [0, 1], [0, N - 1]);
+  // Active stage
+  const rawStage = useTransform(scrollYProgress, [INTRO_END, 1], [0, N - 1]);
   useMotionValueEvent(rawStage, 'change', (v) => {
     setActiveStage(Math.min(N - 1, Math.max(0, Math.round(v))));
   });
@@ -158,10 +162,11 @@ export default function DocumentJourney() {
 
   return (
     <section className="relative bg-[#FAFAFA]">
-      <div ref={containerRef} className="relative" style={{ height: `${N * 100}vh` }}>
+      {/* Extra height for intro animation + N stages */}
+      <div ref={containerRef} className="relative" style={{ height: `${(N + 1) * 100}vh` }}>
         <div className="sticky top-0 h-screen overflow-hidden flex items-center">
 
-          {/* Shifting bg glow */}
+          {/* BG glow */}
           <motion.div
             className="absolute inset-0 pointer-events-none"
             animate={{ background: `radial-gradient(ellipse 55% 45% at 40% 50%, ${s.accent}12 0%, transparent 70%)` }}
@@ -170,53 +175,98 @@ export default function DocumentJourney() {
           />
           <div aria-hidden="true" className="absolute inset-0 grid-bg opacity-20 pointer-events-none" />
 
-          {/* Full-width container — carousel on left, text overlaps from right */}
           <div className="relative w-full max-w-6xl mx-auto px-6">
 
-            {/* 3D Carousel — left-anchored */}
-            <div
-              className="absolute left-6"
+            {/* ── Folder fly-in ── */}
+            <motion.div
               style={{
+                x: folderX,
+                y: folderY,
+                scale: folderScale,
+                opacity: folderOp,
+                rotate: folderRot,
+                position: 'absolute',
+                left: '22%',
                 top: '50%',
-                transform: 'translateY(-50%)',
-                width: '48%',
-                height: 420,
-                perspective: 1000,
+                translateY: '-50%',
+                zIndex: 10,
               }}
             >
-              <motion.div
+              <div
+                className="flex flex-col items-center gap-3"
+              >
+                {/* Folder icon */}
+                <div
+                  className="w-28 h-28 rounded-3xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                    boxShadow: '0 24px 64px rgba(245,158,11,0.25), 0 4px 16px rgba(245,158,11,0.15)',
+                    border: '2px solid rgba(245,158,11,0.2)',
+                  }}
+                >
+                  <Folder size={52} className="text-amber-500" fill="rgba(245,158,11,0.3)" />
+                </div>
+                {/* Mini doc chips inside */}
+                <div className="flex flex-col gap-1.5">
+                  {['Q4_Finance.pdf', 'NDA_v3.pdf', 'Handbook.docx'].map((f, i) => (
+                    <div key={f}
+                      className="flex items-center gap-1.5 bg-white rounded-full px-2.5 py-1 text-[9px] font-medium text-slate-600"
+                      style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.08)', opacity: 1 - i * 0.15 }}
+                    >
+                      <FileText size={8} className="text-amber-400 flex-shrink-0" />
+                      {f}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs font-semibold text-amber-600 mt-1">Your documents</p>
+              </div>
+            </motion.div>
+
+            {/* ── 3D Carousel ── */}
+            <motion.div style={{ opacity: carouselOp }}>
+              <div
+                className="absolute left-6"
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  transformStyle: 'preserve-3d',
-                  rotateY: carouselRotY,
-                  position: 'relative',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '48%',
+                  height: 420,
+                  perspective: 1000,
                 }}
               >
-                {STAGES.map((_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: `translate(-50%, -50%) rotateY(${i * 90}deg) translateZ(${RADIUS}px)`,
-                      backfaceVisibility: 'hidden',
-                      WebkitBackfaceVisibility: 'hidden',
-                    }}
-                  >
-                    <DocCard index={i} />
-                  </div>
-                ))}
-              </motion.div>
-            </div>
+                <motion.div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    transformStyle: 'preserve-3d',
+                    rotateY: carouselRotY,
+                    position: 'relative',
+                  }}
+                >
+                  {STAGES.map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: `translate(-50%, -50%) rotateY(${i * 90}deg) translateZ(${RADIUS}px)`,
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
+                      }}
+                    >
+                      <DocCard index={i} />
+                    </div>
+                  ))}
+                </motion.div>
+              </div>
+            </motion.div>
 
-            {/* Text — sits on the right with a clear gap from the carousel */}
-            <div className="relative ml-auto w-[44%] flex flex-col gap-6 py-8 pl-4">
-              {/* Frosted backdrop so text stays readable over carousel */}
+            {/* ── Right text panel ── */}
+            <motion.div style={{ opacity: carouselOp }} className="relative ml-auto w-[44%] flex flex-col gap-6 py-8 pl-4">
               <div
                 className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{ background: 'linear-gradient(to left, rgba(250,250,250,0.97) 55%, rgba(250,250,250,0.7) 100%)' }}
+                style={{ background: 'linear-gradient(to left, rgba(250,250,250,0.97) 55%, rgba(250,250,250,0.6) 100%)' }}
               />
 
               <div className="relative flex flex-col gap-6">
@@ -288,7 +338,7 @@ export default function DocumentJourney() {
                   )}
                 </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

@@ -86,22 +86,29 @@ const CARDS = [
 ];
 
 export default function Hero() {
-  const heroRef   = useRef<HTMLElement>(null);
-  const rawMouseX = useMotionValue(0);
-  const rawMouseY = useMotionValue(0);
+  const heroRef    = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const rawMouseX  = useMotionValue(0);
+  const rawMouseY  = useMotionValue(0);
   const mx = useSpring(rawMouseX, { stiffness: 40, damping: 22, mass: 1 });
   const my = useSpring(rawMouseY, { stiffness: 40, damping: 22, mass: 1 });
 
-  // Scroll progress of the hero section exiting the viewport
+  // Hero section is tall (200vh) — content sticky so it stays while scroll drives animations
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   });
 
-  // Cards start flying out at 40% scroll, fully gone by 85%
-  const cardExitProgress = useTransform(scrollYProgress, [0.4, 0.85], [0, 1]);
-  const heroTextOpacity  = useTransform(scrollYProgress, [0.0, 0.4], [1, 0]);
-  const heroTextY        = useTransform(scrollYProgress, [0.0, 0.4], [0, -40]);
+  // Whole hero content slides DOWN and shrinks as you scroll past
+  const heroY     = useTransform(scrollYProgress, [0.5, 1], [0, 120]);
+  const heroScale = useTransform(scrollYProgress, [0.5, 1], [1, 0.9]);
+  const heroOp    = useTransform(scrollYProgress, [0.6, 1], [1, 0]);
+  const heroRadius= useTransform(scrollYProgress, [0.5, 1], [0, 28]);
+
+  // Cards fly left in the middle of the scroll
+  const cardExitProgress = useTransform(scrollYProgress, [0.15, 0.55], [0, 1]);
+  const heroTextOpacity  = useTransform(scrollYProgress, [0.0, 0.18], [1, 0]);
+  const heroTextY        = useTransform(scrollYProgress, [0.0, 0.18], [0, -40]);
 
   useEffect(() => {
     const el = heroRef.current;
@@ -116,7 +123,19 @@ export default function Hero() {
   }, [rawMouseX, rawMouseY]);
 
   return (
-    <section ref={heroRef} className="relative overflow-hidden min-h-screen flex items-center bg-[#FAFAFA]">
+    <section ref={heroRef} className="relative bg-[#FAFAFA]" style={{ height: '200vh' }}>
+      {/* Sticky wrapper — stays in view while section scrolls */}
+      <motion.div
+        ref={contentRef}
+        style={{
+          y: heroY,
+          scale: heroScale,
+          opacity: heroOp,
+          borderRadius: heroRadius,
+          overflow: 'hidden',
+        }}
+        className="sticky top-0 h-screen flex items-center bg-[#FAFAFA]"
+      >
       <div aria-hidden="true" className="absolute inset-0 grid-bg opacity-25 pointer-events-none" />
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 60% 70% at 12% 55%, rgba(245,158,11,0.07) 0%, transparent 65%)' }} />
@@ -189,7 +208,7 @@ export default function Hero() {
 
       {/* Scroll indicator */}
       <motion.div aria-hidden="true"
-        style={{ opacity: useTransform(scrollYProgress, [0, 0.2], [1, 0]) }}
+        style={{ opacity: useTransform(scrollYProgress, [0, 0.15], [1, 0]) }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none">
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }}
@@ -202,6 +221,7 @@ export default function Hero() {
           </motion.div>
         </motion.div>
       </motion.div>
+      </motion.div>{/* end sticky */}
     </section>
   );
 }

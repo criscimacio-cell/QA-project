@@ -102,12 +102,10 @@ function StatCard({ stat, index, isInView, scrollYProgress }: {
   scrollYProgress: MotionValue<number>;
 }) {
   const Icon = stat.icon;
-  const row = Math.floor(index / 3);       // 0 = top row, 1 = bottom row
-  const fromRight = row === 0;             // top row slides from right, bottom from left
+  // Alternate left/right per card
+  const fromRight = index % 2 === 0;
 
-  // Each card has its own scroll window staggered by position
-  const col = index % 3;
-  const s0 = col * 0.06;
+  const s0 = (index % 3) * 0.06;
   const s1 = s0 + 0.35;
 
   const rawX = useTransform(scrollYProgress, [s0, s1], [fromRight ? 120 : -120, 0]);

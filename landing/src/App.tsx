@@ -1,4 +1,5 @@
 import './index.css';
+import { useState } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import DocumentJourney from './components/DocumentJourney';
@@ -10,13 +11,17 @@ import FAQ from './components/FAQ';
 import CTA from './components/CTA';
 import Footer from './components/Footer';
 import { ScrollProgressBar, ScrollToTop } from './components/ScrollUI';
+import TalkToSalesModal from './components/TalkToSalesModal';
 
 export default function App() {
+  const [salesOpen, setSalesOpen] = useState(false);
+
   return (
     <div className="min-h-screen">
       <ScrollProgressBar />
       <ScrollToTop />
-      <Navbar />
+      <TalkToSalesModal open={salesOpen} onClose={() => setSalesOpen(false)} />
+      <Navbar onTalkToSales={() => setSalesOpen(true)} />
       <main>
         <Hero />
         <DocumentJourney />

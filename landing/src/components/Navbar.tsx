@@ -8,7 +8,7 @@ const links = [
   { label: 'Pricing', href: '#pricing' },
 ];
 
-export default function Navbar() {
+export default function Navbar({ onTalkToSales }: { onTalkToSales?: () => void }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { scrollY } = useScroll();
@@ -73,6 +73,12 @@ export default function Navbar() {
           >
             Log in
           </a>
+          <button
+            onClick={onTalkToSales}
+            className="text-sm font-medium text-slate-600 hover:text-slate-900 px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all duration-200"
+          >
+            Talk to Sales
+          </button>
           <motion.a
             href="/register"
             whileHover={{ transform: 'scale(1.04)' }}
@@ -118,6 +124,13 @@ export default function Navbar() {
           ))}
           <div className="pt-2 flex flex-col gap-2">
             <a href="/login" tabIndex={open ? 0 : -1} className="text-sm text-slate-500 hover:text-slate-900 text-center py-2">Log in</a>
+            <button
+              tabIndex={open ? 0 : -1}
+              onClick={() => { setOpen(false); onTalkToSales?.(); }}
+              className="text-sm font-medium text-slate-600 border border-slate-200 py-2.5 rounded-xl text-center transition-all hover:bg-slate-50"
+            >
+              Talk to Sales
+            </button>
             <a href="/register" tabIndex={open ? 0 : -1} className="text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-white py-2.5 rounded-xl text-center transition-all">
               Get Started
             </a>

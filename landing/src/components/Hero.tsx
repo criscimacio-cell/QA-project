@@ -100,16 +100,16 @@ export default function Hero() {
     offset: ['start start', 'end start'],
   });
 
-  // Whole hero content slides DOWN and shrinks as you scroll past
-  const heroY     = useTransform(scrollYProgress, [0.35, 0.7], [0, 120]);
-  const heroScale = useTransform(scrollYProgress, [0.35, 0.7], [1, 0.9]);
-  const heroOp    = useTransform(scrollYProgress, [0.4, 0.7], [1, 0]);
-  const heroRadius= useTransform(scrollYProgress, [0.35, 0.7], [0, 28]);
+  // Whole page slides down after cards disperse
+  const heroY     = useTransform(scrollYProgress, [0.45, 0.85], [0, 140]);
+  const heroScale = useTransform(scrollYProgress, [0.45, 0.85], [1, 0.88]);
+  const heroOp    = useTransform(scrollYProgress, [0.5, 0.85], [1, 0]);
+  const heroRadius= useTransform(scrollYProgress, [0.45, 0.85], [0, 32]);
 
-  // Cards fly left in the middle of the scroll
-  const cardExitProgress = useTransform(scrollYProgress, [0.1, 0.35], [0, 1]);
-  const heroTextOpacity  = useTransform(scrollYProgress, [0.0, 0.12], [1, 0]);
-  const heroTextY        = useTransform(scrollYProgress, [0.0, 0.12], [0, -30]);
+  // Cards and text exit together at start of scroll
+  const cardExitProgress = useTransform(scrollYProgress, [0.05, 0.4], [0, 1]);
+  const heroTextOpacity  = useTransform(scrollYProgress, [0.05, 0.38], [1, 0]);
+  const heroTextY        = useTransform(scrollYProgress, [0.05, 0.38], [0, -50]);
 
   useEffect(() => {
     const el = heroRef.current;
@@ -133,9 +133,8 @@ export default function Hero() {
           scale: heroScale,
           opacity: heroOp,
           borderRadius: heroRadius,
-          overflow: 'hidden',
         }}
-        className="sticky top-0 h-screen flex items-center bg-[#FAFAFA]"
+        className="sticky top-0 h-screen flex items-center bg-[#FAFAFA] overflow-hidden"
       >
       <div aria-hidden="true" className="absolute inset-0 grid-bg opacity-25 pointer-events-none" />
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none"

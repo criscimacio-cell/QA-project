@@ -1,406 +1,408 @@
-import { motion, useScroll, useTransform, useSpring, useMotionValueEvent, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { useRef, useState } from 'react';
-import { Upload, GitPullRequest, Globe, CheckCircle2, Clock, MessageSquare, Eye, FileText, Shield } from 'lucide-react';
-import { blurUp, stagger } from '../lib/animations';
+import { Upload, GitPullRequest, Globe, CheckCircle2, Clock } from 'lucide-react';
 
 const STEPS = [
   {
-    step: '01',
-    icon: Upload,
-    title: 'Upload & Organize',
+    step: '01', icon: Upload, title: 'Upload & Organize',
     desc: 'Drag and drop any document into Qlarity. Organize by folder, department, or tag. Set metadata like owner, expiry date, and category automatically.',
-    accent: '#f59e0b',
-    accentLight: '#fef3c7',
-    tag: 'Upload',
+    color: 'text-amber-600', accent: '#F59E0B', accentLight: '#FEF3C7', accentBorder: '#FDE68A',
+    dotColor: '#F59E0B', lineColor: 'rgba(245,158,11,0.5)',
+    bgGlow: 'radial-gradient(ellipse 60% 50% at 30% 50%, rgba(245,158,11,0.08) 0%, transparent 70%)',
   },
   {
-    step: '02',
-    icon: GitPullRequest,
-    title: 'Route for Approval',
+    step: '02', icon: GitPullRequest, title: 'Route for Approval',
     desc: 'Assign reviewers and kick off a workflow. Approvers get notified, can comment inline, and sign off — all without leaving Qlarity.',
-    accent: '#f59e0b',
-    accentLight: '#fef3c7',
-    tag: 'Review',
+    color: 'text-blue-600', accent: '#3B82F6', accentLight: '#EFF6FF', accentBorder: '#BFDBFE',
+    dotColor: '#3B82F6', lineColor: 'rgba(59,130,246,0.5)',
+    bgGlow: 'radial-gradient(ellipse 60% 50% at 30% 50%, rgba(59,130,246,0.08) 0%, transparent 70%)',
   },
   {
-    step: '03',
-    icon: Globe,
-    title: 'Publish & Control Access',
+    step: '03', icon: Globe, title: 'Publish & Control Access',
     desc: 'Approved documents go live instantly. Control who can view, download, or share. Every action is logged for compliance.',
-    accent: '#10b981',
-    accentLight: '#ecfdf5',
-    tag: 'Published',
+    color: 'text-emerald-600', accent: '#10B981', accentLight: '#ECFDF5', accentBorder: '#A7F3D0',
+    dotColor: '#10B981', lineColor: 'rgba(16,185,129,0.5)',
+    bgGlow: 'radial-gradient(ellipse 60% 50% at 30% 50%, rgba(16,185,129,0.08) 0%, transparent 70%)',
   },
 ];
 
-// ── Document card that changes state based on scroll ─────────────────────────
+// ─── Step product preview panels ──────────────────────────────────────────────
 
-function DocCard({ step }: { step: number }) {
+function UploadPreview() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden w-72">
-      {/* Chrome */}
-      <div className="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center gap-2">
-        <div className="flex gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-red-400" />
-          <div className="w-2 h-2 rounded-full bg-amber-400" />
-          <div className="w-2 h-2 rounded-full bg-green-400" />
-        </div>
-        <div className="flex-1 mx-2 bg-slate-200 rounded text-[9px] text-slate-500 px-2 py-0.5 text-center">
-          app.qlarity.io
-        </div>
-      </div>
+    <div className="flex flex-col gap-3 p-5">
+      {/* Drop zone */}
+      <motion.div
+        initial={{ opacity: 0, transform: 'scale(0.97)' }}
+        animate={{ opacity: 1, transform: 'scale(1)' }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-5 text-center"
+      >
+        <Upload size={22} className="mx-auto mb-2 text-amber-400" />
+        <p className="text-xs font-medium text-amber-700">Drop files here to upload</p>
+        <p className="text-xs text-amber-500 mt-0.5">PDF, DOCX, PPTX and more</p>
+      </motion.div>
 
-      {/* Document body */}
-      <div className="p-4 flex flex-col gap-3">
-        {/* File header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0">
-            <FileText size={16} className="text-amber-500" />
+      {/* File list */}
+      {[
+        { name: 'Q4_Finance_Report.pdf', progress: null, done: true },
+        { name: 'Employee_Handbook.docx', progress: 72, done: false },
+        { name: 'Legal_NDA_Template.pdf', progress: null, done: false, waiting: true },
+      ].map((f, i) => (
+        <motion.div
+          key={f.name}
+          initial={{ opacity: 0, transform: 'translateX(-12px)' }}
+          animate={{ opacity: 1, transform: 'translateX(0px)' }}
+          transition={{ delay: 0.1 + i * 0.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="flex items-center gap-3 bg-white rounded-xl px-3 py-2.5 border border-slate-100 shadow-sm"
+        >
+          <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-medium text-slate-700 truncate">{f.name}</div>
+            {f.progress != null && (
+              <div className="mt-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: '0%' }}
+                  animate={{ width: `${f.progress}%` }}
+                  transition={{ duration: 1.2, ease: 'linear', delay: 0.4 }}
+                  className="h-full bg-amber-400 rounded-full"
+                />
+              </div>
+            )}
           </div>
-          <div>
-            <div className="text-xs font-bold text-slate-800">Q4_Finance_Report_v2.pdf</div>
-            <div className="text-[10px] text-slate-400 mt-0.5">Uploaded by Sarah K. · 2.4 MB</div>
-          </div>
-        </div>
+          {f.done && <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0" />}
+          {f.waiting && <Clock size={14} className="text-slate-300 flex-shrink-0" />}
+          {f.progress != null && <span className="text-xs text-amber-600 font-medium flex-shrink-0">{f.progress}%</span>}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
-        {/* Status badge */}
-        <AnimatePresence mode="wait">
-          {step === 0 && (
-            <motion.div key="upload"
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.3 }}
-              className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              <Upload size={11} className="text-amber-500" />
-              <span className="text-[10px] font-semibold text-amber-700">Uploaded · awaiting review</span>
-            </motion.div>
-          )}
-          {step === 1 && (
-            <motion.div key="review"
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.3 }}
-              className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-              <Eye size={11} className="text-blue-500" />
-              <span className="text-[10px] font-semibold text-blue-700">In Review · step 2 of 3</span>
-            </motion.div>
-          )}
-          {step === 2 && (
-            <motion.div key="published"
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.3 }}
-              className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-              <CheckCircle2 size={11} className="text-emerald-500" />
-              <span className="text-[10px] font-semibold text-emerald-700">Published · visible to team</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+function ApprovalPreview() {
+  return (
+    <div className="flex flex-col gap-4 p-5">
+      <motion.div
+        initial={{ opacity: 0, transform: 'translateY(-6px)' }}
+        animate={{ opacity: 1, transform: 'translateY(0px)' }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        className="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2.5"
+      >
+        <div className="text-xs font-semibold text-blue-700 mb-0.5">Approval in progress</div>
+        <div className="text-xs text-blue-500">NDA_Template.pdf · Step 2 of 3</div>
+      </motion.div>
 
-        {/* Document lines */}
-        <div className="flex flex-col gap-1.5 pt-1">
-          {[100, 85, 92, 70, 88].map((w, i) => (
-            <div key={i} className="h-1.5 rounded-full bg-slate-100" style={{ width: `${w}%` }} />
-          ))}
-        </div>
+      <div className="relative pl-4">
+        {/* Connecting line */}
+        <div className="absolute left-[11px] top-3 bottom-3 w-px bg-slate-200" />
+        <motion.div
+          className="absolute left-[11px] top-3 w-px bg-blue-400 origin-top"
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          style={{ height: '45%' }}
+        />
 
-        {/* Review annotations — only in step 1+ */}
-        <AnimatePresence>
-          {step >= 1 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.4 }}
-              className="overflow-hidden"
+        {[
+          { initials: 'JD', name: 'John D.', role: 'Author', status: 'approved', color: '#10B981', bgColor: '#ECFDF5', textColor: '#065F46' },
+          { initials: 'SM', name: 'Sarah M.', role: 'Legal Review', status: 'reviewing', color: '#3B82F6', bgColor: '#EFF6FF', textColor: '#1E40AF', pulse: true },
+          { initials: 'CE', name: 'CEO', role: 'Final Approval', status: 'waiting', color: '#94A3B8', bgColor: '#F8FAFC', textColor: '#64748B' },
+        ].map((node, i) => (
+          <motion.div
+            key={node.name}
+            initial={{ opacity: 0, transform: 'translateX(10px)' }}
+            animate={{ opacity: 1, transform: 'translateX(0px)' }}
+            transition={{ delay: 0.15 + i * 0.12, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="flex items-center gap-3 mb-4 relative"
+          >
+            {/* Timeline dot */}
+            <div className="relative flex-shrink-0">
+              <div
+                style={{ background: node.color }}
+                className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold z-10 relative`}
+              >
+                {node.initials}
+              </div>
+              {node.pulse && (
+                <motion.div
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: node.color }}
+                  animate={{ scale: [1, 1.8], opacity: [0.4, 0] }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }}
+                />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-slate-800">{node.name}</div>
+              <div className="text-xs text-slate-400">{node.role}</div>
+            </div>
+            <span
+              style={{ background: node.bgColor, color: node.textColor, border: `1px solid ${node.color}30` }}
+              className="text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0"
             >
-              <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100">
-                {[
-                  { avatar: 'JR', comment: 'Please verify Q3 figures', color: '#f59e0b' },
-                  { avatar: 'SK', comment: 'Updated — looks good ✓', color: '#10b981' },
-                ].map((c, i) => (
-                  <motion.div key={i}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1, duration: 0.3 }}
-                    className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[7px] font-bold flex-shrink-0"
-                      style={{ background: c.color }}>
-                      {c.avatar}
-                    </div>
-                    <span className="text-[9px] text-slate-500">{c.comment}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Approved stamp — only in step 2 */}
-        <AnimatePresence>
-          {step === 2 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.6, rotate: -12 }}
-              animate={{ opacity: 1, scale: 1, rotate: -8 }}
-              exit={{ opacity: 0, scale: 0.6 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-              className="absolute top-24 right-4 border-2 border-emerald-500 rounded-lg px-3 py-1.5 pointer-events-none"
-              style={{ transform: 'rotate(-8deg)', background: 'rgba(236,253,245,0.9)' }}
-            >
-              <div className="text-[10px] font-black text-emerald-600 tracking-widest uppercase flex items-center gap-1">
-                <Shield size={9} /> Approved
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Reviewer avatars */}
-        <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-          <div className="flex -space-x-1.5">
-            {['SK', 'JR', 'MT'].map((a, i) => (
-              <div key={a} className="w-5 h-5 rounded-full border border-white flex items-center justify-center text-[7px] font-bold text-white"
-                style={{ background: ['#f59e0b', '#10b981', '#6366f1'][i] }}>
-                {a}
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-1 text-[9px] text-slate-400">
-            <Clock size={9} /> Updated 2m ago
-          </div>
-        </div>
+              {node.status === 'approved' ? '✓ Approved' : node.status === 'reviewing' ? '◉ Reviewing' : '○ Waiting'}
+            </span>
+          </motion.div>
+        ))}
       </div>
     </div>
   );
 }
 
-// ── Floating satellite elements per step ──────────────────────────────────────
-
-function StepFloaters({ step }: { step: number }) {
+function PublishPreview() {
   return (
-    <div className="absolute inset-0 pointer-events-none">
-      <AnimatePresence>
-        {step === 0 && (
-          <>
-            <motion.div key="folder"
-              initial={{ opacity: 0, x: -20, y: 10 }} animate={{ opacity: 1, x: 0, y: 0 }} exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -left-16 top-1/3 bg-white border border-amber-200 rounded-xl px-3 py-2 shadow-md text-[10px] font-semibold text-amber-700 flex items-center gap-1.5">
-              <Upload size={11} className="text-amber-500" /> Drag & drop
-            </motion.div>
-            <motion.div key="version"
-              initial={{ opacity: 0, x: 20, y: -10 }} animate={{ opacity: 1, x: 0, y: 0 }} exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -right-16 top-1/4 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-md text-[10px] font-semibold text-slate-600 flex items-center gap-1.5">
-              <FileText size={11} className="text-slate-400" /> v1 saved
-            </motion.div>
-          </>
-        )}
-        {step === 1 && (
-          <>
-            <motion.div key="comment"
-              initial={{ opacity: 0, x: 20, y: 10 }} animate={{ opacity: 1, x: 0, y: 0 }} exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -right-16 top-1/3 bg-white border border-blue-200 rounded-xl px-3 py-2 shadow-md text-[10px] font-semibold text-blue-700 flex items-center gap-1.5">
-              <MessageSquare size={11} className="text-blue-500" /> 3 comments
-            </motion.div>
-            <motion.div key="reviewer"
-              initial={{ opacity: 0, x: -20, y: 10 }} animate={{ opacity: 1, x: 0, y: 0 }} exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -left-20 bottom-1/3 bg-white border border-amber-200 rounded-xl px-3 py-2 shadow-md text-[10px] font-semibold text-amber-700 flex items-center gap-1.5">
-              <Eye size={11} className="text-amber-500" /> Reviewing…
-            </motion.div>
-          </>
-        )}
-        {step === 2 && (
-          <>
-            <motion.div key="live"
-              initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -right-20 top-1/4 bg-emerald-500 rounded-xl px-3 py-2 shadow-lg text-[10px] font-bold text-white flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
-            </motion.div>
-            <motion.div key="access"
-              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute -left-20 top-1/3 bg-white border border-emerald-200 rounded-xl px-3 py-2 shadow-md text-[10px] font-semibold text-emerald-700 flex items-center gap-1.5">
-              <Shield size={11} className="text-emerald-500" /> Access set
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+    <div className="flex flex-col gap-3 p-5">
+      <motion.div
+        initial={{ opacity: 0, transform: 'scale(0.95)' }}
+        animate={{ opacity: 1, transform: 'scale(1)' }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3"
+      >
+        <motion.div
+          initial={{ transform: 'scale(0)' }}
+          animate={{ transform: 'scale(1)' }}
+          transition={{ delay: 0.2, duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+        >
+          <CheckCircle2 size={18} className="text-emerald-500" />
+        </motion.div>
+        <div>
+          <div className="text-xs font-bold text-emerald-700">Published</div>
+          <div className="text-xs text-emerald-500">NDA_Template.pdf · visible to team</div>
+        </div>
+      </motion.div>
+
+      <div className="text-xs font-semibold text-slate-500 px-1">Access Control</div>
+
+      {[
+        { icon: '👔', role: 'Executives', access: 'View & Download', allowed: true, delay: 0.1 },
+        { icon: '⚖️', role: 'Legal Team', access: 'Edit & Approve', allowed: true, delay: 0.18 },
+        { icon: '👥', role: 'All Staff', access: 'View only', allowed: true, delay: 0.26 },
+        { icon: '🔒', role: 'External', access: 'No access', allowed: false, delay: 0.34 },
+      ].map((row) => (
+        <motion.div
+          key={row.role}
+          initial={{ opacity: 0, transform: 'translateX(-10px)' }}
+          animate={{ opacity: 1, transform: 'translateX(0px)' }}
+          transition={{ delay: row.delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="flex items-center gap-3 bg-white rounded-xl px-3 py-2.5 border border-slate-100"
+        >
+          <span className="text-sm">{row.icon}</span>
+          <span className="text-xs text-slate-700 flex-1">{row.role}</span>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+            row.allowed
+              ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+              : 'bg-slate-100 text-slate-400'
+          }`}>{row.access}</span>
+        </motion.div>
+      ))}
     </div>
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+const PREVIEWS = [UploadPreview, ApprovalPreview, PublishPreview];
+
+// ─── Main component ────────────────────────────────────────────────────────────
 
 export default function HowItWorks() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeStep, setActiveStep] = useState(0);
-
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ['start start', 'end end'],
   });
 
-  // Document drifts DOWN as you scroll — directly scrubbed
-  const rawDocY    = useTransform(scrollYProgress, [0, 1], [-80, 80]);
-  const rawDocRot  = useTransform(scrollYProgress, [0, 0.33, 0.66, 1], [-6, -1, 2, 5]);
-  const rawDocScale = useTransform(scrollYProgress, [0, 0.1, 0.9, 1], [0.88, 1, 1, 0.93]);
-
-  const docY     = useSpring(rawDocY,    { stiffness: 55, damping: 22, mass: 1.2 });
-  const docRot   = useSpring(rawDocRot,  { stiffness: 55, damping: 22, mass: 1.2 });
-  const docScale = useSpring(rawDocScale,{ stiffness: 55, damping: 22, mass: 1.2 });
-
-  // Glow shifts with document
-  const glowY = useTransform(scrollYProgress, [0, 1], [-40, 40]);
+  const [activeStep, setActiveStep] = useState(0);
 
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
-    setActiveStep(v < 0.37 ? 0 : v < 0.7 ? 1 : 2);
+    const next = v < 0.37 ? 0 : v < 0.72 ? 1 : 2;
+    setActiveStep(next);
   });
 
   const s = STEPS[activeStep];
+  const Preview = PREVIEWS[activeStep];
 
   return (
-    <section id="how-it-works" aria-labelledby="how-it-works-heading" className="scroll-mt-20 bg-[#FAFAFA]">
-      <div ref={containerRef} className="relative h-[300vh]">
+    <section id="how-it-works" aria-labelledby="how-it-works-heading" className="scroll-mt-20">
+      <div ref={containerRef} className="relative h-[270vh]">
         <div className="sticky top-0 h-screen overflow-hidden flex items-center">
 
-          {/* Grid */}
-          <div aria-hidden="true" className="absolute inset-0 grid-bg opacity-20 pointer-events-none" />
-
-          {/* Ambient glow that follows the document */}
+          {/* Ambient background glow that shifts per step */}
           <motion.div
+            className="absolute inset-0 pointer-events-none"
+            animate={{ background: s.bgGlow }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             aria-hidden="true"
-            className="absolute left-1/4 w-96 h-96 rounded-full pointer-events-none -translate-x-1/2"
-            style={{
-              y: glowY,
-              background: `radial-gradient(ellipse, ${activeStep === 2 ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.10)'} 0%, transparent 70%)`,
-              filter: 'blur(48px)',
-              top: '50%',
-              translateY: '-50%',
-            }}
           />
+          <div aria-hidden="true" className="absolute inset-0 grid-bg opacity-30" />
 
-          <div className="relative max-w-6xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="relative max-w-6xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
 
-            {/* ── LEFT: scroll-scrubbed document ── */}
-            <div className="relative flex items-center justify-center order-2 lg:order-1" style={{ height: 400 }}>
+            {/* ── Left: product preview window ── */}
+            <div className="relative order-2 lg:order-1">
+              {/* Outer glow ring behind the window */}
               <motion.div
-                style={{ y: docY, rotate: docRot, scale: docScale }}
-                className="relative"
+                className="absolute -inset-4 rounded-3xl pointer-events-none blur-2xl opacity-30"
+                animate={{ background: `radial-gradient(ellipse, ${s.accent}40 0%, transparent 70%)` }}
+                transition={{ duration: 0.7 }}
+                aria-hidden="true"
+              />
+
+              {/* The window card */}
+              <motion.div
+                className="relative rounded-2xl border border-slate-200 bg-white shadow-xl shadow-black/5 overflow-hidden"
+                animate={{ borderColor: `${s.accentBorder}` }}
+                transition={{ duration: 0.5 }}
+                style={{ transformStyle: 'preserve-3d' }}
               >
-                <StepFloaters step={activeStep} />
-                <DocCard step={activeStep} />
+                {/* Window chrome */}
+                <div className="bg-slate-50 border-b border-slate-200 px-4 py-2.5 flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                  <div className="flex-1 mx-3">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeStep}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="h-4 rounded-md text-[10px] flex items-center px-2"
+                        style={{ background: s.accentLight, color: s.accent }}
+                      >
+                        app.qlarity.io / {activeStep === 0 ? 'upload' : activeStep === 1 ? 'review' : 'published'}
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                  <motion.div
+                    className="text-[9px] font-bold px-2 py-0.5 rounded"
+                    animate={{ background: s.accentLight, color: s.accent }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    LIVE
+                  </motion.div>
+                </div>
+
+                {/* Animated content area */}
+                <div className="min-h-[280px] relative overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeStep}
+                      initial={{ opacity: 0, transform: 'translateY(16px)' }}
+                      animate={{ opacity: 1, transform: 'translateY(0px)' }}
+                      exit={{ opacity: 0, transform: 'translateY(-12px)' }}
+                      transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute inset-0"
+                    >
+                      <Preview />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+
+              {/* Step counter badge */}
+              <motion.div
+                className="absolute -bottom-4 -right-4 w-14 h-14 rounded-2xl shadow-lg flex items-center justify-center text-white font-black text-lg"
+                animate={{ background: s.accent }}
+                transition={{ duration: 0.5 }}
+              >
+                {activeStep + 1}
               </motion.div>
             </div>
 
-            {/* ── RIGHT: step content ── */}
-            <div className="order-1 lg:order-2 flex flex-col gap-8">
+            {/* ── Right: step list ── */}
+            <div className="order-1 lg:order-2">
               <motion.div
-                variants={stagger(0.08)}
-                initial="hidden"
-                whileInView="show"
+                initial={{ opacity: 0, transform: 'translateY(24px)' }}
+                whileInView={{ opacity: 1, transform: 'translateY(0px)' }}
                 viewport={{ once: true }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="mb-10"
               >
-                <motion.div variants={blurUp}
-                  className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-1.5 text-xs font-medium text-amber-700 mb-4">
+                <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 text-xs font-medium text-blue-600 mb-4">
                   Simple workflow
-                </motion.div>
-                <motion.h2
-                  id="how-it-works-heading"
-                  variants={blurUp}
-                  className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-2"
-                >
+                </div>
+                <h2 id="how-it-works-heading" className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
                   From upload to published
                   <br />
                   <span className="text-gradient">in three steps.</span>
-                </motion.h2>
+                </h2>
               </motion.div>
 
-              {/* Step list */}
-              <div className="relative flex flex-col">
-                {/* Track line */}
-                <div aria-hidden="true" className="absolute left-[9px] top-3 bottom-3 w-px bg-slate-100" />
+              {/* Step items */}
+              <div className="relative">
+                {/* Vertical progress line */}
+                <div aria-hidden="true" className="absolute left-[9px] top-3 bottom-3 w-px bg-slate-200" />
                 <motion.div
                   aria-hidden="true"
-                  className="absolute left-[9px] top-3 w-px origin-top rounded-full"
+                  className="absolute left-[9px] top-3 w-px origin-top"
                   animate={{
-                    height: activeStep === 0 ? '12%' : activeStep === 1 ? '55%' : '92%',
+                    height: activeStep === 0 ? '10%' : activeStep === 1 ? '55%' : '90%',
                     background: s.accent,
                   }}
-                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                 />
 
-                {STEPS.map((step, i) => {
-                  const active = activeStep === i;
-                  const done   = activeStep > i;
-                  const Icon   = step.icon;
-                  return (
-                    <motion.div
-                      key={step.step}
-                      animate={{ opacity: active ? 1 : done ? 0.5 : 0.3 }}
-                      transition={{ duration: 0.4 }}
-                      className="relative pl-8 py-5"
-                    >
-                      {/* Dot */}
+                <div className="flex flex-col gap-0">
+                  {STEPS.map((step, i) => {
+                    const active = activeStep === i;
+                    return (
                       <motion.div
-                        className="absolute left-0 top-[22px] w-[19px] h-[19px] rounded-full border-2 border-white shadow flex items-center justify-center"
-                        animate={{ background: active ? step.accent : done ? '#10b981' : '#e2e8f0', scale: active ? 1.2 : 1 }}
-                        transition={{ duration: 0.35 }}
+                        key={step.step}
+                        animate={{
+                          opacity: active ? 1 : 0.38,
+                        }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        className="relative pl-8 py-5"
                       >
-                        {done
-                          ? <CheckCircle2 size={10} className="text-white" />
-                          : active && <motion.div className="w-2 h-2 rounded-full bg-white" initial={{ scale: 0 }} animate={{ scale: 1 }} />
-                        }
-                      </motion.div>
+                        {/* Timeline dot */}
+                        <motion.div
+                          className="absolute left-0 top-[22px] w-[19px] h-[19px] rounded-full border-2 border-white shadow-sm flex items-center justify-center"
+                          animate={{
+                            background: active ? step.accent : '#E2E8F0',
+                            scale: active ? 1.15 : 0.85,
+                          }}
+                          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                          {active && (
+                            <motion.div
+                              className="w-1.5 h-1.5 rounded-full bg-white"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ duration: 0.2 }}
+                            />
+                          )}
+                        </motion.div>
 
-                      <div className="pl-4">
-                        <div className="flex items-center gap-2 mb-1">
+                        {/* Left accent border */}
+                        <motion.div
+                          className="absolute left-5 top-2 bottom-2 w-[2px] rounded-full"
+                          animate={{ background: active ? step.accent : 'transparent', opacity: active ? 1 : 0 }}
+                          transition={{ duration: 0.35 }}
+                          aria-hidden="true"
+                        />
+
+                        <div className="pl-4">
                           <motion.span
-                            className="text-[10px] font-mono font-bold"
-                            animate={{ color: active ? step.accent : '#94a3b8' }}
+                            className="text-xs font-mono font-bold block mb-1"
+                            animate={{ color: active ? step.accent : '#94A3B8' }}
+                            transition={{ duration: 0.35 }}
                           >
                             {step.step}
                           </motion.span>
-                          {active && (
-                            <motion.span
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="text-[9px] px-2 py-0.5 rounded-full font-semibold"
-                              style={{ background: s.accentLight, color: s.accent }}
-                            >
-                              {step.tag}
-                            </motion.span>
-                          )}
+                          <h3 className="text-base font-bold text-slate-900 mb-1">{step.title}</h3>
+                          <motion.p
+                            className="text-sm text-slate-500 leading-relaxed max-w-sm"
+                            animate={{ opacity: active ? 1 : 0.6 }}
+                            transition={{ duration: 0.35 }}
+                          >
+                            {step.desc}
+                          </motion.p>
                         </div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Icon size={14} style={{ color: active ? step.accent : '#94a3b8' }} />
-                          <h3 className="text-sm font-bold text-slate-800">{step.title}</h3>
-                        </div>
-                        <motion.p
-                          className="text-sm text-slate-500 leading-relaxed max-w-sm"
-                          animate={{ opacity: active ? 1 : 0.5 }}
-                        >
-                          {step.desc}
-                        </motion.p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
-
-              {/* Scroll hint */}
-              <motion.div
-                animate={{ opacity: activeStep < 2 ? 1 : 0 }}
-                className="flex items-center gap-2 text-xs text-slate-400 pl-8"
-              >
-                <motion.div
-                  animate={{ y: [0, 5, 0] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-4 h-6 rounded-full border border-slate-200 flex items-start justify-center pt-1"
-                >
-                  <div className="w-0.5 h-1.5 bg-amber-400 rounded-full" />
-                </motion.div>
-                Scroll to continue
-              </motion.div>
             </div>
           </div>
         </div>

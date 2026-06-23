@@ -1,6 +1,7 @@
 import './index.css';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import DocumentJourney from './components/DocumentJourney';
 import Features from './components/Features';
 import HowItWorks from './components/HowItWorks';
 import SocialProof from './components/SocialProof';
@@ -18,6 +19,7 @@ export default function App() {
       <Navbar />
       <main>
         <Hero />
+        <DocumentJourney />
         <Features />
         <HowItWorks />
         <SocialProof />

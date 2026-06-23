@@ -108,10 +108,10 @@ function StatCard({ stat, index, isInView, scrollYProgress }: {
   const s0 = (index % 3) * 0.06;
   const s1 = s0 + 0.35;
 
-  const rawX = useTransform(scrollYProgress, [s0, s1], [fromRight ? 120 : -120, 0]);
+  const rawX = useTransform(scrollYProgress, [s0, s1], [fromRight ? 1400 : -1400, 0]);
   const rawOp = useTransform(scrollYProgress, [s0, s0 + 0.2], [0, 1]);
-  const rawRotY = useTransform(scrollYProgress, [s0, s1], [fromRight ? 25 : -25, 0]);
-  const x = useSpring(rawX, { stiffness: 70, damping: 18, mass: 1 });
+  const rawRotY = useTransform(scrollYProgress, [s0, s1], [fromRight ? 35 : -35, 0]);
+  const x = useSpring(rawX, { stiffness: 60, damping: 20, mass: 1 });
 
   return (
     <motion.div

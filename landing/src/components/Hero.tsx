@@ -6,38 +6,141 @@ import { MagneticButton } from './ui/MagneticButton';
 
 const BADGES = ['SOC 2 Ready', 'Version Control', 'Role-based Access'];
 
-const FLOAT_CHIPS = [
-  { file: 'Q4_Finance_Report.pdf',    status: 'Approved',        icon: CheckCircle, color: '#10b981', x: -38, y: -8,  depth: 1.5, rot: -4, delay: 0    },
-  { file: 'Legal_NDA_v3.pdf',         status: 'In Review',       icon: Eye,         color: '#f59e0b', x: 36,  y: -16, depth: 1.1, rot:  4, delay: 0.05 },
-  { file: 'Employee_Handbook.docx',   status: 'Pending',         icon: Clock,       color: '#94a3b8', x: -40, y: 24,  depth: 0.7, rot:  3, delay: 0.1  },
-  { file: 'Brand_Guidelines.pdf',     status: 'Published',       icon: Globe,       color: '#10b981', x: 40,  y: 22,  depth: 1.3, rot: -3, delay: 0.08 },
-  { file: 'Sales_Contract.docx',      status: 'Uploaded',        icon: Upload,      color: '#f59e0b', x: -14, y: -26, depth: 0.5, rot:  2, delay: 0.12 },
-  { file: 'Compliance_Policy.pdf',    status: 'Approved',        icon: CheckCircle, color: '#10b981', x: 20,  y: 36,  depth: 0.9, rot: -2, delay: 0.06 },
-  { file: 'Budget_Forecast_Q1.xlsx',  status: 'Awaiting review', icon: Clock,       color: '#f59e0b', x: -26, y: 38,  depth: 1.6, rot:  5, delay: 0.14 },
-  { file: 'Product_Roadmap.pptx',     status: 'In Review',       icon: Eye,         color: '#f59e0b', x: 44,  y: 4,   depth: 0.6, rot: -4, delay: 0.09 },
+// Each floating card: position (% from center), depth layer, content
+// Palette: amber (brand) · emerald (approved/published) · slate (neutral)
+// y values kept in -28..+40 range so cards stay in the lower 2/3 of the hero
+// and never crowd the navbar. x spread keeps them on the sides, away from copy.
+const FLOAT_CARDS = [
+  {
+    file: 'Q4_Finance_Report_v2.pdf',
+    status: 'Approved',
+    icon: CheckCircle,
+    color: '#10b981',
+    bg: 'rgba(16,185,129,0.08)',
+    border: 'rgba(16,185,129,0.22)',
+    avatar: 'SK',
+    x: -38, y: -10,
+    depth: 1.6,
+    rot: -6,
+    delay: 0,
+  },
+  {
+    file: 'Legal_NDA_Template_v3.pdf',
+    status: 'In Review',
+    icon: Eye,
+    color: '#d97706',
+    bg: 'rgba(245,158,11,0.09)',
+    border: 'rgba(245,158,11,0.28)',
+    avatar: 'PM',
+    x: 36, y: -18,
+    depth: 1.2,
+    rot: 5,
+    delay: 0.05,
+  },
+  {
+    file: 'Employee_Handbook_2025.docx',
+    status: 'Pending',
+    icon: Clock,
+    color: '#b45309',
+    bg: 'rgba(180,83,9,0.07)',
+    border: 'rgba(180,83,9,0.20)',
+    avatar: 'MT',
+    x: -42, y: 26,
+    depth: 0.8,
+    rot: 4,
+    delay: 0.1,
+  },
+  {
+    file: 'Brand_Guidelines_v2.pdf',
+    status: 'Published',
+    icon: Globe,
+    color: '#10b981',
+    bg: 'rgba(16,185,129,0.08)',
+    border: 'rgba(16,185,129,0.22)',
+    avatar: 'AL',
+    x: 40, y: 24,
+    depth: 1.4,
+    rot: -4,
+    delay: 0.08,
+  },
+  {
+    file: 'Sales_Contract_Acme.docx',
+    status: 'Uploaded',
+    icon: Upload,
+    color: '#f59e0b',
+    bg: 'rgba(245,158,11,0.09)',
+    border: 'rgba(245,158,11,0.25)',
+    avatar: 'JR',
+    x: -16, y: -28,
+    depth: 0.6,
+    rot: 2,
+    delay: 0.12,
+  },
+  {
+    file: 'Compliance_Policy_2025.pdf',
+    status: 'Approved',
+    icon: CheckCircle,
+    color: '#10b981',
+    bg: 'rgba(16,185,129,0.08)',
+    border: 'rgba(16,185,129,0.25)',
+    avatar: 'TB',
+    x: 20, y: 38,
+    depth: 1.0,
+    rot: -3,
+    delay: 0.06,
+  },
+  {
+    file: 'Budget_Forecast_Q1.xlsx',
+    status: 'Awaiting review',
+    icon: Clock,
+    color: '#d97706',
+    bg: 'rgba(245,158,11,0.09)',
+    border: 'rgba(245,158,11,0.28)',
+    avatar: 'PM',
+    x: -28, y: 40,
+    depth: 1.8,
+    rot: 7,
+    delay: 0.14,
+  },
+  {
+    file: 'Product_Roadmap_Draft.pptx',
+    status: 'In Review',
+    icon: Eye,
+    color: '#f59e0b',
+    bg: 'rgba(245,158,11,0.09)',
+    border: 'rgba(245,158,11,0.25)',
+    avatar: 'SK',
+    x: 44, y: 4,
+    depth: 0.7,
+    rot: -5,
+    delay: 0.09,
+  },
 ];
 
+// Gentle float animation — each card bobs independently
 const FLOAT_VARIANTS = [
-  { y: [0, -8, 0], dur: 4.2 },
-  { y: [0,  7, 0], dur: 3.8 },
-  { y: [0, -6, 0], dur: 5.0 },
-  { y: [0,  9, 0], dur: 4.5 },
-  { y: [0, -8, 0], dur: 3.6 },
-  { y: [0,  5, 0], dur: 4.8 },
-  { y: [0,-10, 0], dur: 4.0 },
-  { y: [0,  8, 0], dur: 3.9 },
+  { y: [0, -10, 0], duration: 4.2 },
+  { y: [0, 8,  0], duration: 3.8 },
+  { y: [0, -7, 0], duration: 5.0 },
+  { y: [0, 10, 0], duration: 4.5 },
+  { y: [0, -9, 0], duration: 3.6 },
+  { y: [0, 6,  0], duration: 4.8 },
+  { y: [0, -11,0], duration: 4.0 },
+  { y: [0, 9,  0], duration: 3.9 },
 ];
+
 
 export default function Hero() {
-  const heroRef   = useRef<HTMLElement>(null);
-  const rawMouseX = useMotionValue(0);
-  const rawMouseY = useMotionValue(0);
+  const heroRef    = useRef<HTMLElement>(null);
+  const rawMouseX  = useMotionValue(0);
+  const rawMouseY  = useMotionValue(0);
 
   useEffect(() => {
     const el = heroRef.current;
     if (!el) return;
     const handler = (e: MouseEvent) => {
       const rect = el.getBoundingClientRect();
+      // Normalize to -1 … 1 from center
       rawMouseX.set(((e.clientX - rect.left) / rect.width  - 0.5) * 2);
       rawMouseY.set(((e.clientY - rect.top)  / rect.height - 0.5) * 2);
     };
@@ -48,29 +151,34 @@ export default function Hero() {
   return (
     <section ref={heroRef} className="relative overflow-hidden min-h-screen flex items-center bg-[#FAFAFA]">
       <div aria-hidden="true" className="absolute inset-0 grid-bg opacity-25 pointer-events-none" />
+
+      {/* Radial ambient */}
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 48%, rgba(245,158,11,0.06) 0%, transparent 70%)' }} />
 
-      {/* Floating chip field */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ opacity: 0.9 }}>
-        {FLOAT_CHIPS.map((chip, i) => (
-          <FloatingChip
-            key={chip.file}
-            chip={chip}
-            rawX={rawMouseX}
-            rawY={rawMouseY}
-            floatV={FLOAT_VARIANTS[i % FLOAT_VARIANTS.length]}
-          />
-        ))}
+      {/* ── Floating card field ─────────────────────────────────── */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ opacity: 0.72 }}>
+        {FLOAT_CARDS.map((card, i) => {
+          // Scale parallax offset by depth — deeper = more pixels
+          return (
+            <FloatingCardScaled
+              key={card.file}
+              card={card}
+              rawX={rawMouseX}
+              rawY={rawMouseY}
+              floatV={FLOAT_VARIANTS[i % FLOAT_VARIANTS.length]}
+            />
+          );
+        })}
       </div>
 
-      {/* Vignette */}
+      {/* Vignette — strong top fade keeps cards away from the navbar */}
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 75% 75% at 50% 50%, transparent 35%, rgba(250,250,250,0.88) 78%, rgba(250,250,250,1) 100%)' }} />
+        style={{ background: 'radial-gradient(ellipse 75% 75% at 50% 50%, transparent 40%, rgba(250,250,250,0.85) 80%, rgba(250,250,250,1) 100%)' }} />
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-40 pointer-events-none"
         style={{ background: 'linear-gradient(to bottom, rgba(250,250,250,1) 0%, rgba(250,250,250,0.85) 60%, transparent 100%)' }} />
 
-      {/* Hero copy */}
+      {/* ── Hero text ──────────────────────────────────────────── */}
       <div className="relative w-full max-w-4xl mx-auto px-6 py-32 pt-36 flex flex-col items-center gap-7 text-center z-10">
         <motion.div variants={stagger(0.09)} initial="hidden" animate="show"
           className="flex flex-col items-center gap-6 w-full">
@@ -111,6 +219,16 @@ export default function Hero() {
           <motion.p variants={fadeUp} className="text-xs text-slate-400">
             No credit card required · Free to get started
           </motion.p>
+
+          {/* Live indicator */}
+          <motion.div variants={fadeUp}
+            className="flex items-center gap-2 bg-white/80 backdrop-blur border border-slate-200 rounded-full px-4 py-2 shadow-sm text-xs text-slate-500">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            Move your cursor — your documents follow
+          </motion.div>
         </motion.div>
       </div>
 
@@ -128,54 +246,66 @@ export default function Hero() {
   );
 }
 
-function FloatingChip({ chip, rawX, rawY, floatV }: {
-  chip: typeof FLOAT_CHIPS[number];
+// Separate component so each card can call useSpring/useTransform at top level
+function FloatingCardScaled({ card, rawX, rawY, floatV }: {
+  card: typeof FLOAT_CARDS[number];
   rawX: ReturnType<typeof useMotionValue<number>>;
   rawY: ReturnType<typeof useMotionValue<number>>;
   floatV: typeof FLOAT_VARIANTS[number];
 }) {
-  const Icon = chip.icon;
-  const springCfg = { stiffness: 35 + chip.depth * 14, damping: 22, mass: 1.1 };
+  const Icon = card.icon;
+
+  const springCfg = { stiffness: 35 + card.depth * 15, damping: 22, mass: 1.1 };
   const mx = useSpring(rawX, springCfg);
   const my = useSpring(rawY, springCfg);
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.8, y: 16 }}
+      initial={{ opacity: 0, scale: 0.75, y: 24 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ delay: 0.6 + chip.delay, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ delay: 0.5 + card.delay, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
       className="absolute"
       style={{
-        left: `calc(50% + ${chip.x}%)`,
-        top:  `calc(50% + ${chip.y}%)`,
+        left: `calc(50% + ${card.x}%)`,
+        top:  `calc(50% + ${card.y}%)`,
         transform: 'translate(-50%, -50%)',
-        zIndex: Math.round(chip.depth * 3),
+        zIndex: Math.round(card.depth * 3),
       }}
     >
-      <motion.div style={{ x: mx, y: my, rotateZ: chip.rot }}>
+      <motion.div
+        style={{ x: mx, y: my, rotateZ: card.rot }}
+        // Override y with float bob (additive via separate animate)
+      >
         <motion.div
           animate={{ y: floatV.y }}
-          transition={{ duration: floatV.dur, repeat: Infinity, ease: 'easeInOut', repeatType: 'mirror' }}
-          style={{ scale: 0.85 + chip.depth * 0.09 }}
+          transition={{ duration: floatV.duration, repeat: Infinity, ease: 'easeInOut', repeatType: 'mirror' }}
+          // scale per depth so close cards feel bigger
+          style={{ scale: 0.82 + card.depth * 0.11 }}
         >
-          {/* Minimal pill chip */}
           <div
-            className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full pl-2 pr-3.5 py-1.5 select-none"
+            className="bg-white/90 backdrop-blur-sm rounded-xl px-3.5 py-3 shadow-lg select-none"
             style={{
-              border: '1px solid rgba(0,0,0,0.07)',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+              border: `1.5px solid ${card.border}`,
+              minWidth: 190,
+              maxWidth: 225,
+              boxShadow: `0 ${Math.round(card.depth * 6)}px ${Math.round(card.depth * 24)}px rgba(0,0,0,${0.05 + card.depth * 0.04}), 0 0 0 1px ${card.border}`,
             }}
           >
-            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: `${chip.color}18` }}>
-              <FileText size={10} style={{ color: chip.color }} />
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: card.bg }}>
+                <FileText size={13} style={{ color: card.color }} />
+              </div>
+              <span className="text-[10px] font-semibold text-slate-700 truncate leading-tight">{card.file}</span>
             </div>
-            <span className="text-[10px] font-medium text-slate-600 max-w-[110px] truncate leading-none">
-              {chip.file}
-            </span>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: chip.color }} />
-              <Icon size={9} style={{ color: chip.color }} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Icon size={10} style={{ color: card.color }} />
+                <span className="text-[10px] font-medium" style={{ color: card.color }}>{card.status}</span>
+              </div>
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <span className="text-[7px] font-bold text-white">{card.avatar}</span>
+              </div>
             </div>
           </div>
         </motion.div>

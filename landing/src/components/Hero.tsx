@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useEffect, useRef } from 'react';
-import { ArrowRight, CheckCircle2, Sparkles, FileText, Eye, CheckCircle, Clock, Globe, Twitter, Linkedin, Github } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Sparkles, FileText, Eye, CheckCircle, Globe, Share2, ExternalLink, Star } from 'lucide-react';
 import { blurUp, stagger } from '../lib/animations';
 import { MagneticButton } from './ui/MagneticButton';
 
@@ -118,7 +118,7 @@ export default function Hero() {
 
           {/* Social links */}
           <motion.div variants={blurUp} className="flex items-center gap-4 pt-2">
-            {[Twitter, Linkedin, Github].map((Icon, i) => (
+            {[Share2, ExternalLink, Star].map((Icon, i) => (
               <a key={i} href="#" className="w-8 h-8 rounded-full bg-slate-100 hover:bg-amber-50 hover:text-amber-600 border border-slate-200 flex items-center justify-center text-slate-400 transition-colors">
                 <Icon size={14} />
               </a>
@@ -135,20 +135,15 @@ export default function Hero() {
           ))}
 
           {/* App Mockup — center of the scene */}
+          <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 5 }}>
           <motion.div
             initial={{ opacity: 0, scale: 0.85, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              translateX: '-50%',
-              translateY: '-50%',
               rotateX: tiltX,
               rotateY: tiltY,
-              transformPerspective: 1200,
-              zIndex: 5,
+              perspective: 1200,
             }}
           >
             <div
@@ -224,6 +219,7 @@ export default function Hero() {
               </div>
             </div>
           </motion.div>
+          </div>
         </div>
       </div>
     </section>

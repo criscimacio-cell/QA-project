@@ -1,3 +1,5 @@
+// LEGACY: This file is not currently used. Email is handled by emailService.ts (Resend).
+// Kept for reference if SMTP is needed in future.
 import nodemailer from 'nodemailer';
 
 const {

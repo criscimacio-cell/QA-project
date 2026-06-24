@@ -22,7 +22,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
       LEFT JOIN users u ON f.owner_id = u.id
       LEFT JOIN repositories r ON f.repository_id = r.id
       WHERE f.organization_id = ${orgId}
-      AND f.is_archived = FALSE
+      AND f.status != 'archived'
       ${!isLead ? sql`AND (f.owner_id = ${userId} OR f.status IN ('published','approved'))` : sql``}
       AND (
         to_tsvector('english', coalesce(f.name,'') || ' ' || coalesce(f.description,'') || ' ' || coalesce(f.tags,'') || ' ' || coalesce(f.project,'') || ' ' || coalesce(f.jira_ticket,''))

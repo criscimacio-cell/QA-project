@@ -10,6 +10,9 @@
  *   All template functions below stay exactly the same.
  */
 
+// Note: mailer.ts (legacy nodemailer/SMTP) is not used. All email goes through Resend.
+// To enable SMTP, wire mailer.ts functions here.
+
 // Env vars are read lazily at call time (NOT at module load). This is required
 // because route modules — which transitively import this file — may be loaded
 // before dotenv.config() runs (ESM import hoisting under tsx/esbuild). Reading

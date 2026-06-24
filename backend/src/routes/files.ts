@@ -21,8 +21,12 @@ const PLAN_STORAGE_LIMITS: Record<string, number> = {
   enterprise: Infinity,
 };
 import { notificationQueue } from '../queue';
+import { bustDashboardCache } from './dashboard';
 
 const router = Router();
+
+// Simple per-user rate limit: max 3 bulk uploads per minute
+const bulkUploadTracker = new Map<number, { count: number; resetAt: number }>();
 
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
   (req, res, next) => fn(req, res, next).catch(next);
@@ -163,6 +167,7 @@ router.post('/bulk-action', authenticate, requireModule('files'), requireRole('a
       await tx`DELETE FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
     });
   }
+  bustDashboardCache(orgId).catch(() => {});
   res.json({ message: `Bulk ${action} complete`, count: ids.length });
 });
 
@@ -346,10 +351,24 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
   encryptFile(path.join(UPLOAD_DIR, f.filename));
   await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, ${newVersion}, ${f.filename}, ${f.size}, ${change_log || (existing ? `Version ${newVersion} update` : 'Initial upload')}, ${req.user!.userId}, ${orgId})`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
+  bustDashboardCache(orgId).catch(() => {});
   res.json({ id: fileId, version: newVersion, message: existing ? `New version ${newVersion} created` : 'File uploaded successfully' });
 });
 
 router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), upload.array('files', 20), async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  const now = Date.now();
+  const tracker = bulkUploadTracker.get(userId);
+  if (tracker && now < tracker.resetAt) {
+    if (tracker.count >= 3) {
+      res.status(429).json({ error: 'Too many bulk uploads. Please wait before uploading again.' });
+      return;
+    }
+    tracker.count++;
+  } else {
+    bulkUploadTracker.set(userId, { count: 1, resetAt: now + 60_000 });
+  }
+
   const files = req.files as Express.Multer.File[];
   if (!files?.length) { res.status(400).json({ error: 'No files attached' }); return; }
   const { repository_id, project, module, category } = req.body;
@@ -370,6 +389,7 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Bulk uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
     results.push({ id: fileId, name, originalName: f.originalname, size: f.size });
   }
+  bustDashboardCache(orgId).catch(() => {});
   res.json({ uploaded: results.length, files: results });
 });
 
@@ -454,6 +474,7 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
     } catch {}
   }
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'APPROVE', 'file', ${req.params.id}, ${`Changed status to ${effectiveStatus}`}, ${req.ip || ''}, ${orgId})`;
+  bustDashboardCache(orgId).catch(() => {});
   res.json({ message: 'Status updated', status: effectiveStatus });
 });
 
@@ -465,6 +486,7 @@ router.post('/:id/archive', authenticate, requireModule('files'), requireRole('a
   if (file.status === 'archived') { res.status(400).json({ error: 'File is already archived' }); return; }
   await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id=${req.params.id} AND organization_id=${orgId}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'ARCHIVE', 'file', ${req.params.id}, 'Archived file', ${req.ip || ''}, ${orgId})`;
+  bustDashboardCache(orgId).catch(() => {});
   res.json({ message: 'Archived' });
 });
 
@@ -475,6 +497,7 @@ router.post('/:id/restore', authenticate, requireRole('admin', 'lead'), async (r
   if (file.status !== 'archived') { res.status(400).json({ error: 'Only archived files can be restored' }); return; }
   await sql`UPDATE files SET status='draft', updated_at=NOW() WHERE id=${req.params.id} AND organization_id=${orgId}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'RESTORE', 'file', ${req.params.id}, 'Restored file from archive', ${req.ip || ''}, ${orgId})`;
+  bustDashboardCache(orgId).catch(() => {});
   res.json({ message: 'Restored to draft' });
 });
 
@@ -490,6 +513,7 @@ router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, r
     await tx`DELETE FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   });
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'DELETE', 'file', ${req.params.id}, 'Permanently deleted file', ${req.ip || ''}, ${orgId})`;
+  bustDashboardCache(orgId).catch(() => {});
   res.json({ message: 'Deleted' });
 });
 

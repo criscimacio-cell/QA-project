@@ -26,8 +26,11 @@ import orgSettingsRoutes from './routes/orgSettings';
 import folderRoutes from './routes/folders';
 import templateRoutes from './routes/templates';
 import filePermissionsRouter from './routes/filePermissions';
+import shareLinksRouter from './routes/shareLinks';
+import savedSearchesRouter from './routes/savedSearches';
 // Initialize BullMQ worker by importing the module
 import './queue';
+import { startPurgeJob } from './queue';
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
@@ -93,6 +96,9 @@ app.use('/api/org-settings', orgSettingsRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/files', filePermissionsRouter);
+app.use('/api/files', shareLinksRouter);
+app.use('/api/share', shareLinksRouter);
+app.use('/api/saved-searches', savedSearchesRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
@@ -103,6 +109,7 @@ if (process.env.NODE_ENV !== 'production') {
 (async () => {
   try {
     await initDb();
+    startPurgeJob().catch((e) => console.error('[purge] Failed to start purge job:', e));
     const server = http.createServer(app);
     attachWebSocketServer(server);
     server.listen(PORT, () => console.log(`Qlarity API running on http://localhost:${PORT}`));

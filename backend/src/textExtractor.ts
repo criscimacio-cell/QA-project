@@ -13,7 +13,8 @@ export async function extractText(filePath: string, mimeType: string): Promise<s
 
     // PDF
     if (mimeType === 'application/pdf' || ext === '.pdf') {
-      const pdfParse = (await import('pdf-parse')).default;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
       const data = await pdfParse(buf);
       return data.text.slice(0, 100_000);
     }

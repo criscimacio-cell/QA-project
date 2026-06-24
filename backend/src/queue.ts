@@ -25,3 +25,40 @@ const worker = new Worker(
 );
 
 worker.on('failed', (job, err) => console.error(`Notification job ${job?.id} failed:`, err.message));
+
+// Export connection config so purge job can reuse it
+export const redis = connection;
+
+// Auto-purge recycle bin (files deleted > 30 days ago)
+export async function startPurgeJob() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const purgeWorker = new Worker('purge', async () => {
+    try {
+      const sql_module = await import('./db');
+      const sqlDb = sql_module.default;
+      const PURGE_UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+      const fsModule = await import('fs');
+      const pathModule = await import('path');
+      const stale = await sqlDb`
+        SELECT id, path FROM files
+        WHERE deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '30 days'
+        LIMIT 100
+      `;
+      for (const file of stale) {
+        if (file.path) {
+          const fp = pathModule.join(PURGE_UPLOAD_DIR, file.path);
+          if (fsModule.existsSync(fp)) fsModule.unlinkSync(fp);
+        }
+        await sqlDb`DELETE FROM file_versions WHERE file_id = ${file.id}`;
+        await sqlDb`DELETE FROM approvals WHERE file_id = ${file.id}`;
+        await sqlDb`DELETE FROM file_comments WHERE file_id = ${file.id}`;
+        await sqlDb`DELETE FROM files WHERE id = ${file.id}`;
+      }
+      if (stale.length > 0) console.log(`[purge] Auto-purged ${stale.length} files from trash`);
+    } catch (e) { console.error('[purge] Error:', e); }
+  }, { connection });
+
+  // Schedule purge every 24 hours using a repeatable job
+  const purgeQueue = new Queue('purge', { connection });
+  await purgeQueue.add('purge-trash', {}, { repeat: { every: 24 * 60 * 60 * 1000 }, jobId: 'daily-purge' });
+}

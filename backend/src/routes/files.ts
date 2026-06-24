@@ -245,6 +245,59 @@ router.post('/bulk-submit', authenticate, requireModule('files'), requireRole('a
   res.json({ message: 'Submitted for review' });
 });
 
+// GET /checked-out — files currently checked out in this org
+router.get('/checked-out', authenticate, async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const rows = await sql`
+    SELECT f.id, f.name, f.original_name, f.checked_out_at,
+           u.name as checked_out_by_name, u.id as checked_out_by_id,
+           o.name as owner_name
+    FROM files f
+    LEFT JOIN users u ON f.checked_out_by = u.id
+    LEFT JOIN users o ON f.owner_id = o.id
+    WHERE f.organization_id = ${orgId}
+      AND f.checked_out_by IS NOT NULL
+      AND f.deleted_at IS NULL
+    ORDER BY f.checked_out_at DESC
+  `;
+  res.json(rows);
+});
+
+// GET /trash — recycle bin contents (admin only)
+router.get('/trash', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const rows = await sql`
+    SELECT f.id, f.name, f.original_name, f.size, f.mime_type, f.deleted_at,
+           u.name as owner_name, f.version, f.project, f.category
+    FROM files f LEFT JOIN users u ON f.owner_id = u.id
+    WHERE f.organization_id = ${orgId} AND f.deleted_at IS NOT NULL
+    ORDER BY f.deleted_at DESC
+  `;
+  res.json(rows);
+});
+
+// POST /bulk-metadata — bulk update project/category/tags
+router.post('/bulk-metadata', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+  const { ids, project, category, tags } = req.body;
+  if (!ids?.length) { res.status(400).json({ error: 'No file IDs provided' }); return; }
+  const orgId = req.user!.organizationId;
+
+  // Engineers can only edit their own files
+  if (req.user!.role === 'engineer') {
+    const notOwned = await sql`
+      SELECT id FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId} AND owner_id != ${req.user!.userId}
+    `;
+    if (notOwned.length > 0) { res.status(403).json({ error: 'You can only edit your own files' }); return; }
+  }
+
+  if (project !== undefined) await sql`UPDATE files SET project = ${project}, updated_at = NOW() WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
+  if (category !== undefined) await sql`UPDATE files SET category = ${category}, updated_at = NOW() WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
+  if (tags !== undefined) await sql`UPDATE files SET tags = ${tags}, updated_at = NOW() WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
+
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'BULK_METADATA', 'file', 0, ${`Bulk metadata update on ${ids.length} files`}, ${req.ip || ''}, ${orgId})`;
+  res.json({ message: `Updated ${ids.length} file(s)` });
+});
+
 // POST /:id/checkout
 router.post('/:id/checkout', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
@@ -357,6 +410,15 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
   }
 
   encryptFile(path.join(UPLOAD_DIR, f.filename));
+  // Extract text for full-text search (async, non-blocking)
+  const rawPathForExtract = path.join(UPLOAD_DIR, f.filename);
+  const mimetypeForExtract = f.mimetype;
+  const fileIdForExtract = fileId;
+  extractText(rawPathForExtract, mimetypeForExtract).then(async (text) => {
+    if (text) {
+      await sql`UPDATE files SET content_text = ${text} WHERE id = ${fileIdForExtract}`.catch(() => {});
+    }
+  }).catch(() => {});
   await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, ${newVersion}, ${f.filename}, ${f.size}, ${change_log || (existing ? `Version ${newVersion} update` : 'Initial upload')}, ${req.user!.userId}, ${orgId})`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
   bustDashboardCache(orgId).catch(() => {});
@@ -393,6 +455,15 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
       RETURNING id
     `;
     encryptFile(path.join(UPLOAD_DIR, f.filename));
+    // Extract text for full-text search (async, non-blocking)
+    const bulkRawPath = path.join(UPLOAD_DIR, f.filename);
+    const bulkMimetype = f.mimetype;
+    const bulkFileId = fileId;
+    extractText(bulkRawPath, bulkMimetype).then(async (text) => {
+      if (text) {
+        await sql`UPDATE files SET content_text = ${text} WHERE id = ${bulkFileId}`.catch(() => {});
+      }
+    }).catch(() => {});
     await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, 1, ${f.filename}, ${f.size}, 'Initial upload', ${req.user!.userId}, ${orgId})`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Bulk uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
     results.push({ id: fileId, name, originalName: f.originalname, size: f.size });
@@ -521,18 +592,37 @@ router.post('/:id/restore', authenticate, requireRole('admin', 'lead'), async (r
 
 router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
-  const [file] = await sql`SELECT path FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  const [file] = await sql`SELECT id, deleted_at FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
-  if (file?.path) { const fp = path.join(UPLOAD_DIR, file.path); if (fs.existsSync(fp)) fs.unlinkSync(fp); }
-  await sql.begin(async tx => {
-    await tx`DELETE FROM file_versions WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
-    await tx`DELETE FROM approvals WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
-    await tx`DELETE FROM file_comments WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
-    await tx`DELETE FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
-  });
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'DELETE', 'file', ${req.params.id}, 'Permanently deleted file', ${req.ip || ''}, ${orgId})`;
+  if (file.deleted_at) {
+    // Already in recycle bin — permanently delete
+    const [full] = await sql`SELECT path FROM files WHERE id = ${req.params.id}`;
+    if (full?.path) { const fp = path.join(UPLOAD_DIR, full.path); if (fs.existsSync(fp)) fs.unlinkSync(fp); }
+    await sql.begin(async tx => {
+      await tx`DELETE FROM file_versions WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
+      await tx`DELETE FROM approvals WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
+      await tx`DELETE FROM file_comments WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
+      await tx`DELETE FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+    });
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'DELETE_PERMANENT', 'file', ${req.params.id}, 'Permanently deleted file', ${req.ip || ''}, ${orgId})`;
+    bustDashboardCache(orgId).catch(() => {});
+    res.json({ message: 'Permanently deleted' }); return;
+  }
+  // Soft delete — move to recycle bin
+  await sql`UPDATE files SET deleted_at = NOW(), status = 'archived', updated_at = NOW() WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'DELETE', 'file', ${req.params.id}, 'Moved to recycle bin', ${req.ip || ''}, ${orgId})`;
   bustDashboardCache(orgId).catch(() => {});
-  res.json({ message: 'Deleted' });
+  res.json({ message: 'Moved to recycle bin' });
+});
+
+// POST /:id/restore-from-trash — restore a soft-deleted file
+router.post('/:id/restore-from-trash', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const [file] = await sql`SELECT deleted_at FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!file || !file.deleted_at) { res.status(400).json({ error: 'File is not in the recycle bin' }); return; }
+  await sql`UPDATE files SET deleted_at = NULL, status = 'draft', updated_at = NOW() WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'RESTORE_TRASH', 'file', ${req.params.id}, 'Restored from recycle bin', ${req.ip || ''}, ${orgId})`;
+  res.json({ message: 'Restored to draft' });
 });
 
 router.get('/:id/download', authenticate, async (req: Request, res: Response) => {

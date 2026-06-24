@@ -409,8 +409,7 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
     fileId = id;
   }
 
-  encryptFile(path.join(UPLOAD_DIR, f.filename));
-  // Extract text for full-text search (async, non-blocking)
+  // Extract text BEFORE encryption (file is still plaintext at this point)
   const rawPathForExtract = path.join(UPLOAD_DIR, f.filename);
   const mimetypeForExtract = f.mimetype;
   const fileIdForExtract = fileId;
@@ -419,6 +418,7 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
       await sql`UPDATE files SET content_text = ${text} WHERE id = ${fileIdForExtract}`.catch(() => {});
     }
   }).catch(() => {});
+  encryptFile(path.join(UPLOAD_DIR, f.filename));
   await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, ${newVersion}, ${f.filename}, ${f.size}, ${change_log || (existing ? `Version ${newVersion} update` : 'Initial upload')}, ${req.user!.userId}, ${orgId})`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
   bustDashboardCache(orgId).catch(() => {});
@@ -454,8 +454,7 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
       VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id as string}, ${req.user!.userId}, 1, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${orgId})
       RETURNING id
     `;
-    encryptFile(path.join(UPLOAD_DIR, f.filename));
-    // Extract text for full-text search (async, non-blocking)
+    // Extract text BEFORE encryption
     const bulkRawPath = path.join(UPLOAD_DIR, f.filename);
     const bulkMimetype = f.mimetype;
     const bulkFileId = fileId;
@@ -464,6 +463,7 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
         await sql`UPDATE files SET content_text = ${text} WHERE id = ${bulkFileId}`.catch(() => {});
       }
     }).catch(() => {});
+    encryptFile(path.join(UPLOAD_DIR, f.filename));
     await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, 1, ${f.filename}, ${f.size}, 'Initial upload', ${req.user!.userId}, ${orgId})`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Bulk uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
     results.push({ id: fileId, name, originalName: f.originalname, size: f.size });

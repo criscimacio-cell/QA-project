@@ -107,7 +107,8 @@ export async function initDb() {
         coalesce(description,'') || ' ' ||
         coalesce(tags,'') || ' ' ||
         coalesce(project,'') || ' ' ||
-        coalesce(jira_ticket,'')
+        coalesce(jira_ticket,'') || ' ' ||
+        coalesce(content_text,'')
       )
     )
   `;
@@ -268,18 +269,6 @@ export async function initDb() {
 
   // ── Feature 1: Full-text search content extraction ───────────────────────
   await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS content_text TEXT DEFAULT NULL`;
-  await sql`DROP INDEX IF EXISTS idx_files_fts`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_files_fts ON files USING gin(
-    to_tsvector('english',
-      coalesce(name,'') || ' ' ||
-      coalesce(original_name,'') || ' ' ||
-      coalesce(description,'') || ' ' ||
-      coalesce(tags,'') || ' ' ||
-      coalesce(project,'') || ' ' ||
-      coalesce(jira_ticket,'') || ' ' ||
-      coalesce(content_text,'')
-    )
-  )`;
 
   // ── Feature 2: File sharing links ────────────────────────────────────────
   await sql`

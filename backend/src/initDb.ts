@@ -266,6 +266,58 @@ export async function initDb() {
   await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS download_password_hash TEXT DEFAULT NULL`;
   await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS password_hint TEXT DEFAULT NULL`;
 
+  // ── Feature 1: Full-text search content extraction ───────────────────────
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS content_text TEXT DEFAULT NULL`;
+  await sql`DROP INDEX IF EXISTS idx_files_fts`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_files_fts ON files USING gin(
+    to_tsvector('english',
+      coalesce(name,'') || ' ' ||
+      coalesce(original_name,'') || ' ' ||
+      coalesce(description,'') || ' ' ||
+      coalesce(tags,'') || ' ' ||
+      coalesce(project,'') || ' ' ||
+      coalesce(jira_ticket,'') || ' ' ||
+      coalesce(content_text,'')
+    )
+  )`;
+
+  // ── Feature 2: File sharing links ────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS file_share_links (
+      id          SERIAL PRIMARY KEY,
+      token       TEXT UNIQUE NOT NULL,
+      file_id     INTEGER REFERENCES files(id) ON DELETE CASCADE,
+      created_by  INTEGER REFERENCES users(id),
+      organization_id INTEGER REFERENCES organizations(id),
+      expires_at  TIMESTAMPTZ NOT NULL,
+      password_hash TEXT DEFAULT NULL,
+      max_downloads INTEGER DEFAULT NULL,
+      download_count INTEGER DEFAULT 0,
+      label       TEXT,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_share_links_token ON file_share_links(token)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_share_links_file ON file_share_links(file_id)`;
+
+  // ── Feature 3: Soft delete / recycle bin ─────────────────────────────────
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_files_deleted ON files(organization_id, deleted_at) WHERE deleted_at IS NOT NULL`;
+
+  // ── Feature 5: Saved searches ─────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS saved_searches (
+      id          SERIAL PRIMARY KEY,
+      user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      organization_id INTEGER REFERENCES organizations(id),
+      name        TEXT NOT NULL,
+      query       TEXT NOT NULL,
+      filters     JSONB DEFAULT '{}',
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_saved_searches_user ON saved_searches(user_id)`;
+
   await sql`CREATE INDEX IF NOT EXISTS idx_audit_org_created ON audit_logs(organization_id, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_audit_org_action ON audit_logs(organization_id, action, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id, created_at DESC)`;
@@ -404,6 +456,22 @@ export async function initDb() {
     )
   `;
   await sql`CREATE INDEX IF NOT EXISTS idx_file_templates_org ON file_templates(organization_id)`;
+
+  // ── File-level permissions ────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS file_permissions (
+      id              SERIAL PRIMARY KEY,
+      file_id         INTEGER REFERENCES files(id) ON DELETE CASCADE,
+      user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      permission      TEXT NOT NULL DEFAULT 'view',
+      granted_by      INTEGER REFERENCES users(id),
+      organization_id INTEGER REFERENCES organizations(id),
+      created_at      TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (file_id, user_id)
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_file_permissions_file ON file_permissions(file_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_file_permissions_user ON file_permissions(user_id)`;
 
   // Ensure templates directory exists
   const { mkdirSync } = await import('fs');

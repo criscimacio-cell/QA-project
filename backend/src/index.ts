@@ -25,6 +25,7 @@ import backofficeRoutes from './routes/backoffice';
 import orgSettingsRoutes from './routes/orgSettings';
 import folderRoutes from './routes/folders';
 import templateRoutes from './routes/templates';
+import filePermissionsRouter from './routes/filePermissions';
 // Initialize BullMQ worker by importing the module
 import './queue';
 
@@ -91,6 +92,7 @@ app.use('/api/backoffice', backofficeRoutes);
 app.use('/api/org-settings', orgSettingsRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/templates', templateRoutes);
+app.use('/api/files', filePermissionsRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

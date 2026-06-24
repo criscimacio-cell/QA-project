@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import * as Diff from 'diff';
 import { encryptFile, decryptFileToBuffer, withDecryptedFile } from '../fileEncryption';
+import { extractText } from '../textExtractor';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const archiver = require('archiver') as (format: string, opts?: object) => import('archiver').Archiver;
 import sql from '../db';
@@ -60,6 +61,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
            f.password_hint
     FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id LEFT JOIN users co ON co.id = f.checked_out_by LEFT JOIN file_folders ff ON f.folder_id = ff.id
     WHERE f.organization_id = ${orgId}
+    AND f.deleted_at IS NULL
     ${!isLead ? sql`AND (f.owner_id = ${req.user!.userId} OR f.status IN ('published','approved'))` : sql``}
     ${repository_id ? sql`AND f.repository_id = ${repository_id as string}` : sql``}
     ${status ? sql`AND f.status = ${status as string}` : sql`AND f.status != 'archived'`}
@@ -82,6 +84,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
   const [{ total }] = await sql`
     SELECT COUNT(*)::int as total FROM files f
     WHERE f.organization_id = ${orgId}
+    AND f.deleted_at IS NULL
     ${!isLead ? sql`AND (f.owner_id = ${req.user!.userId} OR f.status IN ('published','approved'))` : sql``}
     ${repository_id ? sql`AND f.repository_id = ${repository_id as string}` : sql``}
     ${status ? sql`AND f.status = ${status as string}` : sql`AND f.status != 'archived'`}
@@ -533,6 +536,15 @@ router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, r
 });
 
 router.get('/:id/download', authenticate, async (req: Request, res: Response) => {
+  // Rate limit: max 30 downloads per user per minute
+  const dlKey = `dl_rate:${req.user!.userId}`;
+  const dlCount = parseInt(await redis.get(dlKey) || '0', 10);
+  if (dlCount >= 30) {
+    res.status(429).json({ error: 'Too many download requests. Please wait a moment.' });
+    return;
+  }
+  await redis.multi().incr(dlKey).expire(dlKey, 60).exec();
+
   const orgId = req.user!.organizationId;
   const userId = req.user!.userId;
   const [file] = await sql`SELECT * FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;

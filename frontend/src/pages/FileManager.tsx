@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Filter, Download, Archive, Eye, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List, Lock, Unlock, GitCompare, BookTemplate } from 'lucide-react';
+import { Filter, Download, Archive, Eye, EyeOff, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List, Lock, Unlock, GitCompare, BookTemplate } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
@@ -13,11 +13,25 @@ import DiffViewer from '../components/UI/DiffViewer';
 import MentionInput from '../components/UI/MentionInput';
 import { useAuth } from '../context/AuthContext';
 
-async function downloadFile(fileId: number, filename: string, versionPath?: string) {
+async function downloadFileWithPassword(fileId: number, filename: string, password?: string, versionPath?: string) {
   try {
     const url = versionPath || `/api/files/${fileId}/download`;
-    const res = await fetch(url, { credentials: 'include' });
-    if (!res.ok) { toast.error('Download failed — file not found on disk.'); return; }
+    const headers: HeadersInit = {};
+    if (password) headers['X-File-Password'] = password;
+    const res = await fetch(url, { credentials: 'include', headers });
+    if (res.status === 403) {
+      const data = await res.json().catch(() => ({}));
+      return { needsPassword: true, hint: data.hint || null };
+    }
+    if (res.status === 401) {
+      const data = await res.json().catch(() => ({}));
+      return { wrongPassword: true, attemptsRemaining: data.attempts_remaining ?? 0 };
+    }
+    if (res.status === 429) {
+      const data = await res.json().catch(() => ({}));
+      return { locked: true, retryAfter: data.retry_after || 900 };
+    }
+    if (!res.ok) { toast.error('Download failed — file not found on disk.'); return { done: true }; }
     const blob = await res.blob();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -26,7 +40,8 @@ async function downloadFile(fileId: number, filename: string, versionPath?: stri
     a.click();
     a.remove();
     URL.revokeObjectURL(a.href);
-  } catch { toast.error('Download failed'); }
+    return { done: true };
+  } catch { toast.error('Download failed'); return { done: true }; }
 }
 
 function formatBytes(b: number) {
@@ -113,6 +128,23 @@ export default function FileManager() {
   const [templateName, setTemplateName] = useState('');
   const [templateDesc, setTemplateDesc] = useState('');
   const [templateLoading, setTemplateLoading] = useState(false);
+
+  // Password modal state
+  const [pwModal, setPwModal] = useState<{ open: boolean; fileId: number; filename: string; hint: string | null; versionPath?: string }>({ open: false, fileId: 0, filename: '', hint: null });
+  const [pwInput, setPwInput] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwShow, setPwShow] = useState(false);
+
+  // Upload/edit password fields
+  const [uploadPassword, setUploadPassword] = useState('');
+  const [uploadPasswordHint, setUploadPasswordHint] = useState('');
+  const [uploadPasswordEnabled, setUploadPasswordEnabled] = useState(false);
+  const [editPasswordMode, setEditPasswordMode] = useState<'keep' | 'change' | 'remove'>('keep');
+  const [editPassword, setEditPassword] = useState('');
+  const [editPasswordHint, setEditPasswordHint] = useState('');
+  const [editPwShow, setEditPwShow] = useState(false);
+  const [uploadPwShow, setUploadPwShow] = useState(false);
 
   useEffect(() => {
     if (!previewFile) { setPreviewBlobUrl(null); return; }
@@ -260,6 +292,10 @@ export default function FileManager() {
     try {
       const fd = new FormData();
       bulkFiles.forEach(f => fd.append('files', f));
+      if (uploadPasswordEnabled && uploadPassword) {
+        fd.append('download_password', uploadPassword);
+        fd.append('password_hint', uploadPasswordHint);
+      }
       await api.post('/files/bulk-upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setBulkProgress('Upload complete!');
       toast.success('Files uploaded successfully');
@@ -267,6 +303,9 @@ export default function FileManager() {
         setShowBulkUpload(false);
         setBulkFiles([]);
         setBulkProgress('');
+        setUploadPassword('');
+        setUploadPasswordHint('');
+        setUploadPasswordEnabled(false);
         load();
       }, 1200);
     } catch (e: any) {
@@ -460,6 +499,33 @@ export default function FileManager() {
       setTemplateName(''); setTemplateDesc('');
     } catch (e: any) { toast.error(e.response?.data?.error || 'Failed to save template'); }
     finally { setTemplateLoading(false); }
+  };
+
+  const handleDownload = async (fileId: number, filename: string, isPasswordProtected: boolean, versionPath?: string) => {
+    if (!isPasswordProtected) {
+      await downloadFileWithPassword(fileId, filename, undefined, versionPath);
+      return;
+    }
+    const result = await downloadFileWithPassword(fileId, filename, undefined, versionPath);
+    if (result?.needsPassword) {
+      setPwModal({ open: true, fileId, filename, hint: result.hint, versionPath });
+      setPwInput(''); setPwError(''); setPwShow(false);
+    }
+  };
+
+  const submitPwDownload = async () => {
+    if (!pwInput.trim()) { setPwError('Please enter the password'); return; }
+    setPwLoading(true);
+    const result = await downloadFileWithPassword(pwModal.fileId, pwModal.filename, pwInput, pwModal.versionPath);
+    setPwLoading(false);
+    if (result?.done) {
+      setPwModal(m => ({ ...m, open: false }));
+      setPwInput(''); setPwError('');
+    } else if (result?.wrongPassword) {
+      setPwError(`Incorrect password. ${result.attemptsRemaining} attempt${result.attemptsRemaining !== 1 ? 's' : ''} remaining.`);
+    } else if (result?.locked) {
+      setPwError(`Too many attempts. Try again in ${Math.ceil(result.retryAfter / 60)} minutes.`);
+    }
   };
 
   const renderComment = (text: string) =>
@@ -668,6 +734,11 @@ export default function FileManager() {
                                 <Lock size={12} className={f.checked_out_by === user?.id ? 'text-amber-500' : 'text-red-500'} />
                               </span>
                             )}
+                            {f.is_password_protected && (
+                              <span title="Password protected" className="ml-1 inline-flex">
+                                <Lock size={11} className="text-amber-500" />
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs truncate" title={f.original_name}>
                             {f.checked_out_by ? (
@@ -703,7 +774,7 @@ export default function FileManager() {
                             {f.mime_type?.startsWith('image/') ? <Image size={14} /> : <FileText size={14} />}
                           </button>
                         )}
-                        <button onClick={() => downloadFile(f.id, f.original_name)} title="Download" aria-label="Download file" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
+                        <button onClick={() => handleDownload(f.id, f.original_name, f.is_password_protected)} title="Download" aria-label="Download file" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
                         {/* Check-out / Check-in buttons */}
                         {!f.checked_out_by && (isLead || isEngineer) && (
                           <button onClick={() => doCheckout(f.id)} title="Check Out" aria-label="Check out file" className="p-1.5 rounded hover:bg-amber-500/10 text-slate-400 hover:text-amber-500">
@@ -757,7 +828,14 @@ export default function FileManager() {
             <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
               <FileIcon mimeType={selected.mime_type} name={selected.original_name} size={36} />
               <div>
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100">{selected.name}</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                  {selected.name}
+                  {selected.is_password_protected && (
+                    <span title="Password protected" className="inline-flex">
+                      <Lock size={13} className="text-amber-500" />
+                    </span>
+                  )}
+                </h3>
                 <p className="text-sm text-slate-500">{selected.original_name} · {formatBytes(selected.size)}</p>
                 <StatusBadge status={selected.status} />
               </div>
@@ -813,6 +891,56 @@ export default function FileManager() {
                 </div>
                 {selected.description && <div className="text-sm text-slate-600 dark:text-slate-300 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">{selected.description}</div>}
 
+                {/* Password management for edit */}
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5"><Lock size={11} /> Password Protection</p>
+                  {selected?.is_password_protected ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-slate-500">This file is currently password protected.</p>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => setEditPasswordMode(m => m === 'change' ? 'keep' : 'change')} className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${editPasswordMode === 'change' ? 'bg-amber-50 border-amber-300 text-amber-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                          Change password
+                        </button>
+                        <button type="button" onClick={() => setEditPasswordMode(m => m === 'remove' ? 'keep' : 'remove')} className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${editPasswordMode === 'remove' ? 'bg-red-50 border-red-300 text-red-600' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                          Remove password
+                        </button>
+                      </div>
+                      {editPasswordMode === 'change' && (
+                        <div className="space-y-2 mt-2">
+                          <div className="relative">
+                            <input type={editPwShow ? 'text' : 'password'} value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="New password…" className="input pr-9 text-sm" />
+                            <button type="button" onClick={() => setEditPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                              {editPwShow ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                          </div>
+                          <input type="text" value={editPasswordHint} onChange={e => setEditPasswordHint(e.target.value)} placeholder="Hint (optional)" className="input text-sm" maxLength={100} />
+                        </div>
+                      )}
+                      {editPasswordMode === 'remove' && (
+                        <p className="text-xs text-red-500 mt-1">Password will be removed. Anyone will be able to download this file without a password.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={editPasswordMode === 'change'} onChange={e => { setEditPasswordMode(e.target.checked ? 'change' : 'keep'); setEditPassword(''); }} className="rounded border-slate-300" />
+                        <span className="text-sm text-slate-700 dark:text-slate-300">Add password protection</span>
+                      </label>
+                      {editPasswordMode === 'change' && (
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <input type={editPwShow ? 'text' : 'password'} value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Set password…" className="input pr-9 text-sm" />
+                            <button type="button" onClick={() => setEditPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                              {editPwShow ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                          </div>
+                          <input type="text" value={editPasswordHint} onChange={e => setEditPasswordHint(e.target.value)} placeholder="Hint (optional)" className="input text-sm" maxLength={100} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {selected.versions?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 mb-2">Version History</h4>
@@ -822,7 +950,7 @@ export default function FileManager() {
                           <span className="text-xs bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded font-mono">v{v.version}</span>
                           <span className="text-slate-500">{v.change_log}</span>
                           <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString('en-CA')}</span>
-                          <button onClick={() => downloadFile(selected.id, selected.original_name, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version" aria-label={`Download version ${v.version}`}><Download size={12} /></button>
+                          <button onClick={() => handleDownload(selected.id, selected.original_name, false, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version" aria-label={`Download version ${v.version}`}><Download size={12} /></button>
                           {v.version > 1 && <button onClick={() => openDiff(selected.id, v.version - 1, v.version)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title={`Diff v${v.version-1} → v${v.version}`}><GitCompare size={12} /></button>}
                         </div>
                       ))}
@@ -830,11 +958,25 @@ export default function FileManager() {
                   </div>
                 )}
 
-                <div className="flex gap-2 justify-end pt-2">
+                <div className="flex gap-2 justify-end pt-2 flex-wrap">
+                  {(editPasswordMode === 'change' || editPasswordMode === 'remove') && (
+                    <button onClick={async () => {
+                      try {
+                        await api.put(`/files/${selected.id}`, {
+                          ...(editPasswordMode === 'remove' ? { remove_password: true } : {}),
+                          ...(editPasswordMode === 'change' && editPassword ? { download_password: editPassword, password_hint: editPasswordHint } : {}),
+                        });
+                        toast.success('Password settings updated');
+                        setEditPasswordMode('keep'); setEditPassword(''); setEditPasswordHint('');
+                        const r = await api.get(`/files/${selected.id}`);
+                        setSelected(r.data);
+                      } catch { toast.error('Failed to update password settings'); }
+                    }} className="btn-primary"><Lock size={15} /> Save Password</button>
+                  )}
                   {isPreviewable(selected) && (
                     <button onClick={() => { setSelected(null); openPreview(selected); }} className="btn-secondary"><Eye size={15} /> Preview</button>
                   )}
-                  <button onClick={() => downloadFile(selected.id, selected.original_name)} className="btn-secondary"><Download size={15} /> Download</button>
+                  <button onClick={() => handleDownload(selected.id, selected.original_name, selected.is_password_protected)} className="btn-secondary"><Download size={15} /> Download</button>
                   {isEngineer && (
                     <button onClick={() => { setTemplateModal({ open: true, fileId: selected.id, fileName: selected.name }); setTemplateName(selected.name); }} className="btn-secondary"><BookTemplate size={15} /> Save as Template</button>
                   )}
@@ -1017,8 +1159,47 @@ export default function FileManager() {
             </p>
           )}
 
+          {/* Password protection */}
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={uploadPasswordEnabled}
+                onChange={e => { setUploadPasswordEnabled(e.target.checked); if (!e.target.checked) { setUploadPassword(''); setUploadPasswordHint(''); } }}
+                className="rounded border-slate-300"
+              />
+              <Lock size={13} className="text-slate-400" />
+              <span className="text-sm text-slate-700 dark:text-slate-300">Password protect this file</span>
+            </label>
+            {uploadPasswordEnabled && (
+              <div className="mt-2 space-y-2">
+                <div className="relative">
+                  <input
+                    type={uploadPwShow ? 'text' : 'password'}
+                    value={uploadPassword}
+                    onChange={e => setUploadPassword(e.target.value)}
+                    placeholder="Set download password…"
+                    className="input pr-9 text-sm"
+                  />
+                  <button type="button" onClick={() => setUploadPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    {uploadPwShow ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={uploadPasswordHint}
+                  onChange={e => setUploadPasswordHint(e.target.value)}
+                  placeholder="Hint (optional — shown on download prompt)"
+                  className="input text-sm"
+                  maxLength={100}
+                />
+                <p className="text-xs text-amber-600 dark:text-amber-400">⚠ Store this password safely — it cannot be recovered if lost.</p>
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { if (!bulkUploading) { setShowBulkUpload(false); setBulkFiles([]); setBulkProgress(''); } }} disabled={bulkUploading} className="btn-secondary">Cancel</button>
+            <button onClick={() => { if (!bulkUploading) { setShowBulkUpload(false); setBulkFiles([]); setBulkProgress(''); setUploadPassword(''); setUploadPasswordHint(''); setUploadPasswordEnabled(false); } }} disabled={bulkUploading} className="btn-secondary">Cancel</button>
             <button onClick={doBulkUpload} disabled={!bulkFiles.length || bulkUploading} className="btn-primary">
               {bulkUploading ? <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> : <Upload size={15} />}
               Upload {bulkFiles.length > 0 ? `${bulkFiles.length} File${bulkFiles.length > 1 ? 's' : ''}` : 'Files'}
@@ -1092,7 +1273,7 @@ export default function FileManager() {
               </div>
             ) : null}
             <div className="flex gap-2">
-              <button onClick={() => downloadFile(previewFile.id, previewFile.original_name)} className="btn-secondary"><Download size={15} /> Download</button>
+              <button onClick={() => handleDownload(previewFile.id, previewFile.original_name, previewFile.is_password_protected)} className="btn-secondary"><Download size={15} /> Download</button>
             </div>
           </div>
         </Modal>
@@ -1128,6 +1309,45 @@ export default function FileManager() {
             <button onClick={() => setTemplateModal(s => ({ ...s, open: false }))} className="btn-secondary">Cancel</button>
             <button onClick={saveAsTemplate} disabled={!templateName.trim() || templateLoading} className="btn-primary">
               {templateLoading ? <Loader2 size={14} className="animate-spin" /> : <BookTemplate size={14} />} Save Template
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Download Password Modal */}
+      <Modal open={pwModal.open} onClose={() => { if (!pwLoading) { setPwModal(m => ({ ...m, open: false })); setPwInput(''); setPwError(''); } }} title="Password Protected File" size="sm">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
+            <Lock size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">This file requires a password to download</p>
+              {pwModal.hint && <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Hint: {pwModal.hint}</p>}
+            </div>
+          </div>
+          <div>
+            <label className="label">Password</label>
+            <div className="relative">
+              <input
+                type={pwShow ? 'text' : 'password'}
+                value={pwInput}
+                onChange={e => { setPwInput(e.target.value); setPwError(''); }}
+                onKeyDown={e => e.key === 'Enter' && !pwLoading && submitPwDownload()}
+                placeholder="Enter file password…"
+                className={`input pr-9 ${pwError ? 'border-red-400 focus:ring-red-300' : ''}`}
+                autoFocus
+                disabled={pwLoading}
+              />
+              <button type="button" onClick={() => setPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                {pwShow ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+            {pwError && <p className="text-xs text-red-500 mt-1">{pwError}</p>}
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => { if (!pwLoading) { setPwModal(m => ({ ...m, open: false })); setPwInput(''); setPwError(''); } }} disabled={pwLoading} className="btn-secondary">Cancel</button>
+            <button onClick={submitPwDownload} disabled={pwLoading || !pwInput.trim()} className="btn-primary">
+              {pwLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              Download
             </button>
           </div>
         </div>

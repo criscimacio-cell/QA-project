@@ -22,6 +22,8 @@ const PLAN_STORAGE_LIMITS: Record<string, number> = {
 };
 import { notificationQueue } from '../queue';
 import { bustDashboardCache } from './dashboard';
+import bcrypt from 'bcryptjs';
+import { redis } from '../redis';
 
 const router = Router();
 
@@ -53,7 +55,9 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
            f.description, f.version, f.created_at, f.updated_at,
            f.owner_id, f.repository_id, f.folder_id,
            f.checked_out_by, f.checked_out_at, co.name as checked_out_by_name,
-           u.name as owner_name, r.name as repository_name, ff.name as folder_name
+           u.name as owner_name, r.name as repository_name, ff.name as folder_name,
+           (f.download_password_hash IS NOT NULL) as is_password_protected,
+           f.password_hint
     FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id LEFT JOIN users co ON co.id = f.checked_out_by LEFT JOIN file_folders ff ON f.folder_id = ff.id
     WHERE f.organization_id = ${orgId}
     ${!isLead ? sql`AND (f.owner_id = ${req.user!.userId} OR f.status IN ('published','approved'))` : sql``}
@@ -307,7 +311,7 @@ router.get('/:id/versions', authenticate, async (req: Request, res: Response) =>
 });
 
 router.post('/upload', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), upload.single('file'), async (req: Request, res: Response) => {
-  const { repository_id, folder_id, project, module, category, jira_ticket, tags, description, version, change_log } = req.body;
+  const { repository_id, folder_id, project, module, category, jira_ticket, tags, description, version, change_log, download_password, password_hint } = req.body;
   const orgId = req.user!.organizationId;
   const f = req.file;
   if (!f) { res.status(400).json({ error: 'No file attached' }); return; }
@@ -340,9 +344,10 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
     fileId = existing.id;
   } else {
     newVersion = parseInt(version) || 1;
+    const pwHash = download_password ? await bcrypt.hash(download_password, 12) : null;
     const [{ id }] = await sql`
-      INSERT INTO files (name, original_name, path, size, mime_type, repository_id, folder_id, owner_id, version, status, project, module, category, jira_ticket, tags, description, organization_id)
-      VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id || null}, ${folder_id || null}, ${req.user!.userId}, ${newVersion}, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${jira_ticket || ''}, ${tags || ''}, ${description || ''}, ${orgId})
+      INSERT INTO files (name, original_name, path, size, mime_type, repository_id, folder_id, owner_id, version, status, project, module, category, jira_ticket, tags, description, download_password_hash, password_hint, organization_id)
+      VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id || null}, ${folder_id || null}, ${req.user!.userId}, ${newVersion}, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${jira_ticket || ''}, ${tags || ''}, ${description || ''}, ${pwHash}, ${password_hint || null}, ${orgId})
       RETURNING id
     `;
     fileId = id;
@@ -394,13 +399,23 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
 });
 
 router.put('/:id', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
-  const { name, project, module, category, jira_ticket, tags, description } = req.body;
+  const { name, project, module, category, jira_ticket, tags, description, download_password, password_hint, remove_password } = req.body;
   const orgId = req.user!.organizationId;
   if (req.user!.role === 'engineer') {
     const [file] = await sql`SELECT owner_id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
     if (!file || file.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
   }
-  await sql`UPDATE files SET name=${name}, project=${project as string}, module=${module}, category=${category as string}, jira_ticket=${jira_ticket}, tags=${tags}, description=${description}, updated_at=NOW() WHERE id=${req.params.id} AND organization_id=${orgId}`;
+  // Compute new password hash: set if provided, clear if remove_password=true, leave unchanged if neither
+  let pwUpdate = sql``;
+  if (remove_password === 'true' || remove_password === true) {
+    pwUpdate = sql`, download_password_hash = NULL, password_hint = NULL`;
+  } else if (download_password) {
+    const pwHash = await bcrypt.hash(download_password, 12);
+    pwUpdate = sql`, download_password_hash = ${pwHash}, password_hint = ${password_hint || null}`;
+  } else if (password_hint !== undefined) {
+    pwUpdate = sql`, password_hint = ${password_hint || null}`;
+  }
+  await sql`UPDATE files SET name=${name}, project=${project as string}, module=${module}, category=${category as string}, jira_ticket=${jira_ticket}, tags=${tags}, description=${description}, updated_at=NOW() ${pwUpdate} WHERE id=${req.params.id} AND organization_id=${orgId}`;
   res.json({ message: 'Updated' });
 });
 
@@ -519,12 +534,41 @@ router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, r
 
 router.get('/:id/download', authenticate, async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
+  const userId = req.user!.userId;
   const [file] = await sql`SELECT * FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
-  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== req.user!.userId && !['published','approved'].includes(file.status)) {
+  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== userId && !['published','approved'].includes(file.status)) {
     res.status(403).json({ error: 'Forbidden' }); return;
   }
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'DOWNLOAD', 'file', ${req.params.id}, ${`Downloaded: ${file.original_name}`}, ${req.ip || ''}, ${orgId})`;
+
+  // Password gate
+  if (file.download_password_hash) {
+    const attemptKey = `pw_attempts:${userId}:${req.params.id}`;
+    const attempts = parseInt(await redis.get(attemptKey) || '0', 10);
+    if (attempts >= 5) {
+      const ttl = await redis.ttl(attemptKey);
+      res.status(429).json({ error: 'Too many incorrect attempts. Try again later.', retry_after: ttl });
+      return;
+    }
+    const provided = req.headers['x-file-password'] as string | undefined;
+    if (!provided) {
+      res.status(403).json({ error: 'password_required', hint: file.password_hint || null });
+      return;
+    }
+    const valid = await bcrypt.compare(provided, file.download_password_hash);
+    if (!valid) {
+      const newCount = attempts + 1;
+      await redis.setex(attemptKey, 15 * 60, String(newCount));
+      await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${userId}, 'DOWNLOAD_PASSWORD_FAIL', 'file', ${req.params.id}, ${`Wrong password attempt ${newCount}/5`}, ${req.ip || ''}, ${orgId})`;
+      res.status(401).json({ error: 'invalid_password', attempts_remaining: 5 - newCount });
+      return;
+    }
+    // Correct — clear the counter
+    await redis.del(attemptKey);
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${userId}, 'DOWNLOAD_PASSWORD_SUCCESS', 'file', ${req.params.id}, ${`Password verified for: ${file.original_name}`}, ${req.ip || ''}, ${orgId})`;
+  }
+
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${userId}, 'DOWNLOAD', 'file', ${req.params.id}, ${`Downloaded: ${file.original_name}`}, ${req.ip || ''}, ${orgId})`;
   const filePath = path.join(UPLOAD_DIR, file.path);
   if (fs.existsSync(filePath)) {
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.original_name)}"`);

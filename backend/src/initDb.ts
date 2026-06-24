@@ -263,6 +263,9 @@ export async function initDb() {
   await sql`UPDATE notifications SET organization_id = 1 WHERE organization_id IS NULL`;
 
   await sql`ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT NULL`;
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS download_password_hash TEXT DEFAULT NULL`;
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS password_hint TEXT DEFAULT NULL`;
+
   await sql`CREATE INDEX IF NOT EXISTS idx_audit_org_created ON audit_logs(organization_id, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_audit_org_action ON audit_logs(organization_id, action, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id, created_at DESC)`;

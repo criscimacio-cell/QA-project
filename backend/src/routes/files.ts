@@ -443,15 +443,17 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
   if (!files?.length) { res.status(400).json({ error: 'No files attached' }); return; }
   const { repository_id, project, module, category } = req.body;
   const orgId = req.user!.organizationId;
-  const [repo] = await sql`SELECT id FROM repositories WHERE id = ${repository_id as string} AND organization_id = ${orgId}`;
-  if (!repo) { res.status(400).json({ error: 'Invalid repository' }); return; }
+  const [repo] = repository_id
+    ? await sql`SELECT id FROM repositories WHERE id = ${repository_id as string} AND organization_id = ${orgId}`
+    : [null];
+  if (repository_id && !repo) { res.status(400).json({ error: 'Invalid repository' }); return; }
 
   const results = [];
   for (const f of files) {
     const name = f.originalname.replace(/\.[^/.]+$/, '');
     const [{ id: fileId }] = await sql`
       INSERT INTO files (name, original_name, path, size, mime_type, repository_id, owner_id, version, status, project, module, category, organization_id)
-      VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id as string}, ${req.user!.userId}, 1, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${orgId})
+      VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id || null}, ${req.user!.userId}, 1, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${orgId})
       RETURNING id
     `;
     // Extract text BEFORE encryption

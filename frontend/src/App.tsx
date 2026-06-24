@@ -50,6 +50,8 @@ import AuditLog from './pages/AuditLog';
 import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
 import Archive from './pages/Archive';
+import Trash from './pages/Trash';
+import CheckedOut from './pages/CheckedOut';
 import OrgSettings from './pages/OrgSettings';
 import Register from './pages/Register';
 import { BackofficeAuthProvider } from './context/BackofficeAuthContext';
@@ -89,6 +91,8 @@ function AppRoutes() {
         <Route path="test-data" element={<TestDataLibrary />} />
         <Route path="approvals" element={<ProtectedRoute requireLead><ApprovalWorkflow /></ProtectedRoute>} />
         <Route path="archive" element={<ProtectedRoute requireAdmin><Archive /></ProtectedRoute>} />
+        <Route path="trash" element={<ProtectedRoute requireAdmin><Trash /></ProtectedRoute>} />
+        <Route path="checked-out" element={<ProtectedRoute requireLead><CheckedOut /></ProtectedRoute>} />
         <Route path="audit" element={<ProtectedRoute requireAdmin><AuditLog /></ProtectedRoute>} />
         <Route path="users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
         <Route path="settings" element={<Settings />} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Filter, Download, Archive, Eye, EyeOff, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List, Lock, Unlock, GitCompare, BookTemplate } from 'lucide-react';
+import { Filter, Download, Archive, Eye, EyeOff, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List, Lock, Unlock, GitCompare, BookTemplate, Share2, Copy, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
@@ -128,6 +128,23 @@ export default function FileManager() {
   const [templateName, setTemplateName] = useState('');
   const [templateDesc, setTemplateDesc] = useState('');
   const [templateLoading, setTemplateLoading] = useState(false);
+
+  // Share links modal state
+  const [shareModal, setShareModal] = useState<{ open: boolean; fileId: number | null }>({ open: false, fileId: null });
+  const [shareLinks, setShareLinks] = useState<any[]>([]);
+  const [shareLinksLoading, setShareLinksLoading] = useState(false);
+  const [newShareLabel, setNewShareLabel] = useState('');
+  const [newShareDays, setNewShareDays] = useState(7);
+  const [newShareMaxDownloads, setNewShareMaxDownloads] = useState('');
+  const [newSharePassword, setNewSharePassword] = useState('');
+  const [shareCreateLoading, setShareCreateLoading] = useState(false);
+
+  // Bulk metadata modal state
+  const [bulkMetaModal, setBulkMetaModal] = useState(false);
+  const [bulkMetaProject, setBulkMetaProject] = useState('');
+  const [bulkMetaCategory, setBulkMetaCategory] = useState('');
+  const [bulkMetaTags, setBulkMetaTags] = useState('');
+  const [bulkMetaLoading, setBulkMetaLoading] = useState(false);
 
   // Password modal state
   const [pwModal, setPwModal] = useState<{ open: boolean; fileId: number; filename: string; hint: string | null; versionPath?: string }>({ open: false, fileId: 0, filename: '', hint: null });
@@ -528,6 +545,69 @@ export default function FileManager() {
     }
   };
 
+  // Share links handlers
+  const openShareModal = async (fileId: number) => {
+    setShareModal({ open: true, fileId });
+    setShareLinksLoading(true);
+    try {
+      const r = await api.get(`/files/${fileId}/share-links`);
+      setShareLinks(Array.isArray(r.data) ? r.data : []);
+    } catch {
+      toast.error('Failed to load share links');
+    } finally {
+      setShareLinksLoading(false);
+    }
+  };
+
+  const createShareLink = async () => {
+    if (!shareModal.fileId) return;
+    setShareCreateLoading(true);
+    try {
+      const payload: any = { label: newShareLabel, expires_in_days: newShareDays };
+      if (newShareMaxDownloads) payload.max_downloads = parseInt(newShareMaxDownloads, 10);
+      if (newSharePassword) payload.password = newSharePassword;
+      const r = await api.post(`/files/${shareModal.fileId}/share-links`, payload);
+      setShareLinks(prev => [...prev, r.data]);
+      setNewShareLabel(''); setNewShareDays(7); setNewShareMaxDownloads(''); setNewSharePassword('');
+      toast.success('Share link created');
+    } catch {
+      toast.error('Failed to create share link');
+    } finally {
+      setShareCreateLoading(false);
+    }
+  };
+
+  const deleteShareLink = async (linkId: number) => {
+    if (!shareModal.fileId) return;
+    try {
+      await api.delete(`/files/${shareModal.fileId}/share-links/${linkId}`);
+      setShareLinks(prev => prev.filter(l => l.id !== linkId));
+      toast.success('Share link deleted');
+    } catch {
+      toast.error('Failed to delete share link');
+    }
+  };
+
+  // Bulk metadata handler
+  const doBulkMetadata = async () => {
+    setBulkMetaLoading(true);
+    try {
+      const payload: any = { ids: Array.from(selectedIds) };
+      if (bulkMetaProject.trim()) payload.project = bulkMetaProject.trim();
+      if (bulkMetaCategory.trim()) payload.category = bulkMetaCategory.trim();
+      if (bulkMetaTags.trim()) payload.tags = bulkMetaTags.trim();
+      await api.post('/files/bulk-metadata', payload);
+      toast.success(`Metadata updated for ${selectedIds.size} file${selectedIds.size !== 1 ? 's' : ''}`);
+      setBulkMetaModal(false);
+      setBulkMetaProject(''); setBulkMetaCategory(''); setBulkMetaTags('');
+      load();
+    } catch {
+      toast.error('Failed to update metadata');
+    } finally {
+      setBulkMetaLoading(false);
+    }
+  };
+
   const renderComment = (text: string) =>
     text.split(/(@[\w.\- ]+)/g).map((part, i) =>
       part.startsWith('@')
@@ -618,6 +698,7 @@ export default function FileManager() {
             {isAdmin && (
               <button onClick={() => setConfirmDelete({ open: true, id: -1, name: `${selectedIds.size} selected files` })} className="text-xs py-1.5 px-3 rounded-lg font-medium bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-colors">Delete Selected</button>
             )}
+            <button onClick={() => setBulkMetaModal(true)} className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"><Pencil size={13} /> Edit Metadata</button>
           </div>
           <button onClick={() => setSelectedIds(new Set())} aria-label="Clear selection" className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-colors" title="Clear selection">
             <X size={14} />
@@ -775,6 +856,7 @@ export default function FileManager() {
                           </button>
                         )}
                         <button onClick={() => handleDownload(f.id, f.original_name, f.is_password_protected)} title="Download" aria-label="Download file" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
+                        <button onClick={() => openShareModal(f.id)} title="Share" aria-label="Manage share links" className="p-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-400 hover:text-blue-500"><Share2 size={14} /></button>
                         {/* Check-out / Check-in buttons */}
                         {!f.checked_out_by && (isLead || isEngineer) && (
                           <button onClick={() => doCheckout(f.id)} title="Check Out" aria-label="Check out file" className="p-1.5 rounded hover:bg-amber-500/10 text-slate-400 hover:text-amber-500">
@@ -1309,6 +1391,94 @@ export default function FileManager() {
             <button onClick={() => setTemplateModal(s => ({ ...s, open: false }))} className="btn-secondary">Cancel</button>
             <button onClick={saveAsTemplate} disabled={!templateName.trim() || templateLoading} className="btn-primary">
               {templateLoading ? <Loader2 size={14} className="animate-spin" /> : <BookTemplate size={14} />} Save Template
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Share Links Modal */}
+      <Modal open={shareModal.open} onClose={() => setShareModal({ open: false, fileId: null })} title="Manage Share Links" size="md">
+        <div className="space-y-4">
+          {shareLinksLoading ? (
+            <div className="flex items-center justify-center py-6"><Loader2 size={24} className="animate-spin text-amber-400" /></div>
+          ) : shareLinks.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-4">No share links yet</p>
+          ) : (
+            <div className="space-y-2">
+              {shareLinks.map(link => (
+                <div key={link.id} className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-700 dark:text-slate-200 truncate">{link.label || 'Untitled'}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {link.expires_at ? `Expires: ${new Date(link.expires_at).toLocaleDateString('en-CA')}` : 'No expiry'}
+                      {link.max_downloads ? ` · ${link.download_count ?? 0}/${link.max_downloads} downloads` : ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/share/${link.token}`); toast.success('Link copied!'); }}
+                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-blue-500"
+                    title="Copy link"
+                  >
+                    <Copy size={13} />
+                  </button>
+                  <button
+                    onClick={() => deleteShareLink(link.id)}
+                    className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500"
+                    title="Delete link"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Create New Link</p>
+            <div className="space-y-2">
+              <input value={newShareLabel} onChange={e => setNewShareLabel(e.target.value)} placeholder="Label (optional)" className="input text-sm w-full" />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="text-xs text-slate-500 mb-1 block">Expires in (days)</label>
+                  <input type="number" value={newShareDays} onChange={e => setNewShareDays(Number(e.target.value))} min={1} className="input text-sm w-full" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-slate-500 mb-1 block">Max downloads (optional)</label>
+                  <input type="number" value={newShareMaxDownloads} onChange={e => setNewShareMaxDownloads(e.target.value)} placeholder="Unlimited" className="input text-sm w-full" />
+                </div>
+              </div>
+              <input type="password" value={newSharePassword} onChange={e => setNewSharePassword(e.target.value)} placeholder="Password (optional)" className="input text-sm w-full" />
+              <div className="flex justify-end">
+                <button onClick={createShareLink} disabled={shareCreateLoading} className="btn-primary text-sm">
+                  {shareCreateLoading ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+                  Create Link
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Bulk Metadata Modal */}
+      <Modal open={bulkMetaModal} onClose={() => setBulkMetaModal(false)} title={`Edit Metadata for ${selectedIds.size} File${selectedIds.size !== 1 ? 's' : ''}`} size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Only filled fields will be updated. Leave blank to keep existing values.</p>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Project</label>
+            <input value={bulkMetaProject} onChange={e => setBulkMetaProject(e.target.value)} placeholder="e.g. Alpha Release" className="input w-full text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Category</label>
+            <input value={bulkMetaCategory} onChange={e => setBulkMetaCategory(e.target.value)} placeholder="e.g. Test Cases" className="input w-full text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Tags (comma-separated)</label>
+            <input value={bulkMetaTags} onChange={e => setBulkMetaTags(e.target.value)} placeholder="e.g. regression, smoke, v2" className="input w-full text-sm" />
+          </div>
+          <div className="flex gap-2 justify-end pt-1">
+            <button onClick={() => setBulkMetaModal(false)} className="btn-secondary">Cancel</button>
+            <button onClick={doBulkMetadata} disabled={bulkMetaLoading || (!bulkMetaProject.trim() && !bulkMetaCategory.trim() && !bulkMetaTags.trim())} className="btn-primary">
+              {bulkMetaLoading ? <Loader2 size={14} className="animate-spin" /> : <Pencil size={14} />}
+              Update Metadata
             </button>
           </div>
         </div>

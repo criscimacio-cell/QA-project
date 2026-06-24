@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FolderOpen, Files, Search, BookOpen,
   Database, GitPullRequest, Users, ShieldCheck, Settings, Archive,
-  ChevronLeft, ChevronRight, Layers, Building2
+  ChevronLeft, ChevronRight, Layers, Building2, Trash2, Lock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { usePermissions, ModuleKey } from '../../context/PermissionsContext';
@@ -89,18 +89,21 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   };
   const leadNav = [
     { to: '/approvals', icon: GitPullRequest, label: 'Approval Workflow' },
+    { to: '/checked-out', icon: Lock, label: 'Checked Out' },
   ].filter(() => canAccess('approvals'));
   const adminNav = [
     { to: '/users', icon: Users, label: 'User Management' },
     { to: '/org-settings', icon: Building2, label: 'Organization' },
     { to: '/audit', icon: ShieldCheck, label: 'Audit Log' },
     { to: '/archive', icon: Archive, label: 'Archive' },
+    { to: '/trash', icon: Trash2, label: 'Trash' },
   ].filter(item => {
     const adminModuleMap: Record<string, ModuleKey> = {
       '/users': 'users',
       '/org-settings': 'orgSettings',
       '/audit': 'audit',
       '/archive': 'archive',
+      '/trash': 'archive',
     };
     return canAccess(adminModuleMap[item.to] ?? 'dashboard');
   });

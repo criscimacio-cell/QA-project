@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, FileText, BookOpen, Download, Loader2 } from 'lucide-react';
+import { Search, FileText, BookOpen, Download, Loader2, Bookmark, X } from 'lucide-react';
 import Pagination from '../components/UI/Pagination';
 
 const PAGE_SIZE = 10;
@@ -44,6 +44,8 @@ export default function SearchResults() {
   const [filter, setFilter] = useState('all');
   const [filesOffset, setFilesOffset] = useState(0);
   const [knowledgeOffset, setKnowledgeOffset] = useState(0);
+  const [savedSearches, setSavedSearches] = useState<any[]>([]);
+  const [savedSearchesLoading, setSavedSearchesLoading] = useState(false);
 
   useEffect(() => {
     if (!q) return;
@@ -60,13 +62,87 @@ export default function SearchResults() {
       .finally(() => setLoading(false));
   }, [q, filter]);
 
+  useEffect(() => {
+    setSavedSearchesLoading(true);
+    api.get('/saved-searches')
+      .then(r => setSavedSearches(Array.isArray(r.data) ? r.data : []))
+      .catch(() => {})
+      .finally(() => setSavedSearchesLoading(false));
+  }, []);
+
+  const saveSearch = async () => {
+    if (!q) return;
+    const name = prompt('Name for this saved search?');
+    if (!name?.trim()) return;
+    try {
+      const r = await api.post('/saved-searches', { name: name.trim(), query: q, filters: {} });
+      setSavedSearches(prev => [...prev, r.data]);
+      toast.success('Search saved');
+    } catch {
+      toast.error('Failed to save search');
+    }
+  };
+
+  const deleteSavedSearch = async (id: number) => {
+    try {
+      await api.delete(`/saved-searches/${id}`);
+      setSavedSearches(prev => prev.filter(s => s.id !== id));
+      toast.success('Saved search deleted');
+    } catch {
+      toast.error('Failed to delete saved search');
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) navigate(`/search?q=${encodeURIComponent(query.trim())}`);
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+    <div className="flex gap-6 animate-fade-in-up">
+      {/* Saved Searches Sidebar */}
+      <div className="w-56 shrink-0 space-y-3">
+        <div className="card p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Bookmark size={14} className="text-amber-500" />
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Saved Searches</span>
+          </div>
+          {q && (
+            <button onClick={saveSearch} className="w-full btn-primary text-xs py-1.5 mb-3 flex items-center gap-1.5 justify-center">
+              <Bookmark size={12} /> Save This Search
+            </button>
+          )}
+          {savedSearchesLoading ? (
+            <div className="flex justify-center py-3"><Loader2 size={16} className="animate-spin text-amber-400" /></div>
+          ) : savedSearches.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-2">No saved searches</p>
+          ) : (
+            <div className="space-y-1">
+              {savedSearches.map(s => (
+                <div key={s.id} className="flex items-center gap-1 group">
+                  <button
+                    onClick={() => navigate(`/search?q=${encodeURIComponent(s.query)}`)}
+                    className="flex-1 text-left text-xs text-slate-600 dark:text-slate-300 hover:text-amber-500 truncate py-1 px-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    title={s.query}
+                  >
+                    {s.name}
+                  </button>
+                  <button
+                    onClick={() => deleteSavedSearch(s.id)}
+                    className="p-1 rounded text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    title="Delete"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 max-w-4xl space-y-6">
       {/* Search bar */}
       <form onSubmit={handleSearch} className="relative">
         <label htmlFor="sr-search" className="sr-only">Search</label>
@@ -227,6 +303,7 @@ export default function SearchResults() {
           )}
         </>
       )}
+      </div>{/* end main content */}
     </div>
   );
 }

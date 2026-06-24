@@ -351,7 +351,7 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
     res.status(403).json({ error: 'Forbidden' }); return;
   }
   const versions = await sql`SELECT fv.*, u.name as created_by_name FROM file_versions fv LEFT JOIN users u ON fv.created_by = u.id WHERE fv.file_id = ${req.params.id} AND fv.organization_id = ${orgId} ORDER BY fv.version DESC`;
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'VIEW', 'file', ${req.params.id}, ${`Viewed file id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
+  // VIEW events omitted — too noisy, drowns meaningful audit trail
   res.json({ ...file, versions });
 });
 
@@ -492,6 +492,7 @@ router.put('/:id', authenticate, requireModule('files'), requireRole('admin', 'l
     pwUpdate = sql`, password_hint = ${password_hint || null}`;
   }
   await sql`UPDATE files SET name=${name}, project=${project as string}, module=${module}, category=${category as string}, jira_ticket=${jira_ticket}, tags=${tags}, description=${description}, updated_at=NOW() ${pwUpdate} WHERE id=${req.params.id} AND organization_id=${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'FILE_UPDATE', 'file', ${req.params.id}, ${`Updated file id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Updated' });
 });
 

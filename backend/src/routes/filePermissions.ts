@@ -38,6 +38,7 @@ router.post('/:id/permissions', authenticate, requireRole('admin', 'lead'), asyn
     ON CONFLICT (file_id, user_id) DO UPDATE SET permission = ${permission}
     RETURNING *
   `;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'FILE_PERMISSION_GRANT', 'file', ${req.params.id}, ${`Set ${permission} permission for user ${user.name} (id=${user_id})`}, ${req.ip || ''}, ${orgId})`;
   res.json(perm);
 });
 
@@ -47,6 +48,7 @@ router.delete('/:id/permissions/:permId', authenticate, requireRole('admin', 'le
   const [file] = await sql`SELECT id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
   await sql`DELETE FROM file_permissions WHERE id = ${req.params.permId} AND file_id = ${req.params.id}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'FILE_PERMISSION_REVOKE', 'file', ${req.params.id}, ${`Revoked permission entry id=${req.params.permId}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Permission removed' });
 });
 

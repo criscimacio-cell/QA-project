@@ -6,21 +6,45 @@ import Pagination from '../components/UI/Pagination';
 
 const ACTION_STYLES: Record<string, string> = {
   LOGIN: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  LOGIN_FAIL: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   LOGOUT: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+  PASSWORD_CHANGE: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+  PASSWORD_RESET: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
   UPLOAD: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   DOWNLOAD: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  DOWNLOAD_PASSWORD_FAIL: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  DOWNLOAD_PASSWORD_SUCCESS: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  FILE_UPDATE: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  BULK_METADATA: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
   DELETE: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  DELETE_PERMANENT: 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+  CHECKOUT: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+  CHECKIN: 'bg-violet-100 text-violet-600 dark:bg-violet-900/20 dark:text-violet-300',
   APPROVE: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
   ARCHIVE: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  RESTORE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  RESTORE_TRASH: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  SHARE_LINK_CREATE: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
+  SHARE_LINK_DELETE: 'bg-sky-100 text-sky-600 dark:bg-sky-900/20 dark:text-sky-300',
+  FILE_PERMISSION_GRANT: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+  FILE_PERMISSION_REVOKE: 'bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-300',
   USER_CREATE: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  PERMISSION_CHANGE: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+  USER_UPDATE: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  USER_ACTIVATE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  USER_DEACTIVATE: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   SEARCH: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-  VIEW: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-500',
-  FILE_UPDATE: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  REPO_CREATE: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
 };
 
-const ACTIONS = ['', 'LOGIN', 'LOGOUT', 'UPLOAD', 'DOWNLOAD', 'DELETE', 'APPROVE', 'ARCHIVE', 'USER_CREATE', 'PERMISSION_CHANGE', 'SEARCH'];
+const ACTIONS = [
+  '', 'LOGIN', 'LOGIN_FAIL', 'LOGOUT', 'PASSWORD_CHANGE', 'PASSWORD_RESET',
+  'UPLOAD', 'DOWNLOAD', 'DOWNLOAD_PASSWORD_FAIL', 'DOWNLOAD_PASSWORD_SUCCESS',
+  'FILE_UPDATE', 'BULK_METADATA', 'DELETE', 'DELETE_PERMANENT',
+  'CHECKOUT', 'CHECKIN', 'APPROVE', 'ARCHIVE', 'RESTORE', 'RESTORE_TRASH',
+  'SHARE_LINK_CREATE', 'SHARE_LINK_DELETE',
+  'FILE_PERMISSION_GRANT', 'FILE_PERMISSION_REVOKE',
+  'USER_CREATE', 'USER_UPDATE', 'USER_ACTIVATE', 'USER_DEACTIVATE',
+  'SEARCH',
+];
 
 /** S2: Sanitize a CSV cell value to prevent CSV injection.
  *  Prefixes any value starting with =, +, -, or @ with a single quote. */
@@ -39,6 +63,7 @@ export default function AuditLog() {
   const limit = 10;
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [summaryCounts, setSummaryCounts] = useState<Record<string, number>>({});
 
   const load = () => {
     setLoading(true);
@@ -47,6 +72,18 @@ export default function AuditLog() {
       .catch(() => toast.error('Failed to load audit logs'))
       .finally(() => setLoading(false));
   };
+
+  // Load summary totals independently (not filtered by current page)
+  useEffect(() => {
+    const summaryActions = ['UPLOAD', 'DOWNLOAD', 'LOGIN', 'DELETE', 'APPROVE'];
+    Promise.all(summaryActions.map(a =>
+      api.get('/audit', { params: { action: a, limit: 1, offset: 0 } })
+        .then(r => ({ action: a, count: r.data.total }))
+        .catch(() => ({ action: a, count: 0 }))
+    )).then(results => {
+      setSummaryCounts(Object.fromEntries(results.map(r => [r.action, r.count])));
+    });
+  }, []);
 
   useEffect(() => { load(); }, [action, offset]);
 
@@ -85,7 +122,6 @@ export default function AuditLog() {
   };
 
   const summaryActions = ['UPLOAD', 'DOWNLOAD', 'LOGIN', 'DELETE', 'APPROVE'];
-  const summary = summaryActions.map(a => ({ action: a, count: logs.filter(l => l.action === a).length }));
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -101,20 +137,20 @@ export default function AuditLog() {
         </button>
       </div>
 
-      {/* Summary — U1: Show shimmer skeletons while loading */}
+      {/* Summary — real totals across all pages */}
       <div className="grid grid-cols-5 gap-3">
-        {summaryActions.map((sa, i) => (
+        {summaryActions.map((sa) => (
           <div key={sa} className="card p-3 text-center">
-            {loading ? (
+            {Object.keys(summaryCounts).length === 0 ? (
               <>
                 <div className="shimmer-bg rounded h-7 w-10 mx-auto mb-1" />
                 <div className="shimmer-bg rounded-full h-4 w-16 mx-auto" />
               </>
             ) : (
               <>
-                <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{summary[i].count}</div>
+                <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{summaryCounts[sa] ?? 0}</div>
                 <div className={`text-xs mt-0.5 font-medium px-2 py-0.5 rounded-full inline-block ${ACTION_STYLES[sa] || 'bg-slate-100 text-slate-600'}`}>{sa}</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">pg {Math.floor(offset / limit) + 1}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">total</div>
               </>
             )}
           </div>

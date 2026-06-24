@@ -70,12 +70,14 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   if (emailCount >= 20) { res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again in 15 minutes.' }); return; }
 
   let user: any;
+  let resolvedOrgId: number | null = null;
   if (orgSlug) {
     const [org] = await sql`SELECT id FROM organizations WHERE slug = ${orgSlug} AND active = TRUE`;
     if (!org) {
       await sql`INSERT INTO audit_logs (action, entity_type, entity_id, details, ip_address) VALUES ('LOGIN_FAIL', 'user', 0, ${`Failed login: unknown org slug "${orgSlug}" for ${email}`}, ${ip})`;
       res.status(401).json({ error: 'Invalid credentials' }); return;
     }
+    resolvedOrgId = org.id;
     [user] = await sql`SELECT * FROM users WHERE email = ${email} AND organization_id = ${org.id}`;
   } else {
     [user] = await sql`
@@ -83,10 +85,11 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
       JOIN organizations o ON u.organization_id = o.id
       WHERE u.email = ${email} AND o.active = TRUE
     `;
+    if (user) resolvedOrgId = user.organization_id;
   }
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-    await sql`INSERT INTO audit_logs (action, entity_type, entity_id, details, ip_address) VALUES ('LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip})`;
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user?.id || null}, 'LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip}, ${resolvedOrgId})`;
     res.status(401).json({ error: 'Invalid credentials' }); return;
   }
   if (!user.active) {

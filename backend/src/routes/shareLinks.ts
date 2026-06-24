@@ -29,6 +29,7 @@ router.post('/:id/share-links', authenticate, requireModule('files'), async (req
     RETURNING id, token, expires_at, max_downloads, label, download_count
   `;
 
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'SHARE_LINK_CREATE', 'file', ${fileId}, ${`Created share link for: ${file.name} (expires ${expiresAt.toISOString().slice(0,10)})`}, ${req.ip || ''}, ${orgId})`;
   const shareUrl = `${process.env.APP_URL || 'http://localhost:5173'}/share/${token}`;
   res.json({ ...link, url: shareUrl, password_protected: !!password });
 });
@@ -56,6 +57,7 @@ router.delete('/:id/share-links/:linkId', authenticate, requireModule('files'), 
   const [file] = await sql`SELECT id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
   await sql`DELETE FROM file_share_links WHERE id = ${req.params.linkId} AND file_id = ${req.params.id}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'SHARE_LINK_DELETE', 'file', ${req.params.id}, ${`Deleted share link id=${req.params.linkId}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Link deleted' });
 });
 

@@ -528,7 +528,7 @@ RULES: dict[str, list] = {
         _r("pDateDispensed",         10, date=True),
         _r("pDispensingPersonnel",  200),
         _r("pIsApplicable",           1, YN_VALS),
-        _r("pDateAdded",             10, date=True, req=True),
+        _r("pDateAdded",             10, date=True, req="cond"),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
@@ -874,10 +874,17 @@ def check_data_dict(root: etree._Element, libs: dict, result: Result):
             val = raw.strip()
 
             # ── required (must not be blank) ─────────────────────────
-            if req_flag and not val:
+            if req_flag is True and not val:
                 result.add("ERROR", "DICT",
                     f"<{tag}> @{attr} is required and must not be blank",
                     line=line, path=path)
+            elif req_flag == "cond" and not val:
+                # required only when the element has at least one other filled attribute
+                other_vals = [v for k, v in elem.attrib.items() if k != attr and v.strip()]
+                if other_vals:
+                    result.add("ERROR", "DICT",
+                        f"<{tag}> @{attr} is required and must not be blank when medicine data is present",
+                        line=line, path=path)
 
             # ── valid values set ─────────────────────────────────────
             if vals and val not in vals and val != "":

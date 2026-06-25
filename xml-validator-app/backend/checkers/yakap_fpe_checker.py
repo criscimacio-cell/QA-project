@@ -95,6 +95,20 @@ def _check_first_tranche(root, result):
                 "(pMdiseaseCode='006') — remove the result or add 006 to FAMHIST",
                 line=getattr(der, "sourceline", None))
 
+    # If FAMHIST has 006 but DIAGNOSTICEXAMRESULTS section is missing entirely
+    if fh_diabetes:
+        ders_by_case = {
+            (der.get("pHciCaseNo") or "").strip()
+            for der in root.iter("DIAGNOSTICEXAMRESULT")
+        }
+        for case_no in fh_diabetes:
+            if case_no not in ders_by_case:
+                result.add("ERROR", "CROSS",
+                    f"PROFILE pHciCaseNo='{case_no}': "
+                    "DIAGNOSTICEXAMRESULT with FBS or RBS is required because "
+                    "FAMHIST has Diabetes Mellitus (pMdiseaseCode='006') "
+                    "but no DIAGNOSTICEXAMRESULT was found for this case")
+
 
 def check_yakap_fpe(filename: str, content: str) -> dict:
     dtd_path = DTD_PATH if os.path.isfile(DTD_PATH) else None

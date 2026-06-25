@@ -1,10 +1,13 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import sql from '../db';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/', authenticate, async (req: Request, res: Response) => {
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
+
+router.get('/', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const { q, type, project, category, dateFrom, dateTo } = req.query;
   if (!q) { res.json({ files: [], knowledge: [], total: 0 }); return; }
 
@@ -54,11 +57,11 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     `;
   }
 
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'SEARCH', 'search', 0, ${`Searched: ${q}`}, ${req.ip || ''}, ${orgId})`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'SEARCH', 'search', 0, ${`Searched: ${q}`}, ${req.ip || ''}, ${orgId})`.catch(() => {});
   res.json({ files, knowledge, total: files.length + knowledge.length });
-});
+}));
 
-router.get('/suggestions', authenticate, async (req: Request, res: Response) => {
+router.get('/suggestions', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const { q } = req.query;
   if (!q) { res.json([]); return; }
   const orgId = req.user!.organizationId;
@@ -66,6 +69,6 @@ router.get('/suggestions', authenticate, async (req: Request, res: Response) => 
   const fileNames = await sql`SELECT name FROM files WHERE name ILIKE ${s} AND organization_id = ${orgId} LIMIT 5`;
   const articleTitles = await sql`SELECT title as name FROM knowledge_articles WHERE title ILIKE ${s} AND organization_id = ${orgId} LIMIT 3`;
   res.json([...fileNames, ...articleTitles].map((r: any) => r.name));
-});
+}));
 
 export default router;

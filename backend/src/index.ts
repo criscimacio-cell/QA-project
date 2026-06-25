@@ -37,6 +37,15 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+// Prevent unhandled async rejections from crashing the server process.
+// Route handlers that throw without asyncHandler/next(err) would otherwise kill Node.js 15+.
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
@@ -101,6 +110,15 @@ app.use('/api/share', shareLinksRouter);
 app.use('/api/saved-searches', savedSearchesRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+// Global error handler — catches errors forwarded via next(err) from async route handlers
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[unhandled route error]', err?.message || err);
+  if (res.headersSent) return;
+  const status = err?.status || err?.statusCode || 500;
+  res.status(status).json({ error: err?.message || 'Internal server error' });
+});
 
 if (process.env.NODE_ENV !== 'production') {
   console.warn('⚠️  WARNING: Running with default demo credentials (password123). Change before deploying to production.');

@@ -44,7 +44,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: MAX_FILE_SIZE } });
 
-router.get('/', authenticate, async (req: Request, res: Response) => {
+router.get('/', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const { repository_id, status, project, category, search, folder_id, limit = '20', offset = '0' } = req.query;
   const lim = Math.min(parseInt(limit as string) || 20, 200);
   const off = parseInt(offset as string) || 0;
@@ -103,7 +103,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     )` : sql``}
   ` as any[];
   res.json({ files: rows, total, limit: lim, offset: off });
-});
+}));
 
 router.get('/search', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const { q } = req.query;

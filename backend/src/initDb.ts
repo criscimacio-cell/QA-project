@@ -101,19 +101,6 @@ export async function initDb() {
   `;
 
   await sql`
-    CREATE INDEX IF NOT EXISTS idx_files_fts ON files USING GIN (
-      to_tsvector('english',
-        coalesce(name,'') || ' ' ||
-        coalesce(description,'') || ' ' ||
-        coalesce(tags,'') || ' ' ||
-        coalesce(project,'') || ' ' ||
-        coalesce(jira_ticket,'') || ' ' ||
-        coalesce(content_text,'')
-      )
-    )
-  `;
-
-  await sql`
     CREATE TABLE IF NOT EXISTS file_versions (
       id          SERIAL PRIMARY KEY,
       file_id     INTEGER REFERENCES files(id),
@@ -267,8 +254,44 @@ export async function initDb() {
   await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS download_password_hash TEXT DEFAULT NULL`;
   await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS password_hint TEXT DEFAULT NULL`;
 
+  // ── Checkout columns (from add_checkout.sql migration) ───────────────────
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS checked_out_by INTEGER REFERENCES users(id) ON DELETE SET NULL`;
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS checked_out_at TIMESTAMPTZ`;
+
+  // ── User org memberships table (from add_user_org_memberships.sql) ────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_org_memberships (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      role VARCHAR(50) NOT NULL DEFAULT 'member',
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, organization_id)
+    )
+  `;
+  await sql`
+    INSERT INTO user_org_memberships (user_id, organization_id, role, active)
+    SELECT id, organization_id, role, active FROM users
+    ON CONFLICT (user_id, organization_id) DO NOTHING
+  `;
+
   // ── Feature 1: Full-text search content extraction ───────────────────────
   await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS content_text TEXT DEFAULT NULL`;
+
+  // FTS index must be created after content_text column exists (ordering dependency)
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_files_fts ON files USING GIN (
+      to_tsvector('english',
+        coalesce(name,'') || ' ' ||
+        coalesce(description,'') || ' ' ||
+        coalesce(tags,'') || ' ' ||
+        coalesce(project,'') || ' ' ||
+        coalesce(jira_ticket,'') || ' ' ||
+        coalesce(content_text,'')
+      )
+    )
+  `;
 
   // ── Feature 2: File sharing links ────────────────────────────────────────
   await sql`

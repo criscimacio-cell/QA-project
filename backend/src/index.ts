@@ -28,6 +28,7 @@ import templateRoutes from './routes/templates';
 import filePermissionsRouter from './routes/filePermissions';
 import shareLinksRouter from './routes/shareLinks';
 import savedSearchesRouter from './routes/savedSearches';
+import mfaRoutes from './routes/mfa';
 // Initialize BullMQ worker by importing the module
 import './queue';
 import { startPurgeJob } from './queue';
@@ -157,6 +158,7 @@ app.use('/api/files', filePermissionsRouter);
 app.use('/api/files', shareLinksRouter);
 app.use('/api/share', shareLinksRouter);
 app.use('/api/saved-searches', savedSearchesRouter);
+app.use('/api/auth/mfa', mfaRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction, RequestHandler } from 'express
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import * as OTPAuth from 'otpauth';
 import sql from '../db';
 import { redis } from '../redis';
 import { authenticate, JWT_SECRET } from '../middleware/auth';
@@ -9,6 +10,22 @@ import { sendWelcomeEmail, sendPasswordResetEmail } from '../emailService';
 
 function hashToken(raw: string): string {
   return crypto.createHash('sha256').update(raw).digest('hex');
+}
+
+async function issueCookies(res: Response, user: any, rememberMe: boolean) {
+  const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
+  const accessToken = jwt.sign(
+    { userId: user.id, email: user.email, role: user.role, organizationId: user.organization_id },
+    JWT_SECRET(),
+    { expiresIn: expiresIn as any, algorithm: 'HS256' }
+  );
+  const rawRefresh = crypto.randomBytes(64).toString('hex');
+  const refreshToken = hashToken(rawRefresh);
+  const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const accessTTL = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
+  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at, organization_id) VALUES (${user.id}, ${refreshToken}, ${refreshExpiresAt.toISOString()}, ${user.organization_id})`;
+  res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + accessTTL) });
+  res.cookie('refreshToken', rawRefresh, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
 }
 
 const router = Router();
@@ -66,13 +83,6 @@ function getClientIp(req: Request): string {
   return req.socket.remoteAddress || 'unknown';
 }
 
-function signAccess(user: { id: number; email: string; role: string; organization_id: number }, expiresIn: string) {
-  return jwt.sign(
-    { userId: user.id, email: user.email, role: user.role, organizationId: user.organization_id },
-    JWT_SECRET(),
-    { expiresIn: expiresIn as any, algorithm: 'HS256' }
-  );
-}
 
 router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   const ip = getClientIp(req);
@@ -113,22 +123,58 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   }
 
   await clearLoginFailures(ip, email);
+
+  // If MFA is enabled, issue a short-lived pending token instead of full session
+  if (user.totp_enabled) {
+    const pendingToken = jwt.sign(
+      { pending_mfa: true, userId: user.id, organizationId: user.organization_id, rememberMe: !!rememberMe },
+      JWT_SECRET(),
+      { expiresIn: '5m', algorithm: 'HS256' }
+    );
+    res.json({ mfa_required: true, pending_token: pendingToken });
+    return;
+  }
+
   await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user.id}, 'LOGIN', 'user', ${user.id}, 'Successful login', ${req.ip || ''}, ${user.organization_id})`;
 
-  const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
-  const accessToken = signAccess(user, expiresIn);
-  const rawRefresh = crypto.randomBytes(64).toString('hex');
-  const refreshToken = hashToken(rawRefresh);
-  const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const accessTTL = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
-
-  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at, organization_id) VALUES (${user.id}, ${refreshToken}, ${refreshExpiresAt.toISOString()}, ${user.organization_id})`;
-
-  res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + accessTTL) });
-  res.cookie('refreshToken', rawRefresh, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
-
+  await issueCookies(res, user, !!rememberMe);
   const { password_hash, ...safeUser } = user;
+  res.json({ user: safeUser });
+}));
+
+// Complete login when MFA is required
+router.post('/mfa/challenge', asyncHandler(async (req: Request, res: Response) => {
+  const { pending_token, code } = req.body;
+  if (!pending_token || !code) { res.status(400).json({ error: 'pending_token and code are required' }); return; }
+
+  let payload: any;
+  try {
+    payload = jwt.verify(pending_token, JWT_SECRET(), { algorithms: ['HS256'] });
+  } catch { res.status(401).json({ error: 'Pending token invalid or expired. Please log in again.' }); return; }
+
+  if (!payload.pending_mfa) { res.status(400).json({ error: 'Not an MFA pending token' }); return; }
+
+  const [user] = await sql`
+    SELECT u.*, o.active as org_active FROM users u
+    JOIN organizations o ON u.organization_id = o.id
+    WHERE u.id = ${payload.userId} AND u.organization_id = ${payload.organizationId}
+      AND u.active = TRUE AND o.active = TRUE
+  `;
+  if (!user) { res.status(401).json({ error: 'User not found or inactive' }); return; }
+
+  const totp = new OTPAuth.TOTP({ issuer: 'Qlarity', label: user.email, algorithm: 'SHA1', digits: 6, period: 30, secret: OTPAuth.Secret.fromBase32(user.totp_secret) });
+  const delta = totp.validate({ token: code.replace(/\s/g, ''), window: 1 });
+  if (delta === null) {
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user.id}, 'MFA_FAIL', 'user', ${user.id}, 'Failed MFA challenge', ${req.ip || ''}, ${user.organization_id})`;
+    res.status(401).json({ error: 'Invalid MFA code' }); return;
+  }
+
+  await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user.id}, 'LOGIN', 'user', ${user.id}, 'Successful login (MFA verified)', ${req.ip || ''}, ${user.organization_id})`;
+
+  await issueCookies(res, user, !!payload.rememberMe);
+  const { password_hash, totp_secret, ...safeUser } = user;
   res.json({ user: safeUser });
 }));
 

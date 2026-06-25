@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -185,6 +186,74 @@ router.use((err: any, _req: Request, res: Response, next: Function) => {
   if (err?.message) { res.status(400).json({ error: err.message }); return; }
   next(err);
 });
+
+// GDPR: erase own account — anonymizes PII, deletes files, revokes sessions
+// Admin can also erase any user in their org via DELETE /api/users/:id/erase
+router.delete('/me/erase', authenticate, asyncHandler(async (req: Request, res: Response) => {
+  const { password } = req.body;
+  if (!password) { res.status(400).json({ error: 'Current password required to erase account' }); return; }
+
+  const [user] = await sql`SELECT * FROM users WHERE id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}`;
+  if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  if (!bcrypt.compareSync(password, user.password_hash)) { res.status(401).json({ error: 'Incorrect password' }); return; }
+
+  await eraseUser(user.id, req.user!.organizationId, req.ip || '');
+  res.clearCookie('accessToken', { path: '/' });
+  res.clearCookie('refreshToken', { path: '/api/auth' });
+  res.json({ message: 'Account erased. All personal data has been anonymized.' });
+}));
+
+router.delete('/:id/erase', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const [user] = await sql`SELECT id FROM users WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  if (user.id === req.user!.userId) { res.status(400).json({ error: 'Cannot erase your own account via admin endpoint. Use /me/erase.' }); return; }
+  await eraseUser(user.id, orgId, req.ip || '');
+  res.json({ message: 'User erased. All personal data has been anonymized.' });
+}));
+
+async function eraseUser(userId: number, orgId: number, ip: string): Promise<void> {
+  const erasedEmail = `erased-${crypto.createHash('sha256').update(String(userId)).digest('hex').slice(0, 16)}@erased.invalid`;
+  const randomHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
+
+  // Anonymize PII — keep the row for referential integrity
+  await sql`
+    UPDATE users SET
+      name = 'Deleted User',
+      email = ${erasedEmail},
+      password_hash = ${randomHash},
+      avatar = NULL,
+      department = '',
+      totp_secret = NULL,
+      totp_enabled = FALSE,
+      active = FALSE,
+      erased_at = NOW()
+    WHERE id = ${userId} AND organization_id = ${orgId}
+  `;
+
+  // Revoke all sessions
+  await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ${userId}`;
+  await sql`UPDATE password_reset_tokens SET used = TRUE WHERE user_id = ${userId}`;
+
+  // Soft-delete all files owned by this user
+  const uploadDir = path.resolve(process.env.UPLOAD_DIR || './uploads');
+  const files = await sql`SELECT id, path FROM files WHERE owner_id = ${userId} AND organization_id = ${orgId} AND deleted_at IS NULL`;
+  for (const f of files) {
+    if (f.path) {
+      try {
+        const fp = path.resolve(uploadDir, f.path);
+        if (fp.startsWith(uploadDir + path.sep) && fs.existsSync(fp)) fs.unlinkSync(fp);
+      } catch {}
+    }
+  }
+  await sql`UPDATE files SET deleted_at = NOW() WHERE owner_id = ${userId} AND organization_id = ${orgId} AND deleted_at IS NULL`;
+
+  // Audit the erasure (anonymized — does not log the old email)
+  await sql`
+    INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id)
+    VALUES (${userId}, 'GDPR_ERASE', 'user', ${userId}, 'User account erased per GDPR right to erasure', ${ip}, ${orgId})
+  `;
+}
 
 // GET /api/users/mention-search?q=term — autocomplete for @mentions
 router.get('/mention-search', authenticate, asyncHandler(async (req: Request, res: Response) => {

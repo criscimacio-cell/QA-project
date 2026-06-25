@@ -489,5 +489,39 @@ export async function initDb() {
   const { mkdirSync } = await import('fs');
   mkdirSync(process.env.UPLOAD_DIR ? `${process.env.UPLOAD_DIR}/templates` : './uploads/templates', { recursive: true });
 
+  // ── MFA / TOTP columns ───────────────────────────────────────────────────
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT DEFAULT NULL`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE`;
+
+  // ── GDPR erasure column on users ─────────────────────────────────────────
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS erased_at TIMESTAMPTZ DEFAULT NULL`;
+
+  // ── Data retention: per-org retention_days setting ───────────────────────
+  await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS retention_days INTEGER DEFAULT NULL`;
+
+  // ── Audit log immutability ───────────────────────────────────────────────
+  // hash_chain: SHA-256(prev_hash || action || details || created_at) — tamper-evident
+  await sql`ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS row_hash TEXT DEFAULT NULL`;
+
+  // PostgreSQL trigger: block any UPDATE or DELETE on audit_logs
+  await sql`
+    CREATE OR REPLACE FUNCTION audit_logs_immutable() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'audit_logs rows are immutable and cannot be modified or deleted';
+    END;
+    $$ LANGUAGE plpgsql
+  `;
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'trg_audit_logs_immutable'
+      ) THEN
+        CREATE TRIGGER trg_audit_logs_immutable
+        BEFORE UPDATE OR DELETE ON audit_logs
+        FOR EACH ROW EXECUTE FUNCTION audit_logs_immutable();
+      END IF;
+    END $$
+  `;
+
   console.log('Database initialization complete.');
 }

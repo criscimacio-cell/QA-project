@@ -83,4 +83,25 @@ router.delete('/roles/:roleName', authenticate, requireRole('admin'), asyncHandl
   res.json({ success: true });
 }));
 
+// GET/PUT retention policy
+router.get('/retention', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const [org] = await sql`SELECT retention_days FROM organizations WHERE id = ${req.user!.organizationId}`;
+  res.json({ retention_days: org?.retention_days ?? null });
+}));
+
+router.put('/retention', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const { retention_days } = req.body;
+  if (retention_days !== null && retention_days !== undefined) {
+    const days = parseInt(retention_days);
+    if (isNaN(days) || days < 1 || days > 3650) {
+      res.status(400).json({ error: 'retention_days must be between 1 and 3650 (10 years), or null to disable' }); return;
+    }
+    await sql`UPDATE organizations SET retention_days = ${days} WHERE id = ${req.user!.organizationId}`;
+    res.json({ retention_days: days });
+  } else {
+    await sql`UPDATE organizations SET retention_days = NULL WHERE id = ${req.user!.organizationId}`;
+    res.json({ retention_days: null });
+  }
+}));
+
 export default router;

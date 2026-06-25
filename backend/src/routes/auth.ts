@@ -203,11 +203,13 @@ router.post('/forgot-password', asyncHandler(async (req: Request, res: Response)
     }
     if (!user) { res.json({ message: 'If that email exists, a reset link has been sent.' }); return; }
     await sql`UPDATE password_reset_tokens SET used = TRUE WHERE user_id = ${user.id}`;
-    const token = crypto.randomBytes(32).toString('hex');
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    // Store SHA-256 hash — if DB is compromised, tokens in email are still safe
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-    await sql`INSERT INTO password_reset_tokens (user_id, token, expires_at, organization_id) VALUES (${user.id}, ${token}, ${expiresAt}, ${user.organization_id})`;
+    await sql`INSERT INTO password_reset_tokens (user_id, token, expires_at, organization_id) VALUES (${user.id}, ${tokenHash}, ${expiresAt}, ${user.organization_id})`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user.id}, 'PASSWORD_RESET_REQUEST', 'user', ${user.id}, ${`Password reset requested for: ${email}`}, ${ip}, ${user.organization_id})`.catch(() => {});
-    try { await sendPasswordResetEmail(user.email, user.name, token); } catch (e) { console.error('Email send failed:', e); }
+    try { await sendPasswordResetEmail(user.email, user.name, rawToken); } catch (e) { console.error('Email send failed:', e); }
   } catch (e) { console.error('Forgot-password error:', e); }
   res.json({ message: 'If that email exists, a reset link has been sent.' });
 }));
@@ -216,10 +218,11 @@ router.post('/reset-password', asyncHandler(async (req: Request, res: Response) 
   const { token, newPassword } = req.body;
   if (!token || !newPassword) { res.status(400).json({ error: 'Token and new password required' }); return; }
   if (newPassword.length < 8) { res.status(400).json({ error: 'Password must be at least 8 characters' }); return; }
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const [record] = await sql`
     SELECT prt.*, u.id as uid, u.organization_id FROM password_reset_tokens prt
     JOIN users u ON prt.user_id = u.id
-    WHERE prt.token = ${token} AND prt.used = FALSE AND prt.expires_at > NOW()
+    WHERE prt.token = ${tokenHash} AND prt.used = FALSE AND prt.expires_at > NOW()
   `;
   if (!record) { res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' }); return; }
   await sql`UPDATE users SET password_hash = ${bcrypt.hashSync(newPassword, 10)} WHERE id = ${record.uid}`;
@@ -230,7 +233,9 @@ router.post('/reset-password', asyncHandler(async (req: Request, res: Response) 
 
 router.get('/reset-password/validate', asyncHandler(async (req: Request, res: Response) => {
   const { token } = req.query;
-  const [record] = await sql`SELECT id FROM password_reset_tokens WHERE token = ${token as string} AND used = FALSE AND expires_at > NOW()`;
+  if (!token) { res.json({ valid: false }); return; }
+  const tokenHash = crypto.createHash('sha256').update(token as string).digest('hex');
+  const [record] = await sql`SELECT id FROM password_reset_tokens WHERE token = ${tokenHash} AND used = FALSE AND expires_at > NOW()`;
   res.json({ valid: !!record });
 }));
 

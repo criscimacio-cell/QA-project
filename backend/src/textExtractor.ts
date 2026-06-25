@@ -26,16 +26,10 @@ export async function extractText(filePath: string, mimeType: string): Promise<s
       return result.value.slice(0, 100_000);
     }
 
-    // Excel .xlsx
+    // Excel .xlsx — xlsx package has unfixed high-severity CVEs (Prototype Pollution, ReDoS).
+    // Text extraction is skipped; files are still stored and downloadable.
     if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || ext === '.xlsx') {
-      const XLSX = await import('xlsx');
-      const wb = XLSX.read(buf, { type: 'buffer' });
-      const texts: string[] = [];
-      for (const sheetName of wb.SheetNames) {
-        const ws = wb.Sheets[sheetName];
-        texts.push(XLSX.utils.sheet_to_csv(ws));
-      }
-      return texts.join('\n').slice(0, 100_000);
+      return null;
     }
 
     return null;

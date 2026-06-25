@@ -28,6 +28,30 @@ import { redis } from '../redis';
 
 const router = Router();
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const fileTypeLib = require('file-type') as { fromBuffer: (buf: Buffer) => Promise<{ ext: string; mime: string } | undefined> };
+
+const BLOCKED_EXTENSIONS = new Set([
+  '.exe', '.dll', '.bat', '.cmd', '.com', '.scr', '.pif',
+  '.ps1', '.psm1', '.vbs', '.vbe', '.js', '.jse', '.wsf', '.wsh',
+  '.sh', '.bash', '.zsh', '.fish', '.csh',
+  '.php', '.php3', '.php4', '.php5', '.phtml', '.phar',
+  '.asp', '.aspx', '.jsp', '.cfm', '.htaccess',
+  '.msi', '.app', '.deb', '.rpm', '.pkg',
+]);
+
+async function validateUploadedFile(f: Express.Multer.File): Promise<string | null> {
+  const ext = path.extname(f.originalname).toLowerCase();
+  if (BLOCKED_EXTENSIONS.has(ext)) return `File type not allowed: ${ext}`;
+  const buf = fs.readFileSync(path.join(UPLOAD_DIR, f.filename));
+  const detected = await fileTypeLib.fromBuffer(buf);
+  if (detected) {
+    const detectedExt = `.${detected.ext}`;
+    if (BLOCKED_EXTENSIONS.has(detectedExt)) return `File content detected as blocked type: ${detected.mime}`;
+  }
+  return null;
+}
+
 // Simple per-user rate limit: max 3 bulk uploads per minute
 const bulkUploadTracker = new Map<number, { count: number; resetAt: number }>();
 
@@ -368,6 +392,13 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
   const orgId = req.user!.organizationId;
   const f = req.file;
   if (!f) { res.status(400).json({ error: 'No file attached' }); return; }
+
+  const uploadError = await validateUploadedFile(f);
+  if (uploadError) {
+    fs.unlinkSync(path.join(UPLOAD_DIR, f.filename));
+    res.status(400).json({ error: uploadError }); return;
+  }
+
   const name = req.body.name || f.originalname.replace(/\.[^/.]+$/, '');
 
   // Enforce per-plan storage limits
@@ -438,6 +469,17 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
 
   const files = req.files as Express.Multer.File[];
   if (!files?.length) { res.status(400).json({ error: 'No files attached' }); return; }
+
+  for (const f of files) {
+    const uploadError = await validateUploadedFile(f);
+    if (uploadError) {
+      for (const file of files) {
+        try { fs.unlinkSync(path.join(UPLOAD_DIR, file.filename)); } catch {}
+      }
+      res.status(400).json({ error: uploadError }); return;
+    }
+  }
+
   const { repository_id, project, module, category } = req.body;
   const orgId = req.user!.organizationId;
   const [repo] = repository_id

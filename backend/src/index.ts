@@ -36,6 +36,14 @@ if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
   process.exit(1);
 }
+if (process.env.JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET must be at least 32 characters. Use a strong random secret.');
+  process.exit(1);
+}
+if (process.env.BO_JWT_SECRET && process.env.BO_JWT_SECRET.length < 32) {
+  console.error('FATAL: BO_JWT_SECRET must be at least 32 characters.');
+  process.exit(1);
+}
 
 // Prevent unhandled async rejections from crashing the server process.
 // Route handlers that throw without asyncHandler/next(err) would otherwise kill Node.js 15+.
@@ -54,14 +62,45 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:4173')
   .split(',').map(o => o.trim()).filter(Boolean);
 
+// HTTPS redirect when behind a proxy that sets X-Forwarded-Proto (e.g. nginx, load balancer)
+if (process.env.FORCE_HTTPS === '1') {
+  app.set('trust proxy', 1);
+  app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] === 'http') {
+      res.redirect(301, `https://${req.headers.host}${req.url}`);
+      return;
+    }
+    next();
+  });
+}
+
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-  // CSP on API responses only — frontend CSP is handled by nginx
+  // CSP on API responses only — frontend CSP is handled by nginx/reverse proxy
   res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+  // HSTS: force HTTPS for 2 years, include subdomains
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  }
+  next();
+});
+
+// CSRF: for cookie-authenticated state-changing requests, verify the request
+// originates from an allowed origin. API clients using Authorization header are exempt.
+app.use((req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) { next(); return; }
+  if (req.headers.authorization) { next(); return; } // API client — not cookie-based
+  const origin = req.headers.origin ?? req.headers.referer;
+  if (!origin) { next(); return; } // Non-browser clients have no origin
+  const allowed = ALLOWED_ORIGINS.some(o => origin.startsWith(o));
+  if (!allowed) {
+    res.status(403).json({ error: 'CSRF check failed: request origin not allowed' });
+    return;
+  }
   next();
 });
 
@@ -81,6 +120,15 @@ const authLimiter = rateLimit({
   message: { error: 'Too many login attempts, please try again later.' },
 });
 
+// Strict limit on org registration — 5 per hour per IP to deter abuse
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 5 : 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts. Try again later.' },
+});
+
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
@@ -88,6 +136,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(limiter);
 app.use('/api/auth', authLimiter);
+app.use('/api/auth/register', registerLimiter);
 app.use('/api/backoffice/auth', authLimiter);
 
 app.use('/api/auth', authRoutes);

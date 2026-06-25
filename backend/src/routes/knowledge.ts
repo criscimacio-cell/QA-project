@@ -1,10 +1,13 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import sql from '../db';
 import { authenticate, requireRole, requireModule } from '../middleware/auth';
 
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
+
 const router = Router();
 
-router.get('/categories/list', authenticate, async (req: Request, res: Response) => {
+router.get('/categories/list', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const cats = await sql`
     SELECT c.name, COUNT(ka.id)::int as count FROM categories c
@@ -13,9 +16,9 @@ router.get('/categories/list', authenticate, async (req: Request, res: Response)
     GROUP BY c.name ORDER BY c.name
   `;
   res.json(cats);
-});
+}));
 
-router.get('/', authenticate, async (req: Request, res: Response) => {
+router.get('/', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const { category, status, search } = req.query;
   const orgId = req.user!.organizationId;
   const rows = await sql`
@@ -28,9 +31,9 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     ORDER BY k.updated_at DESC
   `;
   res.json(rows);
-});
+}));
 
-router.get('/:id', authenticate, async (req: Request, res: Response) => {
+router.get('/:id', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [article] = await sql`
     SELECT k.*, u.name as author_name FROM knowledge_articles k
@@ -42,9 +45,9 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
     res.status(403).json({ error: 'Forbidden' }); return;
   }
   res.json(article);
-});
+}));
 
-router.post('/', authenticate, requireModule('knowledge'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.post('/', authenticate, requireModule('knowledge'), requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req: Request, res: Response) => {
   const { title, content, category, tags } = req.body;
   const orgId = req.user!.organizationId;
   const safeContent = (content || '').replace(/<script[\s\S]*?<\/script>/gi, '').replace(/on\w+\s*=/gi, 'data-removed=');
@@ -54,9 +57,9 @@ router.post('/', authenticate, requireModule('knowledge'), requireRole('admin', 
     RETURNING id
   `;
   res.json({ id });
-});
+}));
 
-router.put('/:id', authenticate, requireModule('knowledge'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.put('/:id', authenticate, requireModule('knowledge'), requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req: Request, res: Response) => {
   const { title, content, category, tags, status } = req.body;
   const orgId = req.user!.organizationId;
   const [art] = await sql`SELECT author_id, status as current_status FROM knowledge_articles WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
@@ -71,13 +74,13 @@ router.put('/:id', authenticate, requireModule('knowledge'), requireRole('admin'
     WHERE id=${req.params.id} AND organization_id=${orgId}
   `;
   res.json({ message: 'Updated' });
-});
+}));
 
-router.delete('/:id', authenticate, requireModule('knowledge'), requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.delete('/:id', authenticate, requireModule('knowledge'), requireRole('admin', 'lead'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   if (req.user!.role === 'engineer') { res.status(403).json({ error: 'Forbidden: engineers cannot delete knowledge articles' }); return; }
   await sql`DELETE FROM knowledge_articles WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   res.json({ message: 'Deleted' });
-});
+}));
 
 export default router;

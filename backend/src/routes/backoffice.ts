@@ -4,6 +4,13 @@ import bcrypt from 'bcryptjs';
 import sql from '../db';
 import { JWT_SECRET } from '../middleware/auth';
 
+// Platform admin tokens use a dedicated secret so they are cryptographically
+// isolated from regular org-user JWTs.  Falls back to JWT_SECRET when
+// BO_JWT_SECRET is not set so existing single-secret deployments keep working.
+function BO_JWT_SECRET(): string {
+  return process.env.BO_JWT_SECRET || JWT_SECRET();
+}
+
 const router = Router();
 
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
@@ -23,7 +30,7 @@ function authenticatePlatformAdmin(req: Request, res: Response, next: NextFuncti
   const token = req.cookies?.boAccessToken ?? req.headers.authorization?.replace('Bearer ', '');
   if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
   try {
-    const payload = jwt.verify(token, JWT_SECRET(), { algorithms: ['HS256'] }) as any;
+    const payload = jwt.verify(token, BO_JWT_SECRET(), { algorithms: ['HS256'] }) as any;
     if (payload.type !== 'platform_admin') { res.status(403).json({ error: 'Forbidden' }); return; }
     (req as any).platformAdmin = payload;
     next();
@@ -45,7 +52,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
     await sql`UPDATE platform_admins SET last_login = NOW() WHERE id = ${admin.id}`;
     const token = jwt.sign(
       { type: 'platform_admin', adminId: admin.id, email: admin.email, name: admin.name },
-      JWT_SECRET(),
+      BO_JWT_SECRET(),
       { expiresIn: '8h', algorithm: 'HS256' }
     );
     res.cookie('boAccessToken', token, { ...BO_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });

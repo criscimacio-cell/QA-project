@@ -82,25 +82,3 @@ export function decryptFileToBuffer(filePath: string): Buffer {
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
 
-/**
- * Decrypts to a temp file, calls fn(tempPath), then cleans up.
- * Used for bulk-download where archiver needs a real file path.
- * Falls back to the original path for legacy plaintext files.
- */
-export async function withDecryptedFile<T>(
-  filePath: string,
-  fn: (tempPath: string) => Promise<T>,
-): Promise<T> {
-  const data = fs.readFileSync(filePath);
-
-  if (!isEncrypted(data)) return fn(filePath); // legacy — pass original path
-
-  const tempPath = `${filePath}.tmp_dec`;
-  try {
-    const plaintext = decryptFileToBuffer(filePath);
-    fs.writeFileSync(tempPath, plaintext);
-    return await fn(tempPath);
-  } finally {
-    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-  }
-}

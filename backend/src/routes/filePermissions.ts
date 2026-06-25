@@ -1,11 +1,13 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
+
 const router = Router();
 
-// Get permissions for a file
-router.get('/:id/permissions', authenticate, async (req: Request, res: Response) => {
+router.get('/:id/permissions', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [file] = await sql`SELECT id, owner_id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
@@ -18,10 +20,9 @@ router.get('/:id/permissions', authenticate, async (req: Request, res: Response)
     ORDER BY u.name
   `;
   res.json(perms);
-});
+}));
 
-// Grant or update permission for a user
-router.post('/:id/permissions', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.post('/:id/permissions', authenticate, requireRole('admin', 'lead'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const { user_id, permission } = req.body;
   if (!user_id || !['view', 'edit', 'none'].includes(permission)) {
@@ -40,16 +41,15 @@ router.post('/:id/permissions', authenticate, requireRole('admin', 'lead'), asyn
   `;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'FILE_PERMISSION_GRANT', 'file', ${req.params.id}, ${`Set ${permission} permission for user ${user.name} (id=${user_id})`}, ${req.ip || ''}, ${orgId})`;
   res.json(perm);
-});
+}));
 
-// Remove a permission entry
-router.delete('/:id/permissions/:permId', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.delete('/:id/permissions/:permId', authenticate, requireRole('admin', 'lead'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [file] = await sql`SELECT id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
   await sql`DELETE FROM file_permissions WHERE id = ${req.params.permId} AND file_id = ${req.params.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'FILE_PERMISSION_REVOKE', 'file', ${req.params.id}, ${`Revoked permission entry id=${req.params.permId}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Permission removed' });
-});
+}));
 
 export default router;

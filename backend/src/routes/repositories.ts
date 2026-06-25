@@ -1,10 +1,13 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
+
 const router = Router();
 
-router.get('/', authenticate, async (req: Request, res: Response) => {
+router.get('/', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const repos = await sql`
     SELECT r.*, u.name as owner_name,
@@ -14,9 +17,9 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     ORDER BY r.parent_id NULLS FIRST, r.name
   `;
   res.json(repos);
-});
+}));
 
-router.get('/:id', authenticate, async (req: Request, res: Response) => {
+router.get('/:id', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [repo] = await sql`SELECT * FROM repositories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!repo) { res.status(404).json({ error: 'Not found' }); return; }
@@ -32,9 +35,9 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
   `;
   const children = await sql`SELECT * FROM repositories WHERE parent_id = ${req.params.id} AND organization_id = ${orgId} ORDER BY name`;
   res.json({ ...repo, files, children });
-});
+}));
 
-router.post('/', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.post('/', authenticate, requireRole('admin', 'lead'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const { name, description, parent_id, type, project } = req.body;
   const [{ id }] = await sql`
@@ -43,9 +46,9 @@ router.post('/', authenticate, requireRole('admin', 'lead'), async (req: Request
     RETURNING id
   `;
   res.json({ id });
-});
+}));
 
-router.put('/:id', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.put('/:id', authenticate, requireRole('admin', 'lead'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [existing] = await sql`SELECT id FROM repositories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
@@ -53,9 +56,9 @@ router.put('/:id', authenticate, requireRole('admin', 'lead'), async (req: Reque
   const reqApprovals = Number(required_approvals) >= 1 ? Number(required_approvals) : 1;
   await sql`UPDATE repositories SET name=${name}, description=${description}, required_approvals=${reqApprovals} WHERE id=${req.params.id} AND organization_id=${orgId}`;
   res.json({ message: 'Updated' });
-});
+}));
 
-router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+router.delete('/:id', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [existing] = await sql`SELECT id FROM repositories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
@@ -76,6 +79,6 @@ router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, r
   });
 
   res.json({ message: 'Deleted' });
-});
+}));
 
 export default router;

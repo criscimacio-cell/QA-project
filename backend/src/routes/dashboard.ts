@@ -1,11 +1,14 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { getCached, invalidate } from '../redis';
 
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
+
 const router = Router();
 
-router.get('/stats', authenticate, async (req: Request, res: Response) => {
+router.get('/stats', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const cacheKey = `dashboard:stats:${orgId}:${req.user!.role}`;
   const stats = await getCached(cacheKey, 60, async () => {
@@ -70,9 +73,9 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
   });
 
   res.json(stats);
-});
+}));
 
-router.get('/activity', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+router.get('/activity', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
   const activity = await sql`
@@ -84,7 +87,7 @@ router.get('/activity', authenticate, requireRole('admin'), async (req: Request,
     LIMIT ${limit}
   `;
   res.json(activity);
-});
+}));
 
 export async function bustDashboardCache(orgId: number) {
   await Promise.all([

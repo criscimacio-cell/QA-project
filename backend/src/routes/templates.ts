@@ -1,15 +1,17 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import path from 'path';
 import fs from 'fs';
 import sql from '../db';
 import { authenticate, requireRole, requireModule } from '../middleware/auth';
 
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
+
 const router = Router();
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 const TEMPLATE_DIR = path.join(UPLOAD_DIR, 'templates');
 
-// GET /api/templates
-router.get('/', authenticate, async (req: Request, res: Response) => {
+router.get('/', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const templates = await sql`
     SELECT t.id, t.name, t.description, t.mime_type, t.size, t.category, t.tags,
@@ -19,10 +21,9 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     ORDER BY t.created_at DESC
   `;
   res.json(templates);
-});
+}));
 
-// POST /api/templates — save file as template
-router.post('/', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.post('/', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req: Request, res: Response) => {
   const { file_id, name, description } = req.body;
   const orgId = req.user!.organizationId;
   if (!file_id || !name?.trim()) { res.status(400).json({ error: 'file_id and name are required' }); return; }
@@ -33,7 +34,6 @@ router.post('/', authenticate, requireModule('files'), requireRole('admin', 'lea
   const srcPath = path.join(UPLOAD_DIR, file.path);
   if (!fs.existsSync(srcPath)) { res.status(400).json({ error: 'Source file not found on disk' }); return; }
 
-  // Copy encrypted file to templates directory
   const templateFilename = `${Date.now()}-${path.basename(file.path)}`;
   const destPath = path.join(TEMPLATE_DIR, templateFilename);
   fs.mkdirSync(TEMPLATE_DIR, { recursive: true });
@@ -45,10 +45,9 @@ router.post('/', authenticate, requireModule('files'), requireRole('admin', 'lea
     RETURNING id, name, description, mime_type, size, category, created_at
   `;
   res.status(201).json(tmpl);
-});
+}));
 
-// POST /api/templates/:id/create-file — create a new file from template
-router.post('/:id/create-file', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
+router.post('/:id/create-file', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req: Request, res: Response) => {
   const { name, folder_id, repository_id, project, category, description } = req.body;
   const orgId = req.user!.organizationId;
   if (!name?.trim()) { res.status(400).json({ error: 'File name is required' }); return; }
@@ -59,7 +58,6 @@ router.post('/:id/create-file', authenticate, requireModule('files'), requireRol
   const srcPath = path.join(UPLOAD_DIR, tmpl.path);
   if (!fs.existsSync(srcPath)) { res.status(400).json({ error: 'Template file not found on disk' }); return; }
 
-  // Copy encrypted template to uploads
   const newFilename = `${Date.now()}-${path.basename(tmpl.path)}`;
   const destPath = path.join(UPLOAD_DIR, newFilename);
   fs.copyFileSync(srcPath, destPath);
@@ -73,10 +71,9 @@ router.post('/:id/create-file', authenticate, requireModule('files'), requireRol
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Created from template: ${tmpl.name}`}, ${req.ip || ''}, ${orgId})`;
 
   res.status(201).json({ id: fileId, message: 'File created from template' });
-});
+}));
 
-// DELETE /api/templates/:id
-router.delete('/:id', authenticate, requireModule('files'), requireRole('admin', 'lead'), async (req: Request, res: Response) => {
+router.delete('/:id', authenticate, requireModule('files'), requireRole('admin', 'lead'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [tmpl] = await sql`SELECT * FROM file_templates WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!tmpl) { res.status(404).json({ error: 'Template not found' }); return; }
@@ -85,6 +82,6 @@ router.delete('/:id', authenticate, requireModule('files'), requireRole('admin',
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   await sql`DELETE FROM file_templates WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   res.json({ message: 'Template deleted' });
-});
+}));
 
 export default router;

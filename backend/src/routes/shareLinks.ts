@@ -1,17 +1,21 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import sql from '../db';
 import { authenticate, requireModule } from '../middleware/auth';
 import { decryptFileToBuffer } from '../fileEncryption';
+import { redis } from '../redis';
 import path from 'path';
 import fs from 'fs';
+
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
+  (req, res, next) => fn(req, res, next).catch(next);
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const router = Router();
 
 // Create share link for a file
-router.post('/:id/share-links', authenticate, requireModule('files'), async (req: Request, res: Response) => {
+router.post('/:id/share-links', authenticate, requireModule('files'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const fileId = parseInt(req.params.id);
   const [file] = await sql`SELECT id, name FROM files WHERE id = ${fileId} AND organization_id = ${orgId}`;
@@ -32,10 +36,10 @@ router.post('/:id/share-links', authenticate, requireModule('files'), async (req
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'SHARE_LINK_CREATE', 'file', ${fileId}, ${`Created share link for: ${file.name} (expires ${expiresAt.toISOString().slice(0,10)})`}, ${req.ip || ''}, ${orgId})`;
   const shareUrl = `${process.env.APP_URL || 'http://localhost:5173'}/share/${token}`;
   res.json({ ...link, url: shareUrl, password_protected: !!password });
-});
+}));
 
 // List share links for a file
-router.get('/:id/share-links', authenticate, requireModule('files'), async (req: Request, res: Response) => {
+router.get('/:id/share-links', authenticate, requireModule('files'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [file] = await sql`SELECT id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
@@ -49,20 +53,25 @@ router.get('/:id/share-links', authenticate, requireModule('files'), async (req:
   `;
   const baseUrl = process.env.APP_URL || 'http://localhost:5173';
   res.json(links.map((l: any) => ({ ...l, url: `${baseUrl}/share/${l.token}` })));
-});
+}));
 
-// Delete a share link
-router.delete('/:id/share-links/:linkId', authenticate, requireModule('files'), async (req: Request, res: Response) => {
+// Delete a share link — only the creator or an admin may delete
+router.delete('/:id/share-links/:linkId', authenticate, requireModule('files'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [file] = await sql`SELECT id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  const [link] = await sql`SELECT id, created_by FROM file_share_links WHERE id = ${req.params.linkId} AND file_id = ${req.params.id}`;
+  if (!link) { res.status(404).json({ error: 'Link not found' }); return; }
+  if (req.user!.role !== 'admin' && link.created_by !== req.user!.userId) {
+    res.status(403).json({ error: 'Forbidden: only the creator or an admin can delete this link' }); return;
+  }
   await sql`DELETE FROM file_share_links WHERE id = ${req.params.linkId} AND file_id = ${req.params.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'SHARE_LINK_DELETE', 'file', ${req.params.id}, ${`Deleted share link id=${req.params.linkId}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Link deleted' });
-});
+}));
 
 // Public download via share token (no auth required)
-router.get('/public/:token', async (req: Request, res: Response) => {
+router.get('/public/:token', asyncHandler(async (req: Request, res: Response) => {
   const [link] = await sql`
     SELECT sl.*, f.path, f.original_name, f.mime_type, f.name as file_name
     FROM file_share_links sl
@@ -75,12 +84,23 @@ router.get('/public/:token', async (req: Request, res: Response) => {
     res.status(410).json({ error: 'Download limit reached for this link' }); return;
   }
 
-  // Password check
+  // Password check with brute-force protection (5 attempts per 15 min per IP+token)
   if (link.password_hash) {
+    const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+    const attemptKey = `share_pw:${ip}:${req.params.token}`;
+    const attempts = parseInt(await redis.get(attemptKey) || '0', 10);
+    if (attempts >= 5) {
+      const ttl = await redis.ttl(attemptKey);
+      res.status(429).json({ error: 'Too many incorrect attempts. Try again later.', retry_after: ttl }); return;
+    }
     const provided = req.headers['x-share-password'] as string | undefined;
     if (!provided) { res.status(403).json({ error: 'password_required' }); return; }
     const valid = await bcrypt.compare(provided, link.password_hash);
-    if (!valid) { res.status(401).json({ error: 'invalid_password' }); return; }
+    if (!valid) {
+      await redis.setex(attemptKey, 15 * 60, String(attempts + 1));
+      res.status(401).json({ error: 'invalid_password', attempts_remaining: 5 - (attempts + 1) }); return;
+    }
+    await redis.del(attemptKey);
   }
 
   // Increment download count
@@ -96,10 +116,10 @@ router.get('/public/:token', async (req: Request, res: Response) => {
     res.setHeader('Content-Length', decrypted.length);
     res.end(decrypted);
   } catch { res.status(500).json({ error: 'Failed to serve file' }); }
-});
+}));
 
 // Get share link info (public, for the share page UI)
-router.get('/public/:token/info', async (req: Request, res: Response) => {
+router.get('/public/:token/info', asyncHandler(async (req: Request, res: Response) => {
   const [link] = await sql`
     SELECT sl.id, sl.expires_at, sl.max_downloads, sl.download_count, sl.label,
            (sl.password_hash IS NOT NULL) as password_protected,
@@ -114,6 +134,6 @@ router.get('/public/:token/info', async (req: Request, res: Response) => {
     res.status(410).json({ error: 'limit_reached' }); return;
   }
   res.json(link);
-});
+}));
 
 export default router;

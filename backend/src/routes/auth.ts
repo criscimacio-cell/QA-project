@@ -175,9 +175,22 @@ router.post('/change-password', authenticate, asyncHandler(async (req: Request, 
   res.json({ message: 'Password changed successfully' });
 }));
 
-router.post('/forgot-password', async (req: Request, res: Response) => {
+router.post('/forgot-password', asyncHandler(async (req: Request, res: Response) => {
   const { email, orgSlug } = req.body;
   if (!email) { res.status(400).json({ error: 'Email is required' }); return; }
+
+  // Rate-limit forgot-password requests per email (5 per 15 min)
+  const ip = getClientIp(req);
+  const [{ fpCount }] = await sql`
+    SELECT COUNT(*)::int as "fpCount" FROM audit_logs
+    WHERE (details LIKE ${'%' + email + '%'} OR ip_address = ${ip})
+      AND action = 'PASSWORD_RESET_REQUEST'
+      AND created_at > NOW() - INTERVAL '15 minutes'
+  ` as any[];
+  if (fpCount >= 5) {
+    res.json({ message: 'If that email exists, a reset link has been sent.' }); return;
+  }
+
   try {
     let user: any;
     if (orgSlug) {
@@ -193,12 +206,13 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     await sql`INSERT INTO password_reset_tokens (user_id, token, expires_at, organization_id) VALUES (${user.id}, ${token}, ${expiresAt}, ${user.organization_id})`;
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user.id}, 'PASSWORD_RESET_REQUEST', 'user', ${user.id}, ${`Password reset requested for: ${email}`}, ${ip}, ${user.organization_id})`.catch(() => {});
     try { await sendPasswordResetEmail(user.email, user.name, token); } catch (e) { console.error('Email send failed:', e); }
   } catch (e) { console.error('Forgot-password error:', e); }
   res.json({ message: 'If that email exists, a reset link has been sent.' });
-});
+}));
 
-router.post('/reset-password', async (req: Request, res: Response) => {
+router.post('/reset-password', asyncHandler(async (req: Request, res: Response) => {
   const { token, newPassword } = req.body;
   if (!token || !newPassword) { res.status(400).json({ error: 'Token and new password required' }); return; }
   if (newPassword.length < 8) { res.status(400).json({ error: 'Password must be at least 8 characters' }); return; }
@@ -212,15 +226,15 @@ router.post('/reset-password', async (req: Request, res: Response) => {
   await sql`UPDATE password_reset_tokens SET used = TRUE WHERE token = ${token}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${record.uid}, 'PASSWORD_RESET', 'user', ${record.uid}, 'Password reset via token', ${req.ip || ''}, ${record.organization_id})`;
   res.json({ message: 'Password reset successfully. You can now log in.' });
-});
+}));
 
-router.get('/reset-password/validate', async (req: Request, res: Response) => {
+router.get('/reset-password/validate', asyncHandler(async (req: Request, res: Response) => {
   const { token } = req.query;
   const [record] = await sql`SELECT id FROM password_reset_tokens WHERE token = ${token as string} AND used = FALSE AND expires_at > NOW()`;
   res.json({ valid: !!record });
-});
+}));
 
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', asyncHandler(async (req: Request, res: Response) => {
   const { orgName, orgSlug, plan, adminName, adminEmail, adminPassword } = req.body;
   const validPlans = ['free', 'pro', 'enterprise'];
   const orgPlan = validPlans.includes(plan) ? plan : 'free';
@@ -275,7 +289,7 @@ router.post('/register', async (req: Request, res: Response) => {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
-});
+}));
 
 // GET /auth/orgs — list all orgs the current user belongs to
 router.get('/orgs', authenticate, asyncHandler(async (req, res) => {

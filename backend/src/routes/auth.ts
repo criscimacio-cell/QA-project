@@ -3,8 +3,13 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import sql from '../db';
+import { redis } from '../redis';
 import { authenticate, JWT_SECRET } from '../middleware/auth';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../emailService';
+
+function hashToken(raw: string): string {
+  return crypto.createHash('sha256').update(raw).digest('hex');
+}
 
 const router = Router();
 
@@ -29,14 +34,28 @@ const REFRESH_COOKIE_OPTS = {
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,48}[a-z0-9]$|^[a-z0-9]{2}$/;
 
-async function checkRateLimit(ip: string): Promise<boolean> {
-  const [{ count }] = await sql`
-    SELECT COUNT(*)::int as count FROM audit_logs
-    WHERE ip_address = ${ip}
-      AND action = 'LOGIN_FAIL'
-      AND created_at > NOW() - INTERVAL '15 minutes'
-  ` as any[];
-  return count < 20;
+async function incrementLoginFailure(ip: string, email: string): Promise<void> {
+  const ipKey = `login_fail_ip:${ip}`;
+  const emailKey = `login_fail_email:${email.toLowerCase()}`;
+  await Promise.all([
+    redis.multi().incr(ipKey).expire(ipKey, 15 * 60).exec(),
+    redis.multi().incr(emailKey).expire(emailKey, 15 * 60).exec(),
+  ]);
+}
+
+async function clearLoginFailures(ip: string, email: string): Promise<void> {
+  await Promise.all([
+    redis.del(`login_fail_ip:${ip}`),
+    redis.del(`login_fail_email:${email.toLowerCase()}`),
+  ]);
+}
+
+async function checkRateLimit(ip: string, email: string): Promise<boolean> {
+  const [ipFails, emailFails] = await Promise.all([
+    redis.get(`login_fail_ip:${ip}`),
+    redis.get(`login_fail_email:${email.toLowerCase()}`),
+  ]);
+  return parseInt(ipFails || '0') < 20 && parseInt(emailFails || '0') < 10;
 }
 
 function getClientIp(req: Request): string {
@@ -57,23 +76,19 @@ function signAccess(user: { id: number; email: string; role: string; organizatio
 
 router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   const ip = getClientIp(req);
-  if (!await checkRateLimit(ip)) { res.status(429).json({ error: 'Too many login attempts, try again in 15 minutes' }); return; }
   const { email, password, rememberMe, orgSlug } = req.body;
   if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }
 
-  const [{ emailCount }] = await sql`
-    SELECT COUNT(*)::int as "emailCount" FROM audit_logs
-    WHERE details LIKE ${'%' + email + '%'}
-      AND action = 'LOGIN_FAIL'
-      AND created_at > NOW() - INTERVAL '15 minutes'
-  ` as any[];
-  if (emailCount >= 20) { res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again in 15 minutes.' }); return; }
+  if (!await checkRateLimit(ip, email)) {
+    res.status(429).json({ error: 'Too many login attempts, try again in 15 minutes' }); return;
+  }
 
   let user: any;
   let resolvedOrgId: number | null = null;
   if (orgSlug) {
     const [org] = await sql`SELECT id FROM organizations WHERE slug = ${orgSlug} AND active = TRUE`;
     if (!org) {
+      await incrementLoginFailure(ip, email);
       await sql`INSERT INTO audit_logs (action, entity_type, entity_id, details, ip_address) VALUES ('LOGIN_FAIL', 'user', 0, ${`Failed login: unknown org slug "${orgSlug}" for ${email}`}, ${ip})`;
       res.status(401).json({ error: 'Invalid credentials' }); return;
     }
@@ -89,6 +104,7 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+    await incrementLoginFailure(ip, email);
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user?.id || null}, 'LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip}, ${resolvedOrgId})`;
     res.status(401).json({ error: 'Invalid credentials' }); return;
   }
@@ -96,41 +112,45 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
     res.status(403).json({ error: 'Your account has been deactivated. Please contact your administrator.' }); return;
   }
 
+  await clearLoginFailures(ip, email);
   await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user.id}, 'LOGIN', 'user', ${user.id}, 'Successful login', ${req.ip || ''}, ${user.organization_id})`;
 
   const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
   const accessToken = signAccess(user, expiresIn);
-  const refreshToken = crypto.randomBytes(64).toString('hex');
+  const rawRefresh = crypto.randomBytes(64).toString('hex');
+  const refreshToken = hashToken(rawRefresh);
   const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const accessTTL = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
 
   await sql`INSERT INTO refresh_tokens (user_id, token, expires_at, organization_id) VALUES (${user.id}, ${refreshToken}, ${refreshExpiresAt.toISOString()}, ${user.organization_id})`;
 
   res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + accessTTL) });
-  res.cookie('refreshToken', refreshToken, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
+  res.cookie('refreshToken', rawRefresh, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
 
   const { password_hash, ...safeUser } = user;
   res.json({ user: safeUser });
 }));
 
 router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
-  const token = req.cookies?.refreshToken;
-  if (!token) { res.status(401).json({ error: 'No refresh token' }); return; }
+  const rawToken = req.cookies?.refreshToken;
+  if (!rawToken) { res.status(401).json({ error: 'No refresh token' }); return; }
+  const tokenHash = hashToken(rawToken);
   const [record] = await sql`
     SELECT rt.*, u.id as uid, u.email, u.role, u.organization_id, u.active FROM refresh_tokens rt
     JOIN users u ON rt.user_id = u.id
     JOIN organizations o ON u.organization_id = o.id
-    WHERE rt.token = ${token} AND rt.revoked = FALSE AND rt.expires_at > NOW()
+    WHERE rt.token = ${tokenHash} AND rt.revoked = FALSE AND rt.expires_at > NOW()
       AND u.active = TRUE AND o.active = TRUE
       AND rt.organization_id = u.organization_id
   `;
   if (!record) { res.status(401).json({ error: 'Invalid or expired refresh token' }); return; }
-  await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE token = ${token}`;
+  await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE token = ${tokenHash}`;
 
-  const newRefresh = crypto.randomBytes(64).toString('hex');
+  const rawNewRefresh = crypto.randomBytes(64).toString('hex');
+  const newRefreshHash = hashToken(rawNewRefresh);
   const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at, organization_id) VALUES (${record.uid}, ${newRefresh}, ${refreshExpiresAt.toISOString()}, ${record.organization_id})`;
+  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at, organization_id) VALUES (${record.uid}, ${newRefreshHash}, ${refreshExpiresAt.toISOString()}, ${record.organization_id})`;
 
   const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
   const accessToken = jwt.sign(
@@ -140,7 +160,7 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
   );
 
   res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });
-  res.cookie('refreshToken', newRefresh, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
+  res.cookie('refreshToken', rawNewRefresh, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
   res.json({ ok: true });
 }));
 
@@ -156,8 +176,11 @@ router.get('/me', authenticate, asyncHandler(async (req: Request, res: Response)
 }));
 
 router.post('/logout', authenticate, asyncHandler(async (req: Request, res: Response) => {
-  const token = req.cookies?.refreshToken;
-  if (token) await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE token = ${token} AND organization_id = ${req.user!.organizationId}`;
+  const rawToken = req.cookies?.refreshToken;
+  if (rawToken) {
+    const tokenHash = hashToken(rawToken);
+    await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE token = ${tokenHash} AND organization_id = ${req.user!.organizationId}`;
+  }
   res.clearCookie('accessToken', { path: '/' });
   res.clearCookie('refreshToken', { path: '/api/auth' });
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'LOGOUT', 'user', ${req.user!.userId}, 'User logged out', ${req.ip || ''}, ${req.user!.organizationId})`;
@@ -171,8 +194,12 @@ router.post('/change-password', authenticate, asyncHandler(async (req: Request, 
   const [user] = await sql`SELECT * FROM users WHERE id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}`;
   if (!user || !bcrypt.compareSync(currentPassword, user.password_hash)) { res.status(400).json({ error: 'Current password is incorrect' }); return; }
   await sql`UPDATE users SET password_hash = ${bcrypt.hashSync(newPassword, 10)} WHERE id = ${user.id} AND organization_id = ${req.user!.organizationId}`;
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user.id}, 'PASSWORD_CHANGE', 'user', ${user.id}, 'Password changed', ${req.ip || ''}, ${req.user!.organizationId})`;
-  res.json({ message: 'Password changed successfully' });
+  // Revoke all refresh tokens — forces all other sessions to re-authenticate
+  await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ${user.id}`;
+  res.clearCookie('accessToken', { path: '/' });
+  res.clearCookie('refreshToken', { path: '/api/auth' });
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user.id}, 'PASSWORD_CHANGE', 'user', ${user.id}, 'Password changed — all sessions revoked', ${req.ip || ''}, ${req.user!.organizationId})`;
+  res.json({ message: 'Password changed successfully. Please log in again.' });
 }));
 
 router.post('/forgot-password', asyncHandler(async (req: Request, res: Response) => {
@@ -226,8 +253,10 @@ router.post('/reset-password', asyncHandler(async (req: Request, res: Response) 
   `;
   if (!record) { res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' }); return; }
   await sql`UPDATE users SET password_hash = ${bcrypt.hashSync(newPassword, 10)} WHERE id = ${record.uid}`;
-  await sql`UPDATE password_reset_tokens SET used = TRUE WHERE token = ${token}`;
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${record.uid}, 'PASSWORD_RESET', 'user', ${record.uid}, 'Password reset via token', ${req.ip || ''}, ${record.organization_id})`;
+  await sql`UPDATE password_reset_tokens SET used = TRUE WHERE token = ${tokenHash}`;
+  // Revoke all active sessions — someone just proved control of the email
+  await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ${record.uid}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${record.uid}, 'PASSWORD_RESET', 'user', ${record.uid}, 'Password reset via token — all sessions revoked', ${req.ip || ''}, ${record.organization_id})`;
   res.json({ message: 'Password reset successfully. You can now log in.' });
 }));
 

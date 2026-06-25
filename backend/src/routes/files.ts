@@ -28,23 +28,29 @@ import { redis } from '../redis';
 
 const router = Router();
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const fileTypeLib = require('file-type') as { fromBuffer: (buf: Buffer) => Promise<{ ext: string; mime: string } | undefined> };
-
 const BLOCKED_EXTENSIONS = new Set([
   '.exe', '.dll', '.bat', '.cmd', '.com', '.scr', '.pif',
-  '.ps1', '.psm1', '.vbs', '.vbe', '.js', '.jse', '.wsf', '.wsh',
+  '.ps1', '.psm1', '.vbs', '.vbe', '.jse', '.wsf', '.wsh',
   '.sh', '.bash', '.zsh', '.fish', '.csh',
   '.php', '.php3', '.php4', '.php5', '.phtml', '.phar',
   '.asp', '.aspx', '.jsp', '.cfm', '.htaccess',
   '.msi', '.app', '.deb', '.rpm', '.pkg',
 ]);
 
+function safeFilePath(base: string, untrusted: string): string {
+  const resolved = path.resolve(base, untrusted);
+  if (!resolved.startsWith(base + path.sep) && resolved !== base) {
+    throw new Error('Path traversal detected');
+  }
+  return resolved;
+}
+
 async function validateUploadedFile(f: Express.Multer.File): Promise<string | null> {
   const ext = path.extname(f.originalname).toLowerCase();
   if (BLOCKED_EXTENSIONS.has(ext)) return `File type not allowed: ${ext}`;
   const buf = fs.readFileSync(path.join(UPLOAD_DIR, f.filename));
-  const detected = await fileTypeLib.fromBuffer(buf);
+  const { fileTypeFromBuffer } = await import('../fileTypeShim.js');
+  const detected = await fileTypeFromBuffer(buf);
   if (detected) {
     const detectedExt = `.${detected.ext}`;
     if (BLOCKED_EXTENSIONS.has(detectedExt)) return `File content detected as blocked type: ${detected.mime}`;
@@ -224,7 +230,8 @@ router.post('/bulk-download', authenticate, requireModule('files'), asyncHandler
 
   const seen = new Map<string, number>();
   for (const f of allowed) {
-    const filePath = path.join(UPLOAD_DIR, f.path);
+    let filePath: string;
+    try { filePath = safeFilePath(UPLOAD_DIR, f.path); } catch { continue; }
     if (!fs.existsSync(filePath)) continue;
     const ext = path.extname(f.original_name);
     const base = path.basename(f.original_name, ext);
@@ -639,7 +646,7 @@ router.delete('/:id', authenticate, requireRole('admin'), asyncHandler(async (re
   if (file.deleted_at) {
     // Already in recycle bin — permanently delete
     const [full] = await sql`SELECT path FROM files WHERE id = ${req.params.id}`;
-    if (full?.path) { const fp = path.join(UPLOAD_DIR, full.path); if (fs.existsSync(fp)) fs.unlinkSync(fp); }
+    if (full?.path) { try { const fp = safeFilePath(UPLOAD_DIR, full.path); if (fs.existsSync(fp)) fs.unlinkSync(fp); } catch {} }
     await sql.begin(async tx => {
       await tx`DELETE FROM file_versions WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
       await tx`DELETE FROM approvals WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
@@ -713,7 +720,8 @@ router.get('/:id/download', authenticate, asyncHandler(async (req: Request, res:
   }
 
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${userId}, 'DOWNLOAD', 'file', ${req.params.id}, ${`Downloaded: ${file.original_name}`}, ${req.ip || ''}, ${orgId})`;
-  const filePath = path.join(UPLOAD_DIR, file.path);
+  let filePath: string;
+  try { filePath = safeFilePath(UPLOAD_DIR, file.path); } catch { res.status(400).json({ error: 'Invalid file path' }); return; }
   if (fs.existsSync(filePath)) {
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.original_name)}"`);
     res.setHeader('Content-Type', file.mime_type || 'application/octet-stream');
@@ -734,12 +742,16 @@ router.get('/:id/preview', authenticate, asyncHandler(async (req: Request, res: 
   if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== req.user!.userId && !['published','approved'].includes(file.status)) {
     res.status(403).json({ error: 'Forbidden' }); return;
   }
-  const filePath = path.join(UPLOAD_DIR, file.path);
+  let filePath: string;
+  try { filePath = safeFilePath(UPLOAD_DIR, file.path); } catch { res.status(400).json({ error: 'Invalid file path' }); return; }
   if (fs.existsSync(filePath)) {
     const SAFE = new Set(['image/jpeg','image/png','image/gif','image/webp','image/bmp','application/pdf']);
     const mime = file.mime_type || 'application/octet-stream';
     res.setHeader('Content-Type', SAFE.has(mime) ? mime : 'application/octet-stream');
     res.setHeader('Content-Disposition', `${SAFE.has(mime) ? 'inline' : 'attachment'}; filename="${encodeURIComponent(file.original_name)}"`);
+    // Tight CSP for previewed content — prevents XSS if mime detection is wrong
+    res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox allow-same-origin");
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     try {
       const decrypted = decryptFileToBuffer(filePath);
       res.setHeader('Content-Length', decrypted.length);
@@ -759,7 +771,8 @@ router.get('/:id/versions/:version/download', authenticate, asyncHandler(async (
   if (!isAdminOrLead && file.status === 'draft' && file.owner_id !== req.user!.userId) {
     res.status(403).json({ error: 'Forbidden' }); return;
   }
-  const filePath = path.join(UPLOAD_DIR, ver.path);
+  let filePath: string;
+  try { filePath = safeFilePath(UPLOAD_DIR, ver.path); } catch { res.status(400).json({ error: 'Invalid file path' }); return; }
   if (fs.existsSync(filePath)) {
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.original_name)}"`);
     res.setHeader('Content-Type', file.mime_type || 'application/octet-stream');
@@ -860,8 +873,11 @@ router.get('/:id/versions/diff', authenticate, asyncHandler(async (req: Request,
   if (versions.length < 2) { res.status(404).json({ error: 'One or both versions not found' }); return; }
 
   const verMap = Object.fromEntries((versions as any[]).map((v: any) => [v.version, v.path]));
-  const pathA = path.join(UPLOAD_DIR, verMap[Number(from)]);
-  const pathB = path.join(UPLOAD_DIR, verMap[Number(to)]);
+  let pathA: string, pathB: string;
+  try {
+    pathA = safeFilePath(UPLOAD_DIR, verMap[Number(from)]);
+    pathB = safeFilePath(UPLOAD_DIR, verMap[Number(to)]);
+  } catch { res.status(400).json({ error: 'Invalid file path' }); return; }
 
   if (!fs.existsSync(pathA) || !fs.existsSync(pathB)) { res.status(404).json({ error: 'Version file(s) not found on disk' }); return; }
 

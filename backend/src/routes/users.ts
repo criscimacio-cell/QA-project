@@ -104,6 +104,7 @@ router.put('/:id/activate', authenticate, requireRole('admin'), asyncHandler(asy
 router.put('/:id/deactivate', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ${req.params.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Deactivated' });
 }));
@@ -141,6 +142,7 @@ router.put('/:id', authenticate, requireRole('admin'), asyncHandler(async (req: 
 router.delete('/:id', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ${req.params.id}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Deactivated' });
 }));

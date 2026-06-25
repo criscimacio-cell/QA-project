@@ -11,8 +11,14 @@ import fs from 'fs';
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
   (req, res, next) => fn(req, res, next).catch(next);
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 const router = Router();
+
+function safeFilePath(base: string, untrusted: string): string {
+  const resolved = path.resolve(base, untrusted);
+  if (!resolved.startsWith(base + path.sep) && resolved !== base) throw new Error('Path traversal detected');
+  return resolved;
+}
 
 // Create share link for a file
 router.post('/:id/share-links', authenticate, requireModule('files'), asyncHandler(async (req: Request, res: Response) => {
@@ -106,7 +112,8 @@ router.get('/public/:token', asyncHandler(async (req: Request, res: Response) =>
   // Increment download count
   await sql`UPDATE file_share_links SET download_count = download_count + 1 WHERE id = ${link.id}`;
 
-  const filePath = path.join(UPLOAD_DIR, link.path);
+  let filePath: string;
+  try { filePath = safeFilePath(UPLOAD_DIR, link.path); } catch { res.status(400).json({ error: 'Invalid file path' }); return; }
   if (!fs.existsSync(filePath)) { res.status(404).json({ error: 'File not found on disk' }); return; }
 
   try {

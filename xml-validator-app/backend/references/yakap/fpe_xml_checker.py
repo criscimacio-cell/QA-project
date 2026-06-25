@@ -22,7 +22,35 @@ def check_first_tranche(root, result):
     Rules that apply specifically to KonSulTa first tranche XML submissions:
       - All pReportStatus fields must be 'U' (Unvalidated) on submission
       - DOCUMENT element is not yet required — warn if present with data
+      - If FAMHIST has Diabetes Mellitus (006), FBS or RBS result is required
     """
+    # Diabetes Mellitus rule (FPE only):
+    # If any FAMHIST has pMdiseaseCode='006', the corresponding
+    # DIAGNOSTICEXAMRESULT must contain an FBS or RBS element.
+    fh_diabetes = set()
+    for fh in root.iter("FAMHIST"):
+        if (fh.get("pMdiseaseCode") or "").strip() == "006":
+            profile = fh.getparent()
+            while profile is not None and profile.tag != "PROFILE":
+                profile = profile.getparent()
+            if profile is not None:
+                case_no = (profile.get("pHciCaseNo") or "").strip()
+                if case_no:
+                    fh_diabetes.add(case_no)
+
+    for der in root.iter("DIAGNOSTICEXAMRESULT"):
+        case_no = (der.get("pHciCaseNo") or "").strip()
+        if case_no not in fh_diabetes:
+            continue
+        has_fbs = der.find(".//FBS") is not None
+        has_rbs = der.find(".//RBS") is not None
+        if not has_fbs and not has_rbs:
+            result.add("ERROR", "CROSS",
+                f"<DIAGNOSTICEXAMRESULT> pHciCaseNo='{case_no}': "
+                "FBS or RBS result is required because FAMHIST has "
+                "Diabetes Mellitus (pMdiseaseCode='006')",
+                line=getattr(der, "sourceline", None))
+
     # Every pReportStatus in the document must be 'U' for first tranche
     for elem in root.iter():
         val = (elem.get("pReportStatus") or "").strip()

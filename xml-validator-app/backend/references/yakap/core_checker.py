@@ -1065,25 +1065,7 @@ def check_cross_field(root: etree._Element, result: Result):
             req_if(elem, "pQid22_Yn", {"Y"}, dep, line=line)
 
     # ══════════════════════════════════════════════════════════════════
-    # Diabetes Mellitus rule:
-    # If any FAMHIST has pMdiseaseCode='006' (Diabetes Mellitus),
-    # then for that case's DIAGNOSTICEXAMRESULT the FBS/RBS lab
-    # should be present.
-    # ══════════════════════════════════════════════════════════════════
-    if fh_diabetes:
-        for der in root.iter("DIAGNOSTICEXAMRESULT"):
-            line = getattr(der, "sourceline", None)
-            case_no = _get(der, "pHciCaseNo")
-            if case_no not in fh_diabetes:
-                continue
-            has_fbs = der.find(".//FBS") is not None
-            has_rbs = der.find(".//RBS") is not None
-            if not has_fbs and not has_rbs:
-                result.add("WARNING", "CROSS",
-                    f"<DIAGNOSTICEXAMRESULT> pHciCaseNo='{case_no}': "
-                    "FBS or RBS result expected because FAMHIST has "
-                    "Diabetes Mellitus (pMdiseaseCode='006')",
-                    line=line)
+    # Diabetes Mellitus FBS/RBS rule moved to fpe_xml_checker.py (FPE only, ERROR level)
 
 
 # ─────────────────────────────────────────────

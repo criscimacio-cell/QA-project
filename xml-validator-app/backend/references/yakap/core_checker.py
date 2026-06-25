@@ -1087,6 +1087,21 @@ def check_cross_field(root: etree._Element, result: Result):
 
 
 # ─────────────────────────────────────────────
+# Required sections
+# ─────────────────────────────────────────────
+
+def check_required_sections(root: etree._Element, result: Result):
+    """Verify that all required top-level PCB sections are present.
+    DTD: PCB (ENLISTMENTS+, PROFILING+, SOAPS+, DIAGNOSTICEXAMRESULTS*, MEDICINES+, DOCUMENTS*)
+    """
+    required = ["ENLISTMENTS", "PROFILING", "SOAPS", "MEDICINES"]
+    for section in required:
+        if root.find(section) is None:
+            result.add("ERROR", "STRUCTURE",
+                f"<PCB> is missing required section <{section}>")
+
+
+# ─────────────────────────────────────────────
 # Count verification
 # ─────────────────────────────────────────────
 

@@ -92,6 +92,10 @@ def main() -> int:
     if dtd_path and root is not None:
         check_dtd(args.xml_file, dtd_path, result)
 
+    # 2a – Required sections
+    if root is not None:
+        check_required_sections(root, result)
+
     # 3 – Data dictionary + library lookups
     if root is not None:
         libs, missing_libs = load_libraries(libs_dir) if libs_dir else ({}, [])

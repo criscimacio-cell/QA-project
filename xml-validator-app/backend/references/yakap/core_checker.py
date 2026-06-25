@@ -195,8 +195,8 @@ UVF_VALS     = {"U", "V", "F"}
 LAB_STATUS   = {"D", "N", "X", "W"}
 
 
-def _r(attr, max_b=None, vals=None, date=False, num=False, lib=None, multi=False):
-    return (attr, max_b, vals, date, num, lib, multi)
+def _r(attr, max_b=None, vals=None, date=False, num=False, lib=None, multi=False, req=False):
+    return (attr, max_b, vals, date, num, lib, multi, req)
 
 
 # Rules per element — every attribute from the data dictionary is listed.
@@ -528,7 +528,7 @@ RULES: dict[str, list] = {
         _r("pDateDispensed",         10, date=True),
         _r("pDispensingPersonnel",  200),
         _r("pIsApplicable",           1, YN_VALS),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pReportStatus",           1, UVF_VALS),
         _r("pDeficiencyRemarks",   2000),
     ],
@@ -547,7 +547,7 @@ RULES: dict[str, list] = {
     # ── CBC ──────────────────────────────────────────────────────────
     "CBC": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pHematocrit",            50),
         _r("pHemoglobinG",           50),
         _r("pHemoglobinMmol",        50),
@@ -567,7 +567,7 @@ RULES: dict[str, list] = {
         _r("pEosinophils",           50),
         _r("pBasophils",             50),
         _r("pPlatelet",              50),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -577,7 +577,7 @@ RULES: dict[str, list] = {
     # ── URINALYSIS ───────────────────────────────────────────────────
     "URINALYSIS": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pGravity",               50),
         _r("pAppearance",            50),
         _r("pColor",                 50),
@@ -601,7 +601,7 @@ RULES: dict[str, list] = {
         _r("pWcCast",                50),
         _r("pAlbumin",               50),
         _r("pPusCells",              50),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -611,12 +611,12 @@ RULES: dict[str, list] = {
     # ── CHESTXRAY ────────────────────────────────────────────────────
     "CHESTXRAY": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pFindings",            None, lib="lib_chestxray_findings"),
         _r("pRemarksFindings",     2000),
         _r("pObservation",         None, lib="lib_chestxray_observation"),
         _r("pRemarksObservation",  2000),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -626,12 +626,12 @@ RULES: dict[str, list] = {
     # ── SPUTUM ───────────────────────────────────────────────────────
     "SPUTUM": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pDataCollection",         1, {"1","2","3","X"}),
         _r("pFindings",               1, {"1","2"}, num=True),
         _r("pRemarks",             2000),
         _r("pNoPlusses",             50),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -641,13 +641,13 @@ RULES: dict[str, list] = {
     # ── LIPIDPROFILE ─────────────────────────────────────────────────
     "LIPIDPROFILE": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pLdl",                   50),
         _r("pHdl",                   50),
         _r("pTotal",                 50),
         _r("pCholesterol",           50),
         _r("pTriglycerides",         50),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -657,10 +657,10 @@ RULES: dict[str, list] = {
     # ── FBS ──────────────────────────────────────────────────────────
     "FBS": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pGlucoseMg",             50),
         _r("pGlucoseMmol",           50),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -670,10 +670,10 @@ RULES: dict[str, list] = {
     # ── RBS ──────────────────────────────────────────────────────────
     "RBS": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pGlucoseMg",             50),
         _r("pGlucoseMmol",           50),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -683,10 +683,10 @@ RULES: dict[str, list] = {
     # ── ECG ──────────────────────────────────────────────────────────
     "ECG": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pFindings",            2000),
         _r("pRemarks",             2000),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -696,7 +696,7 @@ RULES: dict[str, list] = {
     # ── FECALYSIS ────────────────────────────────────────────────────
     "FECALYSIS": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pColor",                 50, {"1","2","3","4","5","6"}, num=True),
         _r("pConsistency",           50, {"1","2","3","4","5","6"}, num=True),
         _r("pRbc",                   50),
@@ -705,7 +705,7 @@ RULES: dict[str, list] = {
         _r("pParasite",              50),
         _r("pBlood",                 50, {"P","A"}),
         _r("pPusCells",              50),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -715,10 +715,10 @@ RULES: dict[str, list] = {
     # ── PAPSMEAR ─────────────────────────────────────────────────────
     "PAPSMEAR": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pFindings",            2000),
         _r("pImpression",          2000),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -728,14 +728,14 @@ RULES: dict[str, list] = {
     # ── OGTT ─────────────────────────────────────────────────────────
     "OGTT": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pExamFastingMg",         50),
         _r("pExamFastingMmol",       50),
         _r("pExamOgttOneHrMg",       50),
         _r("pExamOgttOneHrMmol",     50),
         _r("pExamOgttTwoHrMg",       50),
         _r("pExamOgttTwoHrMmol",     50),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -745,9 +745,9 @@ RULES: dict[str, list] = {
     # ── FOBT ─────────────────────────────────────────────────────────
     "FOBT": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pFindings",               1, {"P","N"}),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -757,9 +757,9 @@ RULES: dict[str, list] = {
     # ── CREATININE ───────────────────────────────────────────────────
     "CREATININE": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pFindings",            2000),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -769,9 +769,9 @@ RULES: dict[str, list] = {
     # ── PPDTest ──────────────────────────────────────────────────────
     "PPDTest": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pFindings",               1, {"P","N"}),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -781,9 +781,9 @@ RULES: dict[str, list] = {
     # ── HbA1c ────────────────────────────────────────────────────────
     "HbA1c": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pFindings",            2000),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -793,10 +793,10 @@ RULES: dict[str, list] = {
     # ── OTHERDIAGEXAM ────────────────────────────────────────────────
     "OTHERDIAGEXAM": [
         _r("pReferralFacility",    1000),
-        _r("pLabDate",               10, date=True),
+        _r("pLabDate",               10, date=True, req=True),
         _r("pOthDiagExam",         2000),
         _r("pFindings",            2000),
-        _r("pDateAdded",             10, date=True),
+        _r("pDateAdded",             10, date=True, req=True),
         _r("pStatus",                 1, LAB_STATUS),
         _r("pDiagnosticLabFee",    None, num=True),
         _r("pReportStatus",           1, UVF_VALS),
@@ -867,11 +867,17 @@ def check_data_dict(root: etree._Element, libs: dict, result: Result):
                 walk(child, f"{path}/{child.tag}")
             return
 
-        for (attr, max_b, vals, date_flag, num_flag, lib_key, multi) in rules:
+        for (attr, max_b, vals, date_flag, num_flag, lib_key, multi, req_flag) in rules:
             raw = elem.get(attr)
             if raw is None:
                 continue          # missing required attrs caught by DTD
             val = raw.strip()
+
+            # ── required (must not be blank) ─────────────────────────
+            if req_flag and not val:
+                result.add("ERROR", "DICT",
+                    f"<{tag}> @{attr} is required and must not be blank",
+                    line=line, path=path)
 
             # ── valid values set ─────────────────────────────────────
             if vals and val not in vals and val != "":

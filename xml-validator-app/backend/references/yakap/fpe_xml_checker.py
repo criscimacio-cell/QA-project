@@ -40,15 +40,23 @@ def check_first_tranche(root, result):
 
     for der in root.iter("DIAGNOSTICEXAMRESULT"):
         case_no = (der.get("pHciCaseNo") or "").strip()
-        if case_no not in fh_diabetes:
-            continue
         has_fbs = der.find(".//FBS") is not None
         has_rbs = der.find(".//RBS") is not None
-        if not has_fbs and not has_rbs:
+
+        # FAMHIST 006 → FBS/RBS must be present
+        if case_no in fh_diabetes and not has_fbs and not has_rbs:
             result.add("ERROR", "CROSS",
                 f"<DIAGNOSTICEXAMRESULT> pHciCaseNo='{case_no}': "
                 "FBS or RBS result is required because FAMHIST has "
                 "Diabetes Mellitus (pMdiseaseCode='006')",
+                line=getattr(der, "sourceline", None))
+
+        # FBS/RBS present → FAMHIST must have 006
+        if (has_fbs or has_rbs) and case_no not in fh_diabetes:
+            result.add("ERROR", "CROSS",
+                f"<DIAGNOSTICEXAMRESULT> pHciCaseNo='{case_no}': "
+                "FBS/RBS result is present but FAMHIST has no Diabetes Mellitus "
+                "(pMdiseaseCode='006') — remove the result or add 006 to FAMHIST",
                 line=getattr(der, "sourceline", None))
 
     # Every pReportStatus in the document must be 'U' for first tranche

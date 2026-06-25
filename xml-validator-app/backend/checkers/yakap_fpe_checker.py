@@ -40,6 +40,7 @@ def _issues_to_errors(issues):
 
 
 def _check_first_tranche(root, result):
+    # pReportStatus must be 'U' for first tranche
     for elem in root.iter():
         val = (elem.get("pReportStatus") or "").strip()
         if val and val != "U":
@@ -49,6 +50,7 @@ def _check_first_tranche(root, result):
                 "first tranche submissions must use 'U' (Unvalidated)",
                 line=line)
 
+    # DOCUMENT not required in first tranche
     for elem in root.iter("DOCUMENT"):
         has_data = any(
             (elem.get(a) or "").strip()
@@ -60,6 +62,38 @@ def _check_first_tranche(root, result):
                 "<DOCUMENT> element is not required in the first tranche "
                 "and will be ignored by PhilHealth",
                 line=line)
+
+    # Diabetes Mellitus (FPE only):
+    # FAMHIST 006 → FBS/RBS must exist; FBS/RBS exists → FAMHIST must have 006
+    fh_diabetes = set()
+    for fh in root.iter("FAMHIST"):
+        if (fh.get("pMdiseaseCode") or "").strip() == "006":
+            profile = fh.getparent()
+            while profile is not None and profile.tag != "PROFILE":
+                profile = profile.getparent()
+            if profile is not None:
+                case_no = (profile.get("pHciCaseNo") or "").strip()
+                if case_no:
+                    fh_diabetes.add(case_no)
+
+    for der in root.iter("DIAGNOSTICEXAMRESULT"):
+        case_no = (der.get("pHciCaseNo") or "").strip()
+        has_fbs = der.find(".//FBS") is not None
+        has_rbs = der.find(".//RBS") is not None
+
+        if case_no in fh_diabetes and not has_fbs and not has_rbs:
+            result.add("ERROR", "CROSS",
+                f"<DIAGNOSTICEXAMRESULT> pHciCaseNo='{case_no}': "
+                "FBS or RBS result is required because FAMHIST has "
+                "Diabetes Mellitus (pMdiseaseCode='006')",
+                line=getattr(der, "sourceline", None))
+
+        if (has_fbs or has_rbs) and case_no not in fh_diabetes:
+            result.add("ERROR", "CROSS",
+                f"<DIAGNOSTICEXAMRESULT> pHciCaseNo='{case_no}': "
+                "FBS/RBS result is present but FAMHIST has no Diabetes Mellitus "
+                "(pMdiseaseCode='006') — remove the result or add 006 to FAMHIST",
+                line=getattr(der, "sourceline", None))
 
 
 def check_yakap_fpe(filename: str, content: str) -> dict:
@@ -92,6 +126,9 @@ def check_yakap_fpe(filename: str, content: str) -> dict:
                 result.add("WARNING", "LIBRARY",
                     f"Library file '{fname}' not found — attribute checks using it were SKIPPED")
             cc.check_data_dict(root, libs, result)
+
+        if root is not None:
+            cc.check_required_sections(root, result)
 
         if root is not None:
             cc.check_cross_field(root, result)

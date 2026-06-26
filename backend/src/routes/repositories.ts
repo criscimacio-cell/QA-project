@@ -10,8 +10,15 @@ const router = Router();
 router.get('/', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const repos = await sql`
+    WITH RECURSIVE repo_tree AS (
+      SELECT id, id AS root_id FROM repositories WHERE organization_id = ${orgId}
+      UNION ALL
+      SELECT r.id, rt.root_id FROM repositories r JOIN repo_tree rt ON r.parent_id = rt.id WHERE r.organization_id = ${orgId}
+    )
     SELECT r.*, u.name as owner_name,
-      (SELECT COUNT(*)::int FROM files f WHERE f.repository_id = r.id AND f.status != 'archived' AND f.organization_id = ${orgId}) as file_count
+      (SELECT COUNT(*)::int FROM files f
+       JOIN repo_tree rt ON f.repository_id = rt.id
+       WHERE rt.root_id = r.id AND f.status != 'archived' AND f.organization_id = ${orgId}) as file_count
     FROM repositories r LEFT JOIN users u ON r.owner_id = u.id
     WHERE r.organization_id = ${orgId}
     ORDER BY r.parent_id NULLS FIRST, r.name
@@ -33,7 +40,20 @@ router.get('/:id', authenticate, asyncHandler(async (req: Request, res: Response
     WHERE f.repository_id = ${req.params.id} AND f.status != 'archived' AND f.organization_id = ${orgId}
     ORDER BY f.updated_at DESC
   `;
-  const children = await sql`SELECT * FROM repositories WHERE parent_id = ${req.params.id} AND organization_id = ${orgId} ORDER BY name`;
+  const children = await sql`
+    WITH RECURSIVE repo_tree AS (
+      SELECT id, id AS root_id FROM repositories WHERE organization_id = ${orgId}
+      UNION ALL
+      SELECT r.id, rt.root_id FROM repositories r JOIN repo_tree rt ON r.parent_id = rt.id WHERE r.organization_id = ${orgId}
+    )
+    SELECT r.*,
+      (SELECT COUNT(*)::int FROM files f
+       JOIN repo_tree rt ON f.repository_id = rt.id
+       WHERE rt.root_id = r.id AND f.status != 'archived' AND f.organization_id = ${orgId}) as file_count
+    FROM repositories r
+    WHERE r.parent_id = ${req.params.id} AND r.organization_id = ${orgId}
+    ORDER BY r.name
+  `;
   res.json({ ...repo, files, children });
 }));
 

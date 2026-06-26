@@ -193,6 +193,10 @@ router.post('/organizations', authenticatePlatformAdmin, async (req: Request, re
   if (hasAdminFields && (!adminName?.trim() || !adminEmail?.trim() || !adminPassword)) {
     res.status(400).json({ error: 'All admin fields (name, email, password) are required together' }); return;
   }
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (adminEmail && !EMAIL_RE.test(adminEmail.trim())) {
+    res.status(400).json({ error: 'Invalid admin email address' }); return;
+  }
 
   try {
     const result = await sql.begin(async tx => {
@@ -251,7 +255,9 @@ router.delete('/organizations/:id', authenticatePlatformAdmin, asyncHandler(asyn
   if (!org) { res.status(404).json({ error: 'Not found' }); return; }
   await sql`UPDATE organizations SET active = FALSE, archived_at = NOW() WHERE id = ${req.params.id}`;
   await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE organization_id = ${req.params.id}`;
-  res.json({ message: `Organization "${org.name}" archived and all sessions revoked` });
+  // Deactivate all users so their tokens are rejected even if cached
+  await sql`UPDATE users SET active = FALSE WHERE organization_id = ${req.params.id}`;
+  res.json({ message: `Organization "${org.name}" archived, all users deactivated, and all sessions revoked` });
 }));
 
 router.put('/organizations/:id/suspend', authenticatePlatformAdmin, asyncHandler(async (req: Request, res: Response) => {

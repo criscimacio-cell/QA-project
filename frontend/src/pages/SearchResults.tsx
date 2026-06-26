@@ -76,7 +76,7 @@ export default function SearchResults() {
     const name = prompt('Name for this saved search?');
     if (!name?.trim()) return;
     try {
-      const r = await api.post('/saved-searches', { name: name.trim(), query: q, filters: {} });
+      const r = await api.post('/saved-searches', { name: name.trim(), query: q, filters: { type: filter !== 'all' ? filter : undefined } });
       setSavedSearches(prev => [...prev, r.data]);
       toast.success('Search saved');
     } catch {
@@ -122,7 +122,7 @@ export default function SearchResults() {
               {savedSearches.map(s => (
                 <div key={s.id} className="flex items-center gap-1 group">
                   <button
-                    onClick={() => navigate(`/search?q=${encodeURIComponent(s.query)}`)}
+                    onClick={() => { setFilter(s.filters?.type || 'all'); navigate(`/search?q=${encodeURIComponent(s.query)}`); }}
                     className="flex-1 text-left text-xs text-slate-600 dark:text-slate-300 hover:text-amber-500 truncate py-1 px-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                     title={s.query}
                   >

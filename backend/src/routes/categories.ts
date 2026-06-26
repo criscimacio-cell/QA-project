@@ -27,7 +27,12 @@ router.post('/', authenticate, requireRole('admin', 'lead', 'engineer'), asyncHa
 
 router.delete('/:id', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
+  const [cat] = await sql`SELECT name FROM categories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!cat) { res.status(404).json({ error: 'Not found' }); return; }
+  // Clear this category from all files that reference it
+  await sql`UPDATE files SET category = '' WHERE category = ${cat.name} AND organization_id = ${orgId}`;
   await sql`DELETE FROM categories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'CATEGORY_DELETE', 'category', ${req.params.id}, ${`Deleted category: ${cat.name}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Deleted' });
 }));
 

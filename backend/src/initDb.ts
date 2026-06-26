@@ -247,6 +247,18 @@ export async function initDb() {
   await sql`ALTER TABLE knowledge_articles ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
   await sql`UPDATE knowledge_articles SET organization_id = 1 WHERE organization_id IS NULL`;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS knowledge_file_links (
+      id SERIAL PRIMARY KEY,
+      article_id INTEGER REFERENCES knowledge_articles(id) ON DELETE CASCADE,
+      file_id INTEGER REFERENCES files(id) ON DELETE CASCADE,
+      organization_id INTEGER REFERENCES organizations(id),
+      created_by INTEGER REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(article_id, file_id)
+    )
+  `;
+
   await sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
   await sql`UPDATE notifications SET organization_id = 1 WHERE organization_id IS NULL`;
 
@@ -492,6 +504,7 @@ export async function initDb() {
   // ── MFA / TOTP columns ───────────────────────────────────────────────────
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT DEFAULT NULL`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_recovery_codes JSONB DEFAULT NULL`;
 
   // ── GDPR erasure column on users ─────────────────────────────────────────
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS erased_at TIMESTAMPTZ DEFAULT NULL`;

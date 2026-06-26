@@ -21,6 +21,8 @@ export default function ApprovalWorkflow() {
   const { isLead } = useAuth();
   const [files, setFiles] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
+  const [approvalHistory, setApprovalHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [approveTarget, setApproveTarget] = useState<any>(null);
   const [approveModal, setApproveModal] = useState(false);
   const [newStatus, setNewStatus] = useState('approved');
@@ -54,6 +56,18 @@ export default function ApprovalWorkflow() {
     }
   };
   useEffect(() => { load(); }, []);
+
+  const openFileDetail = async (f: any) => {
+    setSelected(f);
+    setApprovalHistory([]);
+    setHistoryLoading(true);
+    try {
+      const r = await api.get(`/files/${f.id}/approvals`);
+      setApprovalHistory(r.data);
+    } catch {} finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const getFilesForStage = (stage: string) => files.filter(f => f.status === stage);
 
@@ -257,7 +271,7 @@ export default function ApprovalWorkflow() {
                         if (draggingId !== null) return;
                         try {
                           const r = await api.get(`/files/${f.id}`);
-                          setSelected(r.data);
+                          await openFileDetail(r.data);
                         } catch {
                           toast.error('Failed to load file details');
                         }
@@ -343,6 +357,26 @@ export default function ApprovalWorkflow() {
                 <div key={l}><span className="text-slate-400">{l}: </span><span className="font-medium text-slate-900 dark:text-slate-100">{v}</span></div>
               ))}
             </div>
+            {selected.required_approvals > 1 && (
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                Requires <span className="font-semibold">{selected.required_approvals}</span> approvals
+              </div>
+            )}
+            {historyLoading ? (
+              <div className="text-xs text-slate-400">Loading history...</div>
+            ) : approvalHistory.length > 0 && (
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Approval History</p>
+                {approvalHistory.map((a: any) => (
+                  <div key={a.id} className="flex items-start gap-2 text-xs">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{a.reviewer_name}</span>
+                    <span className={`px-1.5 py-0.5 rounded-full font-semibold ${a.status === 'approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : a.status === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>{a.status}</span>
+                    {a.comments && <span className="text-slate-400 truncate max-w-[120px]">{a.comments}</span>}
+                    <span className="text-slate-400 ml-auto shrink-0">{new Date(a.created_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {isLead && (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button onClick={() => { setApproveTarget(selected); setSelected(null); setNewStatus('approved'); setComment(''); setApproveModal(true); }} className="btn-primary w-full justify-center" onMouseDown={e => e.currentTarget.style.animation = 'springBounce 0.38s cubic-bezier(0.34,1.5,0.64,1) both'} onAnimationEnd={e => e.currentTarget.style.animation = ''}>Update Status</button>

@@ -29,7 +29,7 @@ router.put('/permissions', authenticate, requireRole('admin'), asyncHandler(asyn
   const existing = current[0]?.role_permissions || {};
 
   const cleaned: Record<string, Record<string, boolean>> = {};
-  const roleNames = Object.keys({ ...existing, ...permissions }).filter(r => r !== 'admin');
+  const roleNames = Object.keys({ ...existing, ...permissions }).filter(r => !RESERVED_ROLE_NAMES.has(r));
   for (const role of roleNames) {
     const perms = permissions[role] ?? existing[role] ?? {};
     cleaned[role] = {};
@@ -39,6 +39,7 @@ router.put('/permissions', authenticate, requireRole('admin'), asyncHandler(asyn
   }
 
   await sql`UPDATE organizations SET role_permissions = ${sql.json(cleaned)} WHERE id = ${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'PERMISSIONS_UPDATE', 'organization', ${orgId}, 'Updated role permissions', ${req.ip || ''}, ${orgId})`;
   res.json({ success: true });
 }));
 
@@ -65,6 +66,7 @@ router.post('/roles', authenticate, requireRole('admin'), asyncHandler(async (re
 
   const updated = { ...existing, [roleName]: newRolePerms };
   await sql`UPDATE organizations SET role_permissions = ${sql.json(updated)} WHERE id = ${orgId}`;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'ROLE_CREATE', 'organization', ${orgId}, ${`Created custom role: ${roleName}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ role: roleName, permissions: newRolePerms });
 }));
 
@@ -78,9 +80,13 @@ router.delete('/roles/:roleName', authenticate, requireRole('admin'), asyncHandl
   const [org] = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
   const existing = { ...(org?.role_permissions || {}) };
   delete existing[roleName];
+  // Find affected users before reassigning
+  const affected = await sql`SELECT id, name, email FROM users WHERE role = ${roleName} AND organization_id = ${orgId}`;
   await sql`UPDATE organizations SET role_permissions = ${sql.json(existing)} WHERE id = ${orgId}`;
   await sql`UPDATE users SET role = 'viewer' WHERE role = ${roleName} AND organization_id = ${orgId}`;
-  res.json({ success: true });
+  const affectedCount = (affected as any[]).length;
+  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'ROLE_DELETE', 'organization', ${orgId}, ${`Deleted role: ${roleName}. ${affectedCount} user(s) reassigned to viewer.`}, ${req.ip || ''}, ${orgId})`;
+  res.json({ success: true, reassigned: affectedCount });
 }));
 
 // GET/PUT retention policy
@@ -97,9 +103,11 @@ router.put('/retention', authenticate, requireRole('admin'), asyncHandler(async 
       res.status(400).json({ error: 'retention_days must be between 1 and 3650 (10 years), or null to disable' }); return;
     }
     await sql`UPDATE organizations SET retention_days = ${days} WHERE id = ${req.user!.organizationId}`;
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'RETENTION_UPDATE', 'organization', ${req.user!.organizationId}, ${`Set retention policy to ${days} days`}, ${req.ip || ''}, ${req.user!.organizationId})`;
     res.json({ retention_days: days });
   } else {
     await sql`UPDATE organizations SET retention_days = NULL WHERE id = ${req.user!.organizationId}`;
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'RETENTION_UPDATE', 'organization', ${req.user!.organizationId}, 'Disabled retention policy', ${req.ip || ''}, ${req.user!.organizationId})`;
     res.json({ retention_days: null });
   }
 }));

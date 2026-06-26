@@ -2,11 +2,19 @@ import { Router, Request, Response, NextFunction, RequestHandler } from 'express
 import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import sql from '../db';
 import { authenticate } from '../middleware/auth';
 
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
   (req, res, next) => fn(req, res, next).catch(next);
+
+function generateRecoveryCodes(count = 8): string[] {
+  return Array.from({ length: count }, () => {
+    const hex = crypto.randomBytes(5).toString('hex').toUpperCase();
+    return `${hex.slice(0,5)}-${hex.slice(5)}`;
+  });
+}
 
 const router = Router();
 
@@ -25,13 +33,17 @@ router.post('/setup', authenticate, asyncHandler(async (req: Request, res: Respo
   });
 
   const secret = totp.secret.base32;
-  // Store pending secret (not yet enabled)
-  await sql`UPDATE users SET totp_secret = ${secret}, totp_enabled = FALSE WHERE id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}`;
+  // Generate recovery codes and store hashed versions
+  const plainCodes = generateRecoveryCodes(8);
+  const hashedCodes = await Promise.all(plainCodes.map(c => bcrypt.hash(c, 10)));
+  // Store pending secret (not yet enabled) and hashed recovery codes
+  await sql`UPDATE users SET totp_secret = ${secret}, totp_enabled = FALSE, totp_recovery_codes = ${JSON.stringify(hashedCodes)} WHERE id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}`;
 
   const otpUrl = totp.toString();
   const qrDataUrl = await QRCode.toDataURL(otpUrl);
 
-  res.json({ secret, qr: qrDataUrl, otpUrl });
+  // Return plain recovery codes once — they cannot be retrieved again
+  res.json({ secret, qr: qrDataUrl, otpUrl, recovery_codes: plainCodes });
 }));
 
 // Confirm the code from the authenticator app — enables MFA

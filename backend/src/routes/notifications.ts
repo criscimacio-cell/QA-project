@@ -32,4 +32,14 @@ router.put('/read-all', authenticate, asyncHandler(async (req: Request, res: Res
   res.json({ message: 'All marked as read' });
 }));
 
+router.delete('/:id', authenticate, asyncHandler(async (req: Request, res: Response) => {
+  await sql`DELETE FROM notifications WHERE id = ${req.params.id} AND user_id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}`;
+  res.json({ message: 'Notification deleted' });
+}));
+
+router.delete('/', authenticate, asyncHandler(async (req: Request, res: Response) => {
+  await sql`DELETE FROM notifications WHERE user_id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId} AND read = TRUE`;
+  res.json({ message: 'Read notifications cleared' });
+}));
+
 export default router;

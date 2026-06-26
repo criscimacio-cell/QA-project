@@ -80,6 +80,7 @@ router.put('/:id', authenticate, requireRole('admin', 'lead'), asyncHandler(asyn
 
 router.delete('/:id', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
+  const force = req.query.force === 'true';
   const [existing] = await sql`SELECT id FROM repositories WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
 
@@ -92,6 +93,14 @@ router.delete('/:id', authenticate, requireRole('admin'), asyncHandler(async (re
     SELECT id FROM tree
   `;
   const ids = descendants.map((r: any) => r.id);
+
+  // Block deletion if files exist unless force=true is passed
+  if (!force) {
+    const [{ file_count }] = await sql`SELECT COUNT(*)::int as file_count FROM files WHERE repository_id = ANY(${ids}::int[]) AND organization_id = ${orgId} AND deleted_at IS NULL` as any[];
+    if (file_count > 0) {
+      res.status(409).json({ error: `Cannot delete: repository contains ${file_count} file(s). Move or delete the files first, or pass ?force=true to orphan them.`, file_count }); return;
+    }
+  }
 
   await sql.begin(async tx => {
     await tx`UPDATE files SET repository_id = NULL WHERE repository_id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;

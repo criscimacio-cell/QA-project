@@ -83,4 +83,40 @@ router.delete('/:id', authenticate, requireModule('knowledge'), requireRole('adm
   res.json({ message: 'Deleted' });
 }));
 
+// GET /knowledge/:id/files — list files linked to an article
+router.get('/:id/files', authenticate, requireModule('knowledge'), asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const [article] = await sql`SELECT id FROM knowledge_articles WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!article) { res.status(404).json({ error: 'Not found' }); return; }
+  const files = await sql`
+    SELECT f.id, f.name, f.original_name, f.mime_type, f.status, f.version, f.updated_at, u.name as owner_name
+    FROM knowledge_file_links kfl
+    JOIN files f ON kfl.file_id = f.id
+    LEFT JOIN users u ON f.owner_id = u.id
+    WHERE kfl.article_id = ${req.params.id} AND kfl.organization_id = ${orgId} AND f.deleted_at IS NULL
+    ORDER BY kfl.created_at DESC
+  `;
+  res.json(files);
+}));
+
+// POST /knowledge/:id/files — link a file to an article
+router.post('/:id/files', authenticate, requireModule('knowledge'), requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  const { file_id } = req.body;
+  if (!file_id) { res.status(400).json({ error: 'file_id is required' }); return; }
+  const [article] = await sql`SELECT id FROM knowledge_articles WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!article) { res.status(404).json({ error: 'Article not found' }); return; }
+  const [file] = await sql`SELECT id FROM files WHERE id = ${file_id} AND organization_id = ${orgId} AND deleted_at IS NULL`;
+  if (!file) { res.status(404).json({ error: 'File not found' }); return; }
+  await sql`INSERT INTO knowledge_file_links (article_id, file_id, organization_id, created_by) VALUES (${req.params.id}, ${file_id}, ${orgId}, ${req.user!.userId}) ON CONFLICT DO NOTHING`;
+  res.json({ message: 'File linked' });
+}));
+
+// DELETE /knowledge/:id/files/:fileId — unlink a file from an article
+router.delete('/:id/files/:fileId', authenticate, requireModule('knowledge'), requireRole('admin', 'lead'), asyncHandler(async (req: Request, res: Response) => {
+  const orgId = req.user!.organizationId;
+  await sql`DELETE FROM knowledge_file_links WHERE article_id = ${req.params.id} AND file_id = ${req.params.fileId} AND organization_id = ${orgId}`;
+  res.json({ message: 'File unlinked' });
+}));
+
 export default router;

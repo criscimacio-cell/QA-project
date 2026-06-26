@@ -5,7 +5,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import sql from '../db';
-import { authenticate, requireRole } from '../middleware/auth';
+import { authenticate, requireRole, requireModule } from '../middleware/auth';
 import { sendRoleChangedEmail } from '../emailService';
 
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
@@ -148,7 +148,7 @@ router.delete('/:id', authenticate, requireRole('admin'), asyncHandler(async (re
   res.json({ message: 'Deactivated' });
 }));
 
-router.put('/me/avatar', authenticate, avatarUpload.single('avatar'), asyncHandler(async (req: Request, res: Response) => {
+router.put('/me/avatar', authenticate, requireModule('users'), avatarUpload.single('avatar'), asyncHandler(async (req: Request, res: Response) => {
   const f = req.file;
   if (!f) { res.status(400).json({ error: 'No image uploaded' }); return; }
   const [existing] = await sql`SELECT avatar FROM users WHERE id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}` as any[];
@@ -189,7 +189,7 @@ router.use((err: any, _req: Request, res: Response, next: Function) => {
 
 // GDPR: erase own account — anonymizes PII, deletes files, revokes sessions
 // Admin can also erase any user in their org via DELETE /api/users/:id/erase
-router.delete('/me/erase', authenticate, asyncHandler(async (req: Request, res: Response) => {
+router.delete('/me/erase', authenticate, requireModule('users'), asyncHandler(async (req: Request, res: Response) => {
   const { password } = req.body;
   if (!password) { res.status(400).json({ error: 'Current password required to erase account' }); return; }
 
@@ -203,7 +203,7 @@ router.delete('/me/erase', authenticate, asyncHandler(async (req: Request, res: 
   res.json({ message: 'Account erased. All personal data has been anonymized.' });
 }));
 
-router.delete('/:id/erase', authenticate, requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id/erase', authenticate, requireModule('users'), requireRole('admin'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [user] = await sql`SELECT id FROM users WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }

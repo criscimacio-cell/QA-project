@@ -214,13 +214,19 @@ router.post('/bulk-download', authenticate, requireModule('files'), asyncHandler
   const orgId = req.user!.organizationId;
   const isLead = ['admin', 'lead'].includes(req.user!.role);
   const files = await sql`
-    SELECT id, name, original_name, path, mime_type, owner_id, status
+    SELECT id, name, original_name, path, mime_type, owner_id, status, download_password_hash
     FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}
   `;
-  const allowed = files.filter((f: any) =>
+  const accessible = files.filter((f: any) =>
     isLead || f.owner_id === req.user!.userId || ['published', 'approved'].includes(f.status)
   );
-  if (!allowed.length) { res.status(403).json({ error: 'No accessible files in selection' }); return; }
+  if (!accessible.length) { res.status(403).json({ error: 'No accessible files in selection' }); return; }
+  // Exclude password-protected files from bulk download — they require individual authentication
+  const passwordProtected = accessible.filter((f: any) => f.download_password_hash);
+  const allowed = accessible.filter((f: any) => !f.download_password_hash);
+  if (!allowed.length) {
+    res.status(403).json({ error: 'All selected files are password-protected. Download them individually.', skipped: passwordProtected.map((f: any) => f.original_name) }); return;
+  }
 
   res.setHeader('Content-Type', 'application/zip');
   res.setHeader('Content-Disposition', `attachment; filename="files-${new Date().toISOString().slice(0,10)}.zip"`);
@@ -244,6 +250,9 @@ router.post('/bulk-download', authenticate, requireModule('files'), asyncHandler
     } catch { /* skip unreadable files */ }
   }
   await archive.finalize();
+  if (passwordProtected.length) {
+    // Can't set headers after streaming, but we've already set Content-Type=zip, just complete normally
+  }
 }));
 
 router.post('/bulk-submit', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req, res) => {
@@ -362,7 +371,7 @@ router.post('/:id/checkin', authenticate, requireModule('files'), asyncHandler(a
   res.json({ message: 'Checked in' });
 }));
 
-router.get('/:id', authenticate, asyncHandler(async (req: Request, res: Response) => {
+router.get('/:id', authenticate, requireModule('files'), asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const [file] = await sql`
     SELECT f.id, f.name, f.original_name, f.size, f.mime_type, f.status,
@@ -497,11 +506,22 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
   const results = [];
   for (const f of files) {
     const name = f.originalname.replace(/\.[^/.]+$/, '');
-    const [{ id: fileId }] = await sql`
-      INSERT INTO files (name, original_name, path, size, mime_type, repository_id, owner_id, version, status, project, module, category, organization_id)
-      VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id || null}, ${req.user!.userId}, 1, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${orgId})
-      RETURNING id
-    `;
+    const [existing] = await sql`SELECT id, version FROM files WHERE name = ${name} AND repository_id = ${repository_id || null} AND status != 'archived' AND organization_id = ${orgId}`;
+    let fileId: number;
+    let newVersion: number;
+    if (existing) {
+      newVersion = existing.version + 1;
+      await sql`UPDATE files SET version=${newVersion}, path=${f.filename}, size=${f.size}, mime_type=${f.mimetype}, status='draft', updated_at=NOW() WHERE id=${existing.id} AND organization_id=${orgId}`;
+      fileId = existing.id;
+    } else {
+      newVersion = 1;
+      const [{ id }] = await sql`
+        INSERT INTO files (name, original_name, path, size, mime_type, repository_id, owner_id, version, status, project, module, category, organization_id)
+        VALUES (${name}, ${f.originalname}, ${f.filename}, ${f.size}, ${f.mimetype}, ${repository_id || null}, ${req.user!.userId}, 1, 'draft', ${project || ''}, ${module || ''}, ${category || ''}, ${orgId})
+        RETURNING id
+      `;
+      fileId = id;
+    }
     // Extract text BEFORE encryption
     const bulkRawPath = path.join(UPLOAD_DIR, f.filename);
     const bulkMimetype = f.mimetype;
@@ -512,9 +532,9 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
       }
     }).catch(() => {});
     encryptFile(path.join(UPLOAD_DIR, f.filename));
-    await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, 1, ${f.filename}, ${f.size}, 'Initial upload', ${req.user!.userId}, ${orgId})`;
+    await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, ${newVersion}, ${f.filename}, ${f.size}, ${existing ? `Version ${newVersion} (bulk upload)` : 'Initial upload'}, ${req.user!.userId}, ${orgId})`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Bulk uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
-    results.push({ id: fileId, name, originalName: f.originalname, size: f.size });
+    results.push({ id: fileId, name, originalName: f.originalname, size: f.size, version: newVersion });
   }
   bustDashboardCache(orgId).catch(() => {});
   res.json({ uploaded: results.length, files: results });
@@ -549,6 +569,8 @@ router.post('/:id/submit', authenticate, requireModule('files'), requireRole('ad
     if (!file || file.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
   }
   await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id=${req.params.id} AND organization_id=${orgId}`;
+  // Create a pending approval record to formalize the workflow entry
+  await sql`INSERT INTO approvals (file_id, reviewer_id, status, comments, organization_id) VALUES (${req.params.id}, ${req.user!.userId}, 'pending', 'Submitted for review', ${orgId}) ON CONFLICT DO NOTHING`;
   const [file] = await sql`SELECT f.name, u.name as owner_name, u.email as owner_email FROM files f JOIN users u ON f.owner_id = u.id WHERE f.id=${req.params.id} AND f.organization_id=${orgId}`;
   const leads = await sql`SELECT id, name, email FROM users WHERE role IN ('admin','lead') AND active = TRUE AND organization_id = ${orgId}`;
   for (const lead of leads) {
@@ -658,8 +680,13 @@ router.delete('/:id', authenticate, requireRole('admin'), asyncHandler(async (re
     res.json({ message: 'Permanently deleted' }); return;
   }
   // Soft delete — move to recycle bin
+  const [fileForNotify] = await sql`SELECT name, owner_id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   await sql`UPDATE files SET deleted_at = NOW(), status = 'archived', updated_at = NOW() WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'DELETE', 'file', ${req.params.id}, 'Moved to recycle bin', ${req.ip || ''}, ${orgId})`;
+  // Notify file owner if a different admin deleted their file
+  if (fileForNotify && fileForNotify.owner_id !== req.user!.userId) {
+    await notificationQueue.add('notify', { userId: fileForNotify.owner_id, type: 'alert', title: 'File deleted', message: `Your file "${fileForNotify.name}" was moved to the recycle bin`, organizationId: orgId });
+  }
   bustDashboardCache(orgId).catch(() => {});
   res.json({ message: 'Moved to recycle bin' });
 }));
@@ -674,7 +701,7 @@ router.post('/:id/restore-from-trash', authenticate, requireRole('admin'), async
   res.json({ message: 'Restored to draft' });
 }));
 
-router.get('/:id/download', authenticate, asyncHandler(async (req: Request, res: Response) => {
+router.get('/:id/download', authenticate, requireModule('files'), asyncHandler(async (req: Request, res: Response) => {
   // Rate limit: max 30 downloads per user per minute
   const dlKey = `dl_rate:${req.user!.userId}`;
   const dlCount = parseInt(await redis.get(dlKey) || '0', 10);
@@ -800,7 +827,7 @@ router.get('/:id/comments', authenticate, asyncHandler(async (req, res) => {
   res.json(comments);
 }));
 
-router.post('/:id/comments', authenticate, requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req, res) => {
+router.post('/:id/comments', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), asyncHandler(async (req, res) => {
   const { comment } = req.body;
   const orgId = req.user!.organizationId;
   if (!comment?.trim()) { res.status(400).json({ error: 'Comment cannot be empty' }); return; }

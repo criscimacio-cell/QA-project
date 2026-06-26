@@ -28,6 +28,9 @@ router.post('/:id/share-links', authenticate, requireModule('files'), asyncHandl
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
 
   const { expires_in_days = 7, password, max_downloads, label } = req.body;
+  if (password !== undefined && password !== null && typeof password === 'string' && password.trim() === '') {
+    res.status(400).json({ error: 'Share link password cannot be empty. Either provide a password or omit the field.' }); return;
+  }
   const expiryDays = Math.min(Math.max(parseInt(expires_in_days) || 7, 1), 365);
   const expiresAt = new Date(Date.now() + expiryDays * 86400_000);
   const token = crypto.randomBytes(32).toString('hex');

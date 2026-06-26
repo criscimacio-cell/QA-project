@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Building2, Users, HardDrive, Package } from 'lucide-react';
+import { Building2, Users, HardDrive, Package, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
+import { toast } from 'sonner';
 
 function formatBytes(b: number) {
   if (b >= 1024 ** 3) return (b / 1024 ** 3).toFixed(1) + ' GB';
@@ -21,6 +22,10 @@ const VALID_PLANS = Object.keys(PLAN_LIMITS);
 export default function OrgSettings() {
   const { user, refreshUser } = useAuth();
   const [stats, setStats] = useState<{ userCount: number; storageUsed: number } | null>(null);
+  const [retentionDays, setRetentionDays] = useState<string>('');
+  const [retentionEnabled, setRetentionEnabled] = useState(false);
+  const [retentionSaving, setRetentionSaving] = useState(false);
+  const isAdmin = (user as any)?.role === 'admin';
 
   useEffect(() => {
     refreshUser();
@@ -29,11 +34,33 @@ export default function OrgSettings() {
       api.get('/dashboard/stats'),
     ]).then(([usersRes, statsRes]) => {
       setStats({
-        userCount: usersRes.data.length,
+        userCount: usersRes.data.total ?? usersRes.data.users?.length ?? usersRes.data.length ?? 0,
         storageUsed: statsRes.data.totalStorage ?? 0,
       });
     }).catch(() => {});
+
+    if (isAdmin) {
+      api.get('/org-settings/retention').then(r => {
+        if (r.data.retention_days) {
+          setRetentionEnabled(true);
+          setRetentionDays(String(r.data.retention_days));
+        }
+      }).catch(() => {});
+    }
   }, []);
+
+  const saveRetention = async () => {
+    setRetentionSaving(true);
+    try {
+      const body = retentionEnabled ? { retention_days: parseInt(retentionDays) || null } : { retention_days: null };
+      await api.put('/org-settings/retention', body);
+      toast.success('Retention policy saved');
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error || 'Failed to save retention policy');
+    } finally {
+      setRetentionSaving(false);
+    }
+  };
 
   const rawPlan = (user as any)?.org_plan;
   const plan = rawPlan && VALID_PLANS.includes(rawPlan) ? rawPlan : 'free';
@@ -119,6 +146,38 @@ export default function OrgSettings() {
           </div>
         )}
       </div>
+      {/* Data Retention (admin only) */}
+      {isAdmin && (
+        <div className="card p-6 space-y-4">
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide flex items-center gap-2">
+            <Clock size={15} /> Data Retention Policy
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Automatically archive files that haven't been updated within the retention window. Archived files remain accessible but won't appear in active views.
+          </p>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={retentionEnabled} onChange={e => setRetentionEnabled(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Enable automatic archiving</span>
+          </label>
+          {retentionEnabled && (
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-slate-600 dark:text-slate-400 shrink-0">Archive files older than</label>
+              <input
+                type="number"
+                min={1} max={3650}
+                value={retentionDays}
+                onChange={e => setRetentionDays(e.target.value)}
+                className="input w-24"
+                placeholder="90"
+              />
+              <span className="text-sm text-slate-600 dark:text-slate-400">days</span>
+            </div>
+          )}
+          <button onClick={saveRetention} disabled={retentionSaving || (retentionEnabled && !retentionDays)} className="btn-primary">
+            {retentionSaving ? 'Saving…' : 'Save Retention Policy'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

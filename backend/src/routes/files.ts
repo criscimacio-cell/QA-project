@@ -5,8 +5,10 @@ import fs from 'fs';
 import * as Diff from 'diff';
 import { encryptFile, decryptFileToBuffer } from '../fileEncryption';
 import { extractText } from '../textExtractor';
+// archiver v8 is ESM-only; use named class exports
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const archiver = require('archiver') as (format: string, opts?: object) => import('archiver').Archiver;
+const { ZipArchive } = require('archiver') as typeof import('archiver');
+const makeZip = (opts?: object) => new (ZipArchive as any)(opts);
 import sql from '../db';
 import { authenticate, requireRole, requireModule } from '../middleware/auth';
 import {
@@ -231,7 +233,7 @@ router.post('/bulk-download', authenticate, requireModule('files'), asyncHandler
   res.setHeader('Content-Type', 'application/zip');
   res.setHeader('Content-Disposition', `attachment; filename="files-${new Date().toISOString().slice(0,10)}.zip"`);
 
-  const archive = archiver('zip', { zlib: { level: 6 } });
+  const archive = makeZip({ zlib: { level: 6 } });
   archive.pipe(res);
 
   const seen = new Map<string, number>();

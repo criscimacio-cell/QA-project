@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Database, Download, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
+import { downloadWithPasswordPrompt } from '../utils/download';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
 import Pagination from '../components/UI/Pagination';
@@ -79,20 +80,7 @@ export default function TestDataLibrary() {
     setOffset(0);
   };
 
-  const handleDownload = async (f: any) => {
-    try {
-      const res = await fetch(`/api/files/${f.id}/download`, { credentials: 'include' });
-      if (!res.ok) { toast.error('Download failed — file not found'); return; }
-      const blob = await res.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = f.original_name || f.name;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(a.href);
-    } catch {
-      toast.error('Download failed');
-    }
-  };
+  const handleDownload = (f: any) => downloadWithPasswordPrompt(f.id, f.original_name || f.name, f.is_password_protected);
 
   const isFiltered = category !== 'All' || !!project;
 

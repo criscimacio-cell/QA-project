@@ -6,6 +6,7 @@ import Pagination from '../components/UI/Pagination';
 const PAGE_SIZE = 10;
 import { toast } from 'sonner';
 import api from '../api/client';
+import { downloadWithPasswordPrompt } from '../utils/download';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
 
@@ -249,18 +250,7 @@ export default function SearchResults() {
                         </div>
                       )}
                     </div>
-                    <button onClick={async () => {
-                      try {
-                        const res = await fetch(`/api/files/${f.id}/download`, { credentials: 'include' });
-                        if (!res.ok) { toast.error('Download failed — file not found'); return; }
-                        const blob = await res.blob();
-                        const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = f.original_name || f.name;
-                        document.body.appendChild(a); a.click(); a.remove();
-                        URL.revokeObjectURL(a.href);
-                      } catch { toast.error('Download failed'); }
-                    }} aria-label={`Download ${f.name}`} className="btn-ghost p-2 flex-shrink-0 text-teal-500">
+                    <button onClick={() => downloadWithPasswordPrompt(f.id, f.original_name || f.name, f.is_password_protected)} aria-label={`Download ${f.name}`} className="btn-ghost p-2 flex-shrink-0 text-teal-500">
                       <Download size={16} />
                     </button>
                   </div>

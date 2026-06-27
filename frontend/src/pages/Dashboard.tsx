@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api/client';
+import { formatBytes } from '../utils/format';
 import {
   ResponsiveContainer, LineChart, Line, AreaChart, Area,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell
@@ -277,12 +278,6 @@ const RANK_GRADIENTS = [
   'linear-gradient(135deg, #b45309, #92400e)',
 ];
 
-function formatBytes(b: number) {
-  if (b > 1e9) return (b / 1e9).toFixed(1) + ' GB';
-  if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
-  if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
-  return b + ' B';
-}
 
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;

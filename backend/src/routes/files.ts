@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
+import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -27,6 +27,8 @@ import { notificationQueue } from '../queue';
 import { bustDashboardCache } from './dashboard';
 import bcrypt from 'bcryptjs';
 import { redis } from '../redis';
+import asyncHandler from '../utils/asyncHandler';
+import { safeFilePath } from '../utils/paths';
 
 const router = Router();
 
@@ -39,13 +41,6 @@ const BLOCKED_EXTENSIONS = new Set([
   '.msi', '.app', '.deb', '.rpm', '.pkg',
 ]);
 
-function safeFilePath(base: string, untrusted: string): string {
-  const resolved = path.resolve(base, untrusted);
-  if (!resolved.startsWith(base + path.sep) && resolved !== base) {
-    throw new Error('Path traversal detected');
-  }
-  return resolved;
-}
 
 async function validateUploadedFile(f: Express.Multer.File): Promise<string | null> {
   const ext = path.extname(f.originalname).toLowerCase();
@@ -63,8 +58,6 @@ async function validateUploadedFile(f: Express.Multer.File): Promise<string | nu
 // Simple per-user rate limit: max 3 bulk uploads per minute
 const bulkUploadTracker = new Map<number, { count: number; resetAt: number }>();
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
-  (req, res, next) => fn(req, res, next).catch(next);
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });

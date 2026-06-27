@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
+import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import sql from '../db';
@@ -7,18 +7,13 @@ import { decryptFileToBuffer } from '../fileEncryption';
 import { redis } from '../redis';
 import path from 'path';
 import fs from 'fs';
+import asyncHandler from '../utils/asyncHandler';
+import { safeFilePath } from '../utils/paths';
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
-  (req, res, next) => fn(req, res, next).catch(next);
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 const router = Router();
 
-function safeFilePath(base: string, untrusted: string): string {
-  const resolved = path.resolve(base, untrusted);
-  if (!resolved.startsWith(base + path.sep) && resolved !== base) throw new Error('Path traversal detected');
-  return resolved;
-}
 
 // Create share link for a file
 router.post('/:id/share-links', authenticate, requireModule('files'), asyncHandler(async (req: Request, res: Response) => {

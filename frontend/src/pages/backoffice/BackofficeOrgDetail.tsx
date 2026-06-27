@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../api/client';
+import { formatBytes } from '../../utils/format';
 
 interface OrgDetail {
   id: string;
@@ -47,12 +48,6 @@ interface AddUserForm {
   role: string;
 }
 
-function formatBytes(bytes: number): string {
-  if (!bytes || bytes === 0) return '0 B';
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
 
 function PlanBadge({ plan }: { plan: string }) {
   const styles: Record<string, string> = {

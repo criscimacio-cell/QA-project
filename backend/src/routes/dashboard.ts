@@ -1,10 +1,9 @@
-import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
+import { Router, Request, Response } from 'express';
 import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { getCached, invalidate } from '../redis';
+import asyncHandler from '../utils/asyncHandler';
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
-  (req, res, next) => fn(req, res, next).catch(next);
 
 const router = Router();
 

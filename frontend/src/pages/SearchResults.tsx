@@ -9,6 +9,7 @@ import api from '../api/client';
 import { downloadWithPasswordPrompt } from '../utils/download';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
+import { formatBytes } from '../utils/format';
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -29,11 +30,6 @@ function HL({ text, q }: { text: string; q: string }) {
   return <span dangerouslySetInnerHTML={{ __html: highlight(text, q) }} />;
 }
 
-function formatBytes(b: number) {
-  if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
-  if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
-  return b + ' B';
-}
 
 export default function SearchResults() {
   const [params] = useSearchParams();

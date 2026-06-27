@@ -10,6 +10,7 @@ import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/UI/Modal';
+import { formatBytes } from '../utils/format';
 
 interface Repo {
   id: number; name: string; description: string;
@@ -23,11 +24,6 @@ interface FileRecord {
   owner_name: string; updated_at: string; jira_ticket: string; version: number;
 }
 
-function formatBytes(b: number) {
-  if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
-  if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
-  return b + ' B';
-}
 
 function buildTree(repos: Repo[]): Repo[] {
   const map = new Map<number, Repo>();

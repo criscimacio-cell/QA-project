@@ -12,43 +12,8 @@ import FolderTree, { FolderItem } from '../components/UI/FolderTree';
 import DiffViewer from '../components/UI/DiffViewer';
 import MentionInput from '../components/UI/MentionInput';
 import { useAuth } from '../context/AuthContext';
-
-async function downloadFileWithPassword(fileId: number, filename: string, password?: string, versionPath?: string) {
-  try {
-    const url = versionPath || `/api/files/${fileId}/download`;
-    const headers: HeadersInit = {};
-    if (password) headers['X-File-Password'] = password;
-    const res = await fetch(url, { credentials: 'include', headers });
-    if (res.status === 403) {
-      const data = await res.json().catch(() => ({}));
-      return { needsPassword: true, hint: data.hint || null };
-    }
-    if (res.status === 401) {
-      const data = await res.json().catch(() => ({}));
-      return { wrongPassword: true, attemptsRemaining: data.attempts_remaining ?? 0 };
-    }
-    if (res.status === 429) {
-      const data = await res.json().catch(() => ({}));
-      return { locked: true, retryAfter: data.retry_after || 900 };
-    }
-    if (!res.ok) { toast.error('Download failed — file not found on disk.'); return { done: true }; }
-    const blob = await res.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(a.href);
-    return { done: true };
-  } catch { toast.error('Download failed'); return { done: true }; }
-}
-
-function formatBytes(b: number) {
-  if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
-  if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
-  return b + ' B';
-}
+import { downloadFile } from '../utils/download';
+import { formatBytes } from '../utils/format';
 
 const TABS = ['All Files', 'Pending Approval', 'Published'];
 const TAB_STATUS: Record<string, string> = { 'Pending Approval': 'submitted', 'Published': 'published', 'Archived': 'archived' };
@@ -166,9 +131,8 @@ export default function FileManager() {
   useEffect(() => {
     if (!previewFile) { setPreviewBlobUrl(null); return; }
     setPreviewLoading(true);
-    fetch(`/api/files/${previewFile.id}/preview`, { credentials: 'include' })
-      .then(r => r.ok ? r.blob() : Promise.reject())
-      .then(blob => setPreviewBlobUrl(URL.createObjectURL(blob)))
+    api.get(`/files/${previewFile.id}/preview`, { responseType: 'blob' })
+      .then(r => setPreviewBlobUrl(URL.createObjectURL(r.data)))
       .catch(() => setPreviewBlobUrl(null))
       .finally(() => setPreviewLoading(false));
     return () => { setPreviewBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; }); };
@@ -419,25 +383,10 @@ export default function FileManager() {
 
   const doBulkDownload = async () => {
     try {
-      const res = await fetch('/api/files/bulk-download', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedIds) }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 403 && data.skipped?.length) {
-          toast.error(`All selected files are password-protected and were skipped: ${data.skipped.join(', ')}`);
-        } else {
-          toast.error(data.error || 'Download failed');
-        }
-        return;
-      }
-      const skippedHeader = res.headers.get('X-Skipped-Password-Protected');
-      const blob = await res.blob();
+      const res = await api.post('/files/bulk-download', { ids: Array.from(selectedIds) }, { responseType: 'blob' });
+      const skippedHeader = res.headers['x-skipped-password-protected'] as string | undefined;
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+      a.href = URL.createObjectURL(res.data);
       a.download = `files-${new Date().toISOString().slice(0,10)}.zip`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(a.href);
@@ -447,8 +396,18 @@ export default function FileManager() {
       } else {
         toast.success('Download started');
       }
-    } catch {
-      toast.error('Download failed');
+    } catch (e: any) {
+      try {
+        const text = e.response?.data instanceof Blob ? await e.response.data.text() : null;
+        const data = text ? JSON.parse(text) : {};
+        if (e.response?.status === 403 && data.skipped?.length) {
+          toast.error(`All selected files are password-protected and were skipped: ${data.skipped.join(', ')}`);
+        } else {
+          toast.error(data.error || 'Download failed');
+        }
+      } catch {
+        toast.error('Download failed');
+      }
     }
   };
 
@@ -477,10 +436,9 @@ export default function FileManager() {
   // Export CSV
   const exportFiles = async () => {
     try {
-      const res = await fetch('/api/files/export', { credentials: 'include' });
-      if (!res.ok) { toast.error('Export failed'); return; }
-      const blob = await res.blob();
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      const res = await api.get('/files/export', { responseType: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(res.data);
       a.download = `files-export-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(a.href);
@@ -533,12 +491,13 @@ export default function FileManager() {
   };
 
   const handleDownload = async (fileId: number, filename: string, isPasswordProtected: boolean, versionPath?: string) => {
+    const url = versionPath || `/api/files/${fileId}/download`;
     if (!isPasswordProtected) {
-      await downloadFileWithPassword(fileId, filename, undefined, versionPath);
+      await downloadFile(url, filename);
       return;
     }
-    const result = await downloadFileWithPassword(fileId, filename, undefined, versionPath);
-    if (result?.needsPassword) {
+    const result = await downloadFile(url, filename);
+    if ('needsPassword' in result) {
       setPwModal({ open: true, fileId, filename, hint: result.hint, versionPath });
       setPwInput(''); setPwError(''); setPwShow(false);
     }
@@ -547,14 +506,15 @@ export default function FileManager() {
   const submitPwDownload = async () => {
     if (!pwInput.trim()) { setPwError('Please enter the password'); return; }
     setPwLoading(true);
-    const result = await downloadFileWithPassword(pwModal.fileId, pwModal.filename, pwInput, pwModal.versionPath);
+    const url = pwModal.versionPath || `/api/files/${pwModal.fileId}/download`;
+    const result = await downloadFile(url, pwModal.filename, pwInput);
     setPwLoading(false);
-    if (result?.done) {
+    if ('done' in result) {
       setPwModal(m => ({ ...m, open: false }));
       setPwInput(''); setPwError('');
-    } else if (result?.wrongPassword) {
+    } else if ('wrongPassword' in result) {
       setPwError(`Incorrect password. ${result.attemptsRemaining} attempt${result.attemptsRemaining !== 1 ? 's' : ''} remaining.`);
-    } else if (result?.locked) {
+    } else if ('locked' in result) {
       setPwError(`Too many attempts. Try again in ${Math.ceil(result.retryAfter / 60)} minutes.`);
     }
   };

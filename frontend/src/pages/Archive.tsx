@@ -7,14 +7,10 @@ import Modal from '../components/UI/Modal';
 import ConfirmModal from '../components/UI/ConfirmModal';
 import EmptyState from '../components/UI/EmptyState';
 import Pagination from '../components/UI/Pagination';
+import { formatBytes } from '../utils/format';
 
 const PAGE_SIZE = 10;
 
-function formatBytes(b: number) {
-  if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
-  if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
-  return b + ' B';
-}
 
 export default function Archive() {
   const [files, setFiles] = useState<any[]>([]);

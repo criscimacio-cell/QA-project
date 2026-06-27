@@ -6,15 +6,11 @@ import { downloadWithPasswordPrompt } from '../utils/download';
 import FileIcon from '../components/UI/FileIcon';
 import StatusBadge from '../components/UI/Badge';
 import Pagination from '../components/UI/Pagination';
+import { formatBytes } from '../utils/format';
 
 const CATEGORIES = ['All', 'Test Cases', 'Test Data', 'Test Scripts', 'Template', 'Evidence', 'RCA', 'Bug Report', 'Performance'];
 const PAGE_SIZE = 10;
 
-function formatBytes(b: number) {
-  if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
-  if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
-  return b + ' B';
-}
 
 export default function TestDataLibrary() {
   const [files, setFiles] = useState<any[]>([]);

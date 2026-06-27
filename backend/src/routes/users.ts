@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
+import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import multer from 'multer';
@@ -7,9 +7,8 @@ import fs from 'fs';
 import sql from '../db';
 import { authenticate, requireRole, requireModule } from '../middleware/auth';
 import { sendRoleChangedEmail } from '../emailService';
+import asyncHandler from '../utils/asyncHandler';
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
-  (req, res, next) => fn(req, res, next).catch(next);
 
 const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise: Infinity };
 

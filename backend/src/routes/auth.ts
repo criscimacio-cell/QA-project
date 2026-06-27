@@ -7,6 +7,7 @@ import sql from '../db';
 import { redis } from '../redis';
 import { authenticate, JWT_SECRET } from '../middleware/auth';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../emailService';
+import asyncHandler from '../utils/asyncHandler';
 
 function hashToken(raw: string): string {
   return crypto.createHash('sha256').update(raw).digest('hex');
@@ -30,8 +31,6 @@ async function issueCookies(res: Response, user: any, rememberMe: boolean) {
 
 const router = Router();
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
-  (req, res, next) => fn(req, res, next).catch(next);
 
 const isProduction = process.env.NODE_ENV === 'production';
 

@@ -5,12 +5,8 @@ import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
 import EmptyState from '../components/UI/EmptyState';
 import ConfirmModal from '../components/UI/ConfirmModal';
+import { formatBytes } from '../utils/format';
 
-function formatBytes(b: number) {
-  if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
-  if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
-  return b + ' B';
-}
 
 export default function Trash() {
   const [files, setFiles] = useState<any[]>([]);

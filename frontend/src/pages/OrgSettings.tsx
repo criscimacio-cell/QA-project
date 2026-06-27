@@ -3,13 +3,8 @@ import { Building2, Users, HardDrive, Package, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import { toast } from 'sonner';
+import { formatBytes } from '../utils/format';
 
-function formatBytes(b: number) {
-  if (b >= 1024 ** 3) return (b / 1024 ** 3).toFixed(1) + ' GB';
-  if (b >= 1024 ** 2) return (b / 1024 ** 2).toFixed(1) + ' MB';
-  if (b >= 1024) return (b / 1024).toFixed(1) + ' KB';
-  return b + ' B';
-}
 
 const PLAN_LIMITS: Record<string, { users: number; usersLabel: string; storageBytes: number; storageLabel: string }> = {
   free:       { users: 5,         usersLabel: '5',         storageBytes: 1 * 1024 ** 3,  storageLabel: '1 GB' },

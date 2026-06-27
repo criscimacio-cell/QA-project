@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import sql from '../db';
 import { JWT_SECRET } from '../middleware/auth';
+import asyncHandler from '../utils/asyncHandler';
 
 // Platform admin tokens use a dedicated secret so they are cryptographically
 // isolated from regular org-user JWTs.  Falls back to JWT_SECRET when
@@ -13,8 +14,6 @@ function BO_JWT_SECRET(): string {
 
 const router = Router();
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
-  (req, res, next) => fn(req, res, next).catch(next);
 
 const isProduction = process.env.NODE_ENV === 'production';
 const BO_COOKIE_OPTS = {

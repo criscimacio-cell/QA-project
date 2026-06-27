@@ -172,7 +172,7 @@ export default function BackofficeLogin() {
           <h1 className="brand-title" style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 32, fontWeight: 800, color: dark ? '#f1f5f9' : '#1a1a1a', lineHeight: 1.2, marginBottom: 8 }}>
             Platform Admin
           </h1>
-          <p className="brand-tagline" style={{ fontSize: 15, color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>Manage all organizations from one place.</p>
+          <p className="brand-tagline" style={{ fontSize: 15, color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>Manage all organizations and their document repositories from one place.</p>
         </div>
 
         <div className="login-demo-panel" style={{ position: 'absolute', left: '5%', bottom: '6%', maxWidth: 340, pointerEvents: 'auto' }}>

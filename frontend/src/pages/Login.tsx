@@ -8,7 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 
 
 /* ─── Post-login morph overlay ─────────────────────────────────────── */
-function MorphOverlay({ grown, ringPulse, fadingOut, loadingText = 'Loading your workspace…', dark }: { grown: boolean; ringPulse: boolean; fadingOut: boolean; loadingText?: string; dark?: boolean }) {
+function MorphOverlay({ grown, ringPulse, fadingOut, loadingText = 'Loading your document workspace…', dark }: { grown: boolean; ringPulse: boolean; fadingOut: boolean; loadingText?: string; dark?: boolean }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100,
@@ -194,9 +194,9 @@ export default function Login() {
           <span className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:18, color: dark ? '#f1f5f9' : '#1a1a1a', letterSpacing:'0.04em' }}>Qlarity</span>
         </div>
         <h1 className="brand-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:32, fontWeight:800, color: dark ? '#f1f5f9' : '#1a1a1a', lineHeight:1.2, marginBottom:8 }}>
-          Asset Platform
+          Document Management Platform
         </h1>
-        <p className="brand-tagline" style={{ fontSize:15, color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>Clarity in every decision.</p>
+        <p className="brand-tagline" style={{ fontSize:15, color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>Organize, control, and access your documents with clarity.</p>
       </div>
 
       <div className="login-demo-panel" style={{ position:'absolute', left:'5%', bottom:'6%', maxWidth:340, pointerEvents:'auto' }}>
@@ -219,8 +219,8 @@ export default function Login() {
 
             {/* Header */}
             <div style={{ textAlign:'center', marginBottom:32 }}>
-              <h2 className="login-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:22, color: dark ? '#f1f5f9' : '#1a1a1a', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>User Login</h2>
-              <p className="login-subtitle" style={{ fontSize:13, color: dark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', letterSpacing:'0.01em' }}>Welcome to Qlarity</p>
+              <h2 className="login-title" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:22, color: dark ? '#f1f5f9' : '#1a1a1a', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>Sign In</h2>
+              <p className="login-subtitle" style={{ fontSize:13, color: dark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', letterSpacing:'0.01em' }}>Sign in to access your documents and workflows</p>
               <div style={{ width:36, height:2, borderRadius:2, background:'linear-gradient(90deg,#F59E0B,#FCD34D)', margin:'10px auto 0' }} />
             </div>
 
@@ -242,7 +242,7 @@ export default function Login() {
                   />
                 </div>
                 <p style={{ fontSize:11, color: dark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)', marginTop:4, paddingLeft:2 }}>
-                  Your workspace ID — provided when your organization was created. Optional if you're the only org.
+                  Your organization ID — assigned when your account was set up. Contact your document administrator if you don't have one.
                 </p>
               </div>
 

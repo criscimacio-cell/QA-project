@@ -113,7 +113,7 @@ export default function Register() {
         <div style={{ background: 'white', borderRadius: 16, padding: '36px 36px 32px', boxShadow: '0 20px 60px rgba(0,0,0,0.12)', border: '1px solid rgba(0,0,0,0.06)' }}>
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 20, color: '#1a1a1a', marginBottom: 6 }}>Create Your Organization</h2>
-            <p style={{ fontSize: 13, color: 'rgba(0,0,0,0.45)' }}>Set up your team workspace in seconds</p>
+            <p style={{ fontSize: 13, color: 'rgba(0,0,0,0.45)' }}>Set up your document management workspace in seconds</p>
             <div style={{ width: 32, height: 2, borderRadius: 2, background: `linear-gradient(90deg, ${AMBER}, #FCD34D)`, margin: '10px auto 0' }} />
           </div>
 

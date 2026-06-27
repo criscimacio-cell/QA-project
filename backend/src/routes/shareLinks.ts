@@ -82,7 +82,8 @@ router.delete('/:id/share-links/:linkId', authenticate, requireModule('files'), 
 // Public download via share token (no auth required)
 router.get('/public/:token', asyncHandler(async (req: Request, res: Response) => {
   const [link] = await sql`
-    SELECT sl.*, f.path, f.original_name, f.mime_type, f.name as file_name
+    SELECT sl.*, f.path, f.original_name, f.mime_type, f.name as file_name,
+           f.download_password_hash as file_password_hash, f.password_hint as file_password_hint
     FROM file_share_links sl
     JOIN files f ON sl.file_id = f.id
     WHERE sl.token = ${req.params.token}
@@ -108,6 +109,25 @@ router.get('/public/:token', asyncHandler(async (req: Request, res: Response) =>
     if (!valid) {
       await redis.setex(attemptKey, 15 * 60, String(attempts + 1));
       res.status(401).json({ error: 'invalid_password', attempts_remaining: 5 - (attempts + 1) }); return;
+    }
+    await redis.del(attemptKey);
+  }
+
+  // Also enforce the file's own download password if one is set (share link doesn't bypass it)
+  if (link.file_password_hash) {
+    const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+    const attemptKey = `share_file_pw:${ip}:${req.params.token}`;
+    const attempts = parseInt(await redis.get(attemptKey) || '0', 10);
+    if (attempts >= 5) {
+      const ttl = await redis.ttl(attemptKey);
+      res.status(429).json({ error: 'Too many incorrect attempts. Try again later.', retry_after: ttl }); return;
+    }
+    const provided = req.headers['x-file-password'] as string | undefined;
+    if (!provided) { res.status(403).json({ error: 'file_password_required', hint: link.file_password_hint || null }); return; }
+    const valid = await bcrypt.compare(provided, link.file_password_hash);
+    if (!valid) {
+      await redis.setex(attemptKey, 15 * 60, String(attempts + 1));
+      res.status(401).json({ error: 'invalid_file_password', attempts_remaining: 5 - (attempts + 1) }); return;
     }
     await redis.del(attemptKey);
   }

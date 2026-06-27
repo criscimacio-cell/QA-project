@@ -21,7 +21,8 @@ router.get('/', authenticate, asyncHandler(async (req: Request, res: Response) =
   if (!type || type === 'files' || type === 'all') {
     files = await sql`
       SELECT f.*, u.name as owner_name, r.name as repository_name,
-             LEFT(coalesce(f.content_text,''), 300) as content_snippet
+             CASE WHEN f.download_password_hash IS NOT NULL THEN NULL
+                  ELSE LEFT(coalesce(f.content_text,''), 300) END as content_snippet
       FROM files f
       LEFT JOIN users u ON f.owner_id = u.id
       LEFT JOIN repositories r ON f.repository_id = r.id
@@ -30,7 +31,7 @@ router.get('/', authenticate, asyncHandler(async (req: Request, res: Response) =
       AND f.deleted_at IS NULL
       ${!isLead ? sql`AND (f.owner_id = ${userId} OR f.status IN ('published','approved'))` : sql``}
       AND (
-        to_tsvector('english', coalesce(f.name,'') || ' ' || coalesce(f.description,'') || ' ' || coalesce(f.tags,'') || ' ' || coalesce(f.project,'') || ' ' || coalesce(f.jira_ticket,'') || ' ' || coalesce(f.content_text,''))
+        to_tsvector('english', coalesce(f.name,'') || ' ' || coalesce(f.description,'') || ' ' || coalesce(f.tags,'') || ' ' || coalesce(f.project,'') || ' ' || coalesce(f.jira_ticket,'') || ' ' || CASE WHEN f.download_password_hash IS NOT NULL THEN '' ELSE coalesce(f.content_text,'') END)
         @@ plainto_tsquery('english', ${query})
         OR f.name ILIKE ${'%' + query + '%'}
       )

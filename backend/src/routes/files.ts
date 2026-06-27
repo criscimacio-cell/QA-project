@@ -232,6 +232,9 @@ router.post('/bulk-download', authenticate, requireModule('files'), asyncHandler
 
   res.setHeader('Content-Type', 'application/zip');
   res.setHeader('Content-Disposition', `attachment; filename="files-${new Date().toISOString().slice(0,10)}.zip"`);
+  if (passwordProtected.length) {
+    res.setHeader('X-Skipped-Password-Protected', passwordProtected.map((f: any) => f.original_name).join('||'));
+  }
 
   const archive = makeZip({ zlib: { level: 6 } });
   archive.pipe(res);
@@ -766,11 +769,32 @@ router.get('/:id/download', authenticate, requireModule('files'), asyncHandler(a
 
 router.get('/:id/preview', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
+  const userId = req.user!.userId;
   const [file] = await sql`SELECT * FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
-  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== req.user!.userId && !['published','approved'].includes(file.status)) {
+  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== userId && !['published','approved'].includes(file.status)) {
     res.status(403).json({ error: 'Forbidden' }); return;
   }
+
+  // Password gate — same enforcement as download
+  if (file.download_password_hash) {
+    const attemptKey = `pw_attempts:${userId}:${req.params.id}`;
+    const attempts = parseInt(await redis.get(attemptKey) || '0', 10);
+    if (attempts >= 5) {
+      const ttl = await redis.ttl(attemptKey);
+      res.status(429).json({ error: 'Too many incorrect attempts. Try again later.', retry_after: ttl }); return;
+    }
+    const provided = req.headers['x-file-password'] as string | undefined;
+    if (!provided) { res.status(403).json({ error: 'password_required', hint: file.password_hint || null }); return; }
+    const valid = await bcrypt.compare(provided, file.download_password_hash);
+    if (!valid) {
+      const newCount = attempts + 1;
+      await redis.setex(attemptKey, 15 * 60, String(newCount));
+      res.status(401).json({ error: 'invalid_password', attempts_remaining: 5 - newCount }); return;
+    }
+    await redis.del(attemptKey);
+  }
+
   let filePath: string;
   try { filePath = safeFilePath(UPLOAD_DIR, file.path); } catch { res.status(400).json({ error: 'Invalid file path' }); return; }
   if (fs.existsSync(filePath)) {
@@ -793,13 +817,34 @@ router.get('/:id/preview', authenticate, asyncHandler(async (req: Request, res: 
 
 router.get('/:id/versions/:version/download', authenticate, asyncHandler(async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
+  const userId = req.user!.userId;
   const [file] = await sql`SELECT * FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   const [ver] = await sql`SELECT * FROM file_versions WHERE file_id = ${req.params.id} AND version = ${req.params.version} AND organization_id = ${orgId}`;
   if (!file || !ver) { res.status(404).json({ error: 'Not found' }); return; }
   const isAdminOrLead = ['admin', 'lead'].includes(req.user!.role);
-  if (!isAdminOrLead && file.status === 'draft' && file.owner_id !== req.user!.userId) {
+  if (!isAdminOrLead && file.status === 'draft' && file.owner_id !== userId) {
     res.status(403).json({ error: 'Forbidden' }); return;
   }
+
+  // Password gate — protects historical versions the same as the current file
+  if (file.download_password_hash) {
+    const attemptKey = `pw_attempts:${userId}:${req.params.id}`;
+    const attempts = parseInt(await redis.get(attemptKey) || '0', 10);
+    if (attempts >= 5) {
+      const ttl = await redis.ttl(attemptKey);
+      res.status(429).json({ error: 'Too many incorrect attempts. Try again later.', retry_after: ttl }); return;
+    }
+    const provided = req.headers['x-file-password'] as string | undefined;
+    if (!provided) { res.status(403).json({ error: 'password_required', hint: file.password_hint || null }); return; }
+    const valid = await bcrypt.compare(provided, file.download_password_hash);
+    if (!valid) {
+      const newCount = attempts + 1;
+      await redis.setex(attemptKey, 15 * 60, String(newCount));
+      res.status(401).json({ error: 'invalid_password', attempts_remaining: 5 - newCount }); return;
+    }
+    await redis.del(attemptKey);
+  }
+
   let filePath: string;
   try { filePath = safeFilePath(UPLOAD_DIR, ver.path); } catch { res.status(400).json({ error: 'Invalid file path' }); return; }
   if (fs.existsSync(filePath)) {
@@ -892,10 +937,30 @@ router.get('/:id/versions/diff', authenticate, asyncHandler(async (req: Request,
   const orgId = req.user!.organizationId;
   if (!from || !to || from === to) { res.status(400).json({ error: 'Provide distinct from and to version numbers' }); return; }
 
-  const [file] = await sql`SELECT id, owner_id, status, original_name FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  const userId = req.user!.userId;
+  const [file] = await sql`SELECT id, owner_id, status, original_name, download_password_hash, password_hint FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
-  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== req.user!.userId && !['published','approved'].includes(file.status)) {
+  if (!['admin','lead'].includes(req.user!.role) && file.owner_id !== userId && !['published','approved'].includes(file.status)) {
     res.status(403).json({ error: 'Forbidden' }); return;
+  }
+
+  // Password gate — diff exposes file content, so requires the same password
+  if (file.download_password_hash) {
+    const attemptKey = `pw_attempts:${userId}:${req.params.id}`;
+    const attempts = parseInt(await redis.get(attemptKey) || '0', 10);
+    if (attempts >= 5) {
+      const ttl = await redis.ttl(attemptKey);
+      res.status(429).json({ error: 'Too many incorrect attempts. Try again later.', retry_after: ttl }); return;
+    }
+    const provided = req.headers['x-file-password'] as string | undefined;
+    if (!provided) { res.status(403).json({ error: 'password_required', hint: file.password_hint || null }); return; }
+    const valid = await bcrypt.compare(provided, file.download_password_hash);
+    if (!valid) {
+      const newCount = attempts + 1;
+      await redis.setex(attemptKey, 15 * 60, String(newCount));
+      res.status(401).json({ error: 'invalid_password', attempts_remaining: 5 - newCount }); return;
+    }
+    await redis.del(attemptKey);
   }
 
   const versions = await sql`SELECT version, path FROM file_versions WHERE file_id = ${req.params.id} AND version IN (${Number(from)}, ${Number(to)}) AND organization_id = ${orgId}`;

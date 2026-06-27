@@ -425,14 +425,28 @@ export default function FileManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: Array.from(selectedIds) }),
       });
-      if (!res.ok) { toast.error('Download failed'); return; }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 403 && data.skipped?.length) {
+          toast.error(`All selected files are password-protected and were skipped: ${data.skipped.join(', ')}`);
+        } else {
+          toast.error(data.error || 'Download failed');
+        }
+        return;
+      }
+      const skippedHeader = res.headers.get('X-Skipped-Password-Protected');
       const blob = await res.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = `files-${new Date().toISOString().slice(0,10)}.zip`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(a.href);
-      toast.success('Download started');
+      if (skippedHeader) {
+        const skipped = skippedHeader.split('||').filter(Boolean);
+        toast.warning(`Download started — ${skipped.length} password-protected file${skipped.length !== 1 ? 's' : ''} skipped: ${skipped.join(', ')}`);
+      } else {
+        toast.success('Download started');
+      }
     } catch {
       toast.error('Download failed');
     }

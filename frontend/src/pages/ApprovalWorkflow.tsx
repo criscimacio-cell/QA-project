@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle, Clock, FileText, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckCircle, Clock, FileText, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import Pagination from '../components/UI/Pagination';
 import api from '../api/client';
@@ -8,6 +8,15 @@ import Modal from '../components/UI/Modal';
 import { useAuth } from '../context/AuthContext';
 
 const PAGE_SIZE = 10;
+
+function getDueStatus(dueDate: string | null): { label: string; color: string } | null {
+  if (!dueDate) return null;
+  const diff = Math.ceil((new Date(dueDate).getTime() - Date.now()) / 86400000);
+  if (diff < 0) return { label: `${Math.abs(diff)}d overdue`, color: 'text-red-500 bg-red-50 dark:bg-red-900/20' };
+  if (diff === 0) return { label: 'Due today', color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' };
+  if (diff <= 3) return { label: `Due in ${diff}d`, color: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20' };
+  return { label: `Due ${new Date(dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, color: 'text-slate-400 bg-slate-50 dark:bg-slate-800/50' };
+}
 
 const STAGES = [
   { key: 'draft', label: 'Draft', icon: FileText, color: 'border-slate-300 dark:border-slate-600', headerColor: 'bg-slate-100 dark:bg-slate-800', textColor: 'text-slate-600 dark:text-slate-400' },
@@ -137,6 +146,8 @@ export default function ApprovalWorkflow() {
     }
   };
 
+  const overdueCount = files.filter(f => f.due_date && new Date(f.due_date) < new Date() && f.status !== 'published' && f.status !== 'archived').length;
+
   return (
     <div className="space-y-5 animate-fade-in-up">
       <div>
@@ -160,6 +171,14 @@ export default function ApprovalWorkflow() {
           );
         })}
       </div>
+
+      {/* Overdue warning banner */}
+      {overdueCount > 0 && (
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
+          <AlertTriangle size={15} />
+          {overdueCount} file{overdueCount > 1 ? 's' : ''} past their review deadline
+        </div>
+      )}
 
       {/* Kanban */}
       {loading ? (
@@ -279,6 +298,7 @@ export default function ApprovalWorkflow() {
                         <FileIcon mimeType={f.mime_type} name={f.original_name} size={16} />
                         <span className="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">{f.name}</span>
                       </div>
+                      {(() => { const s = getDueStatus(f.due_date); return s ? <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${s.color}`}>{s.label}</span> : null; })()}
                       <div className="text-xs text-slate-400 space-y-0.5">
                         <div>{f.project} · {f.module}</div>
                         {f.jira_ticket && <div className="text-blue-500 font-mono">{f.jira_ticket}</div>}
@@ -341,6 +361,17 @@ export default function ApprovalWorkflow() {
               {[['Owner', selected.owner_name], ['Category', selected.category], ['Jira', selected.jira_ticket], ['Repository', selected.repository_name]].filter(([, v]) => v).map(([l, v]) => (
                 <div key={l}><span className="text-slate-400">{l}: </span><span className="font-medium text-slate-900 dark:text-slate-100">{v}</span></div>
               ))}
+              {selected.due_date && (() => {
+                const s = getDueStatus(selected.due_date);
+                return (
+                  <div>
+                    <span className="text-slate-400">Due Date: </span>
+                    <span className={`font-medium text-xs px-1.5 py-0.5 rounded-full ${s ? s.color : 'text-slate-900 dark:text-slate-100'}`}>
+                      {s ? s.label : new Date(selected.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
             {isLead && (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">

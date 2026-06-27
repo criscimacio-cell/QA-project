@@ -64,6 +64,7 @@ export default function AuditLog() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [summaryCounts, setSummaryCounts] = useState<Record<string, number>>({});
+  const [trendData, setTrendData] = useState<{ day: string; count: number }[]>([]);
 
   const load = () => {
     setLoading(true);
@@ -86,6 +87,20 @@ export default function AuditLog() {
   }, []);
 
   useEffect(() => { load(); }, [action, offset]);
+
+  useEffect(() => {
+    const days: Record<string, number> = {};
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      days[d.toLocaleDateString('en-US', { weekday: 'short' })] = 0;
+    }
+    logs.forEach(l => {
+      const day = new Date(l.created_at).toLocaleDateString('en-US', { weekday: 'short' });
+      if (day in days) days[day] = (days[day] || 0) + 1;
+    });
+    setTrendData(Object.entries(days).map(([day, count]) => ({ day, count })));
+  }, [logs]);
 
   // S1: Fetch ALL records (limit=10000) instead of only the current page
   const exportCSV = async () => {
@@ -156,6 +171,26 @@ export default function AuditLog() {
           </div>
         ))}
       </div>
+
+      {/* Trends — Activity chart for last 7 days */}
+      {logs.length > 0 && trendData.length > 0 && (
+        <div className="card p-4">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Activity Trend — Last 7 Days</h3>
+          <div className="flex items-end gap-2 h-24">
+            {trendData.map(({ day, count }) => {
+              const max = Math.max(...trendData.map(d => d.count), 1);
+              const pct = (count / max) * 100;
+              return (
+                <div key={day} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{count > 0 ? count : ''}</span>
+                  <div className="w-full rounded-t-md transition-all" style={{ height: `${Math.max(pct, 4)}%`, background: count > 0 ? '#F59E0B' : 'rgba(245,158,11,0.15)' }} />
+                  <span className="text-[10px] text-slate-400">{day}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Filters — L4: page resets to 1 when action filter changes */}
       <div className="card p-4 flex gap-3 items-center flex-wrap">

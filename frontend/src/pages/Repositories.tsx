@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ChevronRight, ChevronDown, Folder, FolderOpen, Plus,
   LayoutGrid, List, Upload, Search, RefreshCw, MoreVertical,
   Pencil, Trash2, FolderPlus, Database, ChevronsDownUp, ChevronsUpDown, Loader2,
+  Activity,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
@@ -222,6 +223,17 @@ export default function Repositories() {
   const filteredFiles = (repoDetail?.files || []).filter((f: FileRecord) =>
     !fileSearch || f.name.toLowerCase().includes(fileSearch.toLowerCase())
   );
+
+  const healthStats = useMemo(() => {
+    const files: FileRecord[] = repoDetail?.files || [];
+    if (!files.length) return null;
+    const now = Date.now();
+    const stale = files.filter(f => new Date(f.updated_at).getTime() < now - 30 * 86400000).length;
+    const pending = files.filter(f => ['submitted', 'under_review'].includes(f.status)).length;
+    const byStatus: Record<string, number> = {};
+    files.forEach(f => { byStatus[f.status] = (byStatus[f.status] || 0) + 1; });
+    return { total: files.length, stale, pending, byStatus };
+  }, [repoDetail]);
 
   /* ── CRUD handlers ── */
   const openCreate = (parentId: number | null, parentName = '') => {
@@ -561,6 +573,37 @@ export default function Repositories() {
                       <div className="mt-1.5"><StatusBadge status={f.status} /></div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {selectedRepo && healthStats && (
+                <div className="card p-4 mt-4">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
+                    <Activity size={15} className="text-[#F59E0B]" /> Repository Health
+                  </h3>
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <div className="text-center p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                      <div className="text-lg font-bold text-slate-800 dark:text-white">{healthStats.total}</div>
+                      <div className="text-xs text-slate-400">Total Files</div>
+                    </div>
+                    <div className="text-center p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                      <div className="text-lg font-bold text-amber-600">{healthStats.pending}</div>
+                      <div className="text-xs text-slate-400">Pending Review</div>
+                    </div>
+                    <div className={`text-center p-2 rounded-lg ${healthStats.stale > 0 ? 'bg-red-50 dark:bg-red-900/20' : 'bg-emerald-50 dark:bg-emerald-900/20'}`}>
+                      <div className={`text-lg font-bold ${healthStats.stale > 0 ? 'text-red-500' : 'text-emerald-500'}`}>{healthStats.stale}</div>
+                      <div className="text-xs text-slate-400">Stale (30d+)</div>
+                    </div>
+                  </div>
+                  {Object.keys(healthStats.byStatus).length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {Object.entries(healthStats.byStatus).map(([status, count]) => (
+                        <span key={status} className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full">
+                          {status}: {count}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </>

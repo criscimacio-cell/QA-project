@@ -58,7 +58,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
            f.checked_out_by, f.checked_out_at, co.name as checked_out_by_name,
            u.name as owner_name, r.name as repository_name, ff.name as folder_name,
            (f.download_password_hash IS NOT NULL) as is_password_protected,
-           f.password_hint
+           f.password_hint, f.due_date
     FROM files f LEFT JOIN users u ON f.owner_id = u.id LEFT JOIN repositories r ON f.repository_id = r.id LEFT JOIN users co ON co.id = f.checked_out_by LEFT JOIN file_folders ff ON f.folder_id = ff.id
     WHERE f.organization_id = ${orgId}
     AND f.deleted_at IS NULL
@@ -475,7 +475,7 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
 });
 
 router.put('/:id', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
-  const { name, project, module, category, jira_ticket, tags, description, download_password, password_hint, remove_password } = req.body;
+  const { name, project, module, category, jira_ticket, tags, description, download_password, password_hint, remove_password, due_date } = req.body;
   const orgId = req.user!.organizationId;
   if (req.user!.role === 'engineer') {
     const [file] = await sql`SELECT owner_id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
@@ -491,7 +491,7 @@ router.put('/:id', authenticate, requireModule('files'), requireRole('admin', 'l
   } else if (password_hint !== undefined) {
     pwUpdate = sql`, password_hint = ${password_hint || null}`;
   }
-  await sql`UPDATE files SET name=${name}, project=${project as string}, module=${module}, category=${category as string}, jira_ticket=${jira_ticket}, tags=${tags}, description=${description}, updated_at=NOW() ${pwUpdate} WHERE id=${req.params.id} AND organization_id=${orgId}`;
+  await sql`UPDATE files SET name=${name}, project=${project as string}, module=${module}, category=${category as string}, jira_ticket=${jira_ticket}, tags=${tags}, description=${description}, due_date=${due_date ?? null}, updated_at=NOW() ${pwUpdate} WHERE id=${req.params.id} AND organization_id=${orgId}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'FILE_UPDATE', 'file', ${req.params.id}, ${`Updated file id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Updated' });
 });

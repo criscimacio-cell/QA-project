@@ -466,5 +466,46 @@ export async function initDb() {
   const { mkdirSync } = await import('fs');
   mkdirSync(process.env.UPLOAD_DIR ? `${process.env.UPLOAD_DIR}/templates` : './uploads/templates', { recursive: true });
 
+  // ── API tokens table ──────────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS api_tokens (
+      id              SERIAL PRIMARY KEY,
+      user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      organization_id INTEGER REFERENCES organizations(id),
+      name            TEXT NOT NULL,
+      token_hash      TEXT UNIQUE NOT NULL,
+      token_prefix    TEXT NOT NULL,
+      scopes          TEXT DEFAULT 'read',
+      last_used_at    TIMESTAMPTZ DEFAULT NULL,
+      expires_at      TIMESTAMPTZ DEFAULT NULL,
+      revoked         BOOLEAN DEFAULT FALSE,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
+  // ── File comment threading ────────────────────────────────────────────────
+  await sql`ALTER TABLE file_comments ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES file_comments(id) ON DELETE CASCADE`;
+
+  // ── Approval due dates on files ───────────────────────────────────────────
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS due_date TIMESTAMPTZ DEFAULT NULL`;
+
+  // ── Document expiry ───────────────────────────────────────────────────────
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT NULL`;
+
+  // ── Webhook subscriptions ─────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS webhooks (
+      id              SERIAL PRIMARY KEY,
+      organization_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE,
+      created_by      INTEGER REFERENCES users(id),
+      url             TEXT NOT NULL,
+      events          TEXT NOT NULL DEFAULT 'file.approved,file.uploaded',
+      secret          TEXT DEFAULT NULL,
+      active          BOOLEAN DEFAULT TRUE,
+      last_triggered  TIMESTAMPTZ DEFAULT NULL,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
   console.log('Database initialization complete.');
 }

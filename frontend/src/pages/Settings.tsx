@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, Camera, X, Check, Sun, Moon, Monitor, Loader2, Building2 } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Bell, Palette, Database, Key, Tag, Plus, Trash2, Camera, X, Check, Sun, Moon, Monitor, Loader2, Building2, Copy, Eye, EyeOff, Clock, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -167,6 +167,74 @@ export default function Settings() {
       const msg = e.response?.data?.error || 'Failed to change password';
       setPwErr(msg);
       toast.error(msg);
+    }
+  };
+
+  // API Tokens state
+  const [apiTokens, setApiTokens] = useState<any[]>([]);
+  const [tokensLoading, setTokensLoading] = useState(false);
+  const [newTokenName, setNewTokenName] = useState('');
+  const [newTokenExpiry, setNewTokenExpiry] = useState('90');
+  const [newTokenScopes, setNewTokenScopes] = useState<string[]>(['read']);
+  const [tokenCreateLoading, setTokenCreateLoading] = useState(false);
+  const [createdToken, setCreatedToken] = useState<string | null>(null);
+  const [showToken, setShowToken] = useState(false);
+
+  const loadApiTokens = () => {
+    setTokensLoading(true);
+    api.get('/api-tokens').then(r => setApiTokens(r.data)).catch(() => {}).finally(() => setTokensLoading(false));
+  };
+
+  useEffect(() => { if (activeSection === 'API Access') loadApiTokens(); }, [activeSection]);
+
+  const createToken = async () => {
+    if (!newTokenName.trim()) return;
+    setTokenCreateLoading(true);
+    try {
+      const payload: any = { name: newTokenName.trim(), scopes: newTokenScopes };
+      if (newTokenExpiry) payload.expires_in_days = parseInt(newTokenExpiry);
+      const r = await api.post('/api-tokens', payload);
+      setCreatedToken(r.data.token);
+      setShowToken(true);
+      setNewTokenName('');
+      setNewTokenExpiry('90');
+      setNewTokenScopes(['read']);
+      loadApiTokens();
+    } catch {
+      toast.error('Failed to create token');
+    } finally {
+      setTokenCreateLoading(false);
+    }
+  };
+
+  const revokeToken = async (id: number) => {
+    try {
+      await api.delete(`/api-tokens/${id}`);
+      setApiTokens(prev => prev.filter(t => t.id !== id));
+      toast.success('Token revoked');
+    } catch {
+      toast.error('Failed to revoke token');
+    }
+  };
+
+  // Active Sessions state
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  const loadSessions = () => {
+    setSessionsLoading(true);
+    api.get('/auth/sessions').then(r => setSessions(r.data)).catch(() => {}).finally(() => setSessionsLoading(false));
+  };
+
+  useEffect(() => { if (activeSection === 'Security') loadSessions(); }, [activeSection]);
+
+  const revokeSession = async (tokenId: string) => {
+    try {
+      await api.delete(`/auth/sessions/${tokenId}`);
+      setSessions(prev => prev.filter(s => s.id !== tokenId));
+      toast.success('Session revoked');
+    } catch {
+      toast.error('Failed to revoke session');
     }
   };
 
@@ -359,44 +427,82 @@ export default function Settings() {
 
           {/* Security section */}
           {activeSection === 'Security' && (
-            <div className="card p-6">
-              <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-                <Key size={18} className="text-[#F59E0B]" /> Change Password
-              </h2>
-              {pwMsg && <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-400">{pwMsg}</div>}
-              {pwErr && <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">{pwErr}</div>}
-              <form onSubmit={changePassword} className="space-y-4 max-w-sm">
-                <div>
-                  <label className="label">Current Password<span className="text-red-500 ml-0.5">*</span></label>
-                  <input type="password" value={currentPw} onChange={e => { setCurrentPw(e.target.value); if (errors.currentPassword) setErrors(p => ({ ...p, currentPassword: '' })); }} className={`input ${errors.currentPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
-                  {errors.currentPassword && <p className="text-xs text-red-500 mt-1">{errors.currentPassword}</p>}
-                </div>
-                <div>
-                  <label className="label">New Password<span className="text-red-500 ml-0.5">*</span></label>
-                  <input type="password" value={newPw} onChange={e => {
-                    const v = e.target.value;
-                    setNewPw(v);
-                    setErrors(p => {
-                      const n: Record<string, string> = { ...p, newPassword: '' };
-                      if (confirmPw) n.confirmPassword = confirmPw !== v ? "Passwords don't match" : '';
-                      return n;
-                    });
-                  }} className={`input ${errors.newPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
-                  {newPw && (() => { const s = passwordStrength(newPw); return <p className={`text-xs mt-1 font-medium ${s.color}`}>Strength: {s.label}</p>; })()}
-                  <p className="text-xs text-slate-400 mt-0.5">Min 8 characters, at least one number or special character</p>
-                  {errors.newPassword && <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>}
-                </div>
-                <div>
-                  <label className="label">Confirm New Password<span className="text-red-500 ml-0.5">*</span></label>
-                  <input type="password" value={confirmPw} onChange={e => {
-                    const v = e.target.value;
-                    setConfirmPw(v);
-                    setErrors(p => ({ ...p, confirmPassword: v && newPw && v !== newPw ? "Passwords don't match" : '' }));
-                  }} className={`input ${errors.confirmPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
-                  {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
-                </div>
-                <button type="submit" className="btn-primary">Update Password</button>
-              </form>
+            <div className="space-y-5">
+              <div className="card p-6">
+                <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                  <Key size={18} className="text-[#F59E0B]" /> Change Password
+                </h2>
+                {pwMsg && <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-400">{pwMsg}</div>}
+                {pwErr && <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">{pwErr}</div>}
+                <form onSubmit={changePassword} className="space-y-4 max-w-sm">
+                  <div>
+                    <label className="label">Current Password<span className="text-red-500 ml-0.5">*</span></label>
+                    <input type="password" value={currentPw} onChange={e => { setCurrentPw(e.target.value); if (errors.currentPassword) setErrors(p => ({ ...p, currentPassword: '' })); }} className={`input ${errors.currentPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                    {errors.currentPassword && <p className="text-xs text-red-500 mt-1">{errors.currentPassword}</p>}
+                  </div>
+                  <div>
+                    <label className="label">New Password<span className="text-red-500 ml-0.5">*</span></label>
+                    <input type="password" value={newPw} onChange={e => {
+                      const v = e.target.value;
+                      setNewPw(v);
+                      setErrors(p => {
+                        const n: Record<string, string> = { ...p, newPassword: '' };
+                        if (confirmPw) n.confirmPassword = confirmPw !== v ? "Passwords don't match" : '';
+                        return n;
+                      });
+                    }} className={`input ${errors.newPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                    {newPw && (() => { const s = passwordStrength(newPw); return <p className={`text-xs mt-1 font-medium ${s.color}`}>Strength: {s.label}</p>; })()}
+                    <p className="text-xs text-slate-400 mt-0.5">Min 8 characters, at least one number or special character</p>
+                    {errors.newPassword && <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>}
+                  </div>
+                  <div>
+                    <label className="label">Confirm New Password<span className="text-red-500 ml-0.5">*</span></label>
+                    <input type="password" value={confirmPw} onChange={e => {
+                      const v = e.target.value;
+                      setConfirmPw(v);
+                      setErrors(p => ({ ...p, confirmPassword: v && newPw && v !== newPw ? "Passwords don't match" : '' }));
+                    }} className={`input ${errors.confirmPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
+                    {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
+                  </div>
+                  <button type="submit" className="btn-primary">Update Password</button>
+                </form>
+              </div>
+
+              {/* Active Sessions */}
+              <div className="card p-6">
+                <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                  <Shield size={18} className="text-[#F59E0B]" /> Active Sessions
+                </h2>
+                {sessionsLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-400 py-4">
+                    <Loader2 size={16} className="animate-spin text-amber-400" /> Loading sessions…
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <p className="text-sm text-slate-400 py-2">No active sessions found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {sessions.map(s => (
+                      <div key={s.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+                          <Shield size={14} className="text-slate-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{s.user_agent || 'Unknown device'}</p>
+                          <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                            <Clock size={10} className="inline" />
+                            {s.is_current ? <span className="text-emerald-500 font-medium">Current session</span> : `Last active ${new Date(s.last_used_at || s.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}`}
+                          </p>
+                        </div>
+                        {!s.is_current && (
+                          <button onClick={() => revokeSession(s.id)} className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Revoke session">
+                            <LogOut size={12} /> Revoke
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -645,14 +751,115 @@ export default function Settings() {
             </div>
           )}
 
-          {/* API Access — placeholder */}
+          {/* API Access */}
           {activeSection === 'API Access' && (
-            <div className="card p-6 opacity-60 pointer-events-none">
-              <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
-                <Key size={18} className="text-[#F59E0B]" /> API Access
-                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-2 py-0.5 rounded-full">Coming soon</span>
-              </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">API key management coming soon.</p>
+            <div className="space-y-5">
+              {/* Created token reveal */}
+              {createdToken && (
+                <div className="card p-4 border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20">
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mb-2">Token created — copy it now, it won't be shown again.</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 font-mono text-slate-800 dark:text-slate-200 overflow-x-auto">
+                      {showToken ? createdToken : '••••••••••••••••••••••••'}
+                    </code>
+                    <button onClick={() => setShowToken(s => !s)} className="btn-secondary p-2" title="Toggle visibility">
+                      {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                    <button onClick={() => { navigator.clipboard.writeText(createdToken); toast.success('Token copied'); }} className="btn-primary p-2" title="Copy to clipboard">
+                      <Copy size={14} />
+                    </button>
+                    <button onClick={() => setCreatedToken(null)} className="btn-secondary p-2" title="Dismiss">
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Create new token */}
+              <div className="card p-6 space-y-4">
+                <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                  <Key size={18} className="text-[#F59E0B]" /> Create API Token
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-1">
+                    <label className="label">Token Name</label>
+                    <input value={newTokenName} onChange={e => setNewTokenName(e.target.value)} placeholder="e.g. CI Pipeline" className="input text-sm" maxLength={80} />
+                  </div>
+                  <div>
+                    <label className="label">Expires in (days)</label>
+                    <select value={newTokenExpiry} onChange={e => setNewTokenExpiry(e.target.value)} className="input text-sm">
+                      <option value="30">30 days</option>
+                      <option value="90">90 days</option>
+                      <option value="180">180 days</option>
+                      <option value="365">1 year</option>
+                      <option value="">Never</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label">Scopes</label>
+                    <div className="flex gap-3 mt-1.5">
+                      {(['read', 'write'] as const).map(scope => (
+                        <label key={scope} className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newTokenScopes.includes(scope)}
+                            onChange={e => setNewTokenScopes(prev => e.target.checked ? [...prev, scope] : prev.filter(s => s !== scope))}
+                            className="rounded border-slate-300"
+                          />
+                          <span className="text-sm text-slate-700 dark:text-slate-300 capitalize">{scope}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <button onClick={createToken} disabled={tokenCreateLoading || !newTokenName.trim()} className="btn-primary flex items-center gap-2">
+                  {tokenCreateLoading ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+                  Generate Token
+                </button>
+              </div>
+
+              {/* Existing tokens */}
+              <div className="card p-6">
+                <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                  <Key size={18} className="text-[#F59E0B]" /> Active Tokens
+                </h2>
+                {tokensLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-400 py-4">
+                    <Loader2 size={16} className="animate-spin text-amber-400" /> Loading tokens…
+                  </div>
+                ) : apiTokens.length === 0 ? (
+                  <p className="text-sm text-slate-400 py-4">No API tokens yet. Create one above.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {apiTokens.map(t => (
+                      <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <Key size={14} className="text-amber-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t.name}</p>
+                          <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                            <span className="font-mono">{t.token_prefix}…</span>
+                            <span>·</span>
+                            {t.scopes && <span className="text-amber-600 dark:text-amber-400">{Array.isArray(t.scopes) ? t.scopes.join(', ') : t.scopes}</span>}
+                            <span>·</span>
+                            {t.expires_at ? (
+                              <span className={new Date(t.expires_at) < new Date() ? 'text-red-500' : ''}>
+                                <Clock size={10} className="inline mr-0.5" />
+                                {new Date(t.expires_at) < new Date() ? 'Expired' : `Expires ${new Date(t.expires_at).toLocaleDateString('en-CA')}`}
+                              </span>
+                            ) : (
+                              <span>No expiry</span>
+                            )}
+                          </p>
+                        </div>
+                        <span className="text-xs text-slate-400">Created {new Date(t.created_at).toLocaleDateString('en-CA')}</span>
+                        <button onClick={() => revokeToken(t.id)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors" title="Revoke token">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

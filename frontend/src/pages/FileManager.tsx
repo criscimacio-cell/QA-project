@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Filter, Download, Archive, Eye, EyeOff, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List, Lock, Unlock, GitCompare, BookTemplate, Share2, Copy, Pencil } from 'lucide-react';
+import { Filter, Download, Archive, Eye, EyeOff, GitBranch, RefreshCw, Upload, X, RotateCcw, FileText, Image, Trash2, MessageSquare, CheckCircle, Clock, Files, Loader2, LayoutGrid, List, Lock, Unlock, GitCompare, BookTemplate, Share2, Copy, Pencil, Users, Shield, Reply, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../api/client';
 import FileIcon from '../components/UI/FileIcon';
@@ -93,11 +93,21 @@ export default function FileManager() {
   const [previewLoading, setPreviewLoading] = useState(false);
 
   // Detail modal tabs
-  const [detailTab, setDetailTab] = useState<'details' | 'comments' | 'approvals'>('details');
+  const [detailTab, setDetailTab] = useState<'details' | 'comments' | 'approvals' | 'permissions'>('details');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [commentError, setCommentError] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyComment, setReplyComment] = useState('');
+
+  // File permissions state
+  const [filePermissions, setFilePermissions] = useState<any[]>([]);
+  const [permLoading, setPermLoading] = useState(false);
+  const [orgUsers, setOrgUsers] = useState<any[]>([]);
+  const [newPermUserId, setNewPermUserId] = useState('');
+  const [newPermLevel, setNewPermLevel] = useState<'view' | 'edit'>('view');
+  const [permGrantLoading, setPermGrantLoading] = useState(false);
   const [approvalHistory, setApprovalHistory] = useState<any[]>([]);
 
   const [viewMode, setViewMode] = useState<'table' | 'grouped'>('table');
@@ -181,6 +191,11 @@ export default function FileManager() {
     setApprovalHistory([]);
     setNewComment('');
     setCommentError('');
+    setReplyingTo(null);
+    setReplyComment('');
+    setFilePermissions([]);
+    setNewPermUserId('');
+    setNewPermLevel('view');
   }, [selected?.id]);
 
   const loadFolders = () => api.get('/folders').then(r => setFolders(r.data)).catch(() => {});
@@ -372,6 +387,73 @@ export default function FileManager() {
     }
   };
 
+  const postReply = async (parentId: number) => {
+    if (!selected || !replyComment.trim()) return;
+    if (replyComment.trim().length > 500) { toast.error('Reply must be 500 characters or fewer'); return; }
+    setCommentLoading(true);
+    try {
+      const r = await api.post(`/files/${selected.id}/comments`, { comment: replyComment, parent_id: parentId });
+      setComments(prev => [...prev, r.data]);
+      setReplyComment('');
+      setReplyingTo(null);
+    } catch {
+      toast.error('Failed to post reply. Please try again.');
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  const loadPermissions = async () => {
+    if (!selected) return;
+    setPermLoading(true);
+    try {
+      const [permRes, usersRes] = await Promise.all([
+        api.get(`/files/${selected.id}/permissions`),
+        api.get('/users'),
+      ]);
+      setFilePermissions(permRes.data);
+      setOrgUsers(usersRes.data?.users || usersRes.data || []);
+    } catch {
+      toast.error('Failed to load permissions');
+    } finally {
+      setPermLoading(false);
+    }
+  };
+
+  const grantPermission = async () => {
+    if (!selected || !newPermUserId) return;
+    setPermGrantLoading(true);
+    try {
+      const r = await api.post(`/files/${selected.id}/permissions`, { user_id: parseInt(newPermUserId), permission: newPermLevel });
+      setFilePermissions(prev => {
+        const existing = prev.findIndex(p => p.user_id === parseInt(newPermUserId));
+        if (existing >= 0) {
+          const next = [...prev];
+          next[existing] = r.data;
+          return next;
+        }
+        return [...prev, r.data];
+      });
+      setNewPermUserId('');
+      toast.success('Permission granted');
+    } catch {
+      toast.error('Failed to grant permission');
+    } finally {
+      setPermGrantLoading(false);
+    }
+  };
+
+  const revokePermission = async (permId: number) => {
+    if (!selected) return;
+    try {
+      await api.delete(`/files/${selected.id}/permissions/${permId}`);
+      setFilePermissions(prev => prev.filter(p => p.id !== permId));
+      toast.success('Permission revoked');
+    } catch {
+      toast.error('Failed to revoke permission');
+    }
+  };
+
   // Approval history handler
   const loadApprovals = async () => {
     if (!selected) return;
@@ -383,10 +465,11 @@ export default function FileManager() {
     }
   };
 
-  const handleDetailTabChange = (t: 'details' | 'comments' | 'approvals') => {
+  const handleDetailTabChange = (t: 'details' | 'comments' | 'approvals' | 'permissions') => {
     setDetailTab(t);
     if (t === 'comments') loadComments();
     if (t === 'approvals') loadApprovals();
+    if (t === 'permissions') loadPermissions();
   };
 
   // Bulk select handlers
@@ -944,14 +1027,14 @@ export default function FileManager() {
             )}
 
             {/* Tabs */}
-            <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg w-fit">
-              {(['details', 'comments', 'approvals'] as const).map(t => (
+            <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg w-fit flex-wrap">
+              {(['details', 'comments', 'approvals', 'permissions'] as const).map(t => (
                 <button
                   key={t}
                   onClick={() => handleDetailTabChange(t)}
                   className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize ${detailTab === t ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                 >
-                  {t === 'approvals' ? 'Approval History' : t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t === 'approvals' ? 'Approval History' : t === 'permissions' ? 'Access' : t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
             </div>
@@ -1075,68 +1158,102 @@ export default function FileManager() {
             )}
 
             {/* Comments tab */}
-            {detailTab === 'comments' && (
-              <div className="space-y-3">
-                {commentLoading && comments.length === 0 ? (
-                  <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
-                    <Loader2 size={20} className="animate-spin text-amber-400" />
-                    Loading comments…
-                  </div>
-                ) : comments.length === 0 ? (
-                  <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
-                    <MessageSquare size={28} className="opacity-30" />
-                    No comments yet. Be the first to comment.
-                  </div>
-                ) : (
-                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                    {comments.map(c => (
-                      <div key={c.id} className="flex gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                        {c.user_avatar ? (
-                          <img src={c.user_avatar} alt="" className="w-8 h-8 rounded-full flex-shrink-0 object-cover" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {(c.user_name || '?')[0].toUpperCase()}
-                          </div>
+            {detailTab === 'comments' && (() => {
+              const topLevel = comments.filter(c => !c.parent_id);
+              const replies = comments.filter(c => c.parent_id);
+              const repliesFor = (parentId: number) => replies.filter(r => r.parent_id === parentId);
+              const CommentCard = ({ c, isReply }: { c: any; isReply?: boolean }) => (
+                <div className={`flex gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 ${isReply ? 'ml-8 mt-2' : ''}`}>
+                  {c.user_avatar ? (
+                    <img src={c.user_avatar} alt="" className="w-8 h-8 rounded-full flex-shrink-0 object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                      {(c.user_name || '?')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{c.user_name}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-slate-400">{new Date(c.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                        {!isReply && (
+                          <button onClick={() => { setReplyingTo(replyingTo === c.id ? null : c.id); setReplyComment(''); }} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-amber-500 transition-colors" title="Reply">
+                            <Reply size={12} />
+                          </button>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{c.user_name}</span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-400">{new Date(c.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                              {(c.user_id === user?.id || isAdmin) && (
-                                <button onClick={() => deleteComment(c.id)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors" title="Delete comment">
-                                  <Trash2 size={12} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{renderComment(c.comment)}</p>
-                        </div>
+                        {(c.user_id === user?.id || isAdmin) && (
+                          <button onClick={() => deleteComment(c.id)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors" title="Delete comment">
+                            <Trash2 size={12} />
+                          </button>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex gap-2 items-end">
-                    <MentionInput
-                      value={newComment}
-                      onChange={v => { setNewComment(v.slice(0, 500)); if (commentError) setCommentError(''); }}
-                      onKeyDown={e => e.key === 'Enter' && !e.shiftKey && postComment()}
-                      placeholder="Add a comment… use @name to mention"
-                      maxLength={500}
-                      rows={2}
-                      disabled={commentLoading}
-                      className={`input flex-1 text-sm resize-none ${commentError ? 'border-red-400 focus:ring-red-300' : ''}`}
-                    />
-                    <button onClick={postComment} disabled={commentLoading} className="btn-primary px-4">Post</button>
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    {commentError ? <p className="text-xs text-red-500">{commentError}</p> : <span />}
-                    <p className="text-xs text-slate-400 text-right">{newComment.length}/500</p>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{renderComment(c.comment)}</p>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+              return (
+                <div className="space-y-3">
+                  {commentLoading && comments.length === 0 ? (
+                    <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
+                      <Loader2 size={20} className="animate-spin text-amber-400" />
+                      Loading comments…
+                    </div>
+                  ) : topLevel.length === 0 ? (
+                    <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
+                      <MessageSquare size={28} className="opacity-30" />
+                      No comments yet. Be the first to comment.
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                      {topLevel.map(c => (
+                        <div key={c.id}>
+                          <CommentCard c={c} />
+                          {repliesFor(c.id).map(r => <CommentCard key={r.id} c={r} isReply />)}
+                          {replyingTo === c.id && (
+                            <div className="ml-8 mt-2 flex gap-2 items-end">
+                              <MentionInput
+                                value={replyComment}
+                                onChange={v => setReplyComment(v.slice(0, 500))}
+                                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && postReply(c.id)}
+                                placeholder="Write a reply…"
+                                maxLength={500}
+                                rows={2}
+                                disabled={commentLoading}
+                                className="input flex-1 text-sm resize-none"
+                              />
+                              <div className="flex flex-col gap-1">
+                                <button onClick={() => postReply(c.id)} disabled={commentLoading} className="btn-primary px-3 text-xs py-1.5">Reply</button>
+                                <button onClick={() => { setReplyingTo(null); setReplyComment(''); }} className="btn-secondary px-3 text-xs py-1.5">Cancel</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex gap-2 items-end">
+                      <MentionInput
+                        value={newComment}
+                        onChange={v => { setNewComment(v.slice(0, 500)); if (commentError) setCommentError(''); }}
+                        onKeyDown={e => e.key === 'Enter' && !e.shiftKey && postComment()}
+                        placeholder="Add a comment… use @name to mention"
+                        maxLength={500}
+                        rows={2}
+                        disabled={commentLoading}
+                        className={`input flex-1 text-sm resize-none ${commentError ? 'border-red-400 focus:ring-red-300' : ''}`}
+                      />
+                      <button onClick={postComment} disabled={commentLoading} className="btn-primary px-4">Post</button>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      {commentError ? <p className="text-xs text-red-500">{commentError}</p> : <span />}
+                      <p className="text-xs text-slate-400 text-right">{newComment.length}/500</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Approval History tab */}
             {detailTab === 'approvals' && (
@@ -1174,6 +1291,87 @@ export default function FileManager() {
                       ))}
                     </div>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Permissions tab */}
+            {detailTab === 'permissions' && (
+              <div className="space-y-4">
+                {permLoading ? (
+                  <div className="text-center py-8 text-slate-400 text-sm flex flex-col items-center gap-2">
+                    <Loader2 size={20} className="animate-spin text-amber-400" />
+                    Loading permissions…
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Shield size={15} className="text-amber-500" />
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Per-User Access Control</span>
+                    </div>
+                    {filePermissions.length === 0 ? (
+                      <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
+                        <Users size={28} className="opacity-30" />
+                        No custom permissions set. All org members have default access.
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {filePermissions.map(p => (
+                          <div key={p.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800">
+                            <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              {(p.user_name || '?')[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{p.user_name}</p>
+                              <p className="text-xs text-slate-400 truncate">{p.user_email}</p>
+                            </div>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.permission === 'edit' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
+                              {p.permission}
+                            </span>
+                            {(isAdmin || isLead) && (
+                              <button onClick={() => revokePermission(p.id)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors" title="Revoke permission">
+                                <X size={13} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {(isAdmin || isLead) && (
+                      <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5"><UserPlus size={11} /> Grant Access</p>
+                        <div className="flex gap-2">
+                          <select
+                            value={newPermUserId}
+                            onChange={e => setNewPermUserId(e.target.value)}
+                            className="input flex-1 text-sm"
+                          >
+                            <option value="">Select user…</option>
+                            {orgUsers
+                              .filter(u => u.id !== selected?.owner_id && !filePermissions.some(p => p.user_id === u.id))
+                              .map(u => (
+                                <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                              ))}
+                          </select>
+                          <select
+                            value={newPermLevel}
+                            onChange={e => setNewPermLevel(e.target.value as 'view' | 'edit')}
+                            className="input w-28 text-sm"
+                          >
+                            <option value="view">View</option>
+                            <option value="edit">Edit</option>
+                          </select>
+                          <button
+                            onClick={grantPermission}
+                            disabled={!newPermUserId || permGrantLoading}
+                            className="btn-primary px-3 text-sm"
+                          >
+                            {permGrantLoading ? <Loader2 size={14} className="animate-spin" /> : 'Grant'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

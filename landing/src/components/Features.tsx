@@ -69,15 +69,6 @@ const FEATURES = [
   },
 ];
 
-// Cards in columns 0 & 1 fly from the left, columns 2 & 3 from the right
-function getXOffset(colIndex: number): number {
-  const col = colIndex % 4;
-  if (col === 0) return -220;
-  if (col === 1) return -110;
-  if (col === 2) return 110;
-  return 220;
-}
-
 export default function Features() {
   const { ref, isInView } = useScrollReveal(0.05);
 
@@ -106,36 +97,36 @@ export default function Features() {
         </motion.div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURES.map((f, i) => {
-            const xOffset = getXOffset(i);
-            return (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, x: xOffset, scale: 0.92 }}
-                whileInView={{ opacity: 1, x: 0, scale: 1 }}
-                // once: false makes it reverse when scrolling back up
-                viewport={{ once: false, amount: 0.25 }}
-                transition={{
-                  duration: 0.6,
-                  delay: (i % 4) * 0.07,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                className="card-glass rounded-2xl p-6 flex flex-col gap-4 cursor-default group"
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+          style={{ perspective: '1000px' }}
+        >
+          {FEATURES.map((f, i) => (
+            <motion.div
+              key={f.title}
+              initial={{ opacity: 0, rotateY: 90, scale: 0.85 }}
+              whileInView={{ opacity: 1, rotateY: 0, scale: 1 }}
+              viewport={{ once: false, amount: 0.3 }}
+              transition={{
+                duration: 0.7,
+                delay: (i % 4) * 0.1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              whileHover={{ y: -6, rotateY: -4, transition: { duration: 0.25 } }}
+              style={{ transformStyle: 'preserve-3d' }}
+              className="card-glass rounded-2xl p-6 flex flex-col gap-4 cursor-default group"
+            >
+              <div
+                className={`w-10 h-10 rounded-xl ${f.bg} border ${f.border} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
               >
-                <motion.div
-                  className={`w-10 h-10 rounded-xl ${f.bg} border ${f.border} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
-                >
-                  <f.icon size={18} className={f.color} />
-                </motion.div>
-                <div>
-                  <h3 className="text-sm font-semibold text-white mb-1.5">{f.title}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">{f.desc}</p>
-                </div>
-              </motion.div>
-            );
-          })}
+                <f.icon size={18} className={f.color} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1.5">{f.title}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{f.desc}</p>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>

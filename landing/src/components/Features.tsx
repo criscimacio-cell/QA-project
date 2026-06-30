@@ -69,18 +69,8 @@ const FEATURES = [
   },
 ];
 
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-};
-
-const cardVariant = {
-  hidden: { opacity: 0, y: 40 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
-};
-
 export default function Features() {
-  const { ref, isInView } = useScrollReveal(0.1);
+  const { ref, isInView } = useScrollReveal(0.05);
 
   return (
     <section id="features" className="py-32 relative overflow-hidden">
@@ -106,30 +96,38 @@ export default function Features() {
           </p>
         </motion.div>
 
-        {/* Grid */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate={isInView ? 'show' : 'hidden'}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-        >
-          {FEATURES.map((f) => (
+        {/* Grid — each card self-animates on scroll */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {FEATURES.map((f, i) => (
             <motion.div
               key={f.title}
-              variants={cardVariant}
-              whileHover={{ y: -6, transition: { duration: 0.3 } }}
-              className="card-glass rounded-2xl p-6 flex flex-col gap-4 cursor-default group transition-all duration-300"
+              initial={{ opacity: 0, y: 48, scale: 0.95 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{
+                duration: 0.55,
+                delay: (i % 4) * 0.08,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              whileHover={{ y: -6, transition: { duration: 0.25 } }}
+              className="card-glass rounded-2xl p-6 flex flex-col gap-4 cursor-default group"
             >
-              <div className={`w-10 h-10 rounded-xl ${f.bg} border ${f.border} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+              <motion.div
+                initial={{ scale: 0.7, opacity: 0 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, delay: (i % 4) * 0.08 + 0.15, ease: [0.16, 1, 0.3, 1] }}
+                className={`w-10 h-10 rounded-xl ${f.bg} border ${f.border} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+              >
                 <f.icon size={18} className={f.color} />
-              </div>
+              </motion.div>
               <div>
                 <h3 className="text-sm font-semibold text-white mb-1.5">{f.title}</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">{f.desc}</p>
               </div>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

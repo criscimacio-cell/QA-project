@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { LogIn, Mail } from 'lucide-react';
 
 export default function CTA() {
   return (
@@ -21,33 +21,34 @@ export default function CTA() {
           className="flex flex-col items-center gap-6"
         >
           <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">
-            <span className="text-gradient-white">Ready to organize</span>
+            <span className="text-gradient-white">Ready to get started</span>
             <br />
-            <span className="text-gradient">your QA assets?</span>
+            <span className="text-gradient">with Qlarity?</span>
           </h2>
           <p className="text-slate-400 text-lg max-w-lg">
-            Join hundreds of QA teams already using Qlarity. Free to start, scales with you.
+            Log in to access your documents, workflows, and knowledge base — all in one place.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <motion.a
-              href="/register"
+              href="/login"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.97 }}
               className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-8 py-3.5 rounded-xl text-sm transition-colors glow-amber"
             >
-              Get Started Free
-              <ArrowRight size={16} />
+              Log In
+              <LogIn size={16} />
             </motion.a>
             <motion.a
-              href="mailto:hello@qlarity.io"
+              href="mailto:support@stash.ph"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.97 }}
               className="inline-flex items-center gap-2 bg-white/6 hover:bg-white/10 border border-white/12 text-white font-medium px-8 py-3.5 rounded-xl text-sm transition-all"
             >
-              Talk to Sales
+              <Mail size={14} />
+              Contact Support
             </motion.a>
           </div>
-          <p className="text-xs text-slate-600">No credit card · Free forever for small teams · Cancel anytime</p>
+          <p className="text-xs text-slate-600">Internal platform · Access managed by your admin</p>
         </motion.div>
       </div>
     </section>

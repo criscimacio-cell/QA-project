@@ -6,7 +6,7 @@ const FEATURES = [
   {
     icon: FolderOpen,
     title: 'File Manager',
-    desc: 'Versioned QA asset storage with drag-and-drop upload, bulk actions, and full history tracking.',
+    desc: 'Versioned document storage with drag-and-drop upload, bulk actions, and full history tracking.',
     color: 'text-amber-400',
     bg: 'bg-amber-500/10',
     border: 'border-amber-500/20',
@@ -22,15 +22,15 @@ const FEATURES = [
   {
     icon: BookOpen,
     title: 'Knowledge Base',
-    desc: 'Rich-text documentation hub your whole QA team can contribute to and search instantly.',
+    desc: 'Rich-text documentation hub your whole team can contribute to and search instantly.',
     color: 'text-violet-400',
     bg: 'bg-violet-500/10',
     border: 'border-violet-500/20',
   },
   {
     icon: Database,
-    title: 'Test Data Library',
-    desc: 'Organize and share reusable test datasets with tagging, categories, and version control.',
+    title: 'Document Library',
+    desc: 'Organize and share reusable documents with tagging, categories, and version control.',
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/20',
@@ -54,7 +54,7 @@ const FEATURES = [
   {
     icon: Search,
     title: 'Full-Text Search',
-    desc: 'Find any file, article, or dataset instantly across your entire org with smart filters.',
+    desc: 'Find any file, article, or document instantly across your entire org with smart filters.',
     color: 'text-yellow-400',
     bg: 'bg-yellow-500/10',
     border: 'border-yellow-500/20',
@@ -62,7 +62,7 @@ const FEATURES = [
   {
     icon: Archive,
     title: 'Archive & Restore',
-    desc: 'Safely retire outdated assets without deletion. Restore at any time with full version history.',
+    desc: 'Safely retire outdated documents without deletion. Restore at any time with full version history.',
     color: 'text-orange-400',
     bg: 'bg-orange-500/10',
     border: 'border-orange-500/20',
@@ -99,7 +99,7 @@ export default function Features() {
             Everything you need
           </div>
           <h2 className="text-4xl sm:text-5xl font-bold text-gradient-white tracking-tight mb-4">
-            Built for QA teams
+            Built for your team
           </h2>
           <p className="text-slate-400 text-lg max-w-xl mx-auto">
             Every module works together. No duct tape, no integrations — one platform from draft to publish.

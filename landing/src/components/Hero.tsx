@@ -1,8 +1,8 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
-import { ArrowRight, Play, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, LogIn, CheckCircle2 } from 'lucide-react';
 
-const BADGES = ['SOC 2 Ready', 'Multi-tenant', 'Role-based Access'];
+const BADGES = ['Multi-tenant', 'Role-based Access', 'Audit Trail'];
 
 const FLOAT_CARDS = [
   { label: 'Files Approved', value: '1,284', color: 'text-emerald-400', dot: 'bg-emerald-400', x: '-right-4 top-12', delay: 0 },
@@ -61,7 +61,7 @@ export default function Hero() {
             variants={item}
             className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]"
           >
-            <span className="text-gradient-white">QA Asset Management,</span>
+            <span className="text-gradient-white">Document Management,</span>
             <br />
             <span className="text-gradient">Finally Organized.</span>
           </motion.h1>
@@ -71,20 +71,20 @@ export default function Hero() {
             variants={item}
             className="max-w-2xl text-lg sm:text-xl text-slate-400 leading-relaxed"
           >
-            Qlarity centralizes your QA files, knowledge base, and test data in one platform —
+            Qlarity centralizes your documents, knowledge base, and files in one platform —
             with approval workflows, audit trails, and role-based access built in.
           </motion.p>
 
           {/* CTAs */}
           <motion.div variants={item} className="flex flex-wrap gap-3 justify-center">
             <motion.a
-              href="/register"
+              href="/login"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-semibold px-6 py-3 rounded-xl text-sm transition-colors duration-200 glow-amber-sm"
             >
-              Start for Free
-              <ArrowRight size={16} />
+              Log In
+              <LogIn size={16} />
             </motion.a>
             <motion.a
               href="#how-it-works"
@@ -92,14 +92,14 @@ export default function Hero() {
               whileTap={{ scale: 0.97 }}
               className="inline-flex items-center gap-2 bg-white/6 hover:bg-white/10 border border-white/12 text-white font-medium px-6 py-3 rounded-xl text-sm transition-all duration-200"
             >
-              <Play size={14} className="fill-current" />
+              <ArrowRight size={14} />
               See How It Works
             </motion.a>
           </motion.div>
 
-          {/* Social proof */}
+          {/* Internal note */}
           <motion.p variants={item} className="text-xs text-slate-500">
-            No credit card required · Free forever for small teams
+            Internal platform · Access managed by your admin
           </motion.p>
 
           {/* App preview */}
@@ -144,7 +144,7 @@ export default function Hero() {
               <div className="bg-slate-900/80 p-6 min-h-[320px] flex gap-4">
                 {/* Sidebar stub */}
                 <div className="hidden sm:flex flex-col gap-2 w-44 flex-shrink-0">
-                  {['Dashboard', 'Repositories', 'File Manager', 'Knowledge Base', 'Test Data'].map((item, i) => (
+                  {['Dashboard', 'Repositories', 'File Manager', 'Knowledge Base', 'Documents'].map((item, i) => (
                     <div
                       key={item}
                       className={`h-8 rounded-lg flex items-center px-3 text-xs ${
@@ -163,12 +163,12 @@ export default function Hero() {
                     <div className="h-5 bg-white/10 rounded w-32" />
                     <div className="h-7 bg-amber-500/20 border border-amber-500/30 rounded-lg w-24" />
                   </div>
-                  {[
-                    { name: 'TC_Login_Flow_v3.xlsx', status: 'approved', color: 'bg-emerald-500/20 text-emerald-400' },
-                    { name: 'API_Regression_Suite.json', status: 'under review', color: 'bg-amber-500/20 text-amber-400' },
-                    { name: 'UI_Smoke_Test_Data.csv', status: 'draft', color: 'bg-slate-500/20 text-slate-400' },
-                    { name: 'Performance_Baseline.xlsx', status: 'published', color: 'bg-blue-500/20 text-blue-400' },
-                  ].map((file) => (
+                  [
+                    { name: 'Project_Charter_v3.pdf', status: 'approved', color: 'bg-emerald-500/20 text-emerald-400' },
+                    { name: 'API_Documentation.docx', status: 'under review', color: 'bg-amber-500/20 text-amber-400' },
+                    { name: 'Onboarding_Guide.pdf', status: 'draft', color: 'bg-slate-500/20 text-slate-400' },
+                    { name: 'Release_Notes_v2.md', status: 'published', color: 'bg-blue-500/20 text-blue-400' },
+                  ].map((file: { name: string; status: string; color: string }) => (
                     <div key={file.name} className="flex items-center gap-3 bg-white/3 rounded-xl px-4 py-3 border border-white/5">
                       <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/20 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -177,7 +177,8 @@ export default function Hero() {
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${file.color}`}>{file.status}</span>
                     </div>
-                  ))}
+                  ))
+                }
                 </div>
               </div>
             </motion.div>

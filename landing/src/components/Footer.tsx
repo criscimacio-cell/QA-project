@@ -2,8 +2,8 @@ import { motion } from 'framer-motion';
 import { Layers } from 'lucide-react';
 
 const LINKS = {
-  Product: ['Features', 'Pricing', 'Changelog', 'Roadmap'],
-  Resources: ['Documentation', 'API Reference', 'Status', 'Security'],
+  Product: ['Features', 'How It Works', 'Changelog', 'Roadmap'],
+  Support: ['Documentation', 'Contact Admin', 'Report a Bug', 'Status'],
   Company: ['About', 'Blog', 'Careers', 'Contact'],
 };
 
@@ -21,7 +21,7 @@ export default function Footer() {
               <span className="font-bold text-white">Qlarity</span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed max-w-[180px]">
-              QA asset management for teams that care about quality.
+              Document management for teams that care about clarity and control.
             </p>
           </div>
 
@@ -49,7 +49,7 @@ export default function Footer() {
           transition={{ duration: 0.6 }}
           className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-white/6"
         >
-          <p className="text-xs text-slate-600">© {new Date().getFullYear()} Qlarity. All rights reserved.</p>
+          <p className="text-xs text-slate-600">© {new Date().getFullYear()} Qlarity · Internal Platform</p>
           <div className="flex items-center gap-4">
             {['Privacy', 'Terms', 'Cookies'].map((l) => (
               <a key={l} href="#" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">

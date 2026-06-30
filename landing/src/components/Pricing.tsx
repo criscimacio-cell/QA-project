@@ -1,77 +1,42 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Zap } from 'lucide-react';
+import { Mail, Shield, Users } from 'lucide-react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 
-const PLANS = [
+const ACCESS_ITEMS = [
   {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    desc: 'Perfect for small QA teams getting started.',
-    cta: 'Get Started',
-    ctaHref: '/register',
-    highlight: false,
-    features: [
-      'Up to 5 users',
-      '2 repositories',
-      '1 GB storage',
-      'File manager & versioning',
-      'Basic approval workflow',
-      'Knowledge base (read-only)',
-    ],
-  },
-  {
-    name: 'Pro',
-    price: '$29',
-    period: 'per month',
-    desc: 'For growing QA teams that need more power.',
-    cta: 'Start Pro Trial',
-    ctaHref: '/register?plan=pro',
+    icon: Users,
+    title: 'Request Access',
+    desc: 'Access to Qlarity is managed by your organization admin. Reach out to get your account set up.',
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/20',
+    cta: 'Contact Admin',
+    ctaHref: 'mailto:admin@stash.ph',
     highlight: true,
-    badge: 'Most Popular',
-    features: [
-      'Unlimited users',
-      'Unlimited repositories',
-      '50 GB storage',
-      'Full approval workflows',
-      'Knowledge base (full access)',
-      'Test data library',
-      'Custom roles & RBAC',
-      'Audit log & CSV export',
-      'Email notifications',
-      'Priority support',
-    ],
   },
   {
-    name: 'Enterprise',
-    price: 'Custom',
-    period: 'contact us',
-    desc: 'For large orgs with security and compliance needs.',
-    cta: 'Contact Sales',
-    ctaHref: 'mailto:sales@qlarity.io',
+    icon: Shield,
+    title: 'Role Assignment',
+    desc: 'Your role determines what you can view, upload, and approve. Admins configure permissions per module.',
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
+    cta: null,
+    ctaHref: null,
     highlight: false,
-    features: [
-      'Everything in Pro',
-      'Unlimited storage',
-      'SSO / SAML',
-      'Dedicated infrastructure',
-      'SLA guarantee',
-      'Custom integrations',
-      'Onboarding support',
-      'Security review',
-    ],
+  },
+  {
+    icon: Mail,
+    title: 'Need Help?',
+    desc: 'Having trouble logging in or accessing a module? Reach out to the internal support team.',
+    color: 'text-violet-400',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/20',
+    cta: 'Get Support',
+    ctaHref: 'mailto:support@stash.ph',
+    highlight: false,
   },
 ];
-
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
-};
-
-const cardVariant = {
-  hidden: { opacity: 0, y: 40 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
-};
 
 export default function Pricing() {
   const { ref, isInView } = useScrollReveal(0.1);
@@ -89,75 +54,53 @@ export default function Pricing() {
           className="text-center mb-16"
         >
           <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 text-xs font-medium text-violet-400 mb-4">
-            <Zap size={12} />
-            Simple pricing
+            Internal access
           </div>
           <h2 className="text-4xl sm:text-5xl font-bold text-gradient-white tracking-tight mb-4">
-            Plans for every team
+            Getting started
           </h2>
           <p className="text-slate-400 text-lg max-w-xl mx-auto">
-            Start free, scale when you need to. No hidden fees.
+            Access is managed by your organization. Contact your admin to get set up.
           </p>
         </motion.div>
 
         <motion.div
-          variants={container}
-          initial="hidden"
-          animate={isInView ? 'show' : 'hidden'}
+          initial={{ opacity: 0, y: 40 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start"
         >
-          {PLANS.map((plan) => (
+          {ACCESS_ITEMS.map((item) => (
             <motion.div
-              key={plan.name}
-              variants={cardVariant}
-              whileHover={{ y: plan.highlight ? -8 : -4, transition: { duration: 0.3 } }}
+              key={item.title}
+              whileHover={{ y: item.highlight ? -8 : -4, transition: { duration: 0.3 } }}
               className={`relative rounded-2xl p-8 flex flex-col gap-6 ${
-                plan.highlight
+                item.highlight
                   ? 'amber-border-glow glow-amber bg-gradient-to-b from-amber-500/8 to-transparent'
                   : 'card-glass'
               }`}
             >
-              {plan.badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {plan.badge}
-                </div>
-              )}
-
-              <div>
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-3">{plan.name}</h3>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className={`text-4xl font-bold ${plan.highlight ? 'text-gradient' : 'text-white'}`}>{plan.price}</span>
-                  {plan.price !== 'Custom' && (
-                    <span className="text-slate-500 text-sm mb-1">/ {plan.period}</span>
-                  )}
-                </div>
-                {plan.price === 'Custom' && (
-                  <span className="text-slate-500 text-sm">{plan.period}</span>
-                )}
-                <p className="text-slate-400 text-sm mt-2">{plan.desc}</p>
+              <div className={`w-10 h-10 rounded-xl ${item.bg} border ${item.border} flex items-center justify-center`}>
+                <item.icon size={18} className={item.color} />
               </div>
-
-              <motion.a
-                href={plan.ctaHref}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className={`w-full py-2.5 rounded-xl text-sm font-semibold text-center transition-all duration-200 ${
-                  plan.highlight
-                    ? 'bg-amber-500 hover:bg-amber-400 text-white glow-amber-sm'
-                    : 'bg-white/8 hover:bg-white/14 border border-white/12 text-white'
-                }`}
-              >
-                {plan.cta}
-              </motion.a>
-
-              <ul className="flex flex-col gap-2.5">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-slate-400">
-                    <CheckCircle2 size={15} className={`flex-shrink-0 mt-0.5 ${plan.highlight ? 'text-amber-400' : 'text-slate-500'}`} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
+              <div>
+                <h3 className={`text-lg font-semibold mb-2 ${item.highlight ? 'text-white' : 'text-slate-300'}`}>{item.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+              </div>
+              {item.cta && item.ctaHref && (
+                <motion.a
+                  href={item.ctaHref}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className={`w-full py-2.5 rounded-xl text-sm font-semibold text-center transition-all duration-200 ${
+                    item.highlight
+                      ? 'bg-amber-500 hover:bg-amber-400 text-white glow-amber-sm'
+                      : 'bg-white/8 hover:bg-white/14 border border-white/12 text-white'
+                  }`}
+                >
+                  {item.cta}
+                </motion.a>
+              )}
             </motion.div>
           ))}
         </motion.div>

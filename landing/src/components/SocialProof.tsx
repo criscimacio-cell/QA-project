@@ -1,34 +1,39 @@
 import { motion } from 'framer-motion';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { ShieldCheck, Users, GitPullRequest, Clock } from 'lucide-react';
 
-const STATS = [
-  { value: '10,000+', label: 'Assets managed' },
-  { value: '500+', label: 'QA teams' },
-  { value: '99.9%', label: 'Uptime SLA' },
-  { value: '< 200ms', label: 'Avg response time' },
-];
-
-const TESTIMONIALS = [
+const HIGHLIGHTS = [
   {
-    quote: "Qlarity cut our approval turnaround time in half. Everything is in one place now — no more Slack threads hunting for the latest test data file.",
-    name: 'Sarah K.',
-    role: 'QA Lead, Fintech startup',
-    avatar: 'SK',
-    color: 'bg-amber-500',
+    icon: Users,
+    title: 'Multi-tenant ready',
+    desc: 'Each team or department gets its own isolated workspace with independent roles and permissions.',
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/20',
   },
   {
-    quote: "The RBAC system is exactly what we needed. I can give contractors access to specific modules without worrying about them seeing things they shouldn't.",
-    name: 'Marcus T.',
-    role: 'Engineering Manager',
-    avatar: 'MT',
-    color: 'bg-blue-500',
+    icon: GitPullRequest,
+    title: 'Structured approvals',
+    desc: 'Documents go through defined review chains before they reach the team — no more ad-hoc Slack approvals.',
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
   },
   {
-    quote: "Audit logs alone saved us during our last compliance review. Every action, timestamped, attributed. The auditors were impressed.",
-    name: 'Priya N.',
-    role: 'QA Director',
-    avatar: 'PN',
-    color: 'bg-violet-500',
+    icon: ShieldCheck,
+    title: 'Full audit trail',
+    desc: 'Every upload, edit, approval, and deletion is logged with timestamps and user attribution.',
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/20',
+  },
+  {
+    icon: Clock,
+    title: 'Version history',
+    desc: 'Never lose a previous version. Roll back to any point in a document\'s history with one click.',
+    color: 'text-violet-400',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/20',
   },
 ];
 
@@ -38,45 +43,25 @@ export default function SocialProof() {
   return (
     <section className="py-24 relative">
       <div className="max-w-6xl mx-auto px-6">
-        {/* Stats */}
         <motion.div
           ref={ref}
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-24"
-        >
-          {STATS.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="text-center"
-            >
-              <div className="text-3xl sm:text-4xl font-bold text-gradient mb-1">{s.value}</div>
-              <div className="text-sm text-slate-500">{s.label}</div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Testimonials */}
-        <motion.div
           initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10"
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-12"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-gradient-white tracking-tight">
-            Loved by QA teams
+          <h2 className="text-3xl sm:text-4xl font-bold text-gradient-white tracking-tight mb-4">
+            Why teams use Qlarity
           </h2>
+          <p className="text-slate-400 text-lg max-w-xl mx-auto">
+            Purpose-built for organizations that need control, clarity, and traceability over their documents.
+          </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {TESTIMONIALS.map((t, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {HIGHLIGHTS.map((h, i) => (
             <motion.div
-              key={t.name}
+              key={h.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
@@ -84,15 +69,12 @@ export default function SocialProof() {
               whileHover={{ y: -4, transition: { duration: 0.3 } }}
               className="card-glass rounded-2xl p-6 flex flex-col gap-4 cursor-default"
             >
-              <p className="text-sm text-slate-400 leading-relaxed flex-1">"{t.quote}"</p>
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full ${t.color} flex items-center justify-center text-xs font-bold text-white flex-shrink-0`}>
-                  {t.avatar}
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-white">{t.name}</div>
-                  <div className="text-xs text-slate-500">{t.role}</div>
-                </div>
+              <div className={`w-10 h-10 rounded-xl ${h.bg} border ${h.border} flex items-center justify-center`}>
+                <h.icon size={18} className={h.color} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1.5">{h.title}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{h.desc}</p>
               </div>
             </motion.div>
           ))}

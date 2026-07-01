@@ -23,6 +23,11 @@ export async function initDb() {
     VALUES (1, 'Default Organization', 'default', 'free')
     ON CONFLICT (id) DO NOTHING
   `;
+  // Explicit-id inserts above don't advance the SERIAL sequence, which would
+  // otherwise collide with the first auto-generated id (e.g. the first org
+  // created via /api/auth/register) and fail with a misleading unique-violation
+  // error. Keep the sequence in sync with the highest id every time.
+  await sql`SELECT setval(pg_get_serial_sequence('organizations', 'id'), (SELECT COALESCE(MAX(id), 1) FROM organizations))`;
 
   // ── Platform Admins (separate from org users) ───────────────────────────
   await sql`
@@ -37,15 +42,30 @@ export async function initDb() {
     )
   `;
 
-  // Seed default platform admin only if none exists yet
-  const [existingPlatformAdmin] = await sql`SELECT id FROM platform_admins WHERE email = 'platform@qlarity.com'`;
+  // Seed default platform admin only if none exists yet. This account has
+  // full cross-tenant visibility (every org's data, suspend/archive/plan
+  // control), so it must never ship with a fixed, hardcoded password — that
+  // was a "God mode" credential baked into the source for every install.
+  // PLATFORM_ADMIN_EMAIL / PLATFORM_ADMIN_PASSWORD let an operator pin their
+  // own; otherwise a random password is generated and printed once so it can
+  // be captured immediately (it is not recoverable afterwards — only reset
+  // via the database).
+  const platformAdminEmail = process.env.PLATFORM_ADMIN_EMAIL || 'platform@qlarity.com';
+  const [existingPlatformAdmin] = await sql`SELECT id FROM platform_admins WHERE email = ${platformAdminEmail}`;
   if (!existingPlatformAdmin) {
-    const defaultPlatformAdminPw = await bcrypt.hash('PlatformAdmin123!', 10);
+    const crypto = await import('crypto');
+    const generatedPw = crypto.randomBytes(18).toString('base64url');
+    const platformAdminPw = process.env.PLATFORM_ADMIN_PASSWORD || generatedPw;
+    const defaultPlatformAdminPw = await bcrypt.hash(platformAdminPw, 10);
     await sql`
       INSERT INTO platform_admins (name, email, password_hash)
-      VALUES ('Platform Admin', 'platform@qlarity.com', ${defaultPlatformAdminPw})
+      VALUES ('Platform Admin', ${platformAdminEmail}, ${defaultPlatformAdminPw})
       ON CONFLICT (email) DO NOTHING
     `;
+    if (!process.env.PLATFORM_ADMIN_PASSWORD) {
+      console.warn('⚠️  Generated platform-admin (backoffice) password for %s: %s', platformAdminEmail, platformAdminPw);
+      console.warn('   This is shown once and cannot be recovered — save it now, or set PLATFORM_ADMIN_PASSWORD and restart to pin your own.');
+    }
   }
 
   // ── Schema ──────────────────────────────────────────────────────────────
@@ -99,6 +119,9 @@ export async function initDb() {
       updated_at      TIMESTAMPTZ DEFAULT NOW()
     )
   `;
+
+  // Must run before the GIN index below, which references this column.
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS content_text TEXT DEFAULT NULL`;
 
   await sql`
     CREATE INDEX IF NOT EXISTS idx_files_fts ON files USING GIN (
@@ -267,8 +290,7 @@ export async function initDb() {
   await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS download_password_hash TEXT DEFAULT NULL`;
   await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS password_hint TEXT DEFAULT NULL`;
 
-  // ── Feature 1: Full-text search content extraction ───────────────────────
-  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS content_text TEXT DEFAULT NULL`;
+  // (content_text is added earlier, before the idx_files_fts GIN index that depends on it)
 
   // ── Feature 2: File sharing links ────────────────────────────────────────
   await sql`
@@ -461,6 +483,37 @@ export async function initDb() {
   `;
   await sql`CREATE INDEX IF NOT EXISTS idx_file_permissions_file ON file_permissions(file_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_file_permissions_user ON file_permissions(user_id)`;
+
+  // ── File checkout (lock while editing) ───────────────────────────────────
+  // Previously shipped only as a standalone migrations/add_checkout.sql file
+  // that nothing ever ran; folded into normal startup so it actually applies.
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS checked_out_by INTEGER REFERENCES users(id) ON DELETE SET NULL`;
+  await sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS checked_out_at TIMESTAMPTZ DEFAULT NULL`;
+
+  // ── Multi-approval repositories ──────────────────────────────────────────
+  await sql`ALTER TABLE repositories ADD COLUMN IF NOT EXISTS required_approvals INTEGER NOT NULL DEFAULT 1`;
+
+  // ── Multi-org membership ─────────────────────────────────────────────────
+  // Previously shipped only as a standalone migrations/add_user_org_memberships.sql
+  // file that nothing ever ran; folded into normal startup so it actually applies.
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_org_memberships (
+      id              SERIAL PRIMARY KEY,
+      user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+      role            VARCHAR(50) NOT NULL DEFAULT 'member',
+      active          BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (user_id, organization_id)
+    )
+  `;
+  // Backfill memberships for any user row that predates this table (existing
+  // deployments, and any user created before this table existed).
+  await sql`
+    INSERT INTO user_org_memberships (user_id, organization_id, role, active)
+    SELECT id, organization_id, role, active FROM users
+    ON CONFLICT (user_id, organization_id) DO NOTHING
+  `;
 
   // Ensure templates directory exists
   const { mkdirSync } = await import('fs');

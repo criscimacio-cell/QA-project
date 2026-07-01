@@ -37,6 +37,12 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 router.post('/', authenticate, requireRole('admin', 'lead'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const { name, description, parent_id, type, project } = req.body;
+  // parent_id was never checked against the caller's org, so a repository
+  // could be nested under another tenant's repository id (a foreign-key IDOR).
+  if (parent_id) {
+    const [parent] = await sql`SELECT id FROM repositories WHERE id = ${parent_id} AND organization_id = ${orgId}`;
+    if (!parent) { res.status(400).json({ error: 'Invalid parent repository' }); return; }
+  }
   const [{ id }] = await sql`
     INSERT INTO repositories (name, description, parent_id, type, project, owner_id, organization_id)
     VALUES (${name}, ${description || ''}, ${parent_id || null}, ${type || 'folder'}, ${project || ''}, ${req.user!.userId}, ${orgId})

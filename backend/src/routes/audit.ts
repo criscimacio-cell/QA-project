@@ -34,6 +34,16 @@ router.get('/', authenticate, requireRole('admin'), async (req: Request, res: Re
   res.json({ logs, total });
 });
 
+// A cell starting with = + - or @ can be interpreted as a formula by
+// Excel/Sheets when opened. `details` frequently embeds raw user-controlled
+// text (filenames, search queries, emails), so quote-escaping alone wasn't
+// enough. A leading apostrophe forces "treat as text" and isn't shown to the user.
+function csvCell(value: unknown): string {
+  let s = String(value ?? '');
+  if (/^[=+\-@]/.test(s)) s = `'${s}`;
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
 router.get('/export', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const logs = await sql`
@@ -45,7 +55,7 @@ router.get('/export', authenticate, requireRole('admin'), async (req: Request, r
   `;
   const header = 'ID,User,Action,Entity Type,Entity ID,Details,IP,Timestamp';
   const rows = logs.map((r: any) =>
-    [r.id, `"${r.user||''}"`, r.action, r.entity_type, r.entity_id, `"${(r.details||'').replace(/"/g,'""')}"`, r.ip_address, new Date(r.created_at).toISOString()].join(',')
+    [r.id, csvCell(r.user), r.action, r.entity_type, r.entity_id, csvCell(r.details), r.ip_address, new Date(r.created_at).toISOString()].join(',')
   );
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="audit-log-${new Date().toISOString().slice(0,10)}.csv"`);

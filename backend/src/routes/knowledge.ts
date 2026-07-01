@@ -1,8 +1,23 @@
 import { Router, Request, Response } from 'express';
+import sanitizeHtml from 'sanitize-html';
 import sql from '../db';
 import { authenticate, requireRole, requireModule } from '../middleware/auth';
 
 const router = Router();
+
+// Replaces a regex blocklist (only stripped <script> tags and on*= attributes,
+// so e.g. <iframe src="javascript:..."> or <a href="javascript:..."> passed
+// straight through into storage) with a real allowlist-based sanitizer. Mirrors
+// the allowlist the frontend separately applies at render time, so content is
+// safe at rest too, not just when viewed through the current web client.
+function sanitizeArticleContent(html: string): string {
+  return sanitizeHtml(html || '', {
+    allowedTags: ['h1','h2','h3','h4','h5','h6','p','ul','ol','li','strong','em','b','i','u','code','pre','blockquote','br','hr','span','a','table','thead','tbody','tr','th','td'],
+    allowedAttributes: { a: ['href', 'title'], td: ['colspan', 'rowspan'], th: ['colspan', 'rowspan'] },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    allowProtocolRelative: false,
+  });
+}
 
 router.get('/categories/list', authenticate, async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
@@ -47,7 +62,7 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 router.post('/', authenticate, requireModule('knowledge'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const { title, content, category, tags } = req.body;
   const orgId = req.user!.organizationId;
-  const safeContent = (content || '').replace(/<script[\s\S]*?<\/script>/gi, '').replace(/on\w+\s*=/gi, 'data-removed=');
+  const safeContent = sanitizeArticleContent(content);
   const [{ id }] = await sql`
     INSERT INTO knowledge_articles (title, content, category, author_id, status, tags, organization_id)
     VALUES (${title}, ${safeContent}, ${category || ''}, ${req.user!.userId}, 'draft', ${tags || ''}, ${orgId})
@@ -65,7 +80,7 @@ router.put('/:id', authenticate, requireModule('knowledge'), requireRole('admin'
     if (art.author_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
     if (status === 'published') { res.status(403).json({ error: 'Engineers cannot publish articles. Submit for lead/admin review.' }); return; }
   }
-  const safeContent = (content || '').replace(/<script[\s\S]*?<\/script>/gi, '').replace(/on\w+\s*=/gi, 'data-removed=');
+  const safeContent = sanitizeArticleContent(content);
   await sql`
     UPDATE knowledge_articles SET title=${title}, content=${safeContent}, category=${category}, tags=${tags}, status=${status || 'draft'}, updated_at=NOW()
     WHERE id=${req.params.id} AND organization_id=${orgId}

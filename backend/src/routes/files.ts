@@ -34,6 +34,15 @@ const bulkUploadTracker = new Map<number, { count: number; resetAt: number }>();
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
   (req, res, next) => fn(req, res, next).catch(next);
 
+// Neutralizes CSV/formula injection: a cell whose text starts with = + - or @
+// can be interpreted as a formula by Excel/Sheets when the export is opened.
+// A leading apostrophe forces "treat as text" and is not shown to the user.
+function csvCell(value: unknown): string {
+  let s = String(value ?? '');
+  if (/^[=+\-@]/.test(s)) s = `'${s}`;
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -137,7 +146,7 @@ router.get('/export', authenticate, requireRole('admin', 'lead'), async (req: Re
   `;
   const header = 'ID,Name,Original Name,Version,Status,Project,Module,Category,Jira Ticket,Tags,Size (bytes),Owner,Repository,Created,Updated';
   const rows = files.map((f: any) =>
-    [f.id, `"${f.name}"`, `"${f.original_name}"`, f.version, f.status, `"${f.project||''}"`, `"${f.module||''}"`, `"${f.category||''}"`, `"${f.jira_ticket||''}"`, `"${f.tags||''}"`, f.size, `"${f.owner||''}"`, `"${f.repository||''}"`, new Date(f.created_at).toISOString(), new Date(f.updated_at).toISOString()].join(',')
+    [f.id, csvCell(f.name), csvCell(f.original_name), f.version, f.status, csvCell(f.project), csvCell(f.module), csvCell(f.category), csvCell(f.jira_ticket), csvCell(f.tags), f.size, csvCell(f.owner), csvCell(f.repository), new Date(f.created_at).toISOString(), new Date(f.updated_at).toISOString()].join(',')
   );
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="files-export-${new Date().toISOString().slice(0,10)}.csv"`);
@@ -383,7 +392,12 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
     res.status(403).json({ error: `Storage limit reached (${limitGB}GB on ${orgRow?.plan} plan). Please upgrade or free up space.` }); return;
   }
 
-  const [existing] = await sql`SELECT * FROM files WHERE name = ${name} AND repository_id = ${repository_id || null} AND status != 'archived' AND organization_id = ${orgId}`;
+  // `repository_id = NULL` is never true in SQL, so files uploaded without a
+  // repository (a perfectly normal case) could never match an existing row
+  // here — every re-upload silently created a disconnected duplicate file
+  // instead of a new version, and completely bypassed the checkout lock for
+  // any unfiled file. `IS NOT DISTINCT FROM` treats NULL = NULL as a match.
+  const [existing] = await sql`SELECT * FROM files WHERE name = ${name} AND repository_id IS NOT DISTINCT FROM ${repository_id || null} AND status != 'archived' AND organization_id = ${orgId}`;
 
   // Check-out lock: if file exists and is locked by another user
   if (existing && existing.checked_out_by && existing.checked_out_by !== req.user!.userId && !['admin', 'lead'].includes(req.user!.role)) {
@@ -418,7 +432,17 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
       await sql`UPDATE files SET content_text = ${text} WHERE id = ${fileIdForExtract}`.catch(() => {});
     }
   }).catch(() => {});
-  encryptFile(path.join(UPLOAD_DIR, f.filename));
+  try {
+    encryptFile(path.join(UPLOAD_DIR, f.filename));
+  } catch (e) {
+    // encryptFile throws synchronously (e.g. a misconfigured FILE_ENCRYPTION_KEY).
+    // It used to be called unguarded, which aborted the rest of this handler —
+    // file_versions/audit_logs never got written and the client's request hung
+    // forever with no response. Log loudly and keep going: the file is already
+    // saved and its DB record already exists, so we still need to finish
+    // writing it consistently and answer the request either way.
+    console.error(`[files] Encryption failed for file id=${fileId}, stored unencrypted:`, e);
+  }
   await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, ${newVersion}, ${f.filename}, ${f.size}, ${change_log || (existing ? `Version ${newVersion} update` : 'Initial upload')}, ${req.user!.userId}, ${orgId})`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
   bustDashboardCache(orgId).catch(() => {});
@@ -465,7 +489,11 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
         await sql`UPDATE files SET content_text = ${text} WHERE id = ${bulkFileId}`.catch(() => {});
       }
     }).catch(() => {});
-    encryptFile(path.join(UPLOAD_DIR, f.filename));
+    try {
+      encryptFile(path.join(UPLOAD_DIR, f.filename));
+    } catch (e) {
+      console.error(`[files] Encryption failed for file id=${fileId}, stored unencrypted:`, e);
+    }
     await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, 1, ${f.filename}, ${f.size}, 'Initial upload', ${req.user!.userId}, ${orgId})`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Bulk uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
     results.push({ id: fileId, name, originalName: f.originalname, size: f.size });
@@ -543,7 +571,7 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
     ` as any[];
     // approval_count excludes current reviewer; adding 1 for this approval
     if ((approval_count + 1) < cur.required_approvals) {
-      effectiveStatus = 'in_review';
+      effectiveStatus = 'under_review';
     }
   }
 
@@ -601,6 +629,14 @@ router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, r
     // Already in recycle bin — permanently delete
     const [full] = await sql`SELECT path FROM files WHERE id = ${req.params.id}`;
     if (full?.path) { const fp = path.join(UPLOAD_DIR, full.path); if (fs.existsSync(fp)) fs.unlinkSync(fp); }
+    // Historical version files were never cleaned up here, leaving every past
+    // version's file orphaned on disk forever after a "permanent" delete.
+    const versions = await sql`SELECT path FROM file_versions WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
+    for (const v of versions as any[]) {
+      if (!v.path) continue;
+      const vp = path.join(UPLOAD_DIR, v.path);
+      if (fs.existsSync(vp)) fs.unlinkSync(vp);
+    }
     await sql.begin(async tx => {
       await tx`DELETE FROM file_versions WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;
       await tx`DELETE FROM approvals WHERE file_id = ${req.params.id} AND organization_id = ${orgId}`;

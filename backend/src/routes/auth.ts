@@ -57,28 +57,17 @@ function signAccess(user: { id: number; email: string; role: string; organizatio
 
 router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   const ip = getClientIp(req);
-  if (!await checkRateLimit(ip)) { res.status(429).json({ error: 'Too many login attempts, try again in 15 minutes' }); return; }
   const { email, password, rememberMe, orgSlug } = req.body;
   if (!email || !password) { res.status(400).json({ error: 'Email and password required' }); return; }
-
-  const [{ emailCount }] = await sql`
-    SELECT COUNT(*)::int as "emailCount" FROM audit_logs
-    WHERE details LIKE ${'%' + email + '%'}
-      AND action = 'LOGIN_FAIL'
-      AND created_at > NOW() - INTERVAL '15 minutes'
-  ` as any[];
-  if (emailCount >= 20) { res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again in 15 minutes.' }); return; }
 
   let user: any;
   let resolvedOrgId: number | null = null;
   if (orgSlug) {
     const [org] = await sql`SELECT id FROM organizations WHERE slug = ${orgSlug} AND active = TRUE`;
-    if (!org) {
-      await sql`INSERT INTO audit_logs (action, entity_type, entity_id, details, ip_address) VALUES ('LOGIN_FAIL', 'user', 0, ${`Failed login: unknown org slug "${orgSlug}" for ${email}`}, ${ip})`;
-      res.status(401).json({ error: 'Invalid credentials' }); return;
+    if (org) {
+      resolvedOrgId = org.id;
+      [user] = await sql`SELECT * FROM users WHERE email = ${email} AND organization_id = ${org.id}`;
     }
-    resolvedOrgId = org.id;
-    [user] = await sql`SELECT * FROM users WHERE email = ${email} AND organization_id = ${org.id}`;
   } else {
     [user] = await sql`
       SELECT u.* FROM users u
@@ -88,7 +77,24 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
     if (user) resolvedOrgId = user.organization_id;
   }
 
-  if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+  const passwordOk = !!user && await bcrypt.compare(password, user.password_hash);
+
+  // Throttling only ever applies to WRONG credentials. Gating this before we
+  // even check the password meant one attacker sending 20 wrong guesses (at
+  // one email, from one IP) locked out every other account sharing that IP,
+  // or every org sharing that email, even with the correct password. A
+  // correct password must never be blocked by someone else's failed attempts.
+  if (!passwordOk) {
+    if (!await checkRateLimit(ip)) { res.status(429).json({ error: 'Too many login attempts, try again in 15 minutes' }); return; }
+    const [{ emailCount }] = await sql`
+      SELECT COUNT(*)::int as "emailCount" FROM audit_logs
+      WHERE details LIKE ${'%' + email + '%'}
+        AND action = 'LOGIN_FAIL'
+        AND ip_address = ${ip}
+        AND created_at > NOW() - INTERVAL '15 minutes'
+    ` as any[];
+    if (emailCount >= 20) { res.status(429).json({ error: 'Too many failed attempts for this account from your network. Try again in 15 minutes.' }); return; }
+
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${user?.id || null}, 'LOGIN_FAIL', 'user', 0, ${`Failed login attempt for: ${email}`}, ${ip}, ${resolvedOrgId})`;
     res.status(401).json({ error: 'Invalid credentials' }); return;
   }
@@ -255,6 +261,13 @@ router.post('/register', async (req: Request, res: Response) => {
         VALUES (${adminName.trim()}, ${adminEmail.trim().toLowerCase()}, ${hash}, 'admin', ${org.id}, ${avatar})
         RETURNING id
       `;
+
+      // Without this, /auth/orgs and /auth/switch-org never see this org for
+      // this user, leaving the sidebar org-switcher permanently empty for
+      // anyone who signs up through self-service registration.
+      await tx`INSERT INTO user_org_memberships (user_id, organization_id, role, active)
+               VALUES (${user.id}, ${org.id}, 'admin', TRUE)
+               ON CONFLICT (user_id, organization_id) DO NOTHING`;
 
       await tx`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id)
                VALUES (${user.id}, 'ORG_REGISTER', 'organization', ${org.id}, ${`Organization "${orgName.trim()}" created`}, ${req.ip || ''}, ${org.id})`;

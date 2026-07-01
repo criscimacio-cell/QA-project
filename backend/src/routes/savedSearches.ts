@@ -5,7 +5,11 @@ import { authenticate } from '../middleware/auth';
 const router = Router();
 
 router.get('/', authenticate, async (req: Request, res: Response) => {
-  const rows = await sql`SELECT * FROM saved_searches WHERE user_id = ${req.user!.userId} ORDER BY created_at DESC`;
+  // Only scoped by user_id previously. Harmless while one user = one org, but
+  // a cross-tenant leak the moment multi-org switching works (same user id,
+  // different organization_id via JWT) — a switched-in user would see
+  // another org's saved searches.
+  const rows = await sql`SELECT * FROM saved_searches WHERE user_id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId} ORDER BY created_at DESC`;
   res.json(rows);
 });
 
@@ -21,7 +25,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 });
 
 router.delete('/:id', authenticate, async (req: Request, res: Response) => {
-  await sql`DELETE FROM saved_searches WHERE id = ${req.params.id} AND user_id = ${req.user!.userId}`;
+  await sql`DELETE FROM saved_searches WHERE id = ${req.params.id} AND user_id = ${req.user!.userId} AND organization_id = ${req.user!.organizationId}`;
   res.json({ message: 'Deleted' });
 });
 

@@ -134,7 +134,7 @@ export default function AppLayout() {
             <Outlet />
           </div>
         </div>
-        <Footer sidebarWidth={sidebarWidth} />
+        <Footer />
       </main>
     </div>
   );

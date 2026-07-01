@@ -167,6 +167,7 @@ Click any demo user button on the login page, or type the credentials manually.
 | `admin@qa.com` | QA Admin | Everything — users, audit logs, all settings |
 | `lead@qa.com` | QA Lead | Approve files, manage repos, view analytics |
 | `engineer1@qa.com` | QA Engineer | Upload and manage files |
+| `engineer2@qa.com` | QA Engineer | Upload and manage files |
 | `viewer@qa.com` | Viewer | View and download only |
 
 > **Start with `admin@qa.com` to see all features.**

@@ -3,12 +3,19 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+// Must be imported before any routes are defined: patches Express's router so
+// a rejected promise in an async handler is forwarded to error-handling
+// middleware instead of becoming an unhandled rejection that crashes the
+// process. Most routes in this codebase are plain `async (req, res) => {}`
+// handlers with no try/catch and no asyncHandler wrapper of their own.
+import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
 import http from 'http';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import jwt from 'jsonwebtoken';
 import { attachWebSocketServer } from './wsServer';
 import { initDb } from './initDb';
 import authRoutes from './routes/auth';
@@ -37,6 +44,16 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+// Last-resort net for errors outside the request/response cycle (background
+// jobs, fire-and-forget calls) that express-async-errors can't intercept.
+// Logs and keeps the process alive rather than taking down every tenant.
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
@@ -56,11 +73,29 @@ app.use((req, res, next) => {
   next();
 });
 
+// Key by the authenticated user when possible, falling back to IP for
+// unauthenticated requests. Keying by IP alone meant every user behind the
+// same NAT/corporate proxy shared one 200-request budget — one active
+// session could lock out an entire office. This also lets each logged-in
+// user run a normal SPA session (dashboard + notifications + navigation)
+// without tripping the limiter on legitimate use.
+function rateLimitKey(req: express.Request): string {
+  const token = req.cookies?.accessToken ?? req.headers.authorization?.split(' ')[1];
+  if (token) {
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET as string, { algorithms: ['HS256'] }) as any;
+      if (payload?.userId) return `user:${payload.userId}`;
+    } catch { /* fall through to IP */ }
+  }
+  return `ip:${ipKeyGenerator(req.ip ?? 'unknown')}`;
+}
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: rateLimitKey,
   message: { error: 'Too many requests, please try again later.' },
 });
 
@@ -101,6 +136,18 @@ app.use('/api/share', shareLinksRouter);
 app.use('/api/saved-searches', savedSearchesRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+// Final safety net: catches anything forwarded via next(err), including
+// errors express-async-errors funnels here from async route handlers that
+// have no error handling of their own. Without this, Express's default
+// handler would still apply, which is fine functionally but leaks stack
+// traces outside production.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[unhandled route error]', err);
+  if (res.headersSent) return;
+  res.status(err?.status ?? 500).json({ error: 'Internal server error' });
+});
 
 if (process.env.NODE_ENV !== 'production') {
   console.warn('⚠️  WARNING: Running with default demo credentials (password123). Change before deploying to production.');

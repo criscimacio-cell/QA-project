@@ -1,13 +1,17 @@
 import { Heart } from 'lucide-react';
 
-export default function Footer({ sidebarWidth }: { sidebarWidth: number }) {
+export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
+    // Was `fixed bottom-0`, pinned to the viewport regardless of scroll — on
+    // any page taller than one screen (Audit Log, long file/user lists) it
+    // permanently overlapped the last ~40px of content. Now a normal flow
+    // element; `flex-1` on the content area above it in AppLayout still keeps
+    // it pinned to the bottom on short pages, without covering content on tall ones.
     <footer
-      className="transition-all duration-300 ease-in-out border-t px-6 py-3 flex items-center justify-between fixed bottom-0 right-0 z-[49]"
+      className="border-t px-6 py-3 flex items-center justify-between"
       style={{
-        left: sidebarWidth,
         borderColor: 'var(--border)',
         background: 'var(--card)',
       }}

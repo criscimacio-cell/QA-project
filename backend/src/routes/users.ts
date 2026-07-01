@@ -7,7 +7,9 @@ import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { sendRoleChangedEmail } from '../emailService';
 
-const PLAN_USER_LIMITS: Record<string, number> = { free: 5, pro: 25, enterprise: Infinity };
+// free was 5, which the 5 seeded demo accounts alone already exhaust, blocking
+// evaluators from adding a single extra user out of the box — bumped to 10.
+const PLAN_USER_LIMITS: Record<string, number> = { free: 10, pro: 25, enterprise: Infinity };
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 fs.mkdirSync(path.join(UPLOAD_DIR, 'avatars'), { recursive: true });
@@ -52,6 +54,23 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
   res.json({ ...user, preferences: JSON.parse(user.preferences || '{}') });
 });
 
+// Must be registered before `/:id` below — Express matches routes in
+// registration order, so with `/:id` first, a request to /mention-search
+// matched `/:id` with id="mention-search" instead, which then failed with a
+// Postgres integer-cast error that (being unhandled) hung the request
+// forever. This route was completely unreachable.
+router.get('/mention-search', authenticate, async (req: Request, res: Response) => {
+  const { q } = req.query;
+  if (!q || (q as string).trim().length < 1) { res.json([]); return; }
+  const orgId = req.user!.organizationId;
+  const users = await sql`
+    SELECT id, name, avatar FROM users
+    WHERE organization_id = ${orgId} AND active = TRUE AND name ILIKE ${'%' + (q as string).trim() + '%'}
+    LIMIT 10
+  `;
+  res.json(users);
+});
+
 router.get('/:id', authenticate, requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   if (req.params.id === 'me') return;
   const [user] = await sql`SELECT id, name, email, role, department, avatar, active, created_at, last_login FROM users WHERE id = ${req.params.id} AND organization_id = ${req.user!.organizationId}`;
@@ -79,10 +98,17 @@ router.post('/', authenticate, requireRole('admin'), async (req: Request, res: R
     res.status(400).json({ error: `Invalid role: "${assignedRole}"` }); return;
   }
 
-  const hash = bcrypt.hashSync(password || 'password123', 10);
+  // A missing password used to silently fall back to the same "password123"
+  // used for every seeded demo account — a predictable, publicly documented
+  // credential with no forced reset. Require the admin to set one explicitly.
+  if (!password || password.length < 8) {
+    res.status(400).json({ error: 'Password is required and must be at least 8 characters' }); return;
+  }
+  const hash = bcrypt.hashSync(password, 10);
   const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`;
   try {
     const [{ id }] = await sql`INSERT INTO users (name, email, password_hash, role, department, avatar, organization_id) VALUES (${name}, ${email}, ${hash}, ${assignedRole}, ${department || ''}, ${avatar}, ${orgId}) RETURNING id`;
+    await sql`INSERT INTO user_org_memberships (user_id, organization_id, role, active) VALUES (${id}, ${orgId}, ${assignedRole}, TRUE) ON CONFLICT (user_id, organization_id) DO NOTHING`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_CREATE', 'user', ${id}, ${`Created user: ${email}`}, ${req.ip || ''}, ${orgId})`;
     res.json({ id, name, email, role: assignedRole });
   } catch { res.status(400).json({ error: 'Operation failed' }); }
@@ -97,6 +123,10 @@ router.put('/:id/activate', authenticate, requireRole('admin'), async (req: Requ
 
 router.put('/:id/deactivate', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
+  // The frontend already blocks this in the UI, but that's client-side only
+  // and trivially bypassed by calling the API directly — a one-click,
+  // unrecoverable (without DB access) lockout for a single-admin org.
+  if (parseInt(req.params.id) === req.user!.userId) { res.status(403).json({ error: 'Cannot deactivate your own account' }); return; }
   await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Deactivated' });
@@ -108,6 +138,10 @@ router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res:
   const { name, role, department, active, password } = req.body;
   const orgId = req.user!.organizationId;
   if (parseInt(req.params.id) === req.user!.userId && role !== undefined) { res.status(403).json({ error: 'Cannot change your own role' }); return; }
+  // Self-role-change was already blocked, but nothing stopped an admin from
+  // deactivating their own account through this same endpoint — a one-click,
+  // unrecoverable (without DB access) lockout for a single-admin org.
+  if (parseInt(req.params.id) === req.user!.userId && active === false) { res.status(403).json({ error: 'Cannot deactivate your own account' }); return; }
   if (role) {
     const [orgRow] = await sql`SELECT role_permissions FROM organizations WHERE id = ${orgId}`;
     const customRoles = Object.keys(orgRow?.role_permissions || {});
@@ -134,6 +168,7 @@ router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res:
 
 router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
+  if (parseInt(req.params.id) === req.user!.userId) { res.status(403).json({ error: 'Cannot deactivate your own account' }); return; }
   await sql`UPDATE users SET active = FALSE WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'USER_DEACTIVATE', 'user', ${req.params.id}, ${`Deactivated user id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Deactivated' });
@@ -176,19 +211,6 @@ router.use((err: any, _req: Request, res: Response, next: Function) => {
   if (err?.code === 'LIMIT_FILE_SIZE') { res.status(400).json({ error: 'Image too large (max 2 MB)' }); return; }
   if (err?.message) { res.status(400).json({ error: err.message }); return; }
   next(err);
-});
-
-// GET /api/users/mention-search?q=term — autocomplete for @mentions
-router.get('/mention-search', authenticate, async (req: Request, res: Response) => {
-  const { q } = req.query;
-  if (!q || (q as string).trim().length < 1) { res.json([]); return; }
-  const orgId = req.user!.organizationId;
-  const users = await sql`
-    SELECT id, name, avatar FROM users
-    WHERE organization_id = ${orgId} AND active = TRUE AND name ILIKE ${'%' + (q as string).trim() + '%'}
-    LIMIT 10
-  `;
-  res.json(users);
 });
 
 export default router;

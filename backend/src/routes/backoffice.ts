@@ -199,6 +199,7 @@ router.post('/organizations', authenticatePlatformAdmin, async (req: Request, re
         const hash = await bcrypt.hash(adminPassword, 10);
         const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(adminEmail.trim())}`;
         const [u] = await tx`INSERT INTO users (name, email, password_hash, role, organization_id, avatar) VALUES (${adminName.trim()}, ${adminEmail.trim().toLowerCase()}, ${hash}, 'admin', ${org.id}, ${avatar}) RETURNING id`;
+        await tx`INSERT INTO user_org_memberships (user_id, organization_id, role, active) VALUES (${u.id}, ${org.id}, 'admin', TRUE) ON CONFLICT (user_id, organization_id) DO NOTHING`;
         userId = u.id;
       }
       return { org, userId };
@@ -225,6 +226,7 @@ router.post('/organizations/:id/users', authenticatePlatformAdmin, async (req: R
     const hash = await bcrypt.hash(password, 10);
     const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email.trim())}`;
     const [user] = await sql`INSERT INTO users (name, email, password_hash, role, organization_id, avatar) VALUES (${name.trim()}, ${email.trim().toLowerCase()}, ${hash}, ${role}, ${req.params.id}, ${avatar}) RETURNING id, name, email, role`;
+    await sql`INSERT INTO user_org_memberships (user_id, organization_id, role, active) VALUES (${user.id}, ${req.params.id}, ${role}, TRUE) ON CONFLICT (user_id, organization_id) DO NOTHING`;
     res.status(201).json({ message: `User "${name}" created in organization`, user });
   } catch (err: any) {
     if (err.code === '23505') { res.status(409).json({ error: 'Email already exists in this organization' }); return; }

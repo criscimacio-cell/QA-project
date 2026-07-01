@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import sql from '../db';
-import { authenticate, requireRole } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { getCached, invalidate } from '../redis';
 
 const router = Router();
@@ -72,7 +72,10 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
   res.json(stats);
 });
 
-router.get('/activity', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+// The frontend's dashboard activity feed is shown to every role, not just
+// admins — this used to 403 for lead/engineer/viewer on every load. Data
+// returned is already org-scoped and excludes sensitive auth-related actions.
+router.get('/activity', authenticate, async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
   const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
   const activity = await sql`

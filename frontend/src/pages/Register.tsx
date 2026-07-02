@@ -39,7 +39,8 @@ export default function Register() {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!orgName.trim()) e.orgName = 'Organization name is required';
-    if (!orgSlug || orgSlug.length < 2) e.orgSlug = 'Organization ID must be at least 2 characters';
+    if (!orgSlug) e.orgSlug = 'Organization ID is required';
+    else if (orgSlug.length < 2) e.orgSlug = 'Organization ID must be at least 2 characters';
     else if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]{2}$/.test(orgSlug)) e.orgSlug = 'Only lowercase letters, numbers, and hyphens. Cannot start or end with a hyphen.';
     if (!adminName.trim()) e.adminName = 'Your name is required';
     if (!adminEmail.trim()) e.adminEmail = 'Email is required';
@@ -75,7 +76,7 @@ export default function Register() {
 
   if (success) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0', padding: 24 }}>
+      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0', padding: 24 }}>
         <div style={{ maxWidth: 420, width: '100%', background: 'white', borderRadius: 16, padding: '40px 36px', boxShadow: '0 20px 60px rgba(0,0,0,0.12)', textAlign: 'center' }}>
           <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #F59E0B, #FBBF24)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -93,12 +94,12 @@ export default function Register() {
             Go to Login
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0', padding: 24 }}>
+    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0f0', padding: 24 }}>
       <div style={{ maxWidth: 460, width: '100%' }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28, justifyContent: 'center' }}>
@@ -192,7 +193,7 @@ export default function Register() {
                 onFocus={e => { e.target.style.borderColor = AMBER; e.target.style.boxShadow = `0 0 0 3px rgba(245,158,11,0.15)`; }}
                 onBlur={e => { e.target.style.borderColor = errors.password ? 'rgba(239,68,68,0.5)' : 'rgba(0,0,0,0.12)'; e.target.style.boxShadow = 'none'; }}
               />
-              <button type="button" tabIndex={-1} onClick={() => setShowPw(s => !s)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(0,0,0,0.35)', padding: 4 }}>
+              <button type="button" tabIndex={-1} onClick={() => setShowPw(s => !s)} aria-label={showPw ? 'Hide password' : 'Show password'} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(0,0,0,0.35)', padding: 4 }}>
                 {showPw ? <EyeOff size={14}/> : <Eye size={14}/>}
               </button>
               {errors.password && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 3 }}>{errors.password}</p>}
@@ -225,13 +226,13 @@ export default function Register() {
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = AMBER}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(0,0,0,0.6)'}
               >
-                Sign in
+                Login
               </Link>
             </p>
           </form>
         </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+    </main>
   );
 }

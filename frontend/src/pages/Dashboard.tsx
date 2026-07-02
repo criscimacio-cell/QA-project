@@ -289,7 +289,7 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   return (
     <div className="px-3 py-2 rounded-xl text-xs font-medium shadow-xl"
       style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-      <div className="text-slate-400 mb-1 text-[11px]">{label}</div>
+      <div className="text-slate-500 dark:text-slate-400 mb-1 text-[11px]">{label}</div>
       {payload.map((p: any) => (
         <div key={p.name} className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
@@ -392,7 +392,7 @@ export default function Dashboard() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span className="font-medium text-slate-700 dark:text-slate-200">{orgName}</span>
             <span className="text-slate-300 dark:text-slate-600">·</span>
-            <span className="font-mono text-xs text-slate-400">{(user as any)?.org_slug}</span>
+            <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{(user as any)?.org_slug}</span>
           </div>
           {orgPlan && (
             <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
@@ -429,7 +429,7 @@ export default function Dashboard() {
               {typedGreeting}
               {!typingDone && <span style={{ animation: 'cursorBlink 0.8s step-end infinite', color: '#f59e0b', marginLeft: 1 }}>|</span>}
             </h1>
-            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 dark:text-slate-500 mt-1">
               Here's what's happening with your assets today.
             </p>
           </div>
@@ -440,7 +440,7 @@ export default function Dashboard() {
             <div className="flex flex-col items-center px-4 py-2.5 rounded-xl"
               style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
               <span className="text-xl font-bold text-amber-500 tabular-nums font-mono">{timeStr}</span>
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">Live</span>
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">Live</span>
             </div>
 
             {/* Quick stat pills */}
@@ -449,13 +449,13 @@ export default function Dashboard() {
                 style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
                 <CheckCircle2 size={13} className="text-emerald-500" />
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{stats.totalFiles}</span>
-                <span className="text-[10px] text-slate-400">files</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">files</span>
               </div>
               <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
                 style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
                 <AlertCircle size={13} className="text-red-500" />
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{stats.pendingApprovals}</span>
-                <span className="text-[10px] text-slate-400">pending</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">pending</span>
               </div>
             </div>
           </div>
@@ -523,8 +523,8 @@ export default function Dashboard() {
         <div className="card p-5 lg:col-span-2" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.28s' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-white text-sm">Upload Trend</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Files uploaded — last 7 days</p>
+              <h2 className="font-bold text-slate-800 dark:text-white text-sm">Upload Trend</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Files uploaded — last 7 days</p>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
               Weekly
@@ -554,12 +554,12 @@ export default function Dashboard() {
         {/* File Status donut */}
         <div className="card p-5" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.34s' }}>
           <div className="mb-4">
-            <h3 className="font-bold text-slate-800 dark:text-white text-sm">File Status</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Distribution breakdown</p>
+            <h2 className="font-bold text-slate-800 dark:text-white text-sm">File Status</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Distribution breakdown</p>
           </div>
           <div role="img" aria-label="File status distribution pie chart">
             <ResponsiveContainer width="100%" height={160}>
-              <PieChart>
+              <PieChart accessibilityLayer={false}>
                 <Pie data={stats.statusBreakdown} dataKey="count" nameKey="status"
                   cx="50%" cy="50%" outerRadius={68} innerRadius={38} paddingAngle={2} strokeWidth={0}>
                   {stats.statusBreakdown.map((entry: any) => (
@@ -578,7 +578,7 @@ export default function Dashboard() {
                 <div key={s.status} className="flex items-center gap-2 text-xs">
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STATUS_COLORS[s.status] || '#94a3b8' }} />
                   <span className="text-slate-500 dark:text-slate-400 capitalize flex-1">{(s.status || '').replace('_', ' ')}</span>
-                  <span className="text-slate-400 dark:text-slate-500">{pct}%</span>
+                  <span className="text-slate-500 dark:text-slate-500">{pct}%</span>
                   <span className="font-bold text-slate-700 dark:text-slate-200 w-4 text-right">{s.count}</span>
                 </div>
               );
@@ -592,8 +592,8 @@ export default function Dashboard() {
         <div className="card p-5" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.38s' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-white text-sm">Repository Usage</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Files per repository</p>
+              <h2 className="font-bold text-slate-800 dark:text-white text-sm">Repository Usage</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Files per repository</p>
             </div>
           </div>
           <div role="img" aria-label="Repository usage bar chart showing files per repository">
@@ -621,8 +621,8 @@ export default function Dashboard() {
         <div className="card p-5" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.5s' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-white text-sm">Recent Activity</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Latest platform events</p>
+              <h2 className="font-bold text-slate-800 dark:text-white text-sm">Recent Activity</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Latest platform events</p>
             </div>
           </div>
           <div className="space-y-3">
@@ -652,9 +652,9 @@ export default function Dashboard() {
                       <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{item.user_name || 'System'}</span>
                       <span className="text-xs px-1.5 py-0.5 rounded font-medium"
                         style={{ background: config.bg, color: config.color }}>{item.action}</span>
-                      {item.entity_type && <span className="text-xs text-slate-400">{item.entity_type}</span>}
+                      {item.entity_type && <span className="text-xs text-slate-500 dark:text-slate-400">{item.entity_type}</span>}
                     </div>
-                    {item.details && <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">{item.details}</p>}
+                    {item.details && <p className="text-xs text-slate-500 dark:text-slate-500 truncate mt-0.5">{item.details}</p>}
                     <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-0.5">{timeAgo(item.created_at)}</p>
                   </div>
                 </div>
@@ -665,7 +665,7 @@ export default function Dashboard() {
       )}
 
       {activityFeed.length === 0 && (
-        <div className="card p-8 text-center text-slate-400">
+        <div className="card p-8 text-center text-slate-500 dark:text-slate-400">
           <Activity size={32} className="mx-auto mb-2 opacity-30" />
           <p className="text-sm">No recent activity to display</p>
         </div>
@@ -678,8 +678,8 @@ export default function Dashboard() {
         <div className="card p-5" style={{ animation: 'fadeSlideUp 0.5s ease both', animationDelay: '0.46s' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-white text-sm">Top Files</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Most downloaded assets</p>
+              <h2 className="font-bold text-slate-800 dark:text-white text-sm">Top Files</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Most downloaded assets</p>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 rounded-lg"
               style={{ background: 'rgba(245,158,11,0.08)', color: '#d97706', border: '1px solid rgba(245,158,11,0.15)' }}>
@@ -690,7 +690,7 @@ export default function Dashboard() {
           {stats.topFiles?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 gap-2">
               <Files size={30} className="text-slate-300 dark:text-slate-600" />
-              <span className="text-sm text-slate-400 dark:text-slate-500">No download activity yet</span>
+              <span className="text-sm text-slate-500 dark:text-slate-500">No download activity yet</span>
             </div>
           ) : (
             <div className="space-y-3">
@@ -706,7 +706,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{f.name}</div>
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5 truncate">
                         {f.project} · {f.category}
                       </div>
                       <div className="mt-1.5 h-1 rounded-full bg-slate-100 dark:bg-slate-700/60 overflow-hidden">
@@ -716,7 +716,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex-shrink-0 text-right">
                       <span className="text-sm font-bold text-amber-500">{f.downloads}</span>
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500">DLs</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-500">DLs</div>
                     </div>
                   </div>
                 );
@@ -737,7 +737,7 @@ export default function Dashboard() {
               <div key={s.label} className="rounded-xl p-3 text-center"
                 style={{ background: `${s.accent}08`, border: `1px solid ${s.accent}18` }}>
                 <div className="text-2xl font-extrabold" style={{ color: s.accent }}>{s.value}</div>
-                <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-tight">{s.label}</div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5 leading-tight">{s.label}</div>
               </div>
             ))}
           </div>

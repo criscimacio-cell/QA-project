@@ -1,20 +1,22 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Sun, Moon, LogOut, User, ChevronDown, X } from 'lucide-react';
+import { Search, Bell, Sun, Moon, LogOut, User, ChevronDown, X, Menu } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotificationSocket } from '../../hooks/useNotificationSocket';
 import { useLogout } from '../../context/LogoutContext';
+import { useIsDesktop } from '../../hooks/useIsDesktop';
 import api from '../../api/client';
 
-interface TopBarProps { sidebarWidth: number; }
+interface TopBarProps { sidebarWidth: number; onMobileMenuToggle: () => void; }
 
-export default function TopBar({ sidebarWidth }: TopBarProps) {
+export default function TopBar({ sidebarWidth, onMobileMenuToggle }: TopBarProps) {
   const { user } = useAuth();
   const { triggerLogout } = useLogout();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
+  const isDesktop = useIsDesktop();
   const [query, setQuery] = useState('');
   const [notifCount, setNotifCount] = useState(0);
   const [showNotif, setShowNotif] = useState(false);
@@ -72,8 +74,18 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
   return (
     <header
       className="fixed top-0 right-0 h-16 flex items-center gap-3 px-5 z-[150] transition-all duration-300 topbar-premium"
-      style={{ left: sidebarWidth }}
+      style={{ left: isDesktop ? sidebarWidth : 0 }}
     >
+      {/* ── Mobile menu toggle — opens the sidebar drawer, desktop hides this and uses the sidebar's own collapse toggle instead ── */}
+      <button
+        onClick={onMobileMenuToggle}
+        aria-label="Open navigation menu"
+        title="Open navigation menu"
+        className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#F59E0B] transition-all duration-200 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 flex-shrink-0"
+      >
+        <Menu size={17} />
+      </button>
+
       {/* ── Search ── */}
       <form onSubmit={handleSearch} className="flex-1 max-w-[480px]">
         <div
@@ -110,7 +122,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="absolute right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              className="absolute right-3 text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
             >
               <X size={14} />
             </button>
@@ -188,7 +200,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
               {/* Items */}
               <div className="divide-y divide-slate-200 dark:divide-slate-800/60 max-h-72 overflow-y-auto">
                 {notifs.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400">
+                  <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-500 dark:text-slate-400">
                     <Bell size={28} className="opacity-30" />
                     <span className="text-sm">All caught up!</span>
                   </div>
@@ -224,7 +236,7 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
                         <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2">
                           {n.message}
                         </div>
-                        <div className="text-xs text-slate-400 dark:text-slate-600 mt-1">
+                        <div className="text-xs text-slate-500 dark:text-slate-600 mt-1">
                           {new Date(n.created_at).toLocaleString()}
                         </div>
                         {/* Age bar */}
@@ -279,13 +291,16 @@ export default function TopBar({ sidebarWidth }: TopBarProps) {
               <div className="text-xs font-semibold text-slate-800 dark:text-white leading-none">
                 {user?.name?.split(' ')[0]}
               </div>
-              <div className="text-xs capitalize leading-none mt-0.5 font-medium" style={{ color: '#F59E0B' }}>
+              {/* #F59E0B here measured 1.96:1 against this light background — well under
+                  the 4.5:1 AA minimum. #B45309 (the same primary palette, a darker shade)
+                  passes; dark mode keeps the lighter gold since it reads fine there. */}
+              <div className="text-xs capitalize leading-none mt-0.5 font-medium text-[#B45309] dark:text-[#FCD34D]">
                 {user?.role}
               </div>
             </div>
             <ChevronDown
               size={13}
-              className={`text-slate-400 transition-transform duration-200 ${showUser ? 'rotate-180' : ''}`}
+              className={`text-slate-500 dark:text-slate-400 transition-transform duration-200 ${showUser ? 'rotate-180' : ''}`}
             />
           </button>
 

@@ -24,7 +24,7 @@ export default function DiffViewer({ patch }: Props) {
           }
           return (
             <div key={i} className={`flex px-0 py-0 ${bg} ${color}`}>
-              <span className="select-none w-10 flex-shrink-0 text-right pr-3 text-slate-400 dark:text-slate-600 border-r border-slate-200 dark:border-slate-700 mr-3">{i + 1}</span>
+              <span className="select-none w-10 flex-shrink-0 text-right pr-3 text-slate-500 dark:text-slate-600 border-r border-slate-200 dark:border-slate-700 mr-3">{i + 1}</span>
               <span>{line || ' '}</span>
             </div>
           );

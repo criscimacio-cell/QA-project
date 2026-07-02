@@ -135,7 +135,7 @@ export default function BackofficeLogin() {
   );
 
   return (
-    <div
+    <main
       className="login-root"
       style={{
         minHeight: '100vh', position: 'relative', overflow: 'hidden',
@@ -255,8 +255,8 @@ export default function BackofficeLogin() {
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 24px rgba(245,158,11,0.4)`; }}
                 >
                   {loading
-                    ? <><span style={{ width: 15, height: 15, border: '2.5px solid #09090B', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }}/> Signing in…</>
-                    : 'Sign in'
+                    ? <><span style={{ width: 15, height: 15, border: '2.5px solid #09090B', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }}/> Logging in…</>
+                    : 'Login'
                   }
                 </button>
 
@@ -293,6 +293,6 @@ export default function BackofficeLogin() {
           .login-card-wrapper { position: relative !important; width: 100% !important; min-width: unset !important; padding: 24px 20px !important; top: unset !important; right: unset !important; bottom: unset !important; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         }
       `}</style>
-    </div>
+    </main>
   );
 }

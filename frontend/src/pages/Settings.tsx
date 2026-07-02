@@ -268,13 +268,13 @@ export default function Settings() {
       <div className="flex gap-6">
         {/* Nav */}
         <div className="w-48 flex-shrink-0">
-          <nav className="space-y-1">
+          <nav className="space-y-1" aria-label="Settings sections">
             {sections.map(s => s.href ? (
               <a key={s.label} href={s.href} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
                 <s.icon size={16} />{s.label}
               </a>
             ) : (
-              <button key={s.label} onClick={() => setActiveSection(s.label)} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeSection === s.label ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+              <button key={s.label} onClick={() => setActiveSection(s.label)} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeSection === s.label ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                 <s.icon size={16} />{s.label}
               </button>
             ))}
@@ -318,7 +318,7 @@ export default function Settings() {
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-slate-900 dark:text-slate-100">{user?.name}</div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">{user?.email}</div>
-                <div className="text-xs text-teal-600 dark:text-teal-400 capitalize mt-0.5 font-medium">{user?.role} · {user?.department}</div>
+                <div className="text-xs text-amber-600 dark:text-amber-400 capitalize mt-0.5 font-medium">{user?.role} · {user?.department}</div>
 
                 {/* Preview action buttons */}
                 {avatarPreview && (
@@ -347,14 +347,14 @@ export default function Settings() {
                 {!avatarPreview && (
                   <button
                     onClick={() => avatarInputRef.current?.click()}
-                    className="text-xs text-teal-600 dark:text-teal-400 hover:underline mt-2 block"
+                    className="text-xs text-amber-600 dark:text-amber-400 hover:underline mt-2 block"
                   >
                     Change profile photo
                   </button>
                 )}
               </div>
             </div>
-            <p className="text-xs text-slate-400 mt-4">JPG, PNG, GIF or WEBP · Max 2MB</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-4">JPG, PNG, GIF or WEBP · Max 2MB</p>
           </div>
 
           {/* Security section */}
@@ -383,7 +383,7 @@ export default function Settings() {
                     });
                   }} className={`input ${errors.newPassword ? 'border-red-400 focus:ring-red-300' : ''}`} />
                   {newPw && (() => { const s = passwordStrength(newPw); return <p className={`text-xs mt-1 font-medium ${s.color}`}>Strength: {s.label}</p>; })()}
-                  <p className="text-xs text-slate-400 mt-0.5">Min 8 characters, at least one number or special character</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Min 8 characters, at least one number or special character</p>
                   {errors.newPassword && <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>}
                 </div>
                 <div>
@@ -467,11 +467,11 @@ export default function Settings() {
                     const label = type === 'file' ? 'File Categories' : 'Knowledge Categories';
                     return (
                       <div key={type}>
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                           {label}
                         </h3>
                         <div className="space-y-1.5">
-                          {cats.length === 0 && <p className="text-xs text-slate-400 italic">No categories yet</p>}
+                          {cats.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400 italic">No categories yet</p>}
                           {cats.map(cat => (
                             <div key={cat.id} className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg group">
                               <span className="text-sm text-slate-700 dark:text-slate-300">{cat.name}</span>
@@ -571,7 +571,7 @@ export default function Settings() {
                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                   <div>
                     <div className="text-sm font-medium text-slate-700 dark:text-slate-300">Compact Sidebar</div>
-                    <div className="text-xs text-slate-400 mt-0.5">Show icons only, hide labels</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Show icons only, hide labels</div>
                   </div>
                   <button
                     onClick={() => setSidebarCompact(v => !v)}
@@ -614,13 +614,13 @@ export default function Settings() {
                     ]},
                   ].map(group => (
                     <div key={group.section}>
-                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{group.section}</h3>
+                      <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{group.section}</h3>
                       <div className="space-y-2">
                         {group.items.map(item => (
                           <div key={item.key} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                             <div>
                               <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{item.label}</div>
-                              <div className="text-xs text-slate-400 mt-0.5">{item.desc}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{item.desc}</div>
                             </div>
                             <button
                               onClick={() => setNotifPrefs(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))}
@@ -650,7 +650,7 @@ export default function Settings() {
             <div className="card p-6 opacity-60 pointer-events-none">
               <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
                 <Key size={18} className="text-[#F59E0B]" /> API Access
-                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-2 py-0.5 rounded-full">Coming soon</span>
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-500 px-2 py-0.5 rounded-full">Coming soon</span>
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">API key management coming soon.</p>
             </div>
@@ -680,7 +680,7 @@ export default function Settings() {
 
               {/* Empty state */}
               {customRoles.length === 0 && (
-                <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
+                <div className="text-center py-8 text-slate-500 dark:text-slate-500 text-sm">
                   No custom roles yet. Add a role above to get started.
                 </div>
               )}

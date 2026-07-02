@@ -115,7 +115,7 @@ export default function SearchResults() {
           {savedSearchesLoading ? (
             <div className="flex justify-center py-3"><Loader2 size={16} className="animate-spin text-amber-400" /></div>
           ) : savedSearches.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-2">No saved searches</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-2">No saved searches</p>
           ) : (
             <div className="space-y-1">
               {savedSearches.map(s => (
@@ -143,10 +143,11 @@ export default function SearchResults() {
 
       {/* Main content */}
       <div className="flex-1 max-w-4xl space-y-6">
+      <h1 className="sr-only">Search</h1>
       {/* Search bar */}
       <form onSubmit={handleSearch} className="relative">
         <label htmlFor="sr-search" className="sr-only">Search</label>
-        <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
         <input
           id="sr-search"
           value={query}
@@ -175,12 +176,12 @@ export default function SearchResults() {
       {/* No query */}
       {!q && (
         <div className="card p-12 text-center">
-          <Search size={48} className="mx-auto mb-4 opacity-20 text-slate-400" />
+          <Search size={48} className="mx-auto mb-4 opacity-20 text-slate-500 dark:text-slate-400" />
           <p className="text-lg font-medium text-slate-600 dark:text-slate-300">Search Qlarity</p>
-          <p className="text-sm mt-1 text-slate-400">Search across files, knowledge articles, Jira tickets, tags, and more</p>
+          <p className="text-sm mt-1 text-slate-500 dark:text-slate-400">Search across files, knowledge articles, Jira tickets, tags, and more</p>
           <div className="mt-6 flex flex-wrap gap-2 justify-center">
             {['report', 'template', 'contract', 'RCA', 'PROJ-123'].map(s => (
-              <button key={s} onClick={() => navigate(`/search?q=${encodeURIComponent(s)}`)} className="text-sm bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/20 text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-1.5 rounded-full transition-colors">
+              <button key={s} onClick={() => navigate(`/search?q=${encodeURIComponent(s)}`)} className="text-sm bg-slate-100 dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 px-3 py-1.5 rounded-full transition-colors">
                 {s}
               </button>
             ))}
@@ -205,7 +206,7 @@ export default function SearchResults() {
           {results.total === 0 && (
             <div className="card p-8 text-center">
               <p className="font-medium text-slate-600 dark:text-slate-300">No results found</p>
-              <p className="text-sm mt-1 text-slate-400">Try different keywords or check the spelling</p>
+              <p className="text-sm mt-1 text-slate-500 dark:text-slate-400">Try different keywords or check the spelling</p>
             </div>
           )}
 
@@ -216,7 +217,7 @@ export default function SearchResults() {
                 <FileText size={18} className="text-[#F59E0B]" /> Files
               </h2>
               {results.files.slice(filesOffset, filesOffset + PAGE_SIZE).map((f: any) => (
-                <div key={f.id} className="card p-4 hover:shadow-md hover:border-teal-200 dark:hover:border-teal-800 transition-all">
+                <div key={f.id} className="card p-4 hover:shadow-md hover:border-amber-200 dark:hover:border-amber-800 transition-all">
                   <div className="flex items-start gap-4">
                     <FileIcon mimeType={f.mime_type} name={f.original_name} size={28} />
                     <div className="flex-1 min-w-0">
@@ -260,7 +261,7 @@ export default function SearchResults() {
                         document.body.appendChild(a); a.click(); a.remove();
                         URL.revokeObjectURL(a.href);
                       } catch { toast.error('Download failed'); }
-                    }} aria-label={`Download ${f.name}`} className="btn-ghost p-2 flex-shrink-0 text-teal-500">
+                    }} aria-label={`Download ${f.name}`} className="btn-ghost p-2 flex-shrink-0 text-amber-500">
                       <Download size={16} />
                     </button>
                   </div>

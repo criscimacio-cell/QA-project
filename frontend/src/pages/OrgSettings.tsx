@@ -53,11 +53,11 @@ export default function OrgSettings() {
         </h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-slate-400 mb-1">Name</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Name</p>
             <p className="font-semibold text-slate-800 dark:text-slate-100">{(user as any)?.org_name ?? '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400 mb-1">Organization ID (slug)</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Organization ID (slug)</p>
             <p className="font-mono text-sm bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-700 dark:text-slate-300 inline-block">
               {(user as any)?.org_slug ?? '—'}
             </p>
@@ -89,7 +89,7 @@ export default function OrgSettings() {
                 <Users size={13} /> Users
               </div>
               <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.userCount}</p>
-              <p className="text-xs text-slate-400">of {limits.usersLabel} allowed</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">of {limits.usersLabel} allowed</p>
               {isFinite(limits.users) && (
                 <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div
@@ -106,7 +106,7 @@ export default function OrgSettings() {
                 <HardDrive size={13} /> Storage
               </div>
               <p className="text-2xl font-bold text-slate-800 dark:text-white">{formatBytes(stats.storageUsed)}</p>
-              <p className="text-xs text-slate-400">of {limits.storageLabel} allowed</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">of {limits.storageLabel} allowed</p>
               {isFinite(limits.storageBytes) && (
                 <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div

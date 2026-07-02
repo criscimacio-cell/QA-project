@@ -143,7 +143,7 @@ export default function FolderTree({ folders, activeFolderId, onSelect, onFolder
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-slate-800">
         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Folders</span>
         {canWrite && (
-          <button onClick={() => setShowInput(s => !s)} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-amber-500 transition-colors" title="New folder">
+          <button onClick={() => setShowInput(s => !s)} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-amber-500 transition-colors" title="New folder">
             <Plus size={14} />
           </button>
         )}
@@ -155,7 +155,7 @@ export default function FolderTree({ folders, activeFolderId, onSelect, onFolder
           className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer text-sm transition-colors ${activeFolderId === null ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 font-medium' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
           onClick={() => onSelect(null)}
         >
-          <Folder size={14} className="shrink-0 text-slate-400" />
+          <Folder size={14} className="shrink-0 text-slate-500 dark:text-slate-400" />
           <span>All Files</span>
         </div>
 
@@ -164,7 +164,7 @@ export default function FolderTree({ folders, activeFolderId, onSelect, onFolder
           className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer text-sm transition-colors ${activeFolderId === 'root' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 font-medium' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
           onClick={() => onSelect('root')}
         >
-          <Folder size={14} className="shrink-0 text-slate-400" />
+          <Folder size={14} className="shrink-0 text-slate-500 dark:text-slate-400" />
           <span>Unfiled</span>
         </div>
 

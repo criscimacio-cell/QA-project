@@ -3,20 +3,27 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import Footer from './Footer';
+import { useIsDesktop } from '../../hooks/useIsDesktop';
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCompact') === 'true');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progressWidth, setProgressWidth] = useState(0);
   const location = useLocation();
   const prevPath = useRef(location.pathname);
   const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDesktop = useIsDesktop();
   const sidebarWidth = collapsed ? 64 : 256;
+  // Below the desktop breakpoint the sidebar is an overlay drawer, not a
+  // pushed column, so content shouldn't be shifted over to make room for it.
+  const contentMarginLeft = isDesktop ? sidebarWidth : 0;
 
   // Simulate a top progress bar on route change
   useEffect(() => {
     if (location.pathname === prevPath.current) return;
     prevPath.current = location.pathname;
+    setMobileNavOpen(false);
 
     setLoading(true);
     setProgressWidth(0);
@@ -122,12 +129,17 @@ export default function AppLayout() {
         </div>
       )}
 
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(c => { localStorage.setItem('sidebarCompact', String(!c)); return !c; })} />
-      <TopBar sidebarWidth={sidebarWidth} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(c => { localStorage.setItem('sidebarCompact', String(!c)); return !c; })}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
+      />
+      <TopBar sidebarWidth={sidebarWidth} onMobileMenuToggle={() => setMobileNavOpen(o => !o)} />
 
       <main
         className="pt-16 min-h-screen transition-all duration-300 ease-in-out flex flex-col"
-        style={{ marginLeft: sidebarWidth }}
+        style={{ marginLeft: contentMarginLeft }}
       >
         <div className="p-6 pb-16 flex-1">
           <div key={location.pathname} className="page-transition-wrapper anim-fade-slide-up">

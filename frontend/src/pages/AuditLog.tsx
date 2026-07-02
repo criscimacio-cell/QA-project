@@ -150,7 +150,7 @@ export default function AuditLog() {
               <>
                 <div className="text-xl font-bold text-slate-800 dark:text-slate-100">{summaryCounts[sa] ?? 0}</div>
                 <div className={`text-xs mt-0.5 font-medium px-2 py-0.5 rounded-full inline-block ${ACTION_STYLES[sa] || 'bg-slate-100 text-slate-600'}`}>{sa}</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">total</div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">total</div>
               </>
             )}
           </div>
@@ -159,8 +159,8 @@ export default function AuditLog() {
 
       {/* Filters — L4: page resets to 1 when action filter changes */}
       <div className="card p-4 flex gap-3 items-center flex-wrap">
-        <Filter size={16} className="text-slate-400" />
-        <select value={action} onChange={e => { setAction(e.target.value); setOffset(0); }} className="input h-8 text-sm w-44">
+        <Filter size={16} className="text-slate-500 dark:text-slate-400" />
+        <select value={action} onChange={e => { setAction(e.target.value); setOffset(0); }} aria-label="Filter by action" className="input h-8 text-sm w-44">
           <option value="">All Actions</option>
           {ACTIONS.slice(1).map(a => <option key={a}>{a}</option>)}
         </select>
@@ -176,7 +176,7 @@ export default function AuditLog() {
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Audit log table, scroll horizontally to see all columns">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800/50">
                 <tr>
@@ -191,7 +191,7 @@ export default function AuditLog() {
                     <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">{new Date(l.created_at).toLocaleString()}</td>
                     <td className="px-4 py-3">
                       <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{l.user_name || 'System'}</div>
-                      <div className="text-xs text-slate-400">{l.user_email}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{l.user_email}</div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs capitalize text-slate-500 dark:text-slate-400">{l.user_role}</span>
@@ -201,7 +201,7 @@ export default function AuditLog() {
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 capitalize">{l.entity_type}</td>
                     <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 max-w-[240px] truncate" title={l.details}>{l.details}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400 font-mono">{l.ip_address}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 font-mono">{l.ip_address}</td>
                   </tr>
                 ))}
                 {logs.length === 0 && (
@@ -210,7 +210,7 @@ export default function AuditLog() {
                       <div className="flex flex-col items-center gap-2">
                         <ShieldCheck size={32} className="text-slate-300 dark:text-slate-600" />
                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No audit events found</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500">Try adjusting the filter or come back later</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-500">Try adjusting the filter or come back later</p>
                       </div>
                     </td>
                   </tr>

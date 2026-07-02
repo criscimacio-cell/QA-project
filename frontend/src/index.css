@@ -588,7 +588,7 @@
   .badge-published {
     @apply badge;
     background: rgba(16, 185, 129, 0.09);
-    color: #FBBF24;
+    color: #059669;
     border: 1px solid rgba(16, 185, 129, 0.22);
   }
   .dark .badge-published {

@@ -650,25 +650,25 @@ export default function FileManager() {
 
       {/* Filters */}
       <div className="card p-4 flex flex-wrap gap-3 items-center">
-        <Filter size={16} className="text-slate-400" />
+        <Filter size={16} className="text-slate-500 dark:text-slate-400" />
         <form onSubmit={handleSearch} className="flex gap-2">
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, tags, Jira…" aria-label="Search files" className="input h-8 text-sm w-64" />
           <button type="submit" className="btn-primary py-1.5 px-3 text-sm">Search</button>
         </form>
-        <select value={project} onChange={e => setProject(e.target.value)} className="input h-8 text-sm w-40">
+        <select value={project} onChange={e => setProject(e.target.value)} aria-label="Filter by project" className="input h-8 text-sm w-40">
           <option value="">All Projects</option>
           {projects.map(p => <option key={p}>{p}</option>)}
         </select>
-        <select value={category} onChange={e => setCategory(e.target.value)} className="input h-8 text-sm w-44">
+        <select value={category} onChange={e => setCategory(e.target.value)} aria-label="Filter by category" className="input h-8 text-sm w-44">
           <option value="">All Categories</option>
           {categories.map(c => <option key={c}>{c}</option>)}
         </select>
         <button onClick={() => { setSearch(''); setProject(''); setCategory(''); load({ search: '', project: '', category: '' }); }} className="btn-ghost text-sm py-1.5">Clear</button>
         <div className="flex items-center gap-1 ml-auto">
-          <button onClick={() => setViewMode('table')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-amber-500 text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
+          <button onClick={() => setViewMode('table')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-amber-500 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
             <List className="w-4 h-4" />
           </button>
-          <button onClick={() => setViewMode('grouped')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grouped' ? 'bg-amber-500 text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
+          <button onClick={() => setViewMode('grouped')} className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grouped' ? 'bg-amber-500 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
             <LayoutGrid className="w-4 h-4" />
           </button>
         </div>
@@ -700,7 +700,7 @@ export default function FileManager() {
             )}
             <button onClick={() => setBulkMetaModal(true)} className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"><Pencil size={13} /> Edit Metadata</button>
           </div>
-          <button onClick={() => setSelectedIds(new Set())} aria-label="Clear selection" className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-colors" title="Clear selection">
+          <button onClick={() => setSelectedIds(new Set())} aria-label="Clear selection" className="ml-auto p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-colors" title="Clear selection">
             <X size={14} />
           </button>
         </div>
@@ -750,7 +750,7 @@ export default function FileManager() {
                 <div key={project}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{project}</span>
-                    <span className="text-xs text-slate-400 dark:text-slate-600">({projectFiles.length})</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-600">({projectFiles.length})</span>
                   </div>
                   <div className="space-y-1">
                     {projectFiles.map(f => (
@@ -762,7 +762,7 @@ export default function FileManager() {
                         <FileIcon mimeType={f.mime_type} name={f.original_name} size={20} />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{f.name}</div>
-                          <div className="text-xs text-slate-400">{f.module || f.category || '—'} · v{f.version}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">{f.module || f.category || '—'} · v{f.version}</div>
                         </div>
                         <StatusBadge status={f.status} />
                       </div>
@@ -827,7 +827,7 @@ export default function FileManager() {
                                 {f.checked_out_by === user?.id ? 'You (editing)' : `Locked by ${f.checked_out_by_name}`}
                               </span>
                             ) : (
-                              <span className="text-slate-400">{f.original_name}</span>
+                              <span className="text-slate-500 dark:text-slate-400">{f.original_name}</span>
                             )}
                           </div>
                         </div>
@@ -843,8 +843,8 @@ export default function FileManager() {
                     <td className="px-4 py-3">
                       {f.jira_ticket && <span className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">{f.jira_ticket}</span>}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">{formatBytes(f.size)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString('en-CA')}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{formatBytes(f.size)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString('en-CA')}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <button onClick={() => openFile(f)} title="Details" aria-label="View file details" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500" disabled={fileDetailLoading}>
@@ -856,10 +856,10 @@ export default function FileManager() {
                           </button>
                         )}
                         <button onClick={() => handleDownload(f.id, f.original_name, f.is_password_protected)} title="Download" aria-label="Download file" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Download size={14} /></button>
-                        <button onClick={() => openShareModal(f.id)} title="Share" aria-label="Manage share links" className="p-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-400 hover:text-blue-500"><Share2 size={14} /></button>
+                        <button onClick={() => openShareModal(f.id)} title="Share" aria-label="Manage share links" className="p-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-500 dark:text-slate-400 hover:text-blue-500"><Share2 size={14} /></button>
                         {/* Check-out / Check-in buttons */}
                         {!f.checked_out_by && (isLead || isEngineer) && (
-                          <button onClick={() => doCheckout(f.id)} title="Check Out" aria-label="Check out file" className="p-1.5 rounded hover:bg-amber-500/10 text-slate-400 hover:text-amber-500">
+                          <button onClick={() => doCheckout(f.id)} title="Check Out" aria-label="Check out file" className="p-1.5 rounded hover:bg-amber-500/10 text-slate-500 dark:text-slate-400 hover:text-amber-500">
                             <Lock size={14} />
                           </button>
                         )}
@@ -991,7 +991,7 @@ export default function FileManager() {
                         <div className="space-y-2 mt-2">
                           <div className="relative">
                             <input type={editPwShow ? 'text' : 'password'} value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="New password…" className="input pr-9 text-sm" />
-                            <button type="button" onClick={() => setEditPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <button type="button" onClick={() => setEditPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-slate-600">
                               {editPwShow ? <EyeOff size={14} /> : <Eye size={14} />}
                             </button>
                           </div>
@@ -1012,7 +1012,7 @@ export default function FileManager() {
                         <div className="space-y-2">
                           <div className="relative">
                             <input type={editPwShow ? 'text' : 'password'} value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Set password…" className="input pr-9 text-sm" />
-                            <button type="button" onClick={() => setEditPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <button type="button" onClick={() => setEditPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-slate-600">
                               {editPwShow ? <EyeOff size={14} /> : <Eye size={14} />}
                             </button>
                           </div>
@@ -1031,9 +1031,9 @@ export default function FileManager() {
                         <div key={v.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
                           <span className="text-xs bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded font-mono">v{v.version}</span>
                           <span className="text-slate-500">{v.change_log}</span>
-                          <span className="ml-auto text-xs text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString('en-CA')}</span>
-                          <button onClick={() => handleDownload(selected.id, selected.original_name, false, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title="Download this version" aria-label={`Download version ${v.version}`}><Download size={12} /></button>
-                          {v.version > 1 && <button onClick={() => openDiff(selected.id, v.version - 1, v.version)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400" title={`Diff v${v.version-1} → v${v.version}`}><GitCompare size={12} /></button>}
+                          <span className="ml-auto text-xs text-slate-500 dark:text-slate-400">{v.created_by_name} · {new Date(v.created_at).toLocaleDateString('en-CA')}</span>
+                          <button onClick={() => handleDownload(selected.id, selected.original_name, false, `/api/files/${selected.id}/versions/${v.version}/download`)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" title="Download this version" aria-label={`Download version ${v.version}`}><Download size={12} /></button>
+                          {v.version > 1 && <button onClick={() => openDiff(selected.id, v.version - 1, v.version)} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" title={`Diff v${v.version-1} → v${v.version}`}><GitCompare size={12} /></button>}
                         </div>
                       ))}
                     </div>
@@ -1078,12 +1078,12 @@ export default function FileManager() {
             {detailTab === 'comments' && (
               <div className="space-y-3">
                 {commentLoading && comments.length === 0 ? (
-                  <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
+                  <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm flex flex-col items-center gap-2">
                     <Loader2 size={20} className="animate-spin text-amber-400" />
                     Loading comments…
                   </div>
                 ) : comments.length === 0 ? (
-                  <div className="text-center py-6 text-slate-400 text-sm flex flex-col items-center gap-2">
+                  <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm flex flex-col items-center gap-2">
                     <MessageSquare size={28} className="opacity-30" />
                     No comments yet. Be the first to comment.
                   </div>
@@ -1102,9 +1102,9 @@ export default function FileManager() {
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{c.user_name}</span>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-slate-400">{new Date(c.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">{new Date(c.created_at).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}</span>
                               {(c.user_id === user?.id || isAdmin) && (
-                                <button onClick={() => deleteComment(c.id)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors" title="Delete comment">
+                                <button onClick={() => deleteComment(c.id)} className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors" title="Delete comment">
                                   <Trash2 size={12} />
                                 </button>
                               )}
@@ -1132,7 +1132,7 @@ export default function FileManager() {
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
                     {commentError ? <p className="text-xs text-red-500">{commentError}</p> : <span />}
-                    <p className="text-xs text-slate-400 text-right">{newComment.length}/500</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 text-right">{newComment.length}/500</p>
                   </div>
                 </div>
               </div>
@@ -1142,7 +1142,7 @@ export default function FileManager() {
             {detailTab === 'approvals' && (
               <div className="space-y-2">
                 {approvalHistory.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400 text-sm flex flex-col items-center gap-2">
+                  <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm flex flex-col items-center gap-2">
                     <CheckCircle size={28} className="opacity-30" />
                     No approval history yet.
                   </div>
@@ -1164,7 +1164,7 @@ export default function FileManager() {
                               )}
                               <span className="font-semibold text-slate-700 dark:text-slate-200">{a.reviewer_name}</span>
                               <StatusBadge status={a.status} />
-                              <span className="ml-auto text-xs text-slate-400 flex items-center gap-1">
+                              <span className="ml-auto text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                 <Clock size={10} /> {new Date(a.created_at).toLocaleDateString('en-CA')}
                               </span>
                             </div>
@@ -1196,7 +1196,7 @@ export default function FileManager() {
           <div>
             <label className="label">Comments{requiresComment && <span className="text-red-500 ml-0.5">*</span>}</label>
             <textarea value={approveComment} onChange={e => { setApproveComment(e.target.value.slice(0, 1000)); if (approveError) setApproveError(''); }} className={`input ${approveError ? 'border-red-400 focus:ring-red-300' : ''}`} rows={3} placeholder={requiresComment ? 'Explain why you are returning/rejecting this file…' : 'Add review comments…'} maxLength={1000} />
-            <p className="text-xs text-slate-400 text-right mt-0.5">{approveComment.length}/1000</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 text-right mt-0.5">{approveComment.length}/1000</p>
             {approveError && <p className="text-xs text-red-500 mt-1">{approveError}</p>}
           </div>
           <div className="flex gap-2 justify-end">
@@ -1216,9 +1216,9 @@ export default function FileManager() {
             onClick={() => fileInputRef.current?.click()}
             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver ? 'border-amber-500 bg-amber-500/5' : 'border-slate-200 dark:border-slate-700 hover:border-amber-500/50'}`}
           >
-            <Upload size={28} className="mx-auto mb-3 text-slate-400" />
+            <Upload size={28} className="mx-auto mb-3 text-slate-500 dark:text-slate-400" />
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Drop files here or click to browse</p>
-            <p className="text-xs text-slate-400 mt-1">Up to 20 files, max 50 MB each</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Up to 20 files, max 50 MB each</p>
             <input ref={fileInputRef} type="file" multiple className="hidden" onChange={e => addBulkFiles(Array.from(e.target.files || []))} />
           </div>
 
@@ -1228,8 +1228,8 @@ export default function FileManager() {
                 <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-sm">
                   <FileIcon mimeType={f.type} name={f.name} size={16} />
                   <span className="flex-1 truncate text-slate-700 dark:text-slate-300">{f.name}</span>
-                  <span className="text-xs text-slate-400">{formatBytes(f.size)}</span>
-                  <button onClick={() => removeFile(i)} className="text-slate-400 hover:text-red-400 transition-colors"><X size={13} /></button>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{formatBytes(f.size)}</span>
+                  <button onClick={() => removeFile(i)} className="text-slate-500 dark:text-slate-400 hover:text-red-400 transition-colors"><X size={13} /></button>
                 </div>
               ))}
             </div>
@@ -1250,7 +1250,7 @@ export default function FileManager() {
                 onChange={e => { setUploadPasswordEnabled(e.target.checked); if (!e.target.checked) { setUploadPassword(''); setUploadPasswordHint(''); } }}
                 className="rounded border-slate-300"
               />
-              <Lock size={13} className="text-slate-400" />
+              <Lock size={13} className="text-slate-500 dark:text-slate-400" />
               <span className="text-sm text-slate-700 dark:text-slate-300">Password protect this file</span>
             </label>
             {uploadPasswordEnabled && (
@@ -1263,7 +1263,7 @@ export default function FileManager() {
                     placeholder="Set download password…"
                     className="input pr-9 text-sm"
                   />
-                  <button type="button" onClick={() => setUploadPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <button type="button" onClick={() => setUploadPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-slate-600">
                     {uploadPwShow ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
@@ -1349,7 +1349,7 @@ export default function FileManager() {
             ) : previewFile?.mime_type === 'application/pdf' && previewBlobUrl ? (
               <iframe src={previewBlobUrl} className="w-full h-[60vh] rounded-lg border border-slate-200 dark:border-slate-700" title="PDF Preview" />
             ) : !previewLoading ? (
-              <div className="flex flex-col items-center justify-center h-40 text-slate-400 gap-2">
+              <div className="flex flex-col items-center justify-center h-40 text-slate-500 dark:text-slate-400 gap-2">
                 <FileText size={32} className="opacity-30" />
                 <p className="text-sm">Preview not available</p>
               </div>
@@ -1368,7 +1368,7 @@ export default function FileManager() {
           {!diffLoading && diffResult && (
             diffResult.diffable
               ? <DiffViewer patch={diffResult.patch!} />
-              : <div className="flex flex-col items-center gap-2 py-8 text-slate-400">
+              : <div className="flex flex-col items-center gap-2 py-8 text-slate-500 dark:text-slate-400">
                   <GitCompare size={32} className="opacity-30" />
                   <p className="text-sm">{diffResult.reason === 'binary' ? 'Binary file — download both versions to compare.' : diffResult.reason === 'too_large' ? 'File too large to diff (> 2 MB).' : 'Cannot diff this file.'}</p>
                 </div>
@@ -1402,28 +1402,28 @@ export default function FileManager() {
           {shareLinksLoading ? (
             <div className="flex items-center justify-center py-6"><Loader2 size={24} className="animate-spin text-amber-400" /></div>
           ) : shareLinks.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-4">No share links yet</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No share links yet</p>
           ) : (
             <div className="space-y-2">
               {shareLinks.map(link => (
                 <div key={link.id} className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-slate-700 dark:text-slate-200 truncate">{link.label || 'Untitled'}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       {link.expires_at ? `Expires: ${new Date(link.expires_at).toLocaleDateString('en-CA')}` : 'No expiry'}
                       {link.max_downloads ? ` · ${link.download_count ?? 0}/${link.max_downloads} downloads` : ''}
                     </p>
                   </div>
                   <button
                     onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/share/${link.token}`); toast.success('Link copied!'); }}
-                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-blue-500"
+                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-500"
                     title="Copy link"
                   >
                     <Copy size={13} />
                   </button>
                   <button
                     onClick={() => deleteShareLink(link.id)}
-                    className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500"
+                    className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-500 dark:text-slate-400 hover:text-red-500"
                     title="Delete link"
                   >
                     <X size={13} />
@@ -1507,7 +1507,7 @@ export default function FileManager() {
                 autoFocus
                 disabled={pwLoading}
               />
-              <button type="button" onClick={() => setPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button type="button" onClick={() => setPwShow(s => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-slate-600">
                 {pwShow ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>

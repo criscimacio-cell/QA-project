@@ -58,15 +58,15 @@ export default function BackofficeLayout() {
   const sidebar = dark ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200';
   const topbar = dark ? 'border-slate-800 bg-slate-900/50' : 'border-gray-200 bg-white';
   const footer = dark ? 'border-slate-800 bg-slate-900/30' : 'border-gray-200 bg-white';
-  const navInactive = dark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-800 hover:bg-gray-100';
-  const adminName = dark ? 'text-slate-400' : 'text-slate-600';
-  const adminEmail = dark ? 'text-slate-600' : 'text-slate-400';
+  const navInactive = dark ? 'text-slate-500 dark:text-slate-400 hover:text-slate-200 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-800 hover:bg-gray-100';
+  const adminName = dark ? 'text-slate-500 dark:text-slate-400' : 'text-slate-600';
+  const adminEmail = dark ? 'text-slate-600' : 'text-slate-500 dark:text-slate-400';
   const logoBrand = dark ? 'text-white' : 'text-slate-800';
-  const logoSub = dark ? 'text-slate-500' : 'text-slate-400';
-  const topbarLabel = dark ? 'text-slate-400' : 'text-slate-500';
+  const logoSub = dark ? 'text-slate-500' : 'text-slate-500 dark:text-slate-400';
+  const topbarLabel = dark ? 'text-slate-500 dark:text-slate-400' : 'text-slate-500';
   const topbarName = dark ? 'text-slate-200' : 'text-slate-800';
-  const iconBtn = dark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-800 hover:bg-gray-100';
-  const footerText = dark ? 'text-slate-600' : 'text-slate-400';
+  const iconBtn = dark ? 'text-slate-500 dark:text-slate-400 hover:text-slate-200 hover:bg-slate-800' : 'text-slate-500 hover:text-slate-800 hover:bg-gray-100';
+  const footerText = dark ? 'text-slate-600' : 'text-slate-500 dark:text-slate-400';
 
   return (
     <div className={`min-h-screen flex ${bg}`}>

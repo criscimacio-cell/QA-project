@@ -3,21 +3,28 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FolderOpen, Files, Search, BookOpen,
   Database, GitPullRequest, Users, ShieldCheck, Settings, Archive,
-  ChevronLeft, ChevronRight, Layers, Building2, Trash2, Lock
+  ChevronLeft, ChevronRight, Layers, Building2, Trash2, Lock, X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { usePermissions, ModuleKey } from '../../context/PermissionsContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useIsDesktop } from '../../hooks/useIsDesktop';
 import clsx from 'clsx';
 import OrgSwitcher from '../UI/OrgSwitcher';
 
-interface SidebarProps { collapsed: boolean; onToggle: () => void; }
+interface SidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
+}
 
 function renderNavSection(
   label: string,
   items: { to: string; icon: React.ElementType; label: string }[],
   startIdx: number,
   collapsed: boolean,
+  onNavigate?: () => void,
 ) {
   return (
     <div>
@@ -37,6 +44,7 @@ function renderNavSection(
             <NavLink
               to={item.to}
               title={collapsed ? item.label : undefined}
+              onClick={onNavigate}
               className={({ isActive }) => clsx(isActive ? 'sidebar-link-active' : 'sidebar-link', collapsed && 'justify-center !px-0 !pl-0')}
             >
               {({ isActive }) => (
@@ -75,9 +83,14 @@ const mainNav = [
 
 const formatRole = (role: string) => role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { user } = useAuth();
   const { canAccess } = usePermissions();
+  const isDesktop = useIsDesktop();
+  // Below the desktop breakpoint the sidebar is an overlay drawer, not a
+  // pushed column — the desktop icon-only "collapsed" preference doesn't
+  // apply there, it should always show full labeled content when opened.
+  const effectiveCollapsed = collapsed && isDesktop;
 
   const moduleMap: Record<string, ModuleKey> = {
     '/': 'dashboard',
@@ -113,17 +126,27 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { dark } = useTheme();
 
   return (
-    <aside
-      className={clsx(
-        'fixed left-0 top-0 h-full flex flex-col z-40 transition-all duration-300 ease-in-out sidebar-premium',
-        collapsed ? 'w-16' : 'w-64',
+    <>
+      {/* ── Mobile scrim — closes the drawer on outside click, below the desktop breakpoint only ── */}
+      {!isDesktop && mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={onMobileClose}
+          aria-hidden="true"
+        />
       )}
-      style={{
-        boxShadow: dark
-          ? '2px 0 40px rgba(0,0,0,0.5)'
-          : '2px 0 20px rgba(0,0,0,0.15)',
-      }}
-    >
+      <aside
+        className={clsx(
+          'fixed left-0 top-0 h-full flex flex-col z-40 transition-all duration-300 ease-in-out sidebar-premium',
+          isDesktop ? (collapsed ? 'w-16' : 'w-64') : 'w-64',
+          !isDesktop && (mobileOpen ? 'translate-x-0' : '-translate-x-full'),
+        )}
+        style={{
+          boxShadow: dark
+            ? '2px 0 40px rgba(0,0,0,0.5)'
+            : '2px 0 20px rgba(0,0,0,0.15)',
+        }}
+      >
       {/* Subtle overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -132,12 +155,23 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         }}
       />
 
+      {/* ── Mobile close button ── */}
+      {!isDesktop && (
+        <button
+          onClick={onMobileClose}
+          aria-label="Close navigation menu"
+          className="absolute right-3 top-4 z-20 w-8 h-8 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+        >
+          <X size={18} />
+        </button>
+      )}
+
       {/* ── Logo area ── */}
       <div
         className={clsx(
           'relative z-10 flex items-center gap-3 px-3 border-b transition-all duration-300',
           'border-white/10',
-          collapsed ? 'py-[1.125rem] justify-center' : 'py-[1.125rem] px-4',
+          effectiveCollapsed ? 'py-[1.125rem] justify-center' : 'py-[1.125rem] px-4',
         )}
         style={{
           background: 'rgba(0,0,0,0.1)',
@@ -157,10 +191,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             border: '1px solid rgba(255,255,255,0.2)',
           }}
         >
-          <Layers size={17} className="text-white" style={{ animation: collapsed ? 'none' : 'float 4s ease-in-out infinite' }} />
+          <Layers size={17} className="text-white" style={{ animation: effectiveCollapsed ? 'none' : 'float 4s ease-in-out infinite' }} />
         </div>
 
-        {!collapsed && (
+        {!effectiveCollapsed && (
           <div className="animate-fade-in overflow-hidden">
             <div
               className="font-extrabold text-sm tracking-tight text-white"
@@ -175,10 +209,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </div>
 
       {/* ── Navigation ── */}
-      <nav className="relative z-10 flex-1 overflow-y-auto py-4 space-y-5 px-2 scrollbar-thin">
+      <nav className="relative z-10 flex-1 overflow-y-auto py-4 space-y-5 px-2 scrollbar-thin" aria-label="Main navigation">
         {mainNav.map(section => (
           <div key={section.section}>
-            {!collapsed && (
+            {!effectiveCollapsed && (
               <div
                 className="px-3 mb-2 text-xs font-bold uppercase tracking-widest animate-fade-in"
                 style={{ color: 'rgba(252,211,77,0.5)' }}
@@ -186,7 +220,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {section.section}
               </div>
             )}
-            {collapsed && (
+            {effectiveCollapsed && (
               <div className="px-1.5 mb-2">
                 <div className="h-px w-full rounded-full border-slate-200 dark:border-slate-700/50 border-t" />
               </div>
@@ -200,11 +234,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     <NavLink
                       to={item.to}
                       end={item.to === '/'}
-                      title={collapsed ? item.label : undefined}
+                      title={effectiveCollapsed ? item.label : undefined}
+                      onClick={() => { if (!isDesktop) onMobileClose(); }}
                       className={({ isActive }) =>
                         clsx(
                           isActive ? 'sidebar-link-active' : 'sidebar-link',
-                          collapsed && 'justify-center !px-0 !pl-0',
+                          effectiveCollapsed && 'justify-center !px-0 !pl-0',
                         )
                       }
                     >
@@ -225,7 +260,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                                 : 'text-white/60',
                             )}
                           />
-                          {!collapsed && (
+                          {!effectiveCollapsed && (
                             <span className="truncate transition-all duration-200">{item.label}</span>
                           )}
                         </>
@@ -239,13 +274,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ))}
 
         {/* Approval Workflow — visible to any role with approvals access */}
-        {leadNav.length > 0 && renderNavSection('Workflow', leadNav, mainNav.reduce((a, s) => a + s.items.length, 0), collapsed)}
+        {leadNav.length > 0 && renderNavSection('Workflow', leadNav, mainNav.reduce((a, s) => a + s.items.length, 0), effectiveCollapsed, () => { if (!isDesktop) onMobileClose(); })}
 
         {/* Admin section — visible to any role with at least one admin module */}
-        {adminNav.length > 0 && renderNavSection('Admin', adminNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length, collapsed)}
+        {adminNav.length > 0 && renderNavSection('Admin', adminNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length, effectiveCollapsed, () => { if (!isDesktop) onMobileClose(); })}
 
         {/* Settings — all roles */}
-        {renderNavSection('Account', settingsNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length + adminNav.length, collapsed)}
+        {renderNavSection('Account', settingsNav, mainNav.reduce((a, s) => a + s.items.length, 0) + leadNav.length + adminNav.length, effectiveCollapsed, () => { if (!isDesktop) onMobileClose(); })}
       </nav>
 
       {/* ── User card ── */}
@@ -253,7 +288,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         className="relative z-10 p-3 border-t"
         style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.1)' }}
       >
-        {!collapsed ? (
+        {!effectiveCollapsed ? (
           <div
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl"
             style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}
@@ -300,10 +335,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         )}
       </div>
 
-      {/* ── Collapse toggle ── */}
+      {/* ── Collapse toggle — desktop only; mobile uses the drawer open/close pattern instead ── */}
       <button
         onClick={onToggle}
-        className="absolute -right-3.5 top-[4.5rem] w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 z-50 bg-white hover:bg-[#F59E0B] hover:text-white"
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className="hidden md:flex absolute -right-3.5 top-[4.5rem] w-7 h-7 rounded-full items-center justify-center transition-all duration-200 z-50 bg-white hover:bg-[#F59E0B] hover:text-white"
         style={{
           border: '1.5px solid rgba(252,211,77,0.6)',
           boxShadow: '0 2px 12px rgba(30,27,75,0.3)',
@@ -313,6 +350,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       >
         {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
       </button>
-    </aside>
+      </aside>
+    </>
   );
 }

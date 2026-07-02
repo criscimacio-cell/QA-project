@@ -30,8 +30,8 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-      <button onClick={toggle} className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl glass text-slate-600 dark:text-slate-300 hover:text-[#F59E0B] transition-all hover:scale-105">
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+      <button onClick={toggle} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'} title={dark ? 'Switch to light mode' : 'Switch to dark mode'} className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl glass text-slate-600 dark:text-slate-300 hover:text-[#F59E0B] transition-all hover:scale-105">
         {dark ? <Sun size={17} /> : <Moon size={17} />}
       </button>
 
@@ -55,7 +55,7 @@ export default function ForgotPassword() {
                 If <strong>{email}</strong> is registered, you'll receive a password reset link shortly.
               </p>
               {import.meta.env.DEV && (
-                <p className="text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                <p className="text-xs text-slate-500 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
                   💡 In development mode, the reset link is printed in the <strong>backend terminal</strong> console.
                 </p>
               )}
@@ -83,7 +83,7 @@ export default function ForgotPassword() {
                 <div>
                   <label className="label">Email address</label>
                   <div className="relative">
-                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
                     <input type="email" value={email} onChange={e => { setEmail(e.target.value); if (error) setError(''); }} className={`input pl-9 ${error ? 'border-red-400 dark:border-red-500 focus:ring-red-300 dark:focus:ring-red-700' : ''}`} placeholder="you@company.com" />
                   </div>
                 </div>
@@ -101,6 +101,6 @@ export default function ForgotPassword() {
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

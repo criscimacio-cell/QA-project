@@ -60,12 +60,12 @@ export default function BackofficeUsers() {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Users</h1>
-        <p className="text-slate-400 dark:text-slate-500 text-sm mt-0.5">Cross-organization user directory — {total} user{total !== 1 ? 's' : ''}</p>
+        <p className="text-slate-500 dark:text-slate-500 text-sm mt-0.5">Cross-organization user directory — {total} user{total !== 1 ? 's' : ''}</p>
       </div>
 
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-500" />
           <input
             type="text"
             placeholder="Search by name or email…"
@@ -75,7 +75,7 @@ export default function BackofficeUsers() {
           />
         </div>
         <div className="flex flex-col gap-0.5">
-          <label className="text-xs text-slate-400 dark:text-slate-500 px-1">Filter by Org ID</label>
+          <label className="text-xs text-slate-500 dark:text-slate-500 px-1">Filter by Org ID</label>
           <input
             type="text"
             placeholder="Organization ID…"
@@ -92,12 +92,12 @@ export default function BackofficeUsers() {
             <div className="animate-spin w-7 h-7 border-2 border-amber-500 border-t-transparent rounded-full" />
           </div>
         ) : users.length === 0 ? (
-          <div className="text-center py-16 text-slate-400 dark:text-slate-500 text-sm">No users found</div>
+          <div className="text-center py-16 text-slate-500 dark:text-slate-500 text-sm">No users found</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-slate-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80">
+                <tr className="text-xs text-slate-500 dark:text-slate-500 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80">
                   <th className="text-left px-4 py-3 font-medium">Name</th>
                   <th className="text-left px-4 py-3 font-medium">Email</th>
                   <th className="text-left px-4 py-3 font-medium">Role</th>
@@ -111,30 +111,30 @@ export default function BackofficeUsers() {
                 {users.map(user => (
                   <tr key={user.id} className="hover:bg-gray-50 dark:bg-gray-100 dark:bg-slate-800/40 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200">{user.name}</td>
-                    <td className="px-4 py-3 text-slate-400 dark:text-slate-500 dark:text-slate-400">{user.email}</td>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-500 dark:text-slate-400">{user.email}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-200 dark:bg-slate-700 text-slate-400 dark:text-slate-600 dark:text-slate-300 capitalize">
+                      <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-200 dark:bg-slate-700 text-slate-500 dark:text-slate-600 dark:text-slate-300 capitalize">
                         {user.role}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => navigate(`/backoffice/organizations/${user.org_id}`)}
-                        className="text-slate-400 dark:text-slate-600 dark:text-slate-300 hover:text-amber-400 transition-colors text-left"
+                        className="text-slate-500 dark:text-slate-600 dark:text-slate-300 hover:text-amber-400 transition-colors text-left"
                       >
                         {user.org_name}
                       </button>
-                      <div className="text-xs text-slate-400 dark:text-slate-600 font-mono">{user.org_id}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-600 font-mono">{user.org_id}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${user.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-gray-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
+                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${user.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-gray-200 dark:bg-slate-700 text-slate-500 dark:text-slate-500'}`}>
                         {user.active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">
+                    <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-500 text-xs">
                       {user.last_login ? new Date(user.last_login).toLocaleDateString() : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">
+                    <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-500 text-xs">
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
                   </tr>

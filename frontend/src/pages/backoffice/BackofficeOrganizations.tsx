@@ -26,7 +26,7 @@ function formatBytes(bytes: number): string {
 
 function PlanBadge({ plan }: { plan: string }) {
   const styles: Record<string, string> = {
-    free: 'bg-gray-200 dark:bg-slate-700 text-slate-400 dark:text-slate-600 dark:text-slate-300',
+    free: 'bg-gray-200 dark:bg-slate-700 text-slate-500 dark:text-slate-600 dark:text-slate-300',
     pro: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
     enterprise: 'bg-violet-600/20 text-violet-400 border border-violet-500/30',
   };
@@ -43,7 +43,7 @@ function PlanDropdown({ org, onPlanChange }: { org: Org; onPlanChange: (id: stri
     <div className="relative">
       <button
         onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
-        className="flex items-center gap-1 px-2 py-1 rounded text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200 hover:bg-gray-200 dark:bg-slate-700 transition-colors"
+        className="flex items-center gap-1 px-2 py-1 rounded text-xs text-slate-500 dark:text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200 hover:bg-gray-200 dark:bg-slate-700 transition-colors"
       >
         Plan <ChevronDown className="w-3 h-3" />
       </button>
@@ -55,7 +55,7 @@ function PlanDropdown({ org, onPlanChange }: { org: Org; onPlanChange: (id: stri
               <button
                 key={p}
                 onClick={e => { e.stopPropagation(); onPlanChange(org.id, p); setOpen(false); }}
-                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-200 dark:bg-slate-700 transition-colors capitalize ${p === org.plan ? 'text-amber-400' : 'text-slate-400 dark:text-slate-600 dark:text-slate-300'}`}
+                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-200 dark:bg-slate-700 transition-colors capitalize ${p === org.plan ? 'text-amber-400' : 'text-slate-500 dark:text-slate-600 dark:text-slate-300'}`}
               >
                 {p} {p === org.plan && '✓'}
               </button>
@@ -177,7 +177,7 @@ export default function BackofficeOrganizations() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">Organizations</h1>
-          <p className="text-slate-400 dark:text-slate-500 text-sm mt-0.5">{orgs.length} organization{orgs.length !== 1 ? 's' : ''} found</p>
+          <p className="text-slate-500 dark:text-slate-500 text-sm mt-0.5">{orgs.length} organization{orgs.length !== 1 ? 's' : ''} found</p>
         </div>
         <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 dark:text-white text-sm font-medium transition-colors">
           <Plus className="w-4 h-4" /> New Organization
@@ -189,21 +189,21 @@ export default function BackofficeOrganizations() {
           <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-800">
               <h2 className="font-semibold text-slate-900 dark:text-white">Create Organization</h2>
-              <button onClick={() => { setShowCreate(false); setCreateForm(emptyForm); setSlugEdited(false); }} className="text-slate-400 dark:text-slate-500 hover:text-slate-400 dark:text-slate-600 dark:text-slate-300"><X className="w-4 h-4" /></button>
+              <button onClick={() => { setShowCreate(false); setCreateForm(emptyForm); setSlugEdited(false); }} className="text-slate-500 dark:text-slate-500 hover:text-slate-400 dark:text-slate-600 dark:text-slate-300"><X className="w-4 h-4" /></button>
             </div>
             <form onSubmit={handleCreate} className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-1">Organization Name *</label>
+                  <label className="text-xs text-slate-500 dark:text-slate-500 dark:text-slate-400 block mb-1">Organization Name *</label>
                   <input required value={createForm.name} onChange={e => handleNameChange(e.target.value)} placeholder="Acme Corp" className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-1">Slug *</label>
+                  <label className="text-xs text-slate-500 dark:text-slate-500 dark:text-slate-400 block mb-1">Slug *</label>
                   <input required value={createForm.slug} onChange={e => { setSlugEdited(true); setCreateForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })); }} placeholder="acme-corp" className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 </div>
               </div>
               <div>
-                <label className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 block mb-1">Plan</label>
+                <label className="text-xs text-slate-500 dark:text-slate-500 dark:text-slate-400 block mb-1">Plan</label>
                 <select value={createForm.plan} onChange={e => setCreateForm(f => ({ ...f, plan: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
                   <option value="free">Free</option>
                   <option value="pro">Pro</option>
@@ -211,7 +211,7 @@ export default function BackofficeOrganizations() {
                 </select>
               </div>
               <div className="border-t border-gray-200 dark:border-slate-800 pt-4">
-                <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">First Admin User <span className="text-slate-400 dark:text-slate-600">(optional — fill all or none)</span></p>
+                <p className="text-xs text-slate-500 dark:text-slate-500 mb-3">First Admin User <span className="text-slate-500 dark:text-slate-600">(optional — fill all or none)</span></p>
                 <div className="space-y-3">
                   <input value={createForm.adminName} onChange={e => setCreateForm(f => ({ ...f, adminName: e.target.value }))} placeholder="Admin name" className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500" />
                   <input type="email" value={createForm.adminEmail} onChange={e => setCreateForm(f => ({ ...f, adminEmail: e.target.value }))} placeholder="admin@example.com" className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500" />
@@ -219,7 +219,7 @@ export default function BackofficeOrganizations() {
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => { setShowCreate(false); setCreateForm(emptyForm); setSlugEdited(false); }} className="px-4 py-2 rounded-lg text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200 hover:bg-gray-100 dark:bg-slate-800 transition-colors">Cancel</button>
+                <button type="button" onClick={() => { setShowCreate(false); setCreateForm(emptyForm); setSlugEdited(false); }} className="px-4 py-2 rounded-lg text-sm text-slate-500 dark:text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200 hover:bg-gray-100 dark:bg-slate-800 transition-colors">Cancel</button>
                 <button type="submit" disabled={creating} className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-900 dark:text-white text-sm font-medium transition-colors">
                   {creating ? 'Creating…' : 'Create Organization'}
                 </button>
@@ -294,7 +294,7 @@ export default function BackofficeOrganizations() {
 
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-500" />
           <input
             type="text"
             placeholder="Search organizations…"
@@ -303,13 +303,13 @@ export default function BackofficeOrganizations() {
             className="w-full pl-9 pr-4 py-2 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-sm text-slate-700 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
         </div>
-        <select value={plan} onChange={e => setPlan(e.target.value)} className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-sm text-slate-400 dark:text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <select value={plan} onChange={e => setPlan(e.target.value)} className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-sm text-slate-500 dark:text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500">
           <option value="">All Plans</option>
           <option value="free">Free</option>
           <option value="pro">Pro</option>
           <option value="enterprise">Enterprise</option>
         </select>
-        <select value={status} onChange={e => setStatus(e.target.value)} className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-sm text-slate-400 dark:text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <select value={status} onChange={e => setStatus(e.target.value)} className="px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-sm text-slate-500 dark:text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500">
           <option value="">All Statuses</option>
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
@@ -323,12 +323,12 @@ export default function BackofficeOrganizations() {
             <div className="animate-spin w-7 h-7 border-2 border-amber-500 border-t-transparent rounded-full" />
           </div>
         ) : orgs.length === 0 ? (
-          <div className="text-center py-16 text-slate-400 dark:text-slate-500 text-sm">No organizations found</div>
+          <div className="text-center py-16 text-slate-500 dark:text-slate-500 text-sm">No organizations found</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-slate-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80">
+                <tr className="text-xs text-slate-500 dark:text-slate-500 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80">
                   <th className="text-left px-4 py-3 font-medium">Name / Slug</th>
                   <th className="text-left px-4 py-3 font-medium">Plan</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
@@ -344,7 +344,7 @@ export default function BackofficeOrganizations() {
                   <tr key={org.id} className="hover:bg-gray-50 dark:bg-gray-100 dark:bg-slate-800/40 transition-colors cursor-pointer" onClick={() => navigate(`/backoffice/organizations/${org.id}`)}>
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-700 dark:text-slate-200 hover:text-amber-400 transition-colors">{org.name}</div>
-                      <div className="text-xs text-slate-400 dark:text-slate-500">{org.slug}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-500">{org.slug}</div>
                     </td>
                     <td className="px-4 py-3"><PlanBadge plan={org.plan} /></td>
                     <td className="px-4 py-3">
@@ -352,10 +352,10 @@ export default function BackofficeOrganizations() {
                         {org.active ? 'Active' : 'Suspended'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-600 dark:text-slate-300">{org.user_count}</td>
-                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-600 dark:text-slate-300">{(org.file_count ?? 0).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-600 dark:text-slate-300">{formatBytes(org.storage_used)}</td>
-                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{new Date(org.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-600 dark:text-slate-300">{org.user_count}</td>
+                    <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-600 dark:text-slate-300">{(org.file_count ?? 0).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-600 dark:text-slate-300">{formatBytes(org.storage_used)}</td>
+                    <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-500 text-xs">{new Date(org.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         <button

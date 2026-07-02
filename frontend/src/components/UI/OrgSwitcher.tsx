@@ -46,15 +46,15 @@ export default function OrgSwitcher() {
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-colors"
       >
-        <Building2 className="w-3.5 h-3.5 text-slate-400" />
+        <Building2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
         {user?.org_name || user?.org_slug}
-        <ChevronDown className="w-3 h-3 text-slate-400" />
+        <ChevronDown className="w-3 h-3 text-slate-500 dark:text-slate-400" />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-full mt-1 z-20 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl py-1 w-56">
-            <div className="px-3 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Organizations</div>
+            <div className="px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Organizations</div>
             {orgs.map(org => (
               <button
                 key={org.id}
@@ -64,7 +64,7 @@ export default function OrgSwitcher() {
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-slate-700 dark:text-slate-200 truncate">{org.name}</div>
-                  <div className="text-xs text-slate-400 capitalize">{org.role} · {org.plan}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 capitalize">{org.role} · {org.plan}</div>
                 </div>
                 {org.slug === user?.org_slug && <Check className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />}
               </button>

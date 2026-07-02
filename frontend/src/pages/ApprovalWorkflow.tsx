@@ -173,7 +173,7 @@ export default function ApprovalWorkflow() {
           ))}
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex gap-4 overflow-x-auto pb-4" tabIndex={0} role="region" aria-label="Approval workflow board, scroll horizontally to see all stages">
           {STAGES.map(stage => {
             const stageFiles = getFilesForStage(stage.key);
             const colOffset = colOffsets[stage.key] || 0;
@@ -220,15 +220,15 @@ export default function ApprovalWorkflow() {
                 >
                   {/* Drop hint */}
                   {isOver && draggingId !== null && !stageFiles.some(f => f.id === draggingId) && (
-                    <div className="border-2 border-dashed border-teal-400 rounded-xl h-16 flex items-center justify-center text-xs text-amber-500 font-medium animate-pulse">
+                    <div className="border-2 border-dashed border-amber-400 rounded-xl h-16 flex items-center justify-center text-xs text-amber-500 font-medium animate-pulse">
                       Drop here → {stage.label}
                     </div>
                   )}
 
                   {stageFiles.length === 0 && !isOver ? (
-                    <div className="text-center py-6 text-xs text-slate-400">
+                    <div className="text-center py-6 text-xs text-slate-500 dark:text-slate-400">
                       {draggingId !== null ? (
-                        <span className="text-teal-400 font-medium">Drop here</span>
+                        <span className="text-amber-500 font-medium">Drop here</span>
                       ) : 'No files'}
                     </div>
                   ) : pagedFiles.map((f, cardIdx) => (
@@ -279,7 +279,7 @@ export default function ApprovalWorkflow() {
                         <FileIcon mimeType={f.mime_type} name={f.original_name} size={16} />
                         <span className="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">{f.name}</span>
                       </div>
-                      <div className="text-xs text-slate-400 space-y-0.5">
+                      <div className="text-xs text-slate-500 dark:text-slate-400 space-y-0.5">
                         <div>{f.project} · {f.module}</div>
                         {f.jira_ticket && <div className="text-blue-500 font-mono">{f.jira_ticket}</div>}
                         <div>{f.owner_name}</div>
@@ -339,7 +339,7 @@ export default function ApprovalWorkflow() {
             {selected.description && <p className="text-sm text-slate-600 dark:text-slate-300">{selected.description}</p>}
             <div className="grid grid-cols-2 gap-2 text-sm">
               {[['Owner', selected.owner_name], ['Category', selected.category], ['Jira', selected.jira_ticket], ['Repository', selected.repository_name]].filter(([, v]) => v).map(([l, v]) => (
-                <div key={l}><span className="text-slate-400">{l}: </span><span className="font-medium text-slate-900 dark:text-slate-100">{v}</span></div>
+                <div key={l}><span className="text-slate-500">{l}: </span><span className="font-medium text-slate-900 dark:text-slate-100">{v}</span></div>
               ))}
             </div>
             {isLead && (
@@ -373,7 +373,7 @@ export default function ApprovalWorkflow() {
               rows={3}
               placeholder={newStatus === 'draft' ? 'Explain why you are returning this file to draft… (required)' : 'Add a review comment...'}
             />
-            <p className="text-xs text-slate-400 text-right mt-0.5">{comment.length}/2000</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 text-right mt-0.5">{comment.length}/2000</p>
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => { setApproveModal(false); setApproveTarget(null); setNewStatus('approved'); setComment(''); }} className="btn-secondary">Cancel</button>

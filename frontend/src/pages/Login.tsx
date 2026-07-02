@@ -152,7 +152,7 @@ export default function Login() {
   );
 
   return (
-    <div
+    <main
       className="login-root"
       style={{
         minHeight: '100vh', position: 'relative', overflow: 'hidden',
@@ -361,6 +361,6 @@ export default function Login() {
           .login-card-wrapper { position: relative !important; width: 100% !important; min-width: unset !important; padding: 24px 20px !important; top: unset !important; right: unset !important; bottom: unset !important; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         }
       `}</style>
-    </div>
+    </main>
   );
 }

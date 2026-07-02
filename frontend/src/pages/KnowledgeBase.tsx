@@ -268,7 +268,7 @@ export default function KnowledgeBase() {
         {/* Sidebar */}
         <div className="w-56 flex-shrink-0 space-y-2">
           <div className="relative mb-1">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -278,7 +278,7 @@ export default function KnowledgeBase() {
             />
           </div>
           {/* L1: hint so users know to press Enter */}
-          <p className="text-xs text-slate-400 px-1 mb-2">Press Enter to search</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 px-1 mb-2">Press Enter to search</p>
           {['All', ...kbCategories].map(cat => {
             const count = cat === 'All' ? articles.length : articles.filter(a => a.category === cat).length;
             return (
@@ -315,10 +315,10 @@ export default function KnowledgeBase() {
               ))}
             </div>
           ) : articles.length === 0 ? (
-            <div className="card p-12 text-center text-slate-400">
+            <div className="card p-12 text-center text-slate-500 dark:text-slate-400">
               <BookOpen size={40} className="mx-auto mb-3 opacity-30" />
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No articles found</p>
-              <p className="text-xs mt-1 text-slate-400">Try a different category or search term</p>
+              <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">Try a different category or search term</p>
             </div>
           ) : (
             <>
@@ -334,10 +334,10 @@ export default function KnowledgeBase() {
                           <StatusBadge status={a.status} />
                         </div>
                         <h3 className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{a.title}</h3>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+                        <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
                           <span className="flex items-center gap-1"><User size={11} />{a.author_name}</span>
                           <span className="flex items-center gap-1"><Clock size={11} />{new Date(a.updated_at).toLocaleDateString()}</span>
-                          {a.tags && <span className="flex items-center gap-1"><Tag size={11} />{a.tags.split(',').slice(0, 3).join(', ')}</span>}
+                          {a.tags && <span className="flex items-center gap-1 min-w-0"><Tag size={11} className="flex-shrink-0" /><span className="truncate">{a.tags.split(',').slice(0, 3).join(', ')}</span></span>}
                         </div>
                       </div>
                       {articleLoading ? <Loader2 size={18} className="text-amber-400 animate-spin flex-shrink-0 mt-1" /> : <ChevronRight size={18} className="text-slate-300 group-hover:text-amber-400 dark:group-hover:text-amber-300 flex-shrink-0 mt-1 transition-colors" />}
@@ -346,7 +346,7 @@ export default function KnowledgeBase() {
                 ))}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   Page {Math.floor(pageOffset / PAGE_SIZE) + 1} of {Math.max(1, Math.ceil(articles.length / PAGE_SIZE))}
                 </span>
                 <Pagination total={articles.length} limit={PAGE_SIZE} offset={pageOffset} onPageChange={setPageOffset} />
@@ -365,8 +365,8 @@ export default function KnowledgeBase() {
                 <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${CAT_COLORS[selected.category] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>{selected.category}</span>
               )}
               <StatusBadge status={selected.status} />
-              <span className="text-xs text-slate-400 flex items-center gap-1"><User size={11} />{selected.author_name}</span>
-              <span className="text-xs text-slate-400 flex items-center gap-1"><Clock size={11} />{new Date(selected.updated_at).toLocaleString()}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><User size={11} />{selected.author_name}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><Clock size={11} />{new Date(selected.updated_at).toLocaleString()}</span>
               <div className="ml-auto flex gap-2">
                 {isEngineer && <button onClick={() => { const a = selected; setSelected(null); startEdit(a); }} className="btn-secondary text-sm py-1.5 px-3"><Edit2 size={13} />Edit</button>}
                 {isLead && <button onClick={() => doDelete(selected.id, selected.title)} aria-label="Delete article" className="btn-ghost text-sm py-1.5 px-3 text-red-500 hover:bg-red-50"><Trash2 size={13} /></button>}
@@ -403,7 +403,7 @@ export default function KnowledgeBase() {
             <input value={form.title} onChange={e => { setForm(p => ({ ...p, title: e.target.value.slice(0, 200) })); if (errors.title) setErrors(p => ({ ...p, title: '' })); }} className={`input ${errors.title ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="Article title" maxLength={200} />
             <div className="flex items-center justify-between mt-0.5">
               {errors.title ? <p className="text-xs text-red-500">{errors.title}</p> : <span />}
-              <p className="text-xs text-slate-400 text-right">{form.title.length}/200</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 text-right">{form.title.length}/200</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -426,7 +426,7 @@ export default function KnowledgeBase() {
               <input value={form.tags} onChange={e => { setForm(p => ({ ...p, tags: e.target.value.slice(0, 200) })); if (errors.tags) setErrors(p => ({ ...p, tags: '' })); }} className={`input ${errors.tags ? 'border-red-400 focus:ring-red-300' : ''}`} placeholder="tag1, tag2, tag3" maxLength={200} />
               <div className="flex items-center justify-between mt-0.5">
                 {errors.tags ? <p className="text-xs text-red-500">{errors.tags}</p> : <span />}
-                <p className="text-xs text-slate-400 text-right">{form.tags.length}/200</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 text-right">{form.tags.length}/200</p>
               </div>
             </div>
           </div>
@@ -442,10 +442,10 @@ export default function KnowledgeBase() {
             <label className="label">Content (HTML supported)</label>
             <textarea ref={contentRef} value={form.content} onChange={e => { setForm(p => ({ ...p, content: e.target.value })); if (errors.content) setErrors(p => ({ ...p, content: '' })); }} className={`input font-mono text-xs ${errors.content ? 'border-red-400 focus:ring-red-300' : ''}`} rows={12} placeholder="<h2>Section Title</h2><p>Content here...</p>" />
             {errors.content && <p className="text-xs text-red-500 mt-1">{errors.content}</p>}
-            <p className="text-xs text-slate-400 mt-1">Supports HTML: h2, h3, p, ul, li, strong, em, code, pre</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Supports HTML: h2, h3, p, ul, li, strong, em, code, pre</p>
             {users.length > 0 && (
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-xs text-slate-400 flex-shrink-0">Mention a team member:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">Mention a team member:</span>
                 <select
                   className="input h-7 text-xs flex-1"
                   defaultValue=""

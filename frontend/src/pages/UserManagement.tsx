@@ -192,7 +192,7 @@ export default function UserManagement() {
               {activeUsers} of {userLimit} users used
               {atLimit ? ' — limit reached' : nearLimit ? ' — approaching limit' : ''}
             </span>
-            <span className="text-xs text-slate-400 capitalize">({orgPlan} plan)</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 capitalize">({orgPlan} plan)</span>
           </div>
           {(atLimit || nearLimit) && (
             <a href="/org-settings" className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline">View plan →</a>
@@ -213,7 +213,7 @@ export default function UserManagement() {
       {/* Permission Matrix */}
       <div className="card p-5">
         <h3 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-1">Permission Matrix</h3>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Module access for all roles. Configure custom roles in Settings → Role Permissions.</p>
+        <p className="text-xs text-slate-500 dark:text-slate-500 mb-4">Module access for all roles. Configure custom roles in Settings → Role Permissions.</p>
         {loading ? (
           <div className="p-4 space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -221,7 +221,7 @@ export default function UserManagement() {
             ))}
           </div>
         ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Permission matrix table, scroll horizontally to see all modules">
           <table className="w-full text-sm">
             <thead>
               <tr>
@@ -270,7 +270,7 @@ export default function UserManagement() {
 
       {/* User Table */}
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Users table, scroll horizontally to see all columns">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 dark:bg-slate-800/50">
               <tr>
@@ -288,7 +288,7 @@ export default function UserManagement() {
                         onError={e => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.email)}`; }} />
                       <div>
                         <div className="font-medium text-slate-900 dark:text-slate-100">{u.name}</div>
-                        <div className="text-xs text-slate-400">{u.email}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{u.email}</div>
                       </div>
                     </div>
                   </td>
@@ -299,7 +299,7 @@ export default function UserManagement() {
                   <td className="px-4 py-3">
                     {u.active ? <span className="badge-approved">Active</span> : <span className="badge-archived">Inactive</span>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-400">{u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       {isAdmin && <button onClick={() => startEdit(u)} title="Edit" className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"><Edit2 size={14} /></button>}
@@ -315,7 +315,7 @@ export default function UserManagement() {
         </div>
       </div>
       {users.length === 0 && !loading && (
-        <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-sm">No users found</div>
+        <div className="text-center py-12 text-slate-500 dark:text-slate-500 text-sm">No users found</div>
       )}
       <div className="px-4 pb-4">
         <Pagination total={total} limit={limit} offset={offset} onPageChange={setOffset} />
@@ -371,7 +371,7 @@ export default function UserManagement() {
             <label className="label">
               {editing ? 'New Password' : 'Password'}
               {!editing && <span className="text-red-500 ml-0.5">*</span>}
-              {editing && <span className="text-xs font-normal text-slate-400 ml-1">(leave blank to keep current)</span>}
+              {editing && <span className="text-xs font-normal text-slate-500 dark:text-slate-400 ml-1">(leave blank to keep current)</span>}
             </label>
             <div className="relative">
               <input
@@ -384,18 +384,18 @@ export default function UserManagement() {
               />
               <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
                 <button type="button" tabIndex={-1} onClick={copyPassword} disabled={!password}
-                  className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 disabled:opacity-30"
+                  className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 disabled:opacity-30"
                   title="Copy password">
                   {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
                 </button>
                 <button type="button" tabIndex={-1}
                   onClick={() => { const p = generatePassword(); setPassword(p); if (errors.password) setErrors(prev => ({ ...prev, password: '' })); }}
-                  className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400"
+                  className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
                   title="Generate strong password">
                   <RefreshCw size={13} />
                 </button>
                 <button type="button" tabIndex={-1} onClick={() => setShowPw(s => !s)}
-                  className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400"
+                  className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
                   aria-label={showPw ? 'Hide password' : 'Show password'}>
                   {showPw ? <EyeOff size={13} /> : <Eye size={13} />}
                 </button>
@@ -446,7 +446,7 @@ export default function UserManagement() {
                   <span className="text-slate-500 dark:text-slate-400 font-medium">Password</span>
                   <div className="flex items-center gap-1">
                     <button type="button" onClick={() => setSuccessPwVisible(v => !v)}
-                      className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400"
+                      className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
                       aria-label={successPwVisible ? 'Hide password' : 'Show password'}>
                       {successPwVisible ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>

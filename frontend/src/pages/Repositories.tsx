@@ -304,12 +304,12 @@ export default function Repositories() {
         {/* Tree header */}
         <div className="px-3 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Repositories</span>
+            <h1 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Repositories</h1>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setAllOpen(o => !o)}
                 title={allOpen ? 'Collapse all' : 'Expand all'}
-                className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-600 transition-colors"
               >
                 {allOpen ? <ChevronsDownUp size={13} /> : <ChevronsUpDown size={13} />}
               </button>
@@ -327,7 +327,7 @@ export default function Repositories() {
 
           {/* Tree search */}
           <div className="relative">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 pointer-events-none" />
             <input
               value={treeSearch}
               onChange={e => setTreeSearch(e.target.value)}
@@ -341,7 +341,7 @@ export default function Repositories() {
         {/* Tree body */}
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {tree.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-slate-400 gap-2">
+            <div className="flex flex-col items-center justify-center py-10 text-slate-500 dark:text-slate-400 gap-2">
               <Database size={28} className="opacity-30" />
               <p className="text-xs text-center">No repositories yet</p>
               {isLead && (
@@ -383,14 +383,14 @@ export default function Repositories() {
           {/* Breadcrumb */}
           <div className="flex items-center gap-1 text-sm flex-1 min-w-0">
             {breadcrumb.length === 0 ? (
-              <span className="text-slate-400 text-xs">Select a folder from the left panel</span>
+              <span className="text-slate-500 dark:text-slate-400 text-xs">Select a folder from the left panel</span>
             ) : breadcrumb.map((b, i) => (
               <span key={b.id} className="flex items-center gap-1 text-xs">
                 {i > 0 && <ChevronRight size={12} className="text-slate-300" />}
                 <span
                   className={i === breadcrumb.length - 1
                     ? 'font-semibold text-slate-500 cursor-default'
-                    : 'text-slate-400 hover:text-[#F59E0B] cursor-pointer transition-colors'}
+                    : 'text-slate-500 dark:text-slate-400 hover:text-[#F59E0B] cursor-pointer transition-colors'}
                   onClick={i < breadcrumb.length - 1 ? () => setSelected(b.id) : undefined}
                 >
                   {b.name}
@@ -401,7 +401,7 @@ export default function Repositories() {
 
           {/* File search */}
           <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
             <input
               value={fileSearch} onChange={e => setFileSearch(e.target.value)}
               placeholder="Filter files…"
@@ -412,8 +412,8 @@ export default function Repositories() {
 
           {/* View toggle */}
           <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-            <button onClick={() => setView('list')} aria-label="List view" aria-pressed={view === 'list'} className={`p-1.5 transition-colors ${view === 'list' ? 'bg-amber-500 text-white rounded-lg' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}><List size={14} /></button>
-            <button onClick={() => setView('grid')} aria-label="Grid view" aria-pressed={view === 'grid'} className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-amber-500 text-white rounded-lg' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}><LayoutGrid size={14} /></button>
+            <button onClick={() => setView('list')} aria-label="List view" aria-pressed={view === 'list'} className={`p-1.5 transition-colors ${view === 'list' ? 'bg-amber-500 text-white rounded-lg' : 'text-slate-500 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}><List size={14} /></button>
+            <button onClick={() => setView('grid')} aria-label="Grid view" aria-pressed={view === 'grid'} className={`p-1.5 transition-colors ${view === 'grid' ? 'bg-amber-500 text-white rounded-lg' : 'text-slate-500 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}><LayoutGrid size={14} /></button>
           </div>
 
           {isLead && (
@@ -429,14 +429,14 @@ export default function Repositories() {
         </div>
 
         {/* Content area */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-5" tabIndex={0} role="region" aria-label="Repository detail panel">
           {!selected ? (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3">
+            <div className="flex flex-col items-center justify-center h-full text-slate-500 dark:text-slate-400 gap-3">
               <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <Database size={36} className="opacity-30" />
               </div>
               <p className="text-sm font-medium">Select a repository</p>
-              <p className="text-xs text-slate-400">Choose a folder from the left panel to view its contents</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Choose a folder from the left panel to view its contents</p>
               {isLead && tree.length === 0 && (
                 <button onClick={() => openCreate(null)} className="btn-primary text-xs mt-2">
                   <Plus size={13} /> Create First Repository
@@ -460,7 +460,7 @@ export default function Repositories() {
                     {selectedRepo.description && (
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 ml-6">{selectedRepo.description}</p>
                     )}
-                    <p className="text-xs text-slate-400 mt-1 ml-6">{filteredFiles.length} file{filteredFiles.length !== 1 ? 's' : ''}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-6">{filteredFiles.length} file{filteredFiles.length !== 1 ? 's' : ''}</p>
                   </div>
                   {isLead && (
                     <div className="flex gap-2">
@@ -478,7 +478,7 @@ export default function Repositories() {
               {/* Sub-folders grid */}
               {repoDetail?.children?.length > 0 && (
                 <div className="mb-5">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Folders</h3>
+                  <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Folders</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                     {repoDetail.children.map((c: any) => (
                       <div
@@ -491,13 +491,13 @@ export default function Repositories() {
                       >
                         <Folder size={26} className="text-amber-400 mb-2 group-hover:text-amber-500 transition-colors" />
                         <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{c.name}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">{c.file_count || 0} files</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{c.file_count || 0} files</div>
                       </div>
                     ))}
                     {isLead && (
                       <button
                         onClick={() => openCreate(selected, selectedRepo?.name)}
-                        className="card p-3 flex flex-col items-center justify-center gap-1.5 border-dashed cursor-pointer hover:border-[#F59E0B]/50 hover:bg-[#F59E0B]/5 transition-all text-slate-400 hover:text-[#F59E0B]"
+                        className="card p-3 flex flex-col items-center justify-center gap-1.5 border-dashed cursor-pointer hover:border-[#F59E0B]/50 hover:bg-[#F59E0B]/5 transition-all text-slate-500 dark:text-slate-400 hover:text-[#F59E0B]"
                       >
                         <Plus size={20} />
                         <span className="text-xs font-medium">New folder</span>
@@ -509,7 +509,7 @@ export default function Repositories() {
 
               {/* Files */}
               {filteredFiles.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">
+                <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                   <FolderOpen size={36} className="mx-auto mb-3 opacity-20" />
                   <p className="text-sm">{fileSearch ? 'No files match your search' : 'No files in this folder'}</p>
                   {isEngineer && !fileSearch && (
@@ -524,7 +524,7 @@ export default function Repositories() {
                     <thead className="bg-slate-50 dark:bg-slate-800/50">
                       <tr>
                         {['Name', 'Category', 'Version', 'Status', 'Owner', 'Jira', 'Size', 'Updated'].map(h => (
-                          <th key={h} className="px-4 py-2.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
+                          <th key={h} className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -544,8 +544,8 @@ export default function Repositories() {
                           <td className="px-4 py-2.5">
                             {f.jira_ticket && <span className="text-xs text-blue-600 font-mono bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded">{f.jira_ticket}</span>}
                           </td>
-                          <td className="px-4 py-2.5 text-xs text-slate-400">{formatBytes(f.size)}</td>
-                          <td className="px-4 py-2.5 text-xs text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString()}</td>
+                          <td className="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400">{formatBytes(f.size)}</td>
+                          <td className="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{new Date(f.updated_at).toLocaleDateString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -557,7 +557,7 @@ export default function Repositories() {
                     <div key={f.id} title={f.name} aria-label={f.name} role="article" className="card p-3 hover:shadow-md transition-all cursor-pointer group">
                       <FileIcon mimeType={f.mime_type} name={f.original_name} size={24} />
                       <div className="text-xs font-medium text-slate-800 dark:text-slate-100 truncate mt-2">{f.name}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{formatBytes(f.size)}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatBytes(f.size)}</div>
                       <div className="mt-1.5"><StatusBadge status={f.status} /></div>
                     </div>
                   ))}
@@ -593,7 +593,7 @@ export default function Repositories() {
               className="input" rows={2}
               placeholder="Optional description…"
             />
-            <p className="text-xs text-slate-400 mt-1 text-right">{formData.description.length}/500</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-right">{formData.description.length}/500</p>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button onClick={() => setCreateModal(m => ({ ...m, open: false }))} className="btn-secondary">Cancel</button>
@@ -622,7 +622,7 @@ export default function Repositories() {
           <div>
             <label className="label">Description</label>
             <textarea value={formData.description} onChange={e => setFormData(f => ({ ...f, description: e.target.value.slice(0, 500) }))} maxLength={500} className="input" rows={2} />
-            <p className="text-xs text-slate-400 mt-1 text-right">{formData.description.length}/500</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-right">{formData.description.length}/500</p>
           </div>
           <div>
             <label className="label">Required Approvals</label>
@@ -631,7 +631,7 @@ export default function Repositories() {
               <option value={2}>2 approvers</option>
               <option value={3}>3 approvers</option>
             </select>
-            <p className="text-xs text-slate-400 mt-1">Files need this many approvals before being published</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Files need this many approvals before being published</p>
           </div>
           <div className="flex justify-end gap-2">
             <button onClick={() => setEditModal({ open: false, repo: null })} className="btn-secondary">Cancel</button>
@@ -810,7 +810,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
               <label className="cursor-pointer">
                 <Upload size={28} className="mx-auto mb-2 text-slate-300" />
                 <p className="text-sm text-slate-500 mb-1">Drop a file here or <span className="text-[#F59E0B] font-medium">browse</span></p>
-                <p className="text-xs text-slate-400">Any file type · Max 50 MB</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Any file type · Max 50 MB</p>
                 <input type="file" className="hidden" onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) { setFile(f); setUploadErrors(p => ({ ...p, file: '' })); if (!form.name) setForm(p => ({ ...p, name: f.name.replace(/\.[^/.]+$/, '') })); }
@@ -821,9 +821,9 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
             folderFiles.length > 0 ? (
               <div className="space-y-1">
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-300">📁 {folderFiles.length} files selected</p>
-                <div className="max-h-28 overflow-y-auto text-xs text-slate-400 text-left space-y-0.5 mt-2">
+                <div className="max-h-28 overflow-y-auto text-xs text-slate-500 dark:text-slate-400 text-left space-y-0.5 mt-2">
                   {folderFiles.slice(0, 20).map((f, i) => <div key={i} className="truncate">{f.webkitRelativePath || f.name}</div>)}
-                  {folderFiles.length > 20 && <div className="text-slate-400">…and {folderFiles.length - 20} more</div>}
+                  {folderFiles.length > 20 && <div className="text-slate-500 dark:text-slate-400">…and {folderFiles.length - 20} more</div>}
                 </div>
                 <button type="button" onClick={() => setFolderFiles([])} className="mt-2 text-xs text-red-500 hover:text-red-700">Clear</button>
               </div>
@@ -831,7 +831,7 @@ function UploadModal({ open, onClose, repositoryId, repos, onSuccess }: any) {
               <label className="cursor-pointer">
                 <Upload size={28} className="mx-auto mb-2 text-slate-300" />
                 <p className="text-sm text-slate-500 mb-1">Click to select a folder</p>
-                <p className="text-xs text-slate-400">All files inside will be uploaded · Max 50 MB each</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">All files inside will be uploaded · Max 50 MB each</p>
                 <input type="file" className="hidden" {...{ webkitdirectory: 'true' } as any} multiple onChange={e => {
                   const files = Array.from(e.target.files || []);
                   if (files.length) { setFolderFiles(files); setUploadErrors(p => ({ ...p, file: '' })); }

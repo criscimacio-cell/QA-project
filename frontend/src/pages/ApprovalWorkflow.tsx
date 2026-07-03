@@ -44,8 +44,9 @@ export default function ApprovalWorkflow() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await api.get('/files');
-      setFiles(r.data.filter((f: any) => f.status !== 'archived'));
+      const r = await api.get('/files', { params: { limit: 200 } });
+      const data = Array.isArray(r.data) ? r.data : (r.data.files ?? []);
+      setFiles(data.filter((f: any) => f.status !== 'archived'));
     } catch {
       toast.error('Failed to load files');
     } finally {

@@ -564,7 +564,7 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
 router.put('/:id', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const { name, project, module, category, jira_ticket, tags, description, download_password, password_hint, remove_password } = req.body;
   const orgId = req.user!.organizationId;
-  const [existing] = await sql`SELECT owner_id, checked_out_by, checked_out_at FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  const [existing] = await sql`SELECT owner_id, checked_out_by, checked_out_at, name, project, module, category, jira_ticket, tags, description FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
   if (req.user!.role === 'engineer' && existing.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
   const lockErr = await checkFileLock(existing, req.user!.userId, req.user!.role, true);
@@ -579,7 +579,23 @@ router.put('/:id', authenticate, requireModule('files'), requireRole('admin', 'l
   } else if (password_hint !== undefined) {
     pwUpdate = sql`, password_hint = ${password_hint || null}`;
   }
-  await sql`UPDATE files SET name=${name}, project=${project as string}, module=${module}, category=${category as string}, jira_ticket=${jira_ticket}, tags=${tags}, description=${description}, updated_at=NOW() ${pwUpdate} WHERE id=${req.params.id} AND organization_id=${orgId}`;
+  // Partial update: a field omitted from the request body keeps its current
+  // value. postgres.js rejects `undefined` outright, and the only real
+  // caller (the password-only save button) never sends name/project/etc,
+  // so treating a missing key as "unchanged" rather than "clear it" is both
+  // what avoids the crash and the only sane interpretation for a caller
+  // that's updating one field.
+  await sql`UPDATE files SET
+    name=${name !== undefined ? name : existing.name},
+    project=${project !== undefined ? project : existing.project},
+    module=${module !== undefined ? module : existing.module},
+    category=${category !== undefined ? category : existing.category},
+    jira_ticket=${jira_ticket !== undefined ? jira_ticket : existing.jira_ticket},
+    tags=${tags !== undefined ? tags : existing.tags},
+    description=${description !== undefined ? description : existing.description},
+    updated_at=NOW()
+    ${pwUpdate}
+    WHERE id=${req.params.id} AND organization_id=${orgId}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'FILE_UPDATE', 'file', ${req.params.id}, ${`Updated file id=${req.params.id}`}, ${req.ip || ''}, ${orgId})`;
   res.json({ message: 'Updated' });
 });

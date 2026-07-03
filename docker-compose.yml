@@ -41,6 +41,7 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       UPLOAD_DIR: /app/uploads
+      BACKUP_DIR: /app/backups
       PORT: 3001
       NODE_ENV: production
       TRUST_PROXY: "1"
@@ -53,6 +54,10 @@ services:
       APP_URL: ${APP_URL:-http://localhost}
     volumes:
       - uploads:/app/uploads
+      # Separate named volume from `uploads` — a backup on the same volume
+      # as the live data doesn't survive that volume being lost. Point this
+      # at a different physical disk/mount on the host where possible.
+      - backups:/app/backups
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,3 +79,4 @@ volumes:
   postgres_data:
   redis_data:
   uploads:
+  backups:

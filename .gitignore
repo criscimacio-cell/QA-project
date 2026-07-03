@@ -1,6 +1,7 @@
 node_modules/
 data/
 uploads/
+backups/
 dist/
 *.db
 *.db-shm

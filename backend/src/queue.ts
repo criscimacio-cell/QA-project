@@ -1,6 +1,7 @@
 import { Queue, Worker } from 'bullmq';
 import sql from './db';
 import { pushToUser } from './wsServer';
+import { runBackup } from './backup';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const url = new URL(REDIS_URL);
@@ -61,4 +62,22 @@ export async function startPurgeJob() {
   // Schedule purge every 24 hours using a repeatable job
   const purgeQueue = new Queue('purge', { connection });
   await purgeQueue.add('purge-trash', {}, { repeat: { every: 24 * 60 * 60 * 1000 }, jobId: 'daily-purge' });
+}
+
+// Nightly local backup: pg_dump the database + zip the uploads folder,
+// written outside the live data path, with automatic retention rotation.
+// See backend/src/backup.ts for the actual dump/archive/rotate logic.
+export async function startBackupJob() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const backupWorker = new Worker('backup', async () => {
+    try {
+      await runBackup();
+    } catch (e) { console.error('[backup] Error:', e); }
+  }, { connection });
+
+  backupWorker.on('failed', (job, err) => console.error(`[backup] Job ${job?.id} failed:`, err.message));
+
+  // 2:00 AM daily
+  const backupQueue = new Queue('backup', { connection });
+  await backupQueue.add('nightly-backup', {}, { repeat: { pattern: '0 2 * * *' }, jobId: 'nightly-backup' });
 }

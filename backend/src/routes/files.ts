@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import * as Diff from 'diff';
-import { encryptFile, decryptFileToBuffer, withDecryptedFile } from '../fileEncryption';
+import { encryptFile, decryptFileToBuffer } from '../fileEncryption';
 import { extractText } from '../textExtractor';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const archiver = require('archiver') as (format: string, opts?: object) => import('archiver').Archiver;
@@ -245,7 +245,6 @@ router.post('/bulk-download', authenticate, requireModule('files'), async (req: 
   archive.pipe(res);
 
   const seen = new Map<string, number>();
-  const decryptJobs: Promise<void>[] = [];
   for (const f of allowed) {
     const filePath = path.join(UPLOAD_DIR, f.path);
     if (!fs.existsSync(filePath)) continue;
@@ -254,13 +253,8 @@ router.post('/bulk-download', authenticate, requireModule('files'), async (req: 
     const count = seen.get(f.original_name) || 0;
     seen.set(f.original_name, count + 1);
     const zipName = count === 0 ? f.original_name : `${base}_(${count})${ext}`;
-    decryptJobs.push(
-      withDecryptedFile(filePath, async (decPath) => {
-        archive.file(decPath, { name: zipName });
-      })
-    );
+    archive.append(decryptFileToBuffer(filePath), { name: zipName });
   }
-  await Promise.all(decryptJobs);
   await archive.finalize();
 });
 

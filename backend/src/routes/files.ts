@@ -43,6 +43,23 @@ function csvCell(value: unknown): string {
   return `"${s.replace(/"/g, '""')}"`;
 }
 
+// Shared checkout-lock check. When allowOverride is true, admin/lead can act
+// despite the lock (matches the checkin route's force-checkin privilege);
+// when false (upload, delete) the lock must be released first, by anyone,
+// so overriding it is always an explicit, audited checkin rather than a
+// silent side effect of an unrelated action.
+async function checkFileLock(
+  file: any,
+  userId: number,
+  role: string,
+  allowOverride: boolean
+): Promise<string | null> {
+  if (!file.checked_out_by || file.checked_out_by === userId) return null;
+  if (allowOverride && ['admin', 'lead'].includes(role)) return null;
+  const [locker] = await sql`SELECT name FROM users WHERE id = ${file.checked_out_by}`;
+  return `File is checked out by ${locker?.name || 'another user'} since ${file.checked_out_at}. Check it in first.`;
+}
+
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -161,30 +178,50 @@ router.post('/bulk-action', authenticate, requireModule('files'), requireRole('a
   const userId = req.user!.userId;
   const orgId = req.user!.organizationId;
 
+  let count = 0;
+  let skipped = 0;
+
   if (action === 'archive') {
-    if (role === 'engineer') {
-      await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status != 'archived' AND owner_id = ${userId} AND organization_id = ${orgId}`;
-      await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) SELECT ${userId}, 'ARCHIVE', 'file', id, 'Bulk archived', ${req.ip || ''}, ${orgId} FROM files WHERE id = ANY(${ids}::int[]) AND owner_id = ${userId} AND organization_id = ${orgId}`;
-    } else {
-      await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status != 'archived' AND organization_id = ${orgId}`;
-      await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) SELECT ${userId}, 'ARCHIVE', 'file', id, 'Bulk archived', ${req.ip || ''}, ${orgId} FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
+    const rows = await sql`SELECT id, owner_id, checked_out_by FROM files WHERE id = ANY(${ids}::int[]) AND status != 'archived' AND organization_id = ${orgId}`;
+    const allowedIds = (rows as any[])
+      .filter(r => !(role === 'engineer' && r.owner_id !== userId))
+      .filter(r => !r.checked_out_by || r.checked_out_by === userId || ['admin', 'lead'].includes(role))
+      .map(r => r.id);
+    skipped = ids.length - allowedIds.length;
+    if (allowedIds.length) {
+      await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id = ANY(${allowedIds}::int[]) AND organization_id = ${orgId}`;
+      await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) SELECT ${userId}, 'ARCHIVE', 'file', id, 'Bulk archived', ${req.ip || ''}, ${orgId} FROM files WHERE id = ANY(${allowedIds}::int[]) AND organization_id = ${orgId}`;
     }
+    count = allowedIds.length;
   } else if (action === 'submit') {
-    if (role === 'engineer') {
-      await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft' AND owner_id = ${userId} AND organization_id = ${orgId}`;
-    } else {
-      await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft' AND organization_id = ${orgId}`;
+    const rows = await sql`SELECT id, owner_id, checked_out_by FROM files WHERE id = ANY(${ids}::int[]) AND status = 'draft' AND organization_id = ${orgId}`;
+    const allowedIds = (rows as any[])
+      .filter(r => !(role === 'engineer' && r.owner_id !== userId))
+      .filter(r => !r.checked_out_by || r.checked_out_by === userId || ['admin', 'lead'].includes(role))
+      .map(r => r.id);
+    skipped = ids.length - allowedIds.length;
+    if (allowedIds.length) {
+      await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${allowedIds}::int[]) AND organization_id = ${orgId}`;
     }
+    count = allowedIds.length;
   } else if (action === 'delete') {
-    await sql.begin(async tx => {
-      await tx`DELETE FROM file_comments WHERE file_id IN (SELECT id FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId})`;
-      await tx`DELETE FROM file_versions WHERE file_id IN (SELECT id FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId})`;
-      await tx`DELETE FROM approvals WHERE file_id IN (SELECT id FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId})`;
-      await tx`DELETE FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
-    });
+    // No admin/lead override on delete — a locked file must be checked in
+    // (or force-checked-in) first, same as the single-file delete route.
+    const rows = await sql`SELECT id, checked_out_by FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
+    const allowedIds = (rows as any[]).filter(r => !r.checked_out_by).map(r => r.id);
+    skipped = ids.length - allowedIds.length;
+    if (allowedIds.length) {
+      await sql.begin(async tx => {
+        await tx`DELETE FROM file_comments WHERE file_id = ANY(${allowedIds}::int[])`;
+        await tx`DELETE FROM file_versions WHERE file_id = ANY(${allowedIds}::int[])`;
+        await tx`DELETE FROM approvals WHERE file_id = ANY(${allowedIds}::int[])`;
+        await tx`DELETE FROM files WHERE id = ANY(${allowedIds}::int[]) AND organization_id = ${orgId}`;
+      });
+    }
+    count = allowedIds.length;
   }
   bustDashboardCache(orgId).catch(() => {});
-  res.json({ message: `Bulk ${action} complete`, count: ids.length });
+  res.json({ message: `Bulk ${action} complete`, count, skipped });
 });
 
 router.post('/bulk-download', authenticate, requireModule('files'), async (req: Request, res: Response) => {
@@ -231,17 +268,25 @@ router.post('/bulk-submit', authenticate, requireModule('files'), requireRole('a
   const { ids } = req.body as { ids: number[] };
   if (!ids?.length) { res.status(400).json({ error: 'ids required' }); return; }
   const orgId = req.user!.organizationId;
-  if (req.user!.role === 'engineer') {
-    await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft' AND owner_id = ${req.user!.userId} AND organization_id = ${orgId}`;
-  } else {
-    await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${ids}::int[]) AND status = 'draft' AND organization_id = ${orgId}`;
+  const role = req.user!.role;
+  const userId = req.user!.userId;
+
+  const rows = await sql`SELECT id, owner_id, checked_out_by FROM files WHERE id = ANY(${ids}::int[]) AND status = 'draft' AND organization_id = ${orgId}`;
+  const allowedIds = (rows as any[])
+    .filter(r => !(role === 'engineer' && r.owner_id !== userId))
+    .filter(r => !r.checked_out_by || r.checked_out_by === userId || ['admin', 'lead'].includes(role))
+    .map(r => r.id);
+  const skipped = ids.length - allowedIds.length;
+
+  if (allowedIds.length) {
+    await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id = ANY(${allowedIds}::int[]) AND organization_id = ${orgId}`;
   }
   // Notify leads/admins of each file that was just submitted
-  const submitted = await sql`
+  const submitted = allowedIds.length ? await sql`
     SELECT f.id, f.name, u.name as owner_name
     FROM files f JOIN users u ON f.owner_id = u.id
-    WHERE f.id = ANY(${ids}::int[]) AND f.status = 'submitted' AND f.organization_id = ${orgId}
-  `;
+    WHERE f.id = ANY(${allowedIds}::int[]) AND f.status = 'submitted' AND f.organization_id = ${orgId}
+  ` : [];
   if (submitted.length) {
     const leads = await sql`SELECT id, name, email FROM users WHERE role IN ('admin','lead') AND active = TRUE AND organization_id = ${orgId}`;
     for (const f of submitted) {
@@ -251,7 +296,7 @@ router.post('/bulk-submit', authenticate, requireModule('files'), requireRole('a
       }
     }
   }
-  res.json({ message: 'Submitted for review' });
+  res.json({ message: 'Submitted for review', count: allowedIds.length, skipped });
 });
 
 // GET /checked-out — files currently checked out in this org
@@ -290,21 +335,29 @@ router.post('/bulk-metadata', authenticate, requireModule('files'), requireRole(
   const { ids, project, category, tags } = req.body;
   if (!ids?.length) { res.status(400).json({ error: 'No file IDs provided' }); return; }
   const orgId = req.user!.organizationId;
+  const role = req.user!.role;
+  const userId = req.user!.userId;
+
+  const rows = await sql`SELECT id, owner_id, checked_out_by FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
 
   // Engineers can only edit their own files
-  if (req.user!.role === 'engineer') {
-    const notOwned = await sql`
-      SELECT id FROM files WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId} AND owner_id != ${req.user!.userId}
-    `;
+  if (role === 'engineer') {
+    const notOwned = (rows as any[]).filter(r => r.owner_id !== userId);
     if (notOwned.length > 0) { res.status(403).json({ error: 'You can only edit your own files' }); return; }
   }
 
-  if (project !== undefined) await sql`UPDATE files SET project = ${project}, updated_at = NOW() WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
-  if (category !== undefined) await sql`UPDATE files SET category = ${category}, updated_at = NOW() WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
-  if (tags !== undefined) await sql`UPDATE files SET tags = ${tags}, updated_at = NOW() WHERE id = ANY(${ids}::int[]) AND organization_id = ${orgId}`;
+  const allowedIds = (rows as any[])
+    .filter(r => !r.checked_out_by || r.checked_out_by === userId || ['admin', 'lead'].includes(role))
+    .map(r => r.id);
+  const skipped = ids.length - allowedIds.length;
 
-  await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'BULK_METADATA', 'file', 0, ${`Bulk metadata update on ${ids.length} files`}, ${req.ip || ''}, ${orgId})`;
-  res.json({ message: `Updated ${ids.length} file(s)` });
+  if (allowedIds.length) {
+    if (project !== undefined) await sql`UPDATE files SET project = ${project}, updated_at = NOW() WHERE id = ANY(${allowedIds}::int[]) AND organization_id = ${orgId}`;
+    if (category !== undefined) await sql`UPDATE files SET category = ${category}, updated_at = NOW() WHERE id = ANY(${allowedIds}::int[]) AND organization_id = ${orgId}`;
+    if (tags !== undefined) await sql`UPDATE files SET tags = ${tags}, updated_at = NOW() WHERE id = ANY(${allowedIds}::int[]) AND organization_id = ${orgId}`;
+    await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${userId}, 'BULK_METADATA', 'file', 0, ${`Bulk metadata update on ${allowedIds.length} files`}, ${req.ip || ''}, ${orgId})`;
+  }
+  res.json({ message: `Updated ${allowedIds.length} file(s)`, skipped });
 });
 
 // POST /:id/checkout
@@ -399,10 +452,16 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
   // any unfiled file. `IS NOT DISTINCT FROM` treats NULL = NULL as a match.
   const [existing] = await sql`SELECT * FROM files WHERE name = ${name} AND repository_id IS NOT DISTINCT FROM ${repository_id || null} AND status != 'archived' AND organization_id = ${orgId}`;
 
-  // Check-out lock: if file exists and is locked by another user
-  if (existing && existing.checked_out_by && existing.checked_out_by !== req.user!.userId && !['admin', 'lead'].includes(req.user!.role)) {
-    fs.unlinkSync(path.join(UPLOAD_DIR, f.filename));
-    res.status(423).json({ error: 'File is locked by another user. Check it in first.' }); return;
+  // Check-out lock: if file exists and is locked by another user. No
+  // admin/lead override here — overriding a lock must be an explicit,
+  // audited checkin (POST /:id/checkin) rather than a silent side effect
+  // of uploading over someone else's in-progress edit.
+  if (existing) {
+    const lockErr = await checkFileLock(existing, req.user!.userId, req.user!.role, false);
+    if (lockErr) {
+      fs.unlinkSync(path.join(UPLOAD_DIR, f.filename));
+      res.status(423).json({ error: lockErr }); return;
+    }
   }
 
   let fileId: number;
@@ -505,10 +564,11 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
 router.put('/:id', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const { name, project, module, category, jira_ticket, tags, description, download_password, password_hint, remove_password } = req.body;
   const orgId = req.user!.organizationId;
-  if (req.user!.role === 'engineer') {
-    const [file] = await sql`SELECT owner_id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
-    if (!file || file.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
-  }
+  const [existing] = await sql`SELECT owner_id, checked_out_by, checked_out_at FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+  if (req.user!.role === 'engineer' && existing.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
+  const lockErr = await checkFileLock(existing, req.user!.userId, req.user!.role, true);
+  if (lockErr) { res.status(423).json({ error: lockErr }); return; }
   // Compute new password hash: set if provided, clear if remove_password=true, leave unchanged if neither
   let pwUpdate = sql``;
   if (remove_password === 'true' || remove_password === true) {
@@ -526,10 +586,11 @@ router.put('/:id', authenticate, requireModule('files'), requireRole('admin', 'l
 
 router.post('/:id/submit', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
-  if (req.user!.role === 'engineer') {
-    const [file] = await sql`SELECT owner_id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
-    if (!file || file.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
-  }
+  const [existing] = await sql`SELECT owner_id, checked_out_by, checked_out_at FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  if (!existing) { res.status(404).json({ error: 'Not found' }); return; }
+  if (req.user!.role === 'engineer' && existing.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden' }); return; }
+  const lockErr = await checkFileLock(existing, req.user!.userId, req.user!.role, true);
+  if (lockErr) { res.status(423).json({ error: lockErr }); return; }
   await sql`UPDATE files SET status='submitted', updated_at=NOW() WHERE id=${req.params.id} AND organization_id=${orgId}`;
   const [file] = await sql`SELECT f.name, u.name as owner_name, u.email as owner_email FROM files f JOIN users u ON f.owner_id = u.id WHERE f.id=${req.params.id} AND f.organization_id=${orgId}`;
   const leads = await sql`SELECT id, name, email FROM users WHERE role IN ('admin','lead') AND active = TRUE AND organization_id = ${orgId}`;
@@ -600,10 +661,12 @@ router.post('/:id/approve', authenticate, requireRole('admin', 'lead'), async (r
 
 router.post('/:id/archive', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
-  const [file] = await sql`SELECT status, owner_id FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  const [file] = await sql`SELECT status, owner_id, checked_out_by, checked_out_at FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
   if (req.user!.role === 'engineer' && file.owner_id !== req.user!.userId) { res.status(403).json({ error: 'Forbidden: engineers can only archive their own files' }); return; }
   if (file.status === 'archived') { res.status(400).json({ error: 'File is already archived' }); return; }
+  const lockErr = await checkFileLock(file, req.user!.userId, req.user!.role, true);
+  if (lockErr) { res.status(423).json({ error: lockErr }); return; }
   await sql`UPDATE files SET status='archived', updated_at=NOW() WHERE id=${req.params.id} AND organization_id=${orgId}`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'ARCHIVE', 'file', ${req.params.id}, 'Archived file', ${req.ip || ''}, ${orgId})`;
   bustDashboardCache(orgId).catch(() => {});
@@ -623,8 +686,12 @@ router.post('/:id/restore', authenticate, requireRole('admin', 'lead'), async (r
 
 router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   const orgId = req.user!.organizationId;
-  const [file] = await sql`SELECT id, deleted_at FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
+  const [file] = await sql`SELECT id, deleted_at, checked_out_by, checked_out_at FROM files WHERE id = ${req.params.id} AND organization_id = ${orgId}`;
   if (!file) { res.status(404).json({ error: 'Not found' }); return; }
+  // No admin override — deleting a file someone is actively editing must go
+  // through an explicit checkin first, not be silently allowed for admins.
+  const lockErr = await checkFileLock(file, req.user!.userId, req.user!.role, false);
+  if (lockErr) { res.status(423).json({ error: lockErr }); return; }
   if (file.deleted_at) {
     // Already in recycle bin — permanently delete
     const [full] = await sql`SELECT path FROM files WHERE id = ${req.params.id}`;

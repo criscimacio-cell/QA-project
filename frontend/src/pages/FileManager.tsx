@@ -408,8 +408,9 @@ export default function FileManager() {
 
   const doBulkAction = async (action: 'archive' | 'delete' | 'submit') => {
     try {
-      await api.post('/files/bulk-action', { ids: Array.from(selectedIds), action });
-      toast.success(`${selectedIds.size} file${selectedIds.size !== 1 ? 's' : ''} updated`);
+      const { data } = await api.post('/files/bulk-action', { ids: Array.from(selectedIds), action });
+      toast.success(`${data.count} file${data.count !== 1 ? 's' : ''} updated`);
+      if (data.skipped > 0) toast.warning(`${data.skipped} file${data.skipped !== 1 ? 's' : ''} skipped — checked out by another user`);
       setSelectedIds(new Set());
       load();
     } catch {
@@ -444,8 +445,9 @@ export default function FileManager() {
     try {
       if (confirmDelete.id === -1) {
         // Bulk delete
-        await api.post('/files/bulk-action', { ids: Array.from(selectedIds), action: 'delete' });
-        toast.success(`${selectedIds.size} file${selectedIds.size !== 1 ? 's' : ''} deleted`);
+        const { data } = await api.post('/files/bulk-action', { ids: Array.from(selectedIds), action: 'delete' });
+        toast.success(`${data.count} file${data.count !== 1 ? 's' : ''} deleted`);
+        if (data.skipped > 0) toast.warning(`${data.skipped} file${data.skipped !== 1 ? 's' : ''} skipped — checked out by another user`);
         setSelectedIds(new Set());
       } else {
         await api.delete(`/files/${confirmDelete.id}`);
@@ -596,8 +598,10 @@ export default function FileManager() {
       if (bulkMetaProject.trim()) payload.project = bulkMetaProject.trim();
       if (bulkMetaCategory.trim()) payload.category = bulkMetaCategory.trim();
       if (bulkMetaTags.trim()) payload.tags = bulkMetaTags.trim();
-      await api.post('/files/bulk-metadata', payload);
-      toast.success(`Metadata updated for ${selectedIds.size} file${selectedIds.size !== 1 ? 's' : ''}`);
+      const { data } = await api.post('/files/bulk-metadata', payload);
+      const updated = selectedIds.size - (data.skipped || 0);
+      toast.success(`Metadata updated for ${updated} file${updated !== 1 ? 's' : ''}`);
+      if (data.skipped > 0) toast.warning(`${data.skipped} file${data.skipped !== 1 ? 's' : ''} skipped — checked out by another user`);
       setBulkMetaModal(false);
       setBulkMetaProject(''); setBulkMetaCategory(''); setBulkMetaTags('');
       load();
@@ -683,8 +687,9 @@ export default function FileManager() {
             {isEngineer && (
               <button onClick={async () => {
                 try {
-                  await api.post('/files/bulk-submit', { ids: Array.from(selectedIds) });
-                  toast.success(`${selectedIds.size} file${selectedIds.size !== 1 ? 's' : ''} submitted for review`);
+                  const { data } = await api.post('/files/bulk-submit', { ids: Array.from(selectedIds) });
+                  toast.success(`${data.count} file${data.count !== 1 ? 's' : ''} submitted for review`);
+                  if (data.skipped > 0) toast.warning(`${data.skipped} file${data.skipped !== 1 ? 's' : ''} skipped — checked out by another user`);
                   setSelectedIds(new Set());
                   load();
                 } catch {

@@ -30,7 +30,13 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
     WHERE f.repository_id = ${req.params.id} AND f.status != 'archived' AND f.organization_id = ${orgId}
     ORDER BY f.updated_at DESC
   `;
-  const children = await sql`SELECT * FROM repositories WHERE parent_id = ${req.params.id} AND organization_id = ${orgId} ORDER BY name`;
+  const children = await sql`
+    SELECT r.*,
+      (SELECT COUNT(*)::int FROM files f WHERE f.repository_id = r.id AND f.status != 'archived' AND f.organization_id = ${orgId}) as file_count
+    FROM repositories r
+    WHERE r.parent_id = ${req.params.id} AND r.organization_id = ${orgId}
+    ORDER BY r.name
+  `;
   res.json({ ...repo, files, children });
 });
 

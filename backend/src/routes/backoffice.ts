@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import sql from '../db';
 import { JWT_SECRET } from '../middleware/auth';
+import { sendWelcomeEmail } from '../emailService';
 
 const router = Router();
 
@@ -204,6 +205,11 @@ router.post('/organizations', authenticatePlatformAdmin, async (req: Request, re
       }
       return { org, userId };
     });
+
+    if (result.userId) {
+      try { await sendWelcomeEmail(adminEmail.trim().toLowerCase(), adminName.trim(), result.org.name); } catch (e) { console.error('Welcome email failed:', e); }
+    }
+
     res.status(201).json({ message: `Organization "${result.org.name}" created`, org: result.org });
   } catch (err: any) {
     if (err.message === 'SLUG_TAKEN') { res.status(409).json({ error: 'Slug already taken' }); return; }

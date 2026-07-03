@@ -100,7 +100,7 @@ function statusBadge(label: string, color: string) {
 }
 
 // ─── 1. Welcome / Registration ────────────────────────────────────────────────
-// Trigger: auth.ts → POST /register (after user row inserted)
+// Trigger: backoffice.ts → POST /organizations (after admin user row inserted)
 
 export async function sendWelcomeEmail(to: string, name: string, orgName: string) {
   const html = layout(`

@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import sql from '../db';
 import { authenticate, JWT_SECRET } from '../middleware/auth';
-import { sendWelcomeEmail, sendPasswordResetEmail } from '../emailService';
+import { sendPasswordResetEmail } from '../emailService';
 
 const router = Router();
 
@@ -27,7 +27,6 @@ const REFRESH_COOKIE_OPTS = {
   path: '/api/auth',
 };
 
-const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,48}[a-z0-9]$|^[a-z0-9]{2}$/;
 
 async function checkRateLimit(ip: string): Promise<boolean> {
   const [{ count }] = await sql`
@@ -224,70 +223,6 @@ router.get('/reset-password/validate', async (req: Request, res: Response) => {
   const { token } = req.query;
   const [record] = await sql`SELECT id FROM password_reset_tokens WHERE token = ${token as string} AND used = FALSE AND expires_at > NOW()`;
   res.json({ valid: !!record });
-});
-
-router.post('/register', async (req: Request, res: Response) => {
-  const { orgName, orgSlug, plan, adminName, adminEmail, adminPassword } = req.body;
-  const validPlans = ['free', 'pro', 'enterprise'];
-  const orgPlan = validPlans.includes(plan) ? plan : 'free';
-
-  if (!orgName?.trim() || !orgSlug?.trim() || !adminName?.trim() || !adminEmail?.trim() || !adminPassword) {
-    res.status(400).json({ error: 'All fields are required' }); return;
-  }
-  if (!SLUG_RE.test(orgSlug)) {
-    res.status(400).json({ error: 'Organization ID must be 2-50 characters, lowercase letters, numbers, and hyphens only (cannot start or end with a hyphen)' }); return;
-  }
-  if (adminPassword.length < 8) {
-    res.status(400).json({ error: 'Password must be at least 8 characters' }); return;
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail.trim())) {
-    res.status(400).json({ error: 'Invalid email address' }); return;
-  }
-
-  try {
-    const result = await sql.begin(async tx => {
-      const [existingSlug] = await tx`SELECT id FROM organizations WHERE slug = ${orgSlug.trim().toLowerCase()}`;
-      if (existingSlug) throw new Error('SLUG_TAKEN');
-
-      const [org] = await tx`
-        INSERT INTO organizations (name, slug, plan) VALUES (${orgName.trim()}, ${orgSlug.trim().toLowerCase()}, ${orgPlan})
-        RETURNING id
-      `;
-
-      const hash = bcrypt.hashSync(adminPassword, 10);
-      const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(adminEmail.trim())}`;
-      const [user] = await tx`
-        INSERT INTO users (name, email, password_hash, role, organization_id, avatar)
-        VALUES (${adminName.trim()}, ${adminEmail.trim().toLowerCase()}, ${hash}, 'admin', ${org.id}, ${avatar})
-        RETURNING id
-      `;
-
-      // Without this, /auth/orgs and /auth/switch-org never see this org for
-      // this user, leaving the sidebar org-switcher permanently empty for
-      // anyone who signs up through self-service registration.
-      await tx`INSERT INTO user_org_memberships (user_id, organization_id, role, active)
-               VALUES (${user.id}, ${org.id}, 'admin', TRUE)
-               ON CONFLICT (user_id, organization_id) DO NOTHING`;
-
-      await tx`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id)
-               VALUES (${user.id}, 'ORG_REGISTER', 'organization', ${org.id}, ${`Organization "${orgName.trim()}" created`}, ${req.ip || ''}, ${org.id})`;
-
-      return { orgId: org.id, userId: user.id };
-    });
-
-    try { await sendWelcomeEmail(adminEmail.trim().toLowerCase(), adminName.trim(), orgName.trim()); } catch (e) { console.error('Welcome email failed:', e); }
-
-    res.status(201).json({ message: 'Organization created successfully. You can now log in.', orgId: result.orgId });
-  } catch (err: any) {
-    if (err.message === 'SLUG_TAKEN') {
-      res.status(409).json({ error: 'That organization ID is already taken. Please choose another.' }); return;
-    }
-    if (err.code === '23505') {
-      res.status(409).json({ error: 'An account with that email already exists in this organization.' }); return;
-    }
-    console.error('Register error:', err);
-    res.status(500).json({ error: 'Registration failed. Please try again.' });
-  }
 });
 
 // GET /auth/orgs — list all orgs the current user belongs to

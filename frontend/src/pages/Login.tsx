@@ -318,16 +318,6 @@ export default function Login() {
                   : 'Login'
                 }
               </button>
-
-              <p className="login-footer-text" style={{ textAlign:'center', fontSize:13, color: dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', marginTop:2 }}>
-                New organization?{' '}
-                <Link to="/register" className="login-footer-link" style={{ color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)', fontWeight:500, textDecoration:'none', transition:'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=AMBER}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color= dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
-                >
-                  Create an account
-                </Link>
-              </p>
             </form>
           </div>
         </div>

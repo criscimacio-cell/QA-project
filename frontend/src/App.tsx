@@ -53,7 +53,6 @@ import Archive from './pages/Archive';
 import Trash from './pages/Trash';
 import CheckedOut from './pages/CheckedOut';
 import OrgSettings from './pages/OrgSettings';
-import Register from './pages/Register';
 import { BackofficeAuthProvider } from './context/BackofficeAuthContext';
 import BackofficeLayout from './pages/backoffice/BackofficeLayout';
 import BackofficeDashboard from './pages/backoffice/BackofficeDashboard';
@@ -79,7 +78,6 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

@@ -25,7 +25,7 @@ export async function initDb() {
   `;
   // Explicit-id inserts above don't advance the SERIAL sequence, which would
   // otherwise collide with the first auto-generated id (e.g. the first org
-  // created via /api/auth/register) and fail with a misleading unique-violation
+  // created via backoffice) and fail with a misleading unique-violation
   // error. Keep the sequence in sync with the highest id every time.
   await sql`SELECT setval(pg_get_serial_sequence('organizations', 'id'), (SELECT COALESCE(MAX(id), 1) FROM organizations))`;
 

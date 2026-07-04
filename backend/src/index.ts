@@ -44,6 +44,22 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+// Catches the case where someone copies .env.example straight to .env and
+// deploys it as-is — these placeholder values are public (checked into the
+// repo), so a prod instance running with any of them is trivially compromised.
+if (process.env.NODE_ENV === 'production') {
+  const placeholderSecrets: Record<string, boolean> = {
+    JWT_SECRET: process.env.JWT_SECRET === 'change-this-to-a-long-random-secret-string-in-production',
+    POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD === 'qtamp_dev',
+    DATABASE_URL: (process.env.DATABASE_URL || '').includes(':qtamp_dev@'),
+  };
+  const stillDefault = Object.entries(placeholderSecrets).filter(([, isDefault]) => isDefault).map(([name]) => name);
+  if (stillDefault.length > 0) {
+    console.error(`FATAL: ${stillDefault.join(', ')} still set to the .env.example placeholder value. Refusing to start in production.`);
+    process.exit(1);
+  }
+}
+
 // Last-resort net for errors outside the request/response cycle (background
 // jobs, fire-and-forget calls) that express-async-errors can't intercept.
 // Logs and keeps the process alive rather than taking down every tenant.
@@ -55,6 +71,11 @@ process.on('uncaughtException', (err) => {
 });
 
 const app = express();
+// Must be set before any middleware reads req.ip (rate limiter below) —
+// without it, requests behind nginx all resolve to the proxy's IP, and
+// express-rate-limit's X-Forwarded-For spoofing check throws on production
+// traffic. TRUST_PROXY=1 in prod (behind nginx/ALB); 0 for direct/local access.
+app.set('trust proxy', process.env.TRUST_PROXY === '1');
 const PORT = process.env.PORT || 3001;
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });

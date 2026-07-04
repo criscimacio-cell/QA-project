@@ -7,8 +7,10 @@ services:
       POSTGRES_DB: qtamp
       POSTGRES_USER: qtamp
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qtamp_dev}
-    ports:
-      - "5432:5432"
+    # No host port published — reachable only from other containers on this
+    # compose network (as `postgres:5432`). Anyone who can reach the host
+    # would otherwise be able to hit the DB directly. For local debugging,
+    # use `docker compose exec postgres psql ...` or a docker-compose.override.yml.
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,8 +22,8 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    # No host port published — internal network only (as `redis:6379`), same
+    # reasoning as postgres above.
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru

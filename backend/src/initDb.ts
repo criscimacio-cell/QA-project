@@ -363,7 +363,13 @@ export async function initDb() {
     }
   }
 
-  // ── Seed demo users ──────────────────────────────────────────────────────
+  // ── Seed demo users + sample KB articles ────────────────────────────────
+  // These accounts use a fixed, publicly-documented password (password123)
+  // and the KB articles below reference them by email — never seed either
+  // in production. Set SEED_DEMO_DATA=1 to opt in anyway (e.g. a staging or
+  // sales-demo environment that isn't reachable by real customers).
+  const seedDemoData = process.env.NODE_ENV !== 'production' || process.env.SEED_DEMO_DATA === '1';
+  if (seedDemoData) {
   const [existingAdmin] = await sql`SELECT id FROM users WHERE email = 'admin@qa.com' AND organization_id = 1`;
   if (!existingAdmin) {
     const hash = (pw: string) => bcrypt.hashSync(pw, 10);
@@ -429,6 +435,7 @@ export async function initDb() {
     }
     console.log('Knowledge base articles seeded.');
   }
+  } // seedDemoData
 
   await sql`ALTER TABLE organizations ADD COLUMN IF NOT EXISTS role_permissions JSONB DEFAULT NULL`;
 

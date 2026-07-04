@@ -2,6 +2,8 @@ node_modules/
 data/
 uploads/
 backups/
+.test-uploads/
+.test-backups/
 dist/
 *.db
 *.db-shm

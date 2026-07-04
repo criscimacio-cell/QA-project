@@ -19,7 +19,11 @@ const isProduction = process.env.NODE_ENV === 'production';
 // to re-authenticate. This caps total session lifetime from the original
 // login regardless of activity — a stolen/leaked refresh token can't be
 // ridden forever just by staying active.
-const SESSION_ABSOLUTE_MAX_MS = parseInt(process.env.SESSION_ABSOLUTE_MAX_DAYS || '30', 10) * 24 * 60 * 60 * 1000;
+// Read lazily (not at module load) — under tsx's dev transform, imports are
+// evaluated before dotenv.config() runs (see emailService.ts's appUrl() for
+// the same pattern), so an eager read here would silently ignore a value
+// set only in .env and always fall back to the default in dev.
+const sessionAbsoluteMaxMs = () => parseInt(process.env.SESSION_ABSOLUTE_MAX_DAYS || '30', 10) * 24 * 60 * 60 * 1000;
 
 const ACCESS_COOKIE_OPTS = {
   httpOnly: true,
@@ -142,7 +146,7 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
   await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE token = ${token}`;
 
   const sessionAgeMs = Date.now() - new Date(record.first_issued_at).getTime();
-  if (sessionAgeMs > SESSION_ABSOLUTE_MAX_MS) {
+  if (sessionAgeMs > sessionAbsoluteMaxMs()) {
     res.clearCookie('accessToken', { path: '/' });
     res.clearCookie('refreshToken', { path: '/api/auth' });
     res.status(401).json({ error: 'Session expired, please log in again' });

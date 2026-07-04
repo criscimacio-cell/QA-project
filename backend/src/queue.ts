@@ -14,7 +14,9 @@ const connection = {
 
 export const notificationQueue = new Queue('notifications', { connection });
 
-const worker = new Worker(
+// Exported so tests can close it in teardown — otherwise the open Redis
+// connection this holds keeps the process alive after the suite finishes.
+export const worker = new Worker(
   'notifications',
   async (job) => {
     const { userId, type, title, message, organizationId } = job.data as { userId: number; type: string; title: string; message: string; organizationId?: number };

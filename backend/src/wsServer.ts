@@ -20,7 +20,9 @@ const WS_NOTIFY_CHANNEL = 'ws:notify';
 // Dedicated connection for SUBSCRIBE: an ioredis connection in subscriber
 // mode can't issue other commands, so this can't share the general-purpose
 // `redis` client used elsewhere for caching/queues.
-const subscriber = redis.duplicate();
+// Exported so tests can close it in teardown — otherwise the open Redis
+// connection this holds keeps the process alive after the suite finishes.
+export const subscriber = redis.duplicate();
 subscriber.on('error', (err) => {
   if ((err as any).code !== 'ECONNREFUSED') logger.error({ err }, '[ws] Redis subscriber error');
 });

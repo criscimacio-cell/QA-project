@@ -26,6 +26,7 @@ import { bustDashboardCache } from './dashboard';
 import bcrypt from 'bcryptjs';
 import { redis } from '../redis';
 import { logger } from '../logger';
+import { Sentry } from '../sentry';
 
 const router = Router();
 
@@ -972,6 +973,7 @@ router.get('/:id/versions/diff', authenticate, asyncHandler(async (req: Request,
 }));
 
 router.use((err: any, _req: Request, res: Response, next: Function) => {
+  Sentry.captureException(err);
   if (err?.code === 'LIMIT_FILE_SIZE') { res.status(400).json({ error: 'File too large (max 50 MB)' }); return; }
   if (err?.message) { res.status(400).json({ error: err.message }); return; }
   next(err);

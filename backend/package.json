@@ -8,6 +8,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@sentry/node": "^10.63.0",
     "@types/archiver": "^8.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/ws": "^8.18.1",

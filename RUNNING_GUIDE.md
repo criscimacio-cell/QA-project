@@ -115,6 +115,36 @@ Stop with `docker compose down` (add `-v` to also remove the database/upload vol
 
 ---
 
+## Error Tracking (GlitchTip) — one-time setup
+
+`docker compose up` also starts a self-hosted, Sentry-API-compatible error
+tracker (GlitchTip) alongside the app, with its own dedicated Postgres/Redis
+so it can't compete with the app's cache for memory. It ships with no
+connection to the backend until you complete this **one-time, manual**
+setup — the piece that can't be pre-baked into `.env.example` is the DSN,
+which GlitchTip only assigns after you create a project through its UI.
+
+1. Set `GLITCHTIP_SECRET_KEY` in `.env` before first boot (generate with
+   `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+   — this is required for GlitchTip's containers to start correctly.
+2. `docker compose up -d` (or `--build` if this is the first run).
+3. Open `http://localhost:8000` (or whatever `GLITCHTIP_DOMAIN`/`GLITCHTIP_PORT`
+   you configured) and create your account — the first user to sign up
+   becomes the organization owner.
+4. In the GlitchTip UI, create a new project (choose "Node.js" as the
+   platform). It will show you a DSN that looks like
+   `http://<key>@localhost:8000/<project-id>`.
+5. Set `GLITCHTIP_DSN` in `.env` to that value, then
+   `docker compose up -d backend` to restart just the backend and pick it up.
+6. Trigger a real error (e.g., a bad request that 500s) and confirm it shows
+   up in GlitchTip's issue list within a few seconds.
+
+Until step 5 is done, the backend runs completely normally — an unset
+`GLITCHTIP_DSN` just means errors aren't forwarded anywhere beyond the
+existing structured logs.
+
+---
+
 ## Troubleshooting
 
 ### "Cannot find module 'express'" or similar

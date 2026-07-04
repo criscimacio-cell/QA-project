@@ -5,6 +5,7 @@ import sql from '../db';
 import { JWT_SECRET } from '../middleware/auth';
 import { sendWelcomeEmail } from '../emailService';
 import { logger } from '../logger';
+import { Sentry } from '../sentry';
 
 const router = Router();
 
@@ -327,6 +328,7 @@ router.post('/organizations/:id/retention', authenticatePlatformAdmin, asyncHand
 }));
 
 router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  Sentry.captureException(err);
   logger.error({ err }, '[backoffice]');
   res.status(500).json({ error: 'Internal server error' });
 });

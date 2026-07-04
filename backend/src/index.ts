@@ -6,6 +6,7 @@ import { initDb } from './initDb';
 import './queue';
 import { startPurgeJob, startBackupJob } from './queue';
 import { logger } from './logger';
+import { initSentry, Sentry } from './sentry';
 
 // These two pre-flight checks exit immediately — kept on plain console.error
 // rather than the structured logger so the message is guaranteed to hit
@@ -31,13 +32,17 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+initSentry();
+
 // Last-resort net for errors outside the request/response cycle (background
 // jobs, fire-and-forget calls) that express-async-errors can't intercept.
 // Logs and keeps the process alive rather than taking down every tenant.
 process.on('unhandledRejection', (reason) => {
+  Sentry.captureException(reason);
   logger.error({ err: reason }, 'unhandledRejection');
 });
 process.on('uncaughtException', (err) => {
+  Sentry.captureException(err);
   logger.error({ err }, 'uncaughtException');
 });
 

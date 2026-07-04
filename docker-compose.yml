@@ -51,6 +51,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
       APP_URL: ${APP_URL:-http://localhost}
+      GLITCHTIP_DSN: ${GLITCHTIP_DSN:-}
     volumes:
       - uploads:/app/uploads
       # Separate named volume from `uploads` — a backup on the same volume
@@ -74,8 +75,88 @@ services:
       - backend
     restart: unless-stopped
 
+  # ── Self-hosted error tracking (GlitchTip — Sentry-API-compatible, MIT) ──
+  # Own dedicated postgres/redis rather than reusing the app's: GlitchTip's
+  # Celery task queue on a shared redis would compete with the app's
+  # allkeys-lru cache eviction policy (tuned for BullMQ/caching, not a task
+  # broker) and could silently drop queued event-processing jobs under
+  # memory pressure. Splitting them out avoids that entirely.
+  #
+  # First-run only: GLITCHTIP_DSN can't be known ahead of time — it's
+  # assigned when you create an organization + project in GlitchTip's own
+  # UI after first boot. See RUNNING_GUIDE.md for the one-time setup steps.
+  glitchtip_postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: glitchtip
+      POSTGRES_USER: glitchtip
+      POSTGRES_PASSWORD: ${GLITCHTIP_POSTGRES_PASSWORD:-glitchtip_dev}
+    volumes:
+      - glitchtip_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glitchtip -d glitchtip"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  glitchtip_redis:
+    image: redis:7-alpine
+    volumes:
+      - glitchtip_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  glitchtip_migrate:
+    image: glitchtip/glitchtip:v4
+    command: ./manage.py migrate
+    environment: &glitchtip_env
+      DATABASE_URL: postgres://glitchtip:${GLITCHTIP_POSTGRES_PASSWORD:-glitchtip_dev}@glitchtip_postgres:5432/glitchtip
+      REDIS_URL: redis://glitchtip_redis:6379/0
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY}
+      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:-http://localhost:8000}
+      DEFAULT_FROM_EMAIL: ${GLITCHTIP_FROM_EMAIL:-glitchtip@localhost}
+      EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}
+      CELERY_WORKER_AUTOSCALE: "1,3"
+    depends_on:
+      glitchtip_postgres:
+        condition: service_healthy
+
+  glitchtip_web:
+    image: glitchtip/glitchtip:v4
+    environment: *glitchtip_env
+    ports:
+      - "${GLITCHTIP_PORT:-8000}:8000"
+    depends_on:
+      glitchtip_postgres:
+        condition: service_healthy
+      glitchtip_redis:
+        condition: service_healthy
+      glitchtip_migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  glitchtip_worker:
+    image: glitchtip/glitchtip:v4
+    command: ./bin/run-celery-with-beat.sh
+    environment: *glitchtip_env
+    depends_on:
+      glitchtip_postgres:
+        condition: service_healthy
+      glitchtip_redis:
+        condition: service_healthy
+      glitchtip_migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
   uploads:
   backups:
+  glitchtip_postgres_data:
+  glitchtip_redis_data:

@@ -33,6 +33,7 @@ import filePermissionsRouter from './routes/filePermissions';
 import shareLinksRouter from './routes/shareLinks';
 import savedSearchesRouter from './routes/savedSearches';
 import { logger } from './logger';
+import { Sentry } from './sentry';
 
 const app = express();
 // Must be set before any middleware reads req.ip (rate limiter below) —
@@ -128,6 +129,7 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Da
 // traces outside production.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  Sentry.captureException(err);
   logger.error({ err }, 'unhandled route error');
   if (res.headersSent) return;
   res.status(err?.status ?? 500).json({ error: 'Internal server error' });

@@ -6,6 +6,7 @@ import sql from '../db';
 import { authenticate, JWT_SECRET } from '../middleware/auth';
 import { sendPasswordResetEmail } from '../emailService';
 import { logger } from '../logger';
+import { Sentry } from '../sentry';
 
 const router = Router();
 
@@ -281,6 +282,7 @@ router.post('/switch-org', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  Sentry.captureException(err);
   logger.error({ err }, '[auth]');
   res.status(500).json({ error: 'Internal server error' });
 });

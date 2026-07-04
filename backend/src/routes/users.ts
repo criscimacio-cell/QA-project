@@ -7,6 +7,7 @@ import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { sendRoleChangedEmail } from '../emailService';
 import { logger } from '../logger';
+import { Sentry } from '../sentry';
 
 // free was 5, which the 5 seeded demo accounts alone already exhaust, blocking
 // evaluators from adding a single extra user out of the box — bumped to 10.
@@ -209,6 +210,7 @@ router.get('/:id/avatar', authenticate, async (req: Request, res: Response) => {
 });
 
 router.use((err: any, _req: Request, res: Response, next: Function) => {
+  Sentry.captureException(err);
   if (err?.code === 'LIMIT_FILE_SIZE') { res.status(400).json({ error: 'Image too large (max 2 MB)' }); return; }
   if (err?.message) { res.status(400).json({ error: err.message }); return; }
   next(err);

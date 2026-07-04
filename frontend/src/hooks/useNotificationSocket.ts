@@ -16,12 +16,14 @@ type NotificationPayload = {
 
 type OnNotification = (notification: NotificationPayload['notification']) => void;
 
+// Same-origin by default — nginx (prod) and the Vite dev proxy (dev) both
+// forward /ws to the backend, matching how /api is already proxied. A
+// hardcoded ':3001' fallback here would bypass that proxy entirely and
+// break in any deployment where the backend isn't reachable on that port
+// directly (e.g. the docker-compose setup, where it never is).
 const WS_BASE =
   import.meta.env.VITE_WS_URL ||
-  (window.location.protocol === 'https:' ? 'wss' : 'ws') +
-    '://' +
-    window.location.hostname +
-    ':3001';
+  (window.location.protocol === 'https:' ? 'wss' : 'ws') + '://' + window.location.host;
 
 const MIN_BACKOFF = 1000;
 const MAX_BACKOFF = 30000;

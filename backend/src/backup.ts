@@ -7,6 +7,7 @@ import zlib from 'zlib';
 // call throws "archiver is not a function". Use the ZipArchive class instead.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { ZipArchive } = require('archiver') as { ZipArchive: new (opts?: object) => import('archiver').Archiver };
+import { logger } from './logger';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 const BACKUP_DIR = path.resolve(process.env.BACKUP_DIR || './backups');
@@ -111,7 +112,7 @@ export async function runBackup(): Promise<void> {
   await archiveUploads(destDir);
 
   const { kept, pruned } = rotateOldBackups(now);
-  console.log(
+  logger.info(
     `[backup] ${stamp} complete — db + uploads written to ${destDir}. ` +
     `Retained ${kept.length} backup day(s)${pruned.length ? `, pruned ${pruned.length}: ${pruned.join(', ')}` : ''}.`
   );

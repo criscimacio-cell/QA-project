@@ -6,12 +6,11 @@
  * Falls back to console logging in dev when key is missing.
  *
  * SWAP GUIDE (future — company SMTP):
- *   Replace the `sendEmail` internals with nodemailer (already in mailer.ts).
+ *   Replace the `sendEmail` internals with nodemailer.
  *   All template functions below stay exactly the same.
  */
 
-// Note: mailer.ts (legacy nodemailer/SMTP) is not used. All email goes through Resend.
-// To enable SMTP, wire mailer.ts functions here.
+import { logger } from './logger';
 
 // Env vars are read lazily at call time (NOT at module load). This is required
 // because route modules — which transitively import this file — may be loaded
@@ -26,7 +25,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   const from = process.env.EMAIL_FROM || 'Qlarity <onboarding@resend.dev>';
 
   if (!apiKey) {
-    console.log(`\n📧 [EMAIL — no RESEND_API_KEY]\nTo: ${to}\nSubject: ${subject}\n`);
+    logger.info(`[EMAIL — no RESEND_API_KEY] To: ${to} | Subject: ${subject}`);
     return;
   }
 
@@ -41,7 +40,7 @@ async function sendEmail(to: string, subject: string, html: string) {
 
   if (!res.ok) {
     const err = await res.text();
-    console.error('[emailService] Resend error:', err);
+    logger.error({ err }, '[emailService] Resend error');
   }
 }
 
@@ -273,7 +272,6 @@ export async function sendRoleChangedEmail(
 
 // ─── 7. Password Reset ────────────────────────────────────────────────────────
 // Trigger: auth.ts → POST /forgot-password
-// NOTE: mailer.ts already handles this — wire up later when migrating fully to emailService
 
 export async function sendPasswordResetEmail(to: string, name: string, token: string) {
   const link = `${appUrl()}/reset-password?token=${token}`;

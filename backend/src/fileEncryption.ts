@@ -13,6 +13,7 @@
 
 import crypto from 'crypto';
 import fs from 'fs';
+import { logger } from './logger';
 
 const MAGIC = Buffer.from('QLENC1');  // 6 bytes — marks an encrypted file
 const IV_LENGTH = 12;
@@ -25,7 +26,7 @@ function getKey(): Buffer | null {
   const hex = process.env.FILE_ENCRYPTION_KEY;
   if (!hex) {
     if (!_warned) {
-      console.warn('[fileEncryption] FILE_ENCRYPTION_KEY not set — files stored unencrypted');
+      logger.warn('FILE_ENCRYPTION_KEY not set — files stored unencrypted');
       _warned = true;
     }
     return null;

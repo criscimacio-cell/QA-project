@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import sql from '../db';
 import { authenticate, JWT_SECRET } from '../middleware/auth';
 import { sendPasswordResetEmail } from '../emailService';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -12,6 +13,13 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
   (req, res, next) => fn(req, res, next).catch(next);
 
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Refresh tokens rotate on every use and each rotation resets the 7-day
+// expiry, so a continuously active session would otherwise never be forced
+// to re-authenticate. This caps total session lifetime from the original
+// login regardless of activity — a stolen/leaked refresh token can't be
+// ridden forever just by staying active.
+const SESSION_ABSOLUTE_MAX_MS = parseInt(process.env.SESSION_ABSOLUTE_MAX_DAYS || '30', 10) * 24 * 60 * 60 * 1000;
 
 const ACCESS_COOKIE_OPTS = {
   httpOnly: true,
@@ -110,7 +118,7 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
   const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const accessTTL = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
 
-  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at, organization_id) VALUES (${user.id}, ${refreshToken}, ${refreshExpiresAt.toISOString()}, ${user.organization_id})`;
+  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at, organization_id, first_issued_at) VALUES (${user.id}, ${refreshToken}, ${refreshExpiresAt.toISOString()}, ${user.organization_id}, NOW())`;
 
   res.cookie('accessToken', accessToken, { ...ACCESS_COOKIE_OPTS, expires: new Date(Date.now() + accessTTL) });
   res.cookie('refreshToken', refreshToken, { ...REFRESH_COOKIE_OPTS, expires: refreshExpiresAt });
@@ -133,9 +141,17 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
   if (!record) { res.status(401).json({ error: 'Invalid or expired refresh token' }); return; }
   await sql`UPDATE refresh_tokens SET revoked = TRUE WHERE token = ${token}`;
 
+  const sessionAgeMs = Date.now() - new Date(record.first_issued_at).getTime();
+  if (sessionAgeMs > SESSION_ABSOLUTE_MAX_MS) {
+    res.clearCookie('accessToken', { path: '/' });
+    res.clearCookie('refreshToken', { path: '/api/auth' });
+    res.status(401).json({ error: 'Session expired, please log in again' });
+    return;
+  }
+
   const newRefresh = crypto.randomBytes(64).toString('hex');
   const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at, organization_id) VALUES (${record.uid}, ${newRefresh}, ${refreshExpiresAt.toISOString()}, ${record.organization_id})`;
+  await sql`INSERT INTO refresh_tokens (user_id, token, expires_at, organization_id, first_issued_at) VALUES (${record.uid}, ${newRefresh}, ${refreshExpiresAt.toISOString()}, ${record.organization_id}, ${record.first_issued_at})`;
 
   const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
   const accessToken = jwt.sign(
@@ -198,8 +214,8 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     await sql`INSERT INTO password_reset_tokens (user_id, token, expires_at, organization_id) VALUES (${user.id}, ${token}, ${expiresAt}, ${user.organization_id})`;
-    try { await sendPasswordResetEmail(user.email, user.name, token); } catch (e) { console.error('Email send failed:', e); }
-  } catch (e) { console.error('Forgot-password error:', e); }
+    try { await sendPasswordResetEmail(user.email, user.name, token); } catch (e) { logger.error({ err: e }, 'Email send failed'); }
+  } catch (e) { logger.error({ err: e }, 'Forgot-password error'); }
   res.json({ message: 'If that email exists, a reset link has been sent.' });
 });
 
@@ -261,7 +277,7 @@ router.post('/switch-org', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('[auth]', err?.message ?? err);
+  logger.error({ err }, '[auth]');
   res.status(500).json({ error: 'Internal server error' });
 });
 

@@ -6,6 +6,7 @@ import fs from 'fs';
 import sql from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { sendRoleChangedEmail } from '../emailService';
+import { logger } from '../logger';
 
 // free was 5, which the 5 seeded demo accounts alone already exhaust, blocking
 // evaluators from adding a single extra user out of the box — bumped to 10.
@@ -161,7 +162,7 @@ router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res:
     try {
       const [org] = await sql`SELECT name FROM organizations WHERE id = ${orgId}`;
       await sendRoleChangedEmail(target.email, name || target.name, target.role, role, org?.name || 'your organization');
-    } catch (e) { console.error('Role-change email failed:', e); }
+    } catch (e) { logger.error({ err: e }, 'Role-change email failed'); }
   }
   res.json({ message: 'Updated' });
 });

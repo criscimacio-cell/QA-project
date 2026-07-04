@@ -2,6 +2,7 @@ import { Queue, Worker } from 'bullmq';
 import sql from './db';
 import { pushToUser } from './wsServer';
 import { runBackup } from './backup';
+import { logger } from './logger';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const url = new URL(REDIS_URL);
@@ -20,12 +21,12 @@ const worker = new Worker(
     const orgId = organizationId ?? 1;
     const [saved] = await sql`INSERT INTO notifications (user_id, type, title, message, organization_id) VALUES (${userId}, ${type}, ${title}, ${message}, ${orgId}) RETURNING *`;
     // Push real-time notification to connected WebSocket clients
-    pushToUser(userId, { type: 'notification', notification: saved });
+    await pushToUser(userId, { type: 'notification', notification: saved });
   },
   { connection, concurrency: 5 },
 );
 
-worker.on('failed', (job, err) => console.error(`Notification job ${job?.id} failed:`, err.message));
+worker.on('failed', (job, err) => logger.error({ err, jobId: job?.id }, 'Notification job failed'));
 
 // Export connection config so purge job can reuse it
 export const redis = connection;
@@ -55,8 +56,8 @@ export async function startPurgeJob() {
         await sqlDb`DELETE FROM file_comments WHERE file_id = ${file.id}`;
         await sqlDb`DELETE FROM files WHERE id = ${file.id}`;
       }
-      if (stale.length > 0) console.log(`[purge] Auto-purged ${stale.length} files from trash`);
-    } catch (e) { console.error('[purge] Error:', e); }
+      if (stale.length > 0) logger.info(`[purge] Auto-purged ${stale.length} files from trash`);
+    } catch (e) { logger.error({ err: e }, '[purge] Error'); }
   }, { connection });
 
   // Schedule purge every 24 hours using a repeatable job
@@ -72,10 +73,10 @@ export async function startBackupJob() {
   const backupWorker = new Worker('backup', async () => {
     try {
       await runBackup();
-    } catch (e) { console.error('[backup] Error:', e); }
+    } catch (e) { logger.error({ err: e }, '[backup] Error'); }
   }, { connection });
 
-  backupWorker.on('failed', (job, err) => console.error(`[backup] Job ${job?.id} failed:`, err.message));
+  backupWorker.on('failed', (job, err) => logger.error({ err, jobId: job?.id }, '[backup] Job failed'));
 
   // 2:00 AM daily
   const backupQueue = new Queue('backup', { connection });

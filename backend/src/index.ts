@@ -38,7 +38,12 @@ import savedSearchesRouter from './routes/savedSearches';
 // Initialize BullMQ worker by importing the module
 import './queue';
 import { startPurgeJob, startBackupJob } from './queue';
+import { logger } from './logger';
 
+// These two pre-flight checks run before the app (or the logger's normal
+// operation) is otherwise established and exit immediately — kept on plain
+// console.error rather than the structured logger so the message is
+// guaranteed to hit stderr before process.exit(), not deferred to it.
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
   process.exit(1);
@@ -64,10 +69,10 @@ if (process.env.NODE_ENV === 'production') {
 // jobs, fire-and-forget calls) that express-async-errors can't intercept.
 // Logs and keeps the process alive rather than taking down every tenant.
 process.on('unhandledRejection', (reason) => {
-  console.error('[unhandledRejection]', reason);
+  logger.error({ err: reason }, 'unhandledRejection');
 });
 process.on('uncaughtException', (err) => {
-  console.error('[uncaughtException]', err);
+  logger.error({ err }, 'uncaughtException');
 });
 
 const app = express();
@@ -165,25 +170,25 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Da
 // traces outside production.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('[unhandled route error]', err);
+  logger.error({ err }, 'unhandled route error');
   if (res.headersSent) return;
   res.status(err?.status ?? 500).json({ error: 'Internal server error' });
 });
 
 if (process.env.NODE_ENV !== 'production') {
-  console.warn('⚠️  WARNING: Running with default demo credentials (password123). Change before deploying to production.');
+  logger.warn('Running with default demo credentials (password123). Change before deploying to production.');
 }
 
 (async () => {
   try {
     await initDb();
-    startPurgeJob().catch((e) => console.error('[purge] Failed to start purge job:', e));
-    startBackupJob().catch((e) => console.error('[backup] Failed to start backup job:', e));
+    startPurgeJob().catch((e) => logger.error({ err: e }, '[purge] Failed to start purge job'));
+    startBackupJob().catch((e) => logger.error({ err: e }, '[backup] Failed to start backup job'));
     const server = http.createServer(app);
     attachWebSocketServer(server);
-    server.listen(PORT, () => console.log(`Qlarity API running on http://localhost:${PORT}`));
+    server.listen(PORT, () => logger.info(`Qlarity API running on http://localhost:${PORT}`));
   } catch (err) {
-    console.error('Failed to initialize database:', err);
+    logger.error({ err }, 'Failed to initialize database');
     process.exit(1);
   }
 })();

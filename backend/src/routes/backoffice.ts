@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import sql from '../db';
 import { JWT_SECRET } from '../middleware/auth';
 import { sendWelcomeEmail } from '../emailService';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -52,7 +53,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
     res.cookie('boAccessToken', token, { ...BO_COOKIE_OPTS, expires: new Date(Date.now() + 8 * 60 * 60 * 1000) });
     res.json({ admin: { id: admin.id, name: admin.name, email: admin.email } });
   } catch (err: any) {
-    console.error('[backoffice login]', err?.message ?? err);
+    logger.error({ err }, '[backoffice login]');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -207,7 +208,7 @@ router.post('/organizations', authenticatePlatformAdmin, async (req: Request, re
     });
 
     if (result.userId) {
-      try { await sendWelcomeEmail(adminEmail.trim().toLowerCase(), adminName.trim(), result.org.name); } catch (e) { console.error('Welcome email failed:', e); }
+      try { await sendWelcomeEmail(adminEmail.trim().toLowerCase(), adminName.trim(), result.org.name); } catch (e) { logger.error({ err: e }, 'Welcome email failed'); }
     }
 
     res.status(201).json({ message: `Organization "${result.org.name}" created`, org: result.org });
@@ -215,7 +216,7 @@ router.post('/organizations', authenticatePlatformAdmin, async (req: Request, re
     if (err.message === 'SLUG_TAKEN') { res.status(409).json({ error: 'Slug already taken' }); return; }
     if (err.message === 'PASSWORD_SHORT') { res.status(400).json({ error: 'Admin password must be at least 8 characters' }); return; }
     if (err.code === '23505') { res.status(409).json({ error: 'Admin email already exists in this organization' }); return; }
-    console.error('Create org error:', err);
+    logger.error({ err }, 'Create org error');
     res.status(500).json({ error: 'Failed to create organization' });
   }
 });
@@ -326,7 +327,7 @@ router.post('/organizations/:id/retention', authenticatePlatformAdmin, asyncHand
 }));
 
 router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('[backoffice]', err?.message ?? err);
+  logger.error({ err }, '[backoffice]');
   res.status(500).json({ error: 'Internal server error' });
 });
 

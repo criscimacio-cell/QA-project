@@ -25,11 +25,26 @@ import { notificationQueue } from '../queue';
 import { bustDashboardCache } from './dashboard';
 import bcrypt from 'bcryptjs';
 import { redis } from '../redis';
+import { logger } from '../logger';
 
 const router = Router();
 
-// Simple per-user rate limit: max 3 bulk uploads per minute
-const bulkUploadTracker = new Map<number, { count: number; resetAt: number }>();
+// Simple per-user rate limit: max 3 bulk uploads per minute. Backed by Redis
+// (not an in-process Map) so the limit is shared across backend replicas —
+// a Map here would let a user get 3 uploads per minute per replica instead
+// of 3 total the moment this runs behind a load balancer with >1 instance.
+// Fails open if Redis is unreachable, matching this codebase's existing
+// Redis-is-a-nice-to-have posture elsewhere (see redis.ts).
+async function checkBulkUploadLimit(userId: number): Promise<boolean> {
+  try {
+    const key = `bulkupload:${userId}`;
+    const count = await redis.incr(key);
+    if (count === 1) await redis.expire(key, 60);
+    return count <= 3;
+  } catch {
+    return true;
+  }
+}
 
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler =>
   (req, res, next) => fn(req, res, next).catch(next);
@@ -494,7 +509,7 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
     // forever with no response. Log loudly and keep going: the file is already
     // saved and its DB record already exists, so we still need to finish
     // writing it consistently and answer the request either way.
-    console.error(`[files] Encryption failed for file id=${fileId}, stored unencrypted:`, e);
+    logger.error({ err: e, fileId }, '[files] Encryption failed, stored unencrypted');
   }
   await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, ${newVersion}, ${f.filename}, ${f.size}, ${change_log || (existing ? `Version ${newVersion} update` : 'Initial upload')}, ${req.user!.userId}, ${orgId})`;
   await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;
@@ -504,16 +519,9 @@ router.post('/upload', authenticate, requireModule('files'), requireRole('admin'
 
 router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('admin', 'lead', 'engineer'), upload.array('files', 20), async (req: Request, res: Response) => {
   const userId = req.user!.userId;
-  const now = Date.now();
-  const tracker = bulkUploadTracker.get(userId);
-  if (tracker && now < tracker.resetAt) {
-    if (tracker.count >= 3) {
-      res.status(429).json({ error: 'Too many bulk uploads. Please wait before uploading again.' });
-      return;
-    }
-    tracker.count++;
-  } else {
-    bulkUploadTracker.set(userId, { count: 1, resetAt: now + 60_000 });
+  if (!(await checkBulkUploadLimit(userId))) {
+    res.status(429).json({ error: 'Too many bulk uploads. Please wait before uploading again.' });
+    return;
   }
 
   const files = req.files as Express.Multer.File[];
@@ -545,7 +553,7 @@ router.post('/bulk-upload', authenticate, requireModule('files'), requireRole('a
     try {
       encryptFile(path.join(UPLOAD_DIR, f.filename));
     } catch (e) {
-      console.error(`[files] Encryption failed for file id=${fileId}, stored unencrypted:`, e);
+      logger.error({ err: e, fileId }, '[files] Encryption failed, stored unencrypted');
     }
     await sql`INSERT INTO file_versions (file_id, version, path, size, change_log, created_by, organization_id) VALUES (${fileId}, 1, ${f.filename}, ${f.size}, 'Initial upload', ${req.user!.userId}, ${orgId})`;
     await sql`INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, ip_address, organization_id) VALUES (${req.user!.userId}, 'UPLOAD', 'file', ${fileId}, ${`Bulk uploaded: ${f.originalname}`}, ${req.ip || ''}, ${orgId})`;

@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import sql from './db';
+import { logger } from './logger';
 
 export async function initDb() {
   // ── Organizations (must exist before any org-scoped tables) ─────────────
@@ -63,8 +64,8 @@ export async function initDb() {
       ON CONFLICT (email) DO NOTHING
     `;
     if (!process.env.PLATFORM_ADMIN_PASSWORD) {
-      console.warn('⚠️  Generated platform-admin (backoffice) password for %s: %s', platformAdminEmail, platformAdminPw);
-      console.warn('   This is shown once and cannot be recovered — save it now, or set PLATFORM_ADMIN_PASSWORD and restart to pin your own.');
+      logger.warn(`Generated platform-admin (backoffice) password for ${platformAdminEmail}: ${platformAdminPw}`);
+      logger.warn('This is shown once and cannot be recovered — save it now, or set PLATFORM_ADMIN_PASSWORD and restart to pin your own.');
     }
   }
 
@@ -352,6 +353,13 @@ export async function initDb() {
   await sql`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS organization_id INTEGER REFERENCES organizations(id) DEFAULT 1`;
   await sql`UPDATE refresh_tokens SET organization_id = 1 WHERE organization_id IS NULL`;
 
+  // Tracks when a session originally started, carried forward unchanged
+  // across refresh-token rotations, so an absolute session lifetime can be
+  // enforced even for a session that's continuously kept alive by activity
+  // (see SESSION_ABSOLUTE_MAX_DAYS in routes/auth.ts). Defaults to NOW() for
+  // pre-existing rows so upgrading doesn't retroactively expire anyone.
+  await sql`ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS first_issued_at TIMESTAMPTZ DEFAULT NOW()`;
+
   // ── Seed categories ──────────────────────────────────────────────────────
   const [{ c: catCount }] = await sql`SELECT COUNT(*)::int as c FROM categories WHERE organization_id = 1`;
   if (catCount === 0) {
@@ -387,7 +395,7 @@ export async function initDb() {
         ON CONFLICT DO NOTHING
       `;
     }
-    console.log('Default accounts created.');
+    logger.info('Default accounts created.');
   }
 
   // ── Seed KB articles ─────────────────────────────────────────────────────
@@ -433,7 +441,7 @@ export async function initDb() {
         VALUES (${a.title}, ${a.content}, ${a.category}, ${a.authorId}, 'published', ${a.tags}, ${a.created}, ${a.updated}, 1)
       `;
     }
-    console.log('Knowledge base articles seeded.');
+    logger.info('Knowledge base articles seeded.');
   }
   } // seedDemoData
 
@@ -526,5 +534,5 @@ export async function initDb() {
   const { mkdirSync } = await import('fs');
   mkdirSync(process.env.UPLOAD_DIR ? `${process.env.UPLOAD_DIR}/templates` : './uploads/templates', { recursive: true });
 
-  console.log('Database initialization complete.');
+  logger.info('Database initialization complete.');
 }

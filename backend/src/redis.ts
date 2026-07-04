@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { logger } from './logger';
 
 export const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   lazyConnect: true,
@@ -8,7 +9,7 @@ export const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
 redis.on('error', (err) => {
-  if ((err as any).code !== 'ECONNREFUSED') console.error('Redis error:', err.message);
+  if ((err as any).code !== 'ECONNREFUSED') logger.error({ err }, 'Redis error');
 });
 
 /** Cache helper — falls through silently if Redis is unavailable */
